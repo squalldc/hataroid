@@ -1,0 +1,211 @@
+	<resources>
+		<string-array name="pref_system_cputype_entries">
+			<item >68000</item>
+			<item >68010</item>
+			<item >68020</item>
+			<item >68EC030+FPU</item>
+			<item >68040</item>
+		</string-array>
+		<string-array name="pref_system_cputype_values">
+			<item >68000</item>
+			<item >68010</item>
+			<item >68020</item>
+			<item >68EC030FPU</item>
+			<item >68040</item>
+		</string-array>
+		<string-array name="pref_system_machinetype_entries">
+			<item >ST</item>
+			<item >STE</item>
+			<item >TT (Not Available)</item>
+			<item >Falcon (Not Available)</item>
+		</string-array>
+		<string-array name="pref_system_machinetype_values">
+			<item >ST</item>
+			<item >STE</item>
+			<item >TT</item>
+			<item >Falcon</item>
+		</string-array>
+		<string-array name="pref_system_cpuclock_entries">
+			<item >8 Mhz</item>
+			<item >16 Mhz</item>
+			<item >32 Mhz</item>
+		</string-array>
+		<string-array name="pref_system_cpuclock_values">
+			<item >8</item>
+			<item >16</item>
+			<item >32</item>
+		</string-array>
+		<string-array name="pref_system_memory_entries">
+			<item >512 Kb</item>
+			<item >1 Mb</item>
+			<item >2 Mb</item>
+			<item >4 Mb</item>
+			<item >8 Mb</item>
+			<item >14 Mb</item>
+		</string-array>
+		<string-array name="pref_system_memory_values">
+			<item >0</item>
+			<item >1</item>
+			<item >2</item>
+			<item >4</item>
+			<item >8</item>
+			<item >14</item>
+		</string-array>
+		<string-array name="pref_storage_floppydisks_writeprotection_entries">
+			<item >Off</item>
+			<item >On</item>
+			<item >Auto</item>
+		</string-array>
+		<string-array name="pref_storage_floppydisks_writeprotection_values">
+			<item >0</item>
+			<item >1</item>
+			<item >2</item>
+		</string-array>
+		<string-array name="pref_storage_harddisks_gemdoswriteprotection_entries">
+			<item >Off</item>
+			<item >On</item>
+			<item >Auto</item>
+		</string-array>
+		<string-array name="pref_storage_harddisks_gemdoswriteprotection_values">
+			<item >0</item>
+			<item >1</item>
+			<item >2</item>
+		</string-array>
+		<string-array name="pref_sound_playbackquality_entries">
+			<item >11025 Hz</item>
+			<item >12517 Hz (ST native multiple)</item>
+			<item >16000 Hz</item>
+			<item >22050 Hz</item>
+			<item >25033 Hz (ST native multiple)</item>
+			<item >32000 Hz</item>
+			<item >44100 Hz</item>
+			<item >48000 Hz</item>
+			<item >50066 Hz (ST native multiple)</item>
+		</string-array>
+		<string-array name="pref_sound_playbackquality_values">
+			<item >11025</item>
+			<item >12517</item>
+			<item >16000</item>
+			<item >22050</item>
+			<item >25033</item>
+			<item >32000</item>
+			<item >44100</item>
+			<item >48000</item>
+			<item >50066</item>
+		</string-array>
+		<string-array name="pref_sound_ymvoicesmixing_entries">
+			<item >Math model</item>
+			<item >ST table</item>
+			<item >Linear</item>
+		</string-array>
+		<string-array name="pref_sound_ymvoicesmixing_values">
+			<item >math</item>
+			<item >st</item>
+			<item >linear</item>
+		</string-array>
+		<string-array name="pref_display_monitortype_entries">
+			<item >Mono</item>
+			<item >RGB</item>
+			<item >VGA (Not Available)</item>
+			<item >TV</item>
+		</string-array>
+		<string-array name="pref_display_monitortype_values">
+			<item >Mono</item>
+			<item >RGB</item>
+			<item >VGA</item>
+			<item >TV</item>
+		</string-array>		
+		<string-array name="pref_display_extendedvdi_colors_entries">
+			<item >2 colors</item>
+			<item >4 colors</item>
+			<item >16 colors</item>
+		</string-array>
+		<string-array name="pref_display_extendedvdi_colors_values">
+			<item >2</item>
+			<item >4</item>
+			<item >16</item>
+		</string-array>
+		<string-array name="pref_display_extendedvdi_resolution_entries">
+			<item >640x480</item>
+			<item >800x600</item>
+			<item >1024x768</item>
+		</string-array>
+		<string-array name="pref_display_extendedvdi_resolution_values">
+			<item >640x480</item>
+			<item >800x600</item>
+			<item >1024x768</item>
+		</string-array>
+		
+		<string-array name="pref_display_frameskip_entries">
+			<item >Auto</item>
+			<item >Off</item>
+			<item >1</item>
+			<item >2</item>
+			<item >3</item>
+			<item >4</item>
+		</string-array>
+		<string-array name="pref_display_frameskip_values">
+			<item >5</item>
+			<item >0</item>
+			<item >1</item>
+			<item >2</item>
+			<item >3</item>
+			<item >4</item>
+		</string-array>
+		<string-array name="pref_display_indicators_entries">
+			<item >Statusbar</item>
+			<item >Drive led</item>
+			<item >None</item>
+		</string-array>
+		<string-array name="pref_display_indicators_values">
+			<item >statusbar</item>
+			<item >driveled</item>
+			<item >none</item>
+		</string-array>
+
+		<string-array name="pref_input_joystick_port_entries">
+			<item >ST Joystick 0</item>
+			<item >ST Joystick 1</item>
+			<item >STE Joypad A</item>
+			<item >STE Joypad B</item>
+			<item >Parallel port stick 1</item>
+			<item >Parallel port stick 2</item>
+		</string-array>
+		<string-array name="pref_input_joystick_port_values">
+			<item >0</item>
+			<item >1</item>
+			<item >2</item>
+			<item >3</item>
+			<item >4</item>
+			<item >5</item>
+		</string-array>
+
+		<string-array name="pref_input_mouse_emutype_entries">
+			<item >Direct</item>
+			<item >Direct Offset</item>
+			<item >Buttons</item>
+		</string-array>
+		<string-array name="pref_input_mouse_emutype_values">
+			<item >direct</item>
+			<item >directoffset</item>
+			<item >buttons</item>
+		</string-array>
+
+		<string-array name="pref_input_mouse_speed_entries">
+			<item >0.5x</item>
+			<item >  1x</item>
+			<item >1.5x</item>
+			<item >  2x</item>
+			<item >2.5x</item>
+			<item >  3x</item>			
+		</string-array>
+		<string-array name="pref_input_mouse_speed_values">
+			<item >0.5</item>
+			<item >1</item>
+			<item >1.5</item>
+			<item >2</item>
+			<item >2.5</item>
+			<item >3</item>			
+		</string-array>
+						
+	</resources>

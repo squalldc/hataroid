@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/disk" android:visible="true" android:title="@string/ChangeDisk" android:enabled="true" android:titleCondensed="@string/Disk" android:icon="@drawable/stdrivea" android:orderInCategory="1" android:menuCategory="system">
+        <menu>
+            <item android:id="@+id/floppya" android:title="@string/InsertFloppyA" android:titleCondensed="@string/FloppyA" android:visible="true" android:enabled="true" android:menuCategory="system" android:orderInCategory="1" />
+            <item android:id="@+id/floppyb" android:title="@string/InsertFloppyB" android:titleCondensed="@string/FloppyB" android:orderInCategory="2" android:menuCategory="system" android:visible="true" android:enabled="true"/>
+            <item android:id="@+id/ejecta" android:titleCondensed="@string/EjectFloppyA" android:title="@string/EjectFloppyA" android:orderInCategory="3" android:menuCategory="system"/>
+            <item android:id="@+id/ejectb" android:orderInCategory="4" android:title="@string/EjectFloppyB" android:menuCategory="system"/>
+        </menu>
+    </item>
+    <item android:id="@+id/reset" android:visible="true" android:title="@string/Reset" android:enabled="true" android:titleCondensed="@string/Reset" android:menuCategory="system" android:icon="@android:drawable/ic_menu_rotate" android:orderInCategory="2">
+        <menu>
+            <item android:id="@+id/coldreset" android:title="@string/ColdReset" android:titleCondensed="@string/ColdReset"/>
+            <item android:id="@+id/warmreset" android:title="@string/WarmReset" android:titleCondensed="@string/WarmReset"/>
+        </menu>
+    </item>
+    <item android:id="@+id/controls" android:title="@string/Controls" android:titleCondensed="@string/Controls" android:icon="@drawable/stkeys" android:orderInCategory="3" android:menuCategory="system">
+        <menu>
+            <item android:id="@+id/togglemousejoystick" android:menuCategory="system" android:title="@string/ToggleMouseJoystick" android:titleCondensed="@string/ToggleMouseJoystick"/>
+        </menu>
+    </item>
+    <item android:id="@+id/settings" android:visible="true" android:title="@string/Settings" android:titleCondensed="@string/Settings" android:menuCategory="system" android:icon="@drawable/st" android:orderInCategory="4"></item>
+    
+    <item android:id="@+id/quit" android:titleCondensed="@string/Quit" android:menuCategory="system" android:orderInCategory="5" android:title="@string/Quit" android:icon="@drawable/sttrash"></item><item android:id="@+id/help" android:title="@string/Help" android:titleCondensed="@string/Help" android:icon="@drawable/atari" android:orderInCategory="6" android:menuCategory="system"></item>
+    
+    
+</menu>

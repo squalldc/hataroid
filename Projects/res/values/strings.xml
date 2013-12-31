@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+/*
+**
+** Copyright 2006, The Android Open Source Project
+**
+** Licensed under the Apache License, Version 2.0 (the "License"); 
+** you may not use this file except in compliance with the License. 
+** You may obtain a copy of the License at 
+**
+**     http://www.apache.org/licenses/LICENSE-2.0 
+**
+** Unless required by applicable law or agreed to in writing, software 
+** distributed under the License is distributed on an "AS IS" BASIS, 
+** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+** See the License for the specific language governing permissions and 
+** limitations under the License.
+*/
+-->
+
+<!--
+     This file contains resource definitions for displayed strings, allowing
+     them to be changed based on the locale and options.
+-->
+
+<resources>
+
+    <!-- Simple strings. -->
+    <string name="Hataroid_activity">Hataroid</string>
+    <string name="Settings">Settings</string>
+    <string name="Reset">Reset</string>
+    <string name="Disk">Disk</string>
+    <string name="FloppyA">Floppy A</string>
+    <string name="FloppyB">Floppy B</string>
+    <string name="ChangeDisk">Change Disk</string>
+    <string name="Help">Help</string>
+    <string name="Controls">Controls</string>
+    <string name="ColdReset">Cold Reset</string>
+    <string name="WarmReset">Warm Reset</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_file_browser">FileBrowser</string>
+    <string name="InsertFloppyA">Insert Floppy A</string>
+    <string name="InsertFloppyB">Insert Floppy B</string>
+    <string name="EjectFloppyA">Eject Floppy A</string>
+    <string name="EjectFloppyB">Eject Floppy B</string>
+    <string name="Quit">Quit</string>
+    <string name="ToggleMouseJoystick">Toogle Mouse/Joystick</string>
+
+    <string name="input">Input</string>
+    <string name="system">System</string>
+    <string name="display">Display</string>
+    <string name="sound">Sound</string>
+    <string name="storage">Storage</string>
+
+    <string name="cputype">CPU Type</string>
+    <string name="machinetype">Machine Type</string>
+    <string name="cpuclock">CPU clock</string>
+    <string name="memory">Memory</string>
+    
+    <string name="pref_system_main_category">Main</string>
+    <string name="pref_system_rom_category">Rom</string>
+    <string name="pref_system_tweaks_category">Tweaks</string>
+    <string name="pref_system_devices_category">Devices</string>
+    
+    <string name="pref_storage_rom_category">Rom</string>
+    <string name="pref_storage_floppydisks_category">Floppy Disks</string>
+    <string name="pref_storage_harddisks_category">Hard Disks</string>
+    
+    <string name="cartridgeimage">Cartridge image</string>
+    <string name="pref_storage_floppydisks_imagedir">Default Floppy Images Directory</string>
+    <string name="floppydisks_autoinsertb">Auto insert B</string>
+    <string name="floppydisks_autoinsertb_summary">Automatically detect and insert second floppy disk</string>
+    <string name="floppydisks_fastfloppyaccess">Fast floppy access</string>
+    <string name="floppydisks_fastfloppyaccess_summary">Speed up floppy disc access (may cause incompatibilities)</string>
+    <string name="floppydisks_writeprotection">Write protection</string>
+    <string name="harddisks_acsiimage">ACSI HD image</string>
+    <string name="harddisks_idemasterimage">IDE HD master image</string>
+    <string name="harddisks_ideslaveimage">IDE HD slave image</string>
+    <string name="harddisks_gemdosdrive">GEMDOS drive</string>
+    <string name="harddisks_gemdoswriteprotection">GEMDOS drive write protection</string>
+    <string name="harddisks_bootfromharddisk">Boot from HD</string>
+    <string name="harddisks_bootfromharddisk_summary">Executes the AUTO folder on the hard disk</string>
+    
+    <string name="tosimage">TOS image (ST)</string>
+    <string name="tosimage_ste">TOS image (STE)</string>
+    <string name="compatiblecpu">Slower but more compatible CPU</string>
+    <string name="compatiblecpu_summary">Enables 68k address errors and CPU prefetch buffer</string>
+	<string name="blitteremulation">Blitter emulation</string>
+    <string name="blitteremulation_summary">Toggles blitter emulation (ST only), always enabled on STE</string>
+	<string name="rtcemulation">Real time clock emulation</string>
+    <string name="rtcemulation_summary">Requires TOS >= 1.02</string>
+	<string name="patchtimerd">Patch Timer-D</string>
+    <string name="patchtimerd_summary">Modifies the MFP timer D rate for improved performance</string>
+	<string name="patchtosfasterboot">Patch TOS for faster boot</string>
+	<string name="patchtosfasterboot_summary">By-passes the boot memory test</string>
+    <string name="printeremulation">Printer Emulation</string>
+	<string name="printeremulation_summary">Toggles printer emulation</string>
+    <string name="rs232emulation">RS232 Emulation</string>
+	<string name="rs232emulation_summary">Toggles RS232 emulation</string>
+    <string name="midiemulation">MIDI Emulation</string>
+	<string name="midiemulation_summary">MIDI messages piped to the default midi device</string>
+
+    <string name="sound_enabled">Sound</string>
+	<string name="sound_enabled_summary">Toggles sound emulation. (Faster when off)</string>
+    <string name="sound_synchronize_enabled">Sound Synchronize</string>
+	<string name="sound_synchronize_enabled_summary">Improve sound latency by adjusting video emulation to match audio output</string>
+    <string name="playbackquality">Playback quality</string>
+    <string name="ymvoices_mixing">YM voices mixing</string>
+
+    <string name="pref_display_monitory_category">Atari Monitor</string>
+    <string name="pref_display_extendedvdi_category">Atari Extended VDI</string>
+    <string name="pref_display_display_category">Android Display</string>
+
+    <string name="display_showborders">Show borders</string>
+	<string name="display_showborders_summary">Shows the screen borders</string>
+    <string name="display_monitortype">Atari monitor type</string>
+	<string name="display_extendedvdi">Use extended VDI screen</string>
+    <string name="display_extendedvdi_summary">Emulates an extended graphics card to allow higher resolutions</string>
+    <string name="display_extendedvdi_colors">Extended VDI colors</string>
+    <string name="display_extendedvdi_resolution">Extended VDI resolution</string>
+    <string name="display_frameskip">Frame skip</string>
+    <string name="display_indicators">Indicators</string>
+    <string name="display_bilinearfilter">Bi-linear filter</string>
+    <string name="display_bilinearfilter_summary">Smooth the emulation screen output</string>
+
+    <string name="pref_input_joysticks_category">Joysticks</string>
+    <string name="pref_input_mouse_category">Mouse</string>
+    <string name="pref_input_keyboard_category">Keyboard</string>
+    
+    <string name="input_joystick_port">On-screen Joystick Port</string>
+    <string name="input_joysticks_autofire">Autofire</string>
+    <string name="input_joysticks_autofire_summary">Toggles auto fire</string>
+    <string name="input_joysticks_maparrowkeys">Map Arrow Keys</string>
+    <string name="input_joysticks_maparrowkeys_summary">On-screen joystick presses map to the Arrow Keys and Space on the Keyboard</string>
+    
+    <string name="mouseemutype">Mouse Emulation Type</string>
+    <string name="mousespeed">Mouse Emulation Speed</string>
+    
+
+    <string name="AppDescription">Atari ST Emulator</string>
+    
+</resources>

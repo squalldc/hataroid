@@ -1,0 +1,341 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+	<PreferenceScreen
+		android:key="input_category_key"
+		android:title="@string/input"
+		android:persistent="false">
+	    <PreferenceCategory 
+	        android:title="@string/pref_input_joysticks_category"
+	        android:key="pref_input_joysticks_category">
+			<ListPreference android:key="pref_input_joystick_port"
+				android:persistent="true"
+				android:entries="@array/pref_input_joystick_port_entries"
+				android:entryValues="@array/pref_input_joystick_port_values"
+				android:dialogTitle="@string/input_joystick_port"
+				android:title="@string/input_joystick_port"
+				android:defaultValue="1" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_input_joysticks_autofire"
+				android:title="@string/input_joysticks_autofire"
+				android:summary="@string/input_joysticks_autofire_summary"
+				android:defaultValue="false" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_input_joysticks_maparrowkeys"
+				android:title="@string/input_joysticks_maparrowkeys"
+				android:summary="@string/input_joysticks_maparrowkeys_summary"
+				android:defaultValue="false" />
+		</PreferenceCategory>
+	    <PreferenceCategory 
+	        android:title="@string/pref_input_mouse_category"
+	        android:key="pref_input_mouse_category">
+			<ListPreference android:key="pref_input_mouse_emutype"
+				android:persistent="true"
+			    android:dialogTitle="@string/mouseemutype" android:title="@string/mouseemutype"
+				android:entries="@array/pref_input_mouse_emutype_entries"
+				android:entryValues="@array/pref_input_mouse_emutype_values"
+				android:defaultValue="direct"/>
+			<ListPreference android:key="pref_input_mouse_speed"
+				android:persistent="true"
+			    android:dialogTitle="@string/mousespeed" android:title="@string/mousespeed"
+				android:entries="@array/pref_input_mouse_speed_entries"
+				android:entryValues="@array/pref_input_mouse_speed_values"
+				android:defaultValue="1"/>
+		</PreferenceCategory>
+	    <PreferenceCategory 
+	        android:title="@string/pref_input_keyboard_category"
+	        android:key="pref_input_keyboard_category">
+		</PreferenceCategory>
+
+	</PreferenceScreen>
+	<PreferenceScreen
+		android:key="system_category_key"
+		android:title="@string/system"
+		android:persistent="false">
+	    <PreferenceCategory 
+	        android:title="@string/pref_system_main_category"
+	        android:key="pref_system_main_category">
+			<ListPreference android:key="pref_system_cputype"
+				android:persistent="true"
+			    android:dialogTitle="@string/cputype" android:title="@string/cputype"
+				android:entries="@array/pref_system_cputype_entries"
+				android:entryValues="@array/pref_system_cputype_values"
+				android:defaultValue="68000"/>
+			<ListPreference android:key="pref_system_machinetype"
+				android:persistent="true"
+				android:entries="@array/pref_system_machinetype_entries"
+				android:entryValues="@array/pref_system_machinetype_values" android:dialogTitle="@string/machinetype" android:title="@string/machinetype"
+				android:defaultValue="ST" />
+			<ListPreference android:key="pref_system_cpuclock"
+				android:persistent="true"
+				android:entries="@array/pref_system_cpuclock_entries"
+				android:entryValues="@array/pref_system_cpuclock_values" android:dialogTitle="@string/cpuclock" android:title="@string/cpuclock"
+				android:defaultValue="8" />
+			<ListPreference android:key="pref_system_memory"
+				android:persistent="true"
+				android:entries="@array/pref_system_memory_entries"
+				android:entryValues="@array/pref_system_memory_values" android:dialogTitle="@string/memory" android:title="@string/memory"
+				android:defaultValue="1" />
+		</PreferenceCategory>
+	    <PreferenceCategory 
+	        android:title="@string/pref_system_rom_category"
+	        android:key="pref_system_rom_category">
+			<EditTextPreference
+				android:persistent="true"
+				android:key="pref_system_tos"
+				android:title="@string/tosimage"
+				android:defaultValue="/sdcard/hataroid/tos.img" />
+			<EditTextPreference
+				android:persistent="true"
+				android:key="pref_system_tos_ste"
+				android:title="@string/tosimage_ste"
+				android:defaultValue="/sdcard/hataroid/tos_ste.img" />
+		</PreferenceCategory>
+	    <PreferenceCategory 
+	        android:title="@string/pref_system_tweaks_category"
+	        android:key="pref_system_tweaks_category">
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_system_compatiblecpu"
+				android:title="@string/compatiblecpu"
+				android:summary="@string/compatiblecpu_summary"
+				android:defaultValue="false" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_system_blitteremulation"
+				android:title="@string/blitteremulation"
+				android:summary="@string/blitteremulation_summary"
+				android:defaultValue="false" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_system_rtc"
+				android:title="@string/rtcemulation"
+				android:summary="@string/rtcemulation_summary"
+				android:defaultValue="true" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_system_patchtimerd"
+				android:title="@string/patchtimerd"
+				android:summary="@string/patchtimerd_summary"
+				android:defaultValue="true" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_system_patchtosfasterboot"
+				android:title="@string/patchtosfasterboot"
+				android:summary="@string/patchtosfasterboot_summary"
+				android:defaultValue="true" />
+		</PreferenceCategory>
+	    <PreferenceCategory 
+	        android:title="@string/pref_system_devices_category"
+	        android:key="pref_system_devices_category">
+			<CheckBoxPreference
+				android:persistent="true"
+				android:enabled="false"
+				android:key="pref_system_printeremulation"
+				android:title="@string/printeremulation"
+				android:summary="@string/printeremulation_summary"
+				android:defaultValue="false" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:enabled="false"
+				android:key="pref_system_rs232emulation"
+				android:title="@string/rs232emulation"
+				android:summary="@string/rs232emulation_summary"
+				android:defaultValue="false" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:enabled="false"
+				android:key="pref_system_midiemulation"
+				android:title="@string/midiemulation"
+				android:summary="@string/midiemulation_summary"
+				android:defaultValue="true" />
+		</PreferenceCategory>			
+    </PreferenceScreen>
+    <PreferenceScreen
+		android:key="display_category_key"
+		android:title="@string/display"
+		android:persistent="false">
+	    <PreferenceCategory 
+	        android:title="@string/pref_display_display_category"
+	        android:key="pref_display_display_category">
+			<ListPreference android:key="pref_display_frameskip"
+				android:persistent="true"
+				android:entries="@array/pref_display_frameskip_entries"
+				android:entryValues="@array/pref_display_frameskip_values"
+				android:dialogTitle="@string/display_frameskip"
+				android:title="@string/display_frameskip"
+				android:defaultValue="5" />
+			<ListPreference android:key="pref_display_indicators"
+				android:persistent="true"
+				android:entries="@array/pref_display_indicators_entries"
+				android:entryValues="@array/pref_display_indicators_values"
+				android:dialogTitle="@string/display_indicators"
+				android:title="@string/display_indicators"
+				android:defaultValue="statusbar" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_display_bilinearfilter"
+				android:title="@string/display_bilinearfilter"
+				android:summary="@string/display_bilinearfilter_summary"
+				android:defaultValue="true" />
+		</PreferenceCategory>
+	    <PreferenceCategory 
+	        android:title="@string/pref_display_monitory_category"
+	        android:key="pref_display_monitor_category">
+			<ListPreference android:key="pref_display_monitortype"
+				android:persistent="true"
+				android:entries="@array/pref_display_monitortype_entries"
+				android:entryValues="@array/pref_display_monitortype_values"
+				android:dialogTitle="@string/display_monitortype"
+				android:title="@string/display_monitortype"
+				android:defaultValue="RGB" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_display_showborders"
+				android:title="@string/display_showborders"
+				android:summary="@string/display_showborders_summary"
+				android:defaultValue="true" />
+		</PreferenceCategory>
+	    <PreferenceCategory 
+	        android:title="@string/pref_display_extendedvdi_category"
+	        android:key="pref_display_extendedvdi_category">
+			<CheckBoxPreference
+				android:persistent="true"
+				android:enabled="false"
+				android:key="pref_display_extendedvdi"
+				android:title="@string/display_extendedvdi"
+				android:summary="@string/display_extendedvdi_summary"
+				android:defaultValue="false" />
+			<ListPreference android:key="pref_display_extendedvdi_resolution"
+				android:persistent="true"
+				android:enabled="false"
+				android:entries="@array/pref_display_extendedvdi_resolution_entries"
+				android:entryValues="@array/pref_display_extendedvdi_resolution_values"
+				android:dialogTitle="@string/display_extendedvdi_resolution"
+				android:title="@string/display_extendedvdi_resolution"
+				android:defaultValue="16" />
+			<ListPreference android:key="pref_display_extendedvdi_colors"
+				android:persistent="true"
+				android:enabled="false"
+				android:entries="@array/pref_display_extendedvdi_colors_entries"
+				android:entryValues="@array/pref_display_extendedvdi_colors_values"
+				android:dialogTitle="@string/display_extendedvdi_colors"
+				android:title="@string/display_extendedvdi_colors"
+				android:defaultValue="640x480" />
+		</PreferenceCategory>
+	</PreferenceScreen>
+	<PreferenceScreen
+		android:key="sound_category_key"
+		android:title="@string/sound"
+		android:persistent="false">
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_sound_enabled"
+			android:title="@string/sound_enabled"
+			android:summary="@string/sound_enabled_summary"
+			android:defaultValue="true" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_sound_synchronize_enabled"
+			android:title="@string/sound_synchronize_enabled"
+			android:summary="@string/sound_synchronize_enabled_summary"
+			android:defaultValue="false" />
+		<ListPreference android:key="pref_sound_quality"
+			android:persistent="true"
+			android:entries="@array/pref_sound_playbackquality_entries"
+			android:entryValues="@array/pref_sound_playbackquality_values"
+			android:dialogTitle="@string/playbackquality"
+			android:title="@string/playbackquality"
+			android:defaultValue="22050" />
+		<ListPreference android:key="pref_sound_ymvoicesmixing"
+			android:persistent="true"
+			android:entries="@array/pref_sound_ymvoicesmixing_entries"
+			android:entryValues="@array/pref_sound_ymvoicesmixing_values"
+			android:dialogTitle="@string/ymvoices_mixing"
+			android:title="@string/ymvoices_mixing"
+			android:defaultValue="st" />
+	</PreferenceScreen>
+	<PreferenceScreen
+		android:key="storage_category_key"
+		android:title="@string/storage"
+		android:persistent="false">
+	    <PreferenceCategory 
+	        android:title="@string/pref_storage_rom_category"
+			android:enabled="false"
+	        android:key="pref_storage_rom_category">
+			<EditTextPreference
+				android:persistent="true"
+				android:key="pref_storage_cartridge"
+				android:title="@string/cartridgeimage"
+				android:defaultValue="none" />
+		</PreferenceCategory>
+	    <PreferenceCategory 
+	        android:title="@string/pref_storage_floppydisks_category"
+	        android:key="pref_storage_floppydisks_category">
+			<EditTextPreference
+				android:persistent="true"
+				android:enabled="false"
+				android:key="pref_storage_floppydisks_imagedir"
+				android:title="@string/pref_storage_floppydisks_imagedir"
+				android:defaultValue="/sdcard/hataroid/disks" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_storage_floppydisks_autoinsertb"
+				android:title="@string/floppydisks_autoinsertb"
+				android:summary="@string/floppydisks_autoinsertb_summary"
+				android:defaultValue="false" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_storage_floppydisks_fastfloppyaccess"
+				android:title="@string/floppydisks_fastfloppyaccess"
+				android:summary="@string/floppydisks_fastfloppyaccess_summary"
+				android:defaultValue="true" />
+			<ListPreference android:key="pref_storage_floppydisks_writeprotection"
+				android:persistent="true"
+				android:entries="@array/pref_storage_floppydisks_writeprotection_entries"
+				android:entryValues="@array/pref_storage_floppydisks_writeprotection_values"
+				android:dialogTitle="@string/floppydisks_writeprotection"
+				android:title="@string/floppydisks_writeprotection"
+				android:defaultValue="1" />
+		</PreferenceCategory>			
+	    <PreferenceCategory 
+	        android:title="@string/pref_storage_harddisks_category"
+			android:enabled="false"
+	        android:key="pref_storage_harddisks_category">
+			<EditTextPreference
+				android:persistent="true"
+				android:key="pref_storage_harddisks_acsiimage"
+				android:title="@string/harddisks_acsiimage"
+				android:defaultValue="none" />
+			<EditTextPreference
+				android:persistent="true"
+				android:key="pref_storage_harddisks_idemasterimage"
+				android:title="@string/harddisks_idemasterimage"
+				android:defaultValue="none" />
+			<EditTextPreference
+				android:persistent="true"
+				android:key="pref_storage_harddisks_ideslaveimage"
+				android:title="@string/harddisks_ideslaveimage"
+				android:defaultValue="none" />
+			<EditTextPreference
+				android:persistent="true"
+				android:key="pref_storage_harddisks_gemdosdrive"
+				android:title="@string/harddisks_gemdosdrive"
+				android:defaultValue="none" />
+			<ListPreference android:key="pref_storage_harddisks_gemdoswriteprotection"
+				android:persistent="true"
+				android:entries="@array/pref_storage_harddisks_gemdoswriteprotection_entries"
+				android:entryValues="@array/pref_storage_harddisks_gemdoswriteprotection_values"
+				android:dialogTitle="@string/harddisks_gemdoswriteprotection"
+				android:title="@string/harddisks_gemdoswriteprotection"
+				android:defaultValue="1" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_storage_harddisks_bootfromharddisk"
+				android:title="@string/harddisks_bootfromharddisk"
+				android:summary="@string/harddisks_bootfromharddisk_summary"
+				android:defaultValue="false" />
+		</PreferenceCategory>			
+	</PreferenceScreen>
+</PreferenceScreen>

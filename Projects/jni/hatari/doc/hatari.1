@@ -1,0 +1,519 @@
+.\" Hey, EMACS: -*- nroff -*-
+.\" First parameter, NAME, should be all caps
+.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
+.\" other parameters are allowed: see man(7), man(1)
+.TH "HATARI" "1" "2011-12-30" "Hatari" ""
+.\" Please adjust this date whenever revising the manpage.
+
+.SH "NAME"
+hatari \- Atari ST/STE/TT/Falcon emulator
+.SH "SYNOPSIS"
+.B hatari
+.RI  [options]
+.RI  [directory|diskimage|program]
+.SH "DESCRIPTION"
+Hatari is an Atari ST/STE/TT/Falcon emulator for Linux, FreeBSD, BeOS and
+other Systems which are supported by the SDL library.
+.PP
+With hatari one can run games, demos or applications written for Atari
+ST, STE or Falcon.  Atari TT support is experimental.  Hatari supports
+the commonly used *.st and *.msa disk images and hard disk emulation.
+.PP
+To run the emulator a TOS ROM image is needed. EmuTOS, a free
+implementation of TOS is shipped with hatari. Since it is not yet
+fully compatible with the original TOS, some programs won't run
+correctly with it. Because of this it is recommended to use a TOS
+ROM from a real Atari.
+.PP
+As an argument one can give either a name of a directory that should
+be emulated as a virtual GEMDOS hard disk, a floppy disk image or an
+Atari program that should be autostarted.  In the last case the
+program's directory will be used as the C: drive from where this
+program will be started.
+.PP
+Note that autostarting a program might not work if you've also
+specified a floppy image for drive A: (on command line or in config
+file) which contains a desktop.inf/newdesk.inf/emutos.inf file on
+it.
+.PP
+Booting will be done from the disk image or directory that's given
+last on the command line as an option or the argument (and which
+corresponds to A: or C:).
+.SH "OPTIONS"
+Hatari options are split into several categories:
+.SH "General options"
+.TP 
+.B \-h, \-\-help
+Print command line options and terminate
+.TP 
+.B \-v, \-\-version
+Print version information and terminate
+.TP 
+.B \-\-confirm\-quit <bool>
+Whether Hatari confirms quitting
+.TP 
+.B \-c, \-\-configfile <filename>
+Read additional configuration values from <file>, these
+override values read from the global and user configuration
+files
+.TP
+.B \-k, \-\-keymap <file>
+Load keyboard mapping from <file>
+.TP 
+.B \-\-fast\-forward <bool>
+On fast machine helps skipping (fast forwarding) Hatari output
+.SH "Common display options"
+.TP 
+.B \-m, \-\-mono
+Start in monochrome mode instead of color
+.TP 
+.B \-\-monitor <x>
+Select monitor type (x = mono/rgb/vga/tv)
+.TP 
+.B \-f, \-\-fullscreen
+Start the emulator in fullscreen mode
+.TP 
+.B \-w, \-\-window
+Start the emulator in window mode
+.TP 
+.B \-\-grab
+Grab mouse (also) in window mode
+.TP 
+.B \-\-frameskips <x>
+Skip <x> frames after each displayed frame to accelerate emulation
+(0=disabled, >4 uses automatic frameskip with given value as maximum)
+.TP 
+.B \-\-statusbar <bool>
+Show statusbar (with floppy leds etc etc)
+.TP 
+.B \-\-drive\-led <bool>
+Show overlay drive led when statusbar isn't shown
+.TP
+.B \-\-bpp <bool>
+Force internal bitdepth (x = 8/15/16/32, 0=disable)
+.SH "ST/STE specific display options"
+.TP 
+.B \-\-borders <bool>
+Show ST/STE screen borders (for low/med resolution overscan demos)
+.TP
+.B \-\-desktop\-st <bool>
+Whether fullscreen mode uses desktop resolution to avoid: messing
+multi-screen setups, several seconds delay needed by LCD monitors
+resolution switching and the resulting sound break. As Hatari ST/E
+display code doesn't support zooming (except low-rez doubling), it
+doesn't get scaled (by Hatari or monitor) when this is enabled.
+Therefore this is mainly useful only if you suffer from the described
+effects, but still want to grab mouse and remove other distractions
+from the screen just by toggling fullscreen mode. (disabled by default)
+.TP 
+.B \-\-spec512 <x>
+Hatari uses this threshold to decide when to render a screen with
+the slower but more accurate Spectrum512 screen conversion functions
+(0 <= x <= 512, 0=disable)
+.TP 
+.B \-z, \-\-zoom <x>
+Zoom (double) low resolution (1=no, 2=yes)
+.SH "Falcon/TT specific display options"
+Zooming to sizes specified below is internally done using integer scaling
+factors. This means that different Atari resolutions may show up with
+different sizes, but they are never blurry.
+.TP 
+.B \-\-desktop <bool>
+Whether to use desktop resolution on fullscreen to avoid issues
+related to resolution switching. Otherwise fullscreen will use
+a resolution that is closest to the Hatari window size.
+(enabled by default)
+.TP
+.B \-\-max\-width <x>
+Preferred / maximum window width
+.TP
+.B \-\-max\-height <x>
+Preferred / maximum window height
+.TP
+.B \-\-force\-max <bool>
+Hatari window size is forced to specified maximum size and black borders
+used when Atari resolution doesn't scale evenly to it.  This is most
+useful when recording videos of Falcon demos that change their
+resolution. (disabled by default)
+.TP
+.B \-\-aspect <bool>
+Whether to do monitor aspect ratio correction (enabled by default)
+.SH "VDI options"
+.TP
+.B \-\-vdi <bool>
+Whether to use VDI screen mode
+.TP
+.B \-\-vdi\-planes <x>
+Use extended VDI resolution with bit depth <x> (x = 1, 2 or 4)
+.TP
+.B \-\-vdi\-width <w>
+Use extended VDI resolution with width <w> (320 < w <= 1280)
+.TP
+.B \-\-vdi\-height <h>
+Use extended VDI resolution with height <h> (200 < h <= 960)
+.SH "Screen capture options"
+.TP
+.B \-\-crop <bool>
+Remove statusbar from the screen captures
+.TP
+.B \-\-avirecord
+Start AVI recording
+.TP
+.B \-\-avi\-vcodec <x>
+Select avi video codec (x = bmp/png)
+.TP
+.B \-\-avi\-fps <x>
+Force avi frame rate (x = 50/60/71/...)
+.TP
+.B \-\-avi\-file <file>
+Use <file> to record avi
+.SH "Devices options"
+.TP 
+.B \-j, \-\-joystick <port>
+Emulate joystick with cursor keys in given port (0-5)
+.TP 
+.B \-\-joy<port> <type>
+Set joystick type (none/keys/real) for given port
+.TP 
+.B \-\-printer <file>
+Enable printer support and write data to <file>
+.TP 
+.B \-\-midi\-in <filename>
+Enable MIDI support and write MIDI data to <file>
+.TP 
+.B \-\-midi\-out <filename>
+Enable MIDI support and read MIDI data from <file>
+.TP 
+.B \-\-rs232\-in <filename>
+Enable serial port support and use <file> as the input device
+.TP 
+.B \-\-rs232\-out <filename>
+Enable serial port support and use <file> as the output device
+.SH "Disk options"
+.TP
+.B \-\-disk\-a <file>
+Set disk image for floppy drive A
+.TP
+.B \-\-disk\-b <file>
+Set disk image for floppy drive B
+.TP
+.B \-\-protect\-floppy <x>
+Write protect floppy image contents (on/off/auto). With "auto" option
+write protection is according to the disk image file attributes.
+.TP
+.B \-\-protect\-hd <x>
+Write protect harddrive <dir> contents (on/off/auto). With "auto" option
+the protection can be controlled by setting individual files attributes
+as it disables the file attribute modifications for the GEMDOS hard disk
+emulation.
+.TP
+.B \-\-gemdos\-case <x>
+Specify whether new dir/filenames are forced to be in upper or lower case
+with the GEMDOS HD emulation. Off by default.
+.TP 
+.B \-d, \-\-harddrive <dir>
+Emulate harddrive partition(s) with <dir> contents.  If directory
+contains only single letter (C-Z) subdirectories, each of these
+subdirectories will be treated as a separate partition, otherwise the
+given directory itself will be assigned to drive "C:". In the multiple
+partition case, the letters used as the subdirectory names will
+determine to which drives/partitions they're assigned.
+.TP
+.B \-\-acsi <file>
+Emulate an ACSI hard disk with an image <file>
+.TP 
+.B \-\-ide\-master <file>
+Emulate an IDE master hard disk with an image <file>
+.TP 
+.B \-\-ide\-slave <file>
+Emulate an IDE slave hard disk with an image <file>
+.TP 
+.B \-\-fastfdc <bool>
+speed up FDC emulation (can cause incompatibilities)
+.SH "Memory options"
+.TP 
+.B \-\-memstate <file>
+Load memory snap-shot <file>
+.TP 
+.B \-s, \-\-memsize <x>
+Set amount of emulated RAM, x = 1 to 14 MiB, or 0 for 512 KiB
+.SH "ROM options"
+.TP 
+.B \-t, \-\-tos <imagefile>
+Specify TOS ROM image to use
+.TP 
+.B \-\-patch\-tos <bool>
+Use this option to enable/disable TOS ROM patching. Experts only! Leave
+this enabled unless you know what you are doing!
+.TP 
+.B \-\-cartridge <imagefile>
+Use ROM cartridge image <file> (only works if GEMDOS HD emulation and
+extended VDI resolution are disabled)
+.SH "CPU options"
+.TP 
+.B \-\-cpulevel <x>
+Specify CPU (680x0) to use (use x >= 1 with EmuTOS or TOS >= 2.06 only!)
+.TP 
+.B \-\-cpuclock <x>
+Set the CPU clock (8, 16 or 32 Mhz)
+.TP 
+.B \-\-compatible <bool>
+Use a more compatible, but slower 68000 CPU mode with
+better prefetch accuracy and cycle counting
+.SH "Misc system options"
+.TP 
+.B \-\-machine <x>
+Select machine type (x = st, ste, tt or falcon)
+.TP 
+.B \-\-blitter <bool>
+Enable blitter emulation (ST only)
+.TP 
+.B \-\-dsp <x>
+Falcon DSP emulation (x = none, dummy or emu, Falcon only)
+.TP 
+.B \-\-timer\-d <bool>
+Patch redundantly high Timer-D frequency set by TOS.  This about doubles
+Hatari speed (for ST/e emulation) as the original Timer-D frequency causes
+most of the interrupts.
+.TP
+.B \-\-fast\-boot <bool>
+Patch TOS and initialize the so-called "memvalid" system variables to by-pass
+the memory test of TOS, so that the system boots faster.
+.TP
+.B \-\-rtc <bool>
+Enable real-time clock
+.SH "Sound options"
+.TP 
+.B \-\-mic <bool>
+Enable/disable (Falcon only) microphone
+.TP 
+.B \-\-sound <x>
+Sound frequency: 6000-50066. "off" disables the sound and speeds up
+the emulation. To prevent extra sound artifacts, the frequency should be
+selected so that it either matches evenly with the STE/TT/Falcon sound
+DMA (6258, 12517, 250033, 50066 Hz) or your sound card frequencies
+(11025, 22050, 44100 or 6000...48000 Hz).  Check what your sound card
+supports.
+.TP 
+.B \-\-sound\-buffer\-size <x>
+SDL's sound buffer size: 10-100, or 0 to use default buffer size.
+By default Hatari uses an SDL buffer size of 1024 samples, which
+gives approximatively 20-30 ms of sound depending on the chosen sound
+frequency. Under some OS or with not fully supported sound card, this
+default setting can cause a bigger delay at lower frequency (nearly 0.5 sec).
+In that case, you can use this option to force the size of the sound
+buffer to a fixed number of milliseconds of sound (using 20 is often
+a good choice if you have such problems). Most users will not need this option.
+.TP 
+.B \-\-sound\-sync <bool>
+The emulation rate is nudged by +100 or 0 or \-100 micro-seconds on occasion.
+This prevents the sound buffer from overflowing (long latency and
+lost samples) or underflowing (short latency and repeated samples).
+The emulation rate smoothly deviates by a maximum of 0.58% until
+synchronized, while the emulator continuously generates every sound
+sample and the crystal controlled sound system consumes every sample.
+.br
+(on|off, off=default)
+.TP 
+.B \-\-ym\-mixing <x>
+Select a method for mixing the three YM2149 voice volumes together.
+"model" uses a mathematical model of the YM voices,
+"table" uses a lookup table of audio output voltage values measured
+on STF and "linear" just averages the 3 YM voices.
+.SH "Debug options"
+.TP 
+.B \-D, \-\-debug
+Toggle whether CPU exceptions invoke the debugger
+.TP 
+.B \-\-bios\-intercept
+Toggle Bios/XBios call interception needed for Bios/XBios call tracing.
+Allows Atari programs to modify Hatari state through XBios 255 calls
+which are processed as Hatari commandline arguments. Atari
+printscreen call takes also Hatari screenshot.
+.TP 
+.B \-\-conout <device>
+Enable console (xconout vector functions) output redirection for given
+<device> to host terminal.  Device 2 is for the (CON:) VT52 console,
+which vector function catches also EmuTOS panic messages and MiNT
+console output, not just normal BIOS console output.
+.TP
+.B \-\-disasm <x>
+Set disassembly options.  'uae' and 'ext' select the dissasembly engine
+to use, bitmask sets output options for the external disassembly engine
+and 'help' lists them.
+.TP 
+.B \-\-natfeats <bool>
+Enable/disable (basic) Native Features support.
+E.g. EmuTOS uses it for debug output.
+.TP
+.B \-\-trace <trace1,...>
+Activate debug traces, see
+.B \-\-trace help
+for available tracing options
+.TP
+.B \-\-trace\-file <file>
+Save trace output to <file> (default=stderr)
+.TP
+.B \-\-parse <file>
+Parse/execute debugger commands from <file>
+.TP
+.B \-\-saveconfig
+Save Hatari configuration and exit. Hatari UI needs Hatari configuration
+file to start, this can be used to create it automatically.
+.TP
+.B \-\-no\-parachute
+Disable SDL parachute to get Hatari core dumps. SDL parachute is enabled
+by default to restore video mode in case Hatari terminates abnormally
+while using non-standard screen resolution.
+.TP
+.B \-\-control\-socket <file>
+Hatari reads options from given socket at run-time
+.TP
+.B \-\-log\-file <file>
+Save log output to <file> (default=stderr)
+.TP
+.B \-\-log\-level <x>
+Log output level (x=debug/todo/info/warn/error/fatal)
+.TP
+.B \-\-alert\-level <x>
+Show dialog for log messages above given level
+.TP
+.B \-\-run\-vbls <x>
+Exit after X VBLs
+.SH "COMMANDS"
+The shortcut keys can be configured in the configuration file.
+The default settings are:
+.TP
+.B AltGr + a
+record animation
+.TP
+.B AltGr + g
+grab a screenshot
+.TP
+.B AltGr + i
+boss key: leave full screen mode and iconify window
+.TP
+.B AltGr + j
+activate joystick emulation via cursor keys
+.TP
+.B AltGr + m
+(un-)lock the mouse into the window
+.TP
+.B AltGr + r
+warm reset the ST (same as the reset button)
+.TP
+.B AltGr + c
+cold reset the ST (same as the power switch)
+.TP
+.B AltGr + d
+open dialog to select/change disk A
+.TP
+.B AltGr + s
+enable/disable sound
+.TP
+.B AltGr + q
+quit the emulator
+.TP
+.B AltGr + x
+toggle normal/max speed
+.TP
+.B AltGr + y
+enable/disable sound recording
+.TP
+.B AltGr + k
+save memory snapshot
+.TP
+.B AltGr + l
+load memory snapshot
+.TP
+.B F11
+toggle between fullscreen and windowed mode
+.TP
+.B F12 
+activate the hatari options GUI
+.br
+You may need to hold SHIFT down while in windowed mode.
+.TP
+.B Pause
+Pauses the emulation
+.TP
+.B AltGr + Pause
+Invokes the internal Hatari debugger
+
+.SH Emulated Atari ST keyboard
+All other keys on the keyboard act as the normal Atari ST keys so
+pressing SPACE on your PC will result in an emulated press of the
+SPACE key on the ST. The following keys have special meanings:
+.TP
+.B  Alt
+will act as the ST's ALTERNATE key
+.TP
+.B  left Ctrl
+will act as the ST's CONTROL key
+.TP
+.B  Page Up
+will emulate the ST's HELP key
+.TP
+.B  Page Down
+will emulate the ST's UNDO key
+.PP
+.B AltGr
+will act as
+.B Alternate
+as well as long as you do not press it together with a Hatari hotkey
+combination. 
+
+The 
+.B right Ctrl
+key is used as the fire button of the emulated joystick when you turn
+on joystick emulation via keyboard. 
+
+The cursor keys will act as the cursor keys on the Atari ST as long as
+joystick emulation via keyboard has been turned off.
+
+.SH "SEE ALSO"
+The main program documentation, usually in /usr/share/doc/.
+Among other things it contains an extensive usage manual,
+software compatiblity list and release notes.
+.PP
+The homepage of hatari: http://hatari.tuxfamily.org/
+.PP
+Other Hatari programs and utilities:
+.br
+.IR hmsa (1),
+.IR zip2st (1),
+.IR atari-hd-image (1),
+.IR hatariui (1),
+.IR hconsole (1)
+.SH "FILES AND DIRECTORIES"
+.TP
+/etc/hatari.cfg (or /usr/local/etc/hatari.cfg)
+The global configuration file of Hatari.
+.TP
+~/.hatari/
+The (default) directory for user's personal Hatari files;
+.B hatari.cfg
+(configuration file),
+.B hatari.nvram
+(NVRAM content file),
+.B hatari.sav
+(Hatari memory state snapshot file which Hatari can load/save automatically
+when it starts/exits),
+.B hatari.prn
+(printer output file),
+.B hatari.wav
+(recorded sound output in WAV format),
+.B hatari.ym
+(recorded sound output in YM format).
+.TP
+/usr/share/hatari/ (or /usr/local/share/hatari/)
+The global data directory of Hatari.
+.TP
+tos.img
+The TOS ROM image will be loaded from the data directory of Hatari unless it
+is specified on the command line or the configuration file.
+
+.SH "AUTHOR"
+This manual page was written by Marco Herrn <marco@mherrn.de> for the
+Debian project and later modified by Thomas Huth and Eero Tamminen to
+suit the latest version of Hatari.
