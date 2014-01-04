@@ -181,12 +181,11 @@
 		</string-array>
 
 		<string-array name="pref_input_mouse_emutype_entries">
-			<item >Direct</item>
-			<item >Buttons</item>
+			<item >Direct (Touch)</item>
+			<item >Buttons (On-Screen)</item>
 		</string-array>
 		<string-array name="pref_input_mouse_emutype_values">
 			<item >direct</item>
-			<item >directoffset</item>
 			<item >buttons</item>
 		</string-array>
 
