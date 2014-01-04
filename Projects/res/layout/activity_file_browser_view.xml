@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"    android:layout_width="match_parent"    android:layout_height="match_parent"    android:orientation="vertical" >    <LinearLayout        android:id="@+id/LinearLayout1"        android:layout_width="match_parent"        android:layout_height="wrap_content"        android:background="#a0a0a0" >        <TextView            android:id="@+id/fb_curPathText"            android:layout_width="wrap_content"            android:layout_height="match_parent"            android:layout_gravity="left|center_vertical"            android:layout_marginLeft="@dimen/padding_small"            android:layout_weight="0.9"            android:gravity="center_vertical"            android:text="TextView"            android:textColor="#ffffff"            android:textSize="@dimen/padding_medium" />        <ImageButton
+            android:id="@+id/fb_closeBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right|center_vertical"
+            android:layout_margin="@dimen/padding_smallest"
+            android:background="#00000000"
+            android:scaleType="fitXY"
+            android:src="@drawable/btn_close" />
+
+    </LinearLayout>    <ListView        android:id="@id/android:list"        android:layout_width="match_parent"        android:layout_height="wrap_content"        android:layout_weight="0.96"        android:background="#000000"        android:choiceMode="singleChoice"        android:clickable="true"        android:drawSelectorOnTop="false" >    </ListView></LinearLayout>

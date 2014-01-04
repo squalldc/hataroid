@@ -44,7 +44,8 @@
         </activity>
         <activity
             android:name=".FileBrowser.FileBrowser"
-            android:label="@string/title_activity_file_browser" >
+            android:label="@string/title_activity_file_browser"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="android.app.ListActivity" />

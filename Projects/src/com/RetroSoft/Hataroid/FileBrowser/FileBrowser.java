@@ -20,7 +20,9 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.RetroSoft.Hataroid.R;
 
@@ -59,8 +61,8 @@ public class FileBrowser extends ListActivity
 	@Override public void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
-		//setContentView(R.layout.activity_file_browser);
-
+		setContentView(R.layout.activity_file_browser_view);
+		
 		parseOptions(savedInstanceState);
 
 		_retIntent = new Intent();
@@ -167,6 +169,8 @@ public class FileBrowser extends ListActivity
 			}
 			_exts[curLen] = ".zip";
 		}
+		
+		setupButtonListeners();
 	}
 	
 	@Override protected void onDestroy()
@@ -241,6 +245,15 @@ public class FileBrowser extends ListActivity
 		}
 
 		return super.onKeyDown(keyCode, event);
+	}
+	
+	void setupButtonListeners()
+	{
+		findViewById(R.id.fb_closeBtn).setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {
+				sendFinish(RESULT_CANCELED);
+			}
+		});
 	}
 	
 	/*private String _getFileName(String fullname)
@@ -505,7 +518,8 @@ public class FileBrowser extends ListActivity
 
 	private void retrieveFileList(File dir, String [] validExts)
 	{
-		setTitle("Current path: " + dir.getAbsolutePath());
+//		setTitle("Current path: " + dir.getAbsolutePath());
+		setCurPathText("Current path: " + dir.getAbsolutePath());
 
 		_savedPath = dir.getAbsolutePath();
 	
@@ -569,7 +583,8 @@ public class FileBrowser extends ListActivity
 
 	private void retrieveZipFileList(ZipFile zipFile, String [] validExts)
 	{
-		setTitle("Current path: " + zipFile.getName());
+//		setTitle("Current path: " + zipFile.getName());
+		setCurPathText("Current path: " + zipFile.getName());
 
 		_savedPath = zipFile.getName();
 	
@@ -627,6 +642,16 @@ public class FileBrowser extends ListActivity
 		
 		_adapter = new FileArrayAdapter(this, R.layout.activity_file_browser, items);
 		setListAdapter(_adapter);
+	}
+	
+	void setCurPathText(String s)
+	{
+		View v = findViewById(R.id.fb_curPathText);
+		if (v != null && v instanceof TextView)
+		{
+			TextView tv = (TextView)v;
+			tv.setText(s);
+		}
 	}
 
 }
