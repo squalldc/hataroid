@@ -182,7 +182,6 @@
 
 		<string-array name="pref_input_mouse_emutype_entries">
 			<item >Direct</item>
-			<item >Direct Offset</item>
 			<item >Buttons</item>
 		</string-array>
 		<string-array name="pref_input_mouse_emutype_values">

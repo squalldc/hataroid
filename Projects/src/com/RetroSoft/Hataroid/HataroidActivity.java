@@ -395,10 +395,10 @@ public class HataroidActivity extends Activity
 		int id = item.getItemId();
 		switch (id)
 		{
-			case R.id.controls:
-			{
-				return true;
-			}
+			//case R.id.controls:
+			//{
+			//	return true;
+			//}
 			case R.id.floppya:
 			case R.id.floppyb:
 			{
@@ -434,11 +434,11 @@ public class HataroidActivity extends Activity
 		        startActivityForResult(settings, ACTIVITYRESULT_SETTINGS);
 		        return true;
 			}
-			case R.id.togglemousejoystick:
-			{
-				HataroidNativeLib.toggleMouseJoystick();
-				return true;
-			}
+			//case R.id.togglemousejoystick:
+			//{
+			//	HataroidNativeLib.toggleMouseJoystick();
+			//	return true;
+			//}
 			case R.id.help:
 			{
 				return true;

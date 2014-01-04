@@ -133,7 +133,7 @@
     <string name="input_joysticks_maparrowkeys">Map Arrow Keys</string>
     <string name="input_joysticks_maparrowkeys_summary">On-screen joystick presses map to the Arrow Keys and Space on the Keyboard</string>
     
-    <string name="mouseemutype">Mouse Emulation Type</string>
+    <string name="mouseemutype">Mouse Button Emulation Type</string>
     <string name="mousespeed">Mouse Emulation Speed</string>
     
 

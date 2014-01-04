@@ -22,6 +22,7 @@
 				android:defaultValue="false" />
 			<CheckBoxPreference
 				android:persistent="true"
+				android:enabled="false"
 				android:key="pref_input_joysticks_maparrowkeys"
 				android:title="@string/input_joysticks_maparrowkeys"
 				android:summary="@string/input_joysticks_maparrowkeys_summary"
@@ -172,7 +173,7 @@
 				android:entryValues="@array/pref_display_indicators_values"
 				android:dialogTitle="@string/display_indicators"
 				android:title="@string/display_indicators"
-				android:defaultValue="statusbar" />
+				android:defaultValue="driveled" />
 			<CheckBoxPreference
 				android:persistent="true"
 				android:key="pref_display_bilinearfilter"
