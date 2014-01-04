@@ -81,12 +81,12 @@
 	    <PreferenceCategory 
 	        android:title="@string/pref_system_rom_category"
 	        android:key="pref_system_rom_category">
-			<EditTextPreference
+			<Preference
 				android:persistent="true"
 				android:key="pref_system_tos"
 				android:title="@string/tosimage"
 				android:defaultValue="/sdcard/hataroid/tos.img" />
-			<EditTextPreference
+			<Preference
 				android:persistent="true"
 				android:key="pref_system_tos_ste"
 				android:title="@string/tosimage_ste"

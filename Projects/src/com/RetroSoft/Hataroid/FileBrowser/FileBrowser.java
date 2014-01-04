@@ -18,7 +18,6 @@ import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.ListView;
@@ -27,6 +26,10 @@ import com.RetroSoft.Hataroid.R;
 
 public class FileBrowser extends ListActivity
 {
+	public static final String CONFIG_OPENZIPS = "Config_OpenZips";
+	public static final String CONFIG_EXT = "Config_Ext";
+	public static final String CONFIG_RESETST = "Config_ResetST";
+	
 	public static final String RESULT_PATH = "ResultPath";
 	public static final String RESULT_ZIPPATH = "ResultZipPath";
 	public static final String RESULT_RESETCOLD = "ResetCold";
@@ -45,6 +48,9 @@ public class FileBrowser extends ListActivity
 
 	private FileArrayAdapter	_adapter;
 
+	private boolean				_openZips = true;
+	private boolean				_resetST = true;
+
 	private String []			_exts = null;
 	private String				_root;
 
@@ -54,7 +60,9 @@ public class FileBrowser extends ListActivity
 	{
 		super.onCreate(savedInstanceState);
 		//setContentView(R.layout.activity_file_browser);
-		
+
+		parseOptions(savedInstanceState);
+
 		_retIntent = new Intent();
 		
 		String lastItemName = null;
@@ -126,6 +134,38 @@ public class FileBrowser extends ListActivity
 					break;
 				}
 			}
+		}
+	}
+	
+	void parseOptions(Bundle savedInstanceState)
+	{
+		_exts = new String [] {".st", ".msa", ".dim", ".stx"};
+		_openZips = true;
+		_resetST = true;
+
+		Bundle b = (savedInstanceState == null) ? getIntent().getExtras() : savedInstanceState;
+		if (b != null)
+		{
+			String [] exts = b.getStringArray(CONFIG_EXT);
+			if (exts != null)
+			{
+				_exts = exts;
+			}
+			
+			_openZips = b.getBoolean(CONFIG_OPENZIPS, true);
+			_resetST = b.getBoolean(CONFIG_RESETST, true);
+		}
+		
+		if (_openZips)
+		{
+			int curLen = _exts.length;
+			String [] curExts = _exts;
+			_exts = new String [curLen + 1];
+			for (int i = 0; i < curLen; ++i)
+			{
+				_exts[i] = curExts[i];
+			}
+			_exts[curLen] = ".zip";
 		}
 	}
 	
@@ -319,7 +359,7 @@ public class FileBrowser extends ListActivity
 						_curZipFile = _openZipFileList(item.getPath());
 						if (_curZipFile != null)
 						{
-							if (!_isSingleDiscZip(_curZipFile))
+							if (!_isSingleDiscZip(_curZipFile, _exts))
 							{
 								retrieveZipFileList(_curZipFile, _exts);
 								_curDir = null;
@@ -335,7 +375,7 @@ public class FileBrowser extends ListActivity
 		}
 	}
 	
-	private Boolean _isSingleDiscZip(ZipFile zipFile)
+	private Boolean _isSingleDiscZip(ZipFile zipFile, String [] validExts)
 	{
 		int validDiscCount = 0;
 
@@ -346,10 +386,10 @@ public class FileBrowser extends ListActivity
 
 			if (!f.isDirectory())
 			{
-				String [] stDiscExts = {".st", ".msa", ".dim", ".stx"};
-				for (String ext : stDiscExts)
+				for (String ext : validExts)
 				{
-					if (f.getName().toLowerCase().endsWith(ext))
+					String flc = f.getName().toLowerCase();
+					if (!flc.endsWith(".zip") && flc.endsWith(ext))
 					{
 						++validDiscCount;
 						if (validDiscCount > 1)
@@ -367,6 +407,11 @@ public class FileBrowser extends ListActivity
 	
 	private ZipFile _openZipFileList(String pathname)
 	{
+		if (!_openZips)
+		{
+			return null;
+		}
+
 		ZipFile zf;
 		try
 		{
@@ -406,43 +451,50 @@ public class FileBrowser extends ListActivity
 			_retIntent.putExtra(RESULT_ZIPPATH, zipPath);
 		}
 		
-		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
-		alertDialog.setTitle("Reset ST?");
-		alertDialog.setMessage("Do you want to the Reset the ST?");
-		
-		alertDialog.setButton("No",
+		if (!_resetST)
+		{
+			sendFinish(RESULT_OK);
+		}
+		else
+		{
+			AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+			alertDialog.setTitle("Reset ST?");
+			alertDialog.setMessage("Do you want to the Reset the ST?");
+			
+			alertDialog.setButton("No",
+					new DialogInterface.OnClickListener()
+					{
+						public void onClick(DialogInterface dialog, int which)
+						{
+							sendFinish(RESULT_OK);
+						}
+					}
+				);
+				
+			alertDialog.setButton2("Yes (Cold)",
 				new DialogInterface.OnClickListener()
 				{
 					public void onClick(DialogInterface dialog, int which)
 					{
+						_retIntent.putExtra(RESULT_RESETCOLD, true);
 						sendFinish(RESULT_OK);
 					}
 				}
 			);
-			
-		alertDialog.setButton2("Yes (Cold)",
-			new DialogInterface.OnClickListener()
-			{
-				public void onClick(DialogInterface dialog, int which)
+	
+			alertDialog.setButton3("Yes (Warm)",
+				new DialogInterface.OnClickListener()
 				{
-					_retIntent.putExtra(RESULT_RESETCOLD, true);
-					sendFinish(RESULT_OK);
+					public void onClick(DialogInterface dialog, int which)
+					{
+						_retIntent.putExtra(RESULT_RESETWARM, true);
+						sendFinish(RESULT_OK);
+					}
 				}
-			}
-		);
-
-		alertDialog.setButton3("Yes (Warm)",
-			new DialogInterface.OnClickListener()
-			{
-				public void onClick(DialogInterface dialog, int which)
-				{
-					_retIntent.putExtra(RESULT_RESETWARM, true);
-					sendFinish(RESULT_OK);
-				}
-			}
-		);
-
-		alertDialog.show();
+			);
+	
+			alertDialog.show();
+		}
 	}
 	
 	private void sendFinish(int resultCode)
