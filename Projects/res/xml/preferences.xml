@@ -22,7 +22,6 @@
 				android:defaultValue="false" />
 			<CheckBoxPreference
 				android:persistent="true"
-				android:enabled="false"
 				android:key="pref_input_joysticks_maparrowkeys"
 				android:title="@string/input_joysticks_maparrowkeys"
 				android:summary="@string/input_joysticks_maparrowkeys_summary"

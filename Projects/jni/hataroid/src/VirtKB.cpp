@@ -863,13 +863,16 @@ void VirtKB_updateInput()
 			else if (vk->flags & (FLAG_JOY))
 			{
 				int joybit = GET_LOWORD(qk->uParam1);
-				Joy_CustomUp(s_joyID, joybit);
 				if (s_joyMapToArrowKeys)
 				{
 					if (joybit & ATARIJOY_BITMASK_LEFT) IKBD_PressSTKey(ST_SCANCODE_LEFTARROW, false);
 					else if (joybit & ATARIJOY_BITMASK_RIGHT) IKBD_PressSTKey(ST_SCANCODE_RIGHTARROW, false);
 					else if (joybit & ATARIJOY_BITMASK_UP) IKBD_PressSTKey(ST_SCANCODE_UPARROW, false);
 					else if (joybit & ATARIJOY_BITMASK_DOWN) IKBD_PressSTKey(ST_SCANCODE_DOWNARROW, false);
+				}
+				else
+				{
+					Joy_CustomUp(s_joyID, joybit);
 				}
 			}
 			else if (vk->flags & (FLAG_MOUSEBUTTON))
@@ -921,13 +924,17 @@ void VirtKB_updateInput()
 			else if (vk->flags & (FLAG_JOY))
 			{
 				int joybit = GET_LOWORD(qk->uParam1);
-				Joy_CustomDown(s_joyID, joybit, GET_HIWORD(qk->uParam1));
+				int clearbit = GET_HIWORD(qk->uParam1);
 				if (s_joyMapToArrowKeys)
 				{
 					if (joybit & ATARIJOY_BITMASK_LEFT) IKBD_PressSTKey(ST_SCANCODE_LEFTARROW, true);
 					else if (joybit & ATARIJOY_BITMASK_RIGHT) IKBD_PressSTKey(ST_SCANCODE_RIGHTARROW, true);
 					else if (joybit & ATARIJOY_BITMASK_UP) IKBD_PressSTKey(ST_SCANCODE_UPARROW, true);
 					else if (joybit & ATARIJOY_BITMASK_DOWN) IKBD_PressSTKey(ST_SCANCODE_DOWNARROW, true);
+				}
+				else
+				{
+					Joy_CustomDown(s_joyID, joybit, clearbit);
 				}
 			}
 			else if (vk->flags & (FLAG_MOUSEBUTTON))
