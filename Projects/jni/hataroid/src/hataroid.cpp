@@ -503,6 +503,17 @@ void _optionSetMouseSpeed(const OptionSetting *setting, const char *val, EmuComm
 	VirtKB_SetMouseEmuSpeed(speed);
 }
 
+void _optionSetOnScreenAlpha(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	float alpha = atof(val);
+	alpha *= (1.0f/100.0f);
+
+	if (alpha < 0.0f) { alpha = 0.0f; }
+	else if (alpha > 1.0f) { alpha = 1.0f; }
+
+	VirtKB_SetControlAlpha(alpha);
+}
+
 static const OptionSetting s_OptionsMap[] =
 {
 	{ "pref_input_joystick_port", _optionSetJoystickPort },
@@ -510,6 +521,7 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_input_joysticks_maparrowkeys", _optionSetJoystickMapArrowKeys },
 	{ "pref_input_mouse_emutype", _optionSetMouseEmuType },
 	{ "pref_input_mouse_speed", _optionSetMouseSpeed },
+	{ "pref_input_onscreen_alpha", _optionSetOnScreenAlpha },
 	{ "pref_system_blitteremulation", _optionSetBlitter },
 	{ "pref_system_cpuclock", _optionSetCPUFreq },
 	{ "pref_system_cputype", _optionSetCPUType },

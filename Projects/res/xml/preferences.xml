@@ -3,7 +3,9 @@
 	<PreferenceScreen
 		android:key="input_category_key"
 		android:title="@string/input"
-		android:persistent="false">
+		android:persistent="false"
+		xmlns:robobunny="http://robobunny.com">
+
 	    <PreferenceCategory 
 	        android:title="@string/pref_input_joysticks_category"
 	        android:key="pref_input_joysticks_category">
@@ -44,10 +46,23 @@
 				android:defaultValue="1"/>
 		</PreferenceCategory>
 	    <PreferenceCategory 
+	        android:title="@string/pref_input_onscreen_category"
+	        android:key="pref_input_onscreen_category">
+			<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
+				android:key="pref_input_onscreen_alpha"
+				android:title="@string/input_onscreen_alpha"
+				android:summary="@string/input_onscreen_alpha_summary"
+				android:defaultValue="65"
+				android:max="100"
+				robobunny:min="0"
+				robobunny:unitsLeft=""
+				robobunny:unitsRight="%"
+			/>
+		</PreferenceCategory>
+	    <PreferenceCategory 
 	        android:title="@string/pref_input_keyboard_category"
 	        android:key="pref_input_keyboard_category">
 		</PreferenceCategory>
-
 	</PreferenceScreen>
 	<PreferenceScreen
 		android:key="system_category_key"

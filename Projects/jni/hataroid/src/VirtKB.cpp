@@ -95,7 +95,7 @@ static bool			s_recreateQuickKeys = false;
 static GLfloat		s_QuickKeyVerts[36*s_MaxNumQuickKeys];
 static GLushort		s_QuickKeyIndices[6*s_MaxNumQuickKeys];
 static GLsizei		s_QuickKeyStride = 9 * sizeof(GLfloat); // 3 position, 4 color, 2 texture
-static float		s_QuickKeyAlpha = 0.8f;
+static float		s_QuickKeyAlpha = 0.65f;
 static float		s_QuickKeyLum = 1.0f;
 
 static const int	MaxTouches = 3;
@@ -115,8 +115,8 @@ static int			s_curIndex = 0;
 static GLfloat		s_VkbVerts[36];
 static GLushort		s_VkbIndices[6] = { 0, 1, 2, 0, 2, 3 };
 static GLsizei		s_VkbStride = 9 * sizeof(GLfloat); // 3 position, 4 color, 2 texture
-static float		s_VkbAlpha = 0.8f;
-static float		s_VkbLum = 0.9f;
+static float		s_VkbAlpha = 0.65f;
+static float		s_VkbLum = 1.0f;
 
 static const int	s_MaxVkbPresses = 20;
 static GLfloat		s_VkbPressedVerts[36*s_MaxVkbPresses];
@@ -235,6 +235,12 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_updateInput
 	curtouched[2] = t2;	curtouchX[2] = tx2;	curtouchY[2] = ty2;
 
 	VirtKB_updateInput();
+
+	if (s_recreateQuickKeys)
+	{
+		VirtKB_CreateQuickKeys();
+		s_recreateQuickKeys = false;
+	}
 
 	s_curIndex = 1 - s_curIndex;
 }
@@ -641,7 +647,7 @@ static void VirtKB_SetupShader()
 
 static void VirtKB_RenderVerts(Shader *pShader, GLfloat *v, GLsizei vstride, GLuint texID, GLushort *ind, int numVerts)
 {
-	glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 
 	glUseProgram(pShader->shaderProgram);
@@ -753,7 +759,7 @@ void VirtKB_updateInput()
 	int numCurButtonDown = 0;
 
 	curButtons->clearAll();
-	s_recreateQuickKeys = false;
+	//s_recreateQuickKeys = false;
 	VirtKB_resetVkbPresses();
 
 	// retrieve current touches
@@ -958,10 +964,10 @@ void VirtKB_updateInput()
 		VirtKB_updateMouse();
 	}
 
-	if (s_recreateQuickKeys)
-	{
-		VirtKB_CreateQuickKeys();
-	}
+	//if (s_recreateQuickKeys)
+	//{
+	//	VirtKB_CreateQuickKeys();
+	//}
 }
 
 static int s_mouseFinger = -1;
@@ -1583,4 +1589,11 @@ static void VirtkKB_MouseRB(bool down)
 {
 	if (down)	{ Keyboard.bRButtonDown |= BUTTON_MOUSE; }
 	else		{ Keyboard.bRButtonDown &= ~BUTTON_MOUSE; }
+}
+
+void VirtKB_SetControlAlpha(float alpha)
+{
+	s_QuickKeyAlpha = alpha;
+	s_VkbAlpha = alpha;
+	s_recreateQuickKeys = true;
 }

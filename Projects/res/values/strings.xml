@@ -126,12 +126,16 @@
     <string name="pref_input_joysticks_category">Joysticks</string>
     <string name="pref_input_mouse_category">Mouse</string>
     <string name="pref_input_keyboard_category">Keyboard</string>
+    <string name="pref_input_onscreen_category">On-Screen</string>
     
     <string name="input_joystick_port">On-screen Joystick Port</string>
     <string name="input_joysticks_autofire">Autofire</string>
     <string name="input_joysticks_autofire_summary">Toggles auto fire</string>
     <string name="input_joysticks_maparrowkeys">Map Arrow Keys</string>
     <string name="input_joysticks_maparrowkeys_summary">On-screen joystick presses map to the Arrow Keys and Space on the Keyboard</string>
+    
+    <string name="input_onscreen_alpha">On Screen Transparency</string>
+    <string name="input_onscreen_alpha_summary">Translucency of on screen controls</string>
     
     <string name="mouseemutype">Mouse Button Emulation Type</string>
     <string name="mousespeed">Mouse Emulation Speed</string>

@@ -13,5 +13,6 @@ extern void VirtKB_MapJoysticksToArrowKeys(bool map);
 extern void VirtKB_SetMouseEmuDirect();
 extern void VirtKB_SetMouseEmuButtons();
 extern void VirtKB_SetMouseEmuSpeed(float speed);
+extern void VirtKB_SetControlAlpha(float alpha);
 
 #endif /* VIRTKB_H_ */
