@@ -45,6 +45,8 @@ public class HataroidActivity extends Activity
 
 	private AudioTrack			_audioTrack;
 	private Boolean				_audioPaused = true;
+
+	private boolean				_lostFocus = false;
 	
 	@Override protected void onCreate(Bundle icicle)
 	{
@@ -238,7 +240,29 @@ public class HataroidActivity extends Activity
 	{
 		super.onResume();
 		
-		_resume();
+		if (!_lostFocus)
+		{
+			_resume();
+		}
+	}
+
+	@Override public void onWindowFocusChanged(boolean hasFocus)
+	{
+		if (!hasFocus)
+		{
+			if (!_lostFocus)
+			{
+				_lostFocus = true;
+				//_pause();
+			}
+		}
+		else
+		{
+			if (_lostFocus)
+			{
+				_resume();
+			}
+		}
 	}
 	
 	private void _pause()
@@ -251,12 +275,14 @@ public class HataroidActivity extends Activity
 	
 	private void _resume()
 	{
+		_lostFocus = false;
+
 		_viewGL2.onResume();
 		
 		resumeEmulation();
 		playAudio();
 	}
-
+	
 	private void pauseEmulation()
 	{
 		HataroidNativeLib.emulationPause();
