@@ -27,6 +27,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 
 import com.RetroSoft.Hataroid.FileBrowser.FileBrowser;
+import com.RetroSoft.Hataroid.Help.HelpActivity;
 import com.RetroSoft.Hataroid.Preferences.Settings;
 
 
@@ -467,6 +468,8 @@ public class HataroidActivity extends Activity
 			//}
 			case R.id.help:
 			{
+		        Intent help = new Intent(this, HelpActivity.class);
+		        startActivity(help);
 				return true;
 			}
 			default:
