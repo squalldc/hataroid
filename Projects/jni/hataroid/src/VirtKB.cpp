@@ -82,6 +82,7 @@ static int			s_joyID = 1;
 static bool			s_joyMapToArrowKeys = false;
 static int			s_prevZoomPanCount = 0;
 static bool			s_waitInputCleared = false;
+static float		s_joystickSize = 1;
 
 static GLuint		s_KbTextureID = 0;
 static int			s_VkbGPUTexWidth = 0;
@@ -127,6 +128,7 @@ static int			s_VkbCurNumPresses = 0;
 //static float		s_VkbPressLum = 0.3f;
 
 static float		s_VkbMinZoom = 0.3f;
+static bool			s_VkbZoomInited = false;
 static float		s_vkbZoom = 1.0f;
 static float		s_vkbPanX = 0;
 static float		s_vkbPanY = 0;
@@ -319,6 +321,17 @@ void VirtKB_Create()
 
 	VirtKB_CreateTextures();
 	VirtKB_CreateQuickKeys();
+
+	if (!s_VkbZoomInited)
+	{
+		if (g_vkbTexKbW > 0)
+		{
+			int scrwidth = getScreenWidth();
+			s_vkbZoom = (float)scrwidth / (float)g_vkbTexKbW;
+			s_VkbZoomInited = false;
+		}
+	}
+
 	VirtKB_UpdateVkbVerts();
 	VirtKB_SetupShader();
 }
@@ -571,7 +584,7 @@ void VirtKB_CreateQuickKeys()
 	{
 		int keyOffsetX = 30;
 		int keyOffsetY = 30;
-		int keyBtnSize = 60;
+		int keyBtnSize = (int)(s_joystickSize*60.0f);
 		int keyMarginY = 2;
 
 		int joyAreaMinWidth = keyOffsetX + (keyBtnSize*3);
@@ -1595,5 +1608,11 @@ void VirtKB_SetControlAlpha(float alpha)
 {
 	s_QuickKeyAlpha = alpha;
 	s_VkbAlpha = alpha;
+	s_recreateQuickKeys = true;
+}
+
+void VirtKB_SetJoystickSize(float size)
+{
+	s_joystickSize = size;
 	s_recreateQuickKeys = true;
 }

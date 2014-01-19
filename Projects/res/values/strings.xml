@@ -122,6 +122,8 @@
     <string name="input_joysticks_autofire_summary">Toggles auto fire</string>
     <string name="input_joysticks_maparrowkeys">Map Arrow Keys</string>
     <string name="input_joysticks_maparrowkeys_summary">On-screen joystick presses map to the Arrow Keys and Space on the Keyboard</string>
+    <string name="input_joysticks_size">Size of On Screen Joystick</string>
+    <string name="input_joysticks_size_summary">Default size is 1.0</string>
     <string name="input_onscreen_alpha">On Screen Transparency</string>
     <string name="input_onscreen_alpha_summary">Translucency of on screen controls</string>
     <string name="mouseemutype">Mouse Button Emulation Type</string>

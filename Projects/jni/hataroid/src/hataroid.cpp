@@ -514,11 +514,23 @@ void _optionSetOnScreenAlpha(const OptionSetting *setting, const char *val, EmuC
 	VirtKB_SetControlAlpha(alpha);
 }
 
+void _optionSetJoystickSize(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	float size = atof(val);
+	size *= (1.0f/100.0f);
+
+	if (size < 0.1f) { size = 0.1f; }
+	else if (size > 3.0f) { size = 3.0f; }
+
+	VirtKB_SetJoystickSize(size);
+}
+
 static const OptionSetting s_OptionsMap[] =
 {
 	{ "pref_input_joystick_port", _optionSetJoystickPort },
 	{ "pref_input_joysticks_autofire", _optionSetJoystickAutoFire },
 	{ "pref_input_joysticks_maparrowkeys", _optionSetJoystickMapArrowKeys },
+	{ "pref_input_joysticks_size", _optionSetJoystickSize },
 	{ "pref_input_mouse_emutype", _optionSetMouseEmuType },
 	{ "pref_input_mouse_speed", _optionSetMouseSpeed },
 	{ "pref_input_onscreen_alpha", _optionSetOnScreenAlpha },

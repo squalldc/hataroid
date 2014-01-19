@@ -37,7 +37,7 @@
 			    android:dialogTitle="@string/mouseemutype" android:title="@string/mouseemutype"
 				android:entries="@array/pref_input_mouse_emutype_entries"
 				android:entryValues="@array/pref_input_mouse_emutype_values"
-				android:defaultValue="direct"/>
+				android:defaultValue="buttons"/>
 			<ListPreference android:key="pref_input_mouse_speed"
 				android:persistent="true"
 			    android:dialogTitle="@string/mousespeed" android:title="@string/mousespeed"
@@ -49,6 +49,7 @@
 	        android:title="@string/pref_input_onscreen_category"
 	        android:key="pref_input_onscreen_category">
 			<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
+				android:persistent="true"
 				android:key="pref_input_onscreen_alpha"
 				android:title="@string/input_onscreen_alpha"
 				android:summary="@string/input_onscreen_alpha_summary"

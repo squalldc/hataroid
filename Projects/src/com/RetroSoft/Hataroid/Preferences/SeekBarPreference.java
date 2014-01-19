@@ -55,8 +55,14 @@ public class SeekBarPreference extends Preference implements OnSeekBarChangeList
 	}
 	
 	private void setValuesFromXml(AttributeSet attrs) {
-		mMaxValue = attrs.getAttributeIntValue(ANDROIDNS, "max", 100);
-		mMinValue = attrs.getAttributeIntValue(APPLICATIONNS, "min", 0);
+		// try int
+		boolean tryString = false;
+		try { mMaxValue = attrs.getAttributeIntValue(ANDROIDNS, "max", 100); } catch (Exception e) { tryString = true; }
+		if (tryString) { try { mMaxValue = (attrs.getAttributeValue(ANDROIDNS, "max")!=null) ? Integer.parseInt(attrs.getAttributeValue(ANDROIDNS, "max")) : 100; } catch (Exception e) { } }
+
+		tryString = false;
+		try { mMinValue = attrs.getAttributeIntValue(APPLICATIONNS, "min", 0); } catch (Exception e) { tryString = true; }
+		if (tryString) { try { mMinValue = (attrs.getAttributeValue(APPLICATIONNS, "min")!=null) ? Integer.parseInt(attrs.getAttributeValue(APPLICATIONNS, "min")) : 0; } catch (Exception e) { } }
 		
 		mUnitsLeft = getAttributeStringValue(attrs, APPLICATIONNS, "unitsLeft", "");
 		String units = getAttributeStringValue(attrs, APPLICATIONNS, "units", "");
@@ -155,6 +161,11 @@ public class SeekBarPreference extends Preference implements OnSeekBarChangeList
 	
 	//@Override
 	public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+		if (mSeekBar != seekBar)
+		{
+			return;
+		}
+
 		int newValue = progress + mMinValue;
 		
 		if(newValue > mMaxValue)
@@ -173,8 +184,10 @@ public class SeekBarPreference extends Preference implements OnSeekBarChangeList
 		// change accepted, store it
 		mCurrentValue = newValue;
 		mStatusText.setText(String.valueOf(newValue));
-		persistInt(newValue);
-
+		
+		boolean tryString = false;
+		try { persistInt(newValue); } catch (Exception e) { tryString = true; }
+		if (tryString) { try { persistString(String.valueOf(newValue)); } catch (Exception e) { }}
 	}
 
 	//@Override
@@ -182,35 +195,55 @@ public class SeekBarPreference extends Preference implements OnSeekBarChangeList
 
 	//@Override
 	public void onStopTrackingTouch(SeekBar seekBar) {
-		notifyChanged();
+		if (seekBar == mSeekBar)
+		{
+			notifyChanged();
+		}
 	}
 
 
 	@Override 
 	protected Object onGetDefaultValue(TypedArray ta, int index){
-		
-		int defaultValue = ta.getInt(index, DEFAULT_VALUE);
+		int defaultValue = 0;
+		boolean tryString = false;
+		try { defaultValue = ta.getInteger(index, DEFAULT_VALUE); } catch (Exception e) { tryString = true; }
+		if (tryString) { try { defaultValue = (ta.getString(index)!=null) ? Integer.parseInt(ta.getString(index)) : DEFAULT_VALUE; } catch (Exception e) {}}
+
 		return defaultValue;
-		
 	}
 
 	@Override
 	protected void onSetInitialValue(boolean restoreValue, Object defaultValue) {
 
 		if(restoreValue) {
-			mCurrentValue = getPersistedInt(mCurrentValue);
+			boolean tryString = false;
+			try { mCurrentValue = getPersistedInt(mCurrentValue); } catch (Exception e) { tryString = true; }
+			if (tryString) { try { mCurrentValue = Integer.parseInt(getPersistedString(String.valueOf(mCurrentValue))); } catch (Exception e) {} }
 		}
 		else {
+			boolean tryString = false;
+
 			int temp = 0;
 			try {
 				temp = (Integer)defaultValue;
+				persistInt(temp);
+				mCurrentValue = temp;
 			}
 			catch(Exception ex) {
+				tryString = true;
 				Log.e(TAG, "Invalid default value: " + defaultValue.toString());
 			}
 			
-			persistInt(temp);
-			mCurrentValue = temp;
+			if (tryString)
+			{
+				try {
+					temp = Integer.parseInt((String)defaultValue);
+					persistString(String.valueOf(temp));
+					mCurrentValue = temp;
+				}
+				catch(Exception ex) {
+				}
+			}
 		}
 		
 	}
