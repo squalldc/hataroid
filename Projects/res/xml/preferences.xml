@@ -28,6 +28,17 @@
 				android:title="@string/input_joysticks_maparrowkeys"
 				android:summary="@string/input_joysticks_maparrowkeys_summary"
 				android:defaultValue="false" />
+			<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
+				android:persistent="true"
+				android:key="pref_input_joysticks_size"
+				android:title="@string/input_joysticks_size"
+				android:summary="@string/input_joysticks_size_summary"
+				android:defaultValue="100"
+				android:max="200"
+				robobunny:min="10"
+				robobunny:unitsLeft=""
+				robobunny:unitsRight="%"
+			/>
 		</PreferenceCategory>
 	    <PreferenceCategory 
 	        android:title="@string/pref_input_mouse_category"

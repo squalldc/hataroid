@@ -35,6 +35,8 @@ public class SeekBarPreference extends Preference implements OnSeekBarChangeList
 	
 	private TextView mStatusText;
 
+	boolean _storeValue = false;
+
 	public SeekBarPreference(Context context, AttributeSet attrs) {
 		super(context, attrs);
 		initPreference(context, attrs);
@@ -139,10 +141,10 @@ public class SeekBarPreference extends Preference implements OnSeekBarChangeList
 	protected void updateView(View view) {
 
 		try {
-			mStatusText = (TextView) view.findViewById(R.id.seekBarPrefValue);
+			//mStatusText = (TextView) view.findViewById(R.id.seekBarPrefValue);
 
-			mStatusText.setText(String.valueOf(mCurrentValue));
-			mStatusText.setMinimumWidth(30);
+			//mStatusText.setText(String.valueOf(mCurrentValue));
+			//mStatusText.setMinimumWidth(30);
 			
 			mSeekBar.setProgress(mCurrentValue - mMinValue);
 
@@ -183,13 +185,15 @@ public class SeekBarPreference extends Preference implements OnSeekBarChangeList
 
 		// change accepted, store it
 		mCurrentValue = newValue;
-		mStatusText.setText(String.valueOf(newValue));
+		//mStatusText.setText(String.valueOf(newValue));
 		
-		boolean tryString = false;
-		try { persistInt(newValue); } catch (Exception e) { tryString = true; }
-		if (tryString) { try { persistString(String.valueOf(newValue)); } catch (Exception e) { }}
+		//boolean tryString = false;
+		//try { persistInt(newValue); } catch (Exception e) { tryString = true; }
+		//if (tryString) { try { persistString(String.valueOf(newValue)); } catch (Exception e) { }}
+		
+		_storeValue = true;
 	}
-
+	
 	//@Override
 	public void onStartTrackingTouch(SeekBar seekBar) {}
 
@@ -198,6 +202,14 @@ public class SeekBarPreference extends Preference implements OnSeekBarChangeList
 		if (seekBar == mSeekBar)
 		{
 			notifyChanged();
+			
+			if (_storeValue)
+			{
+				boolean tryString = false;
+				try { persistInt(mCurrentValue); } catch (Exception e) { tryString = true; }
+				if (tryString) { try { persistString(String.valueOf(mCurrentValue)); } catch (Exception e) { }}
+				_storeValue = false;
+			}
 		}
 	}
 

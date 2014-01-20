@@ -473,12 +473,14 @@ void VirtKB_CreateQuickKeys()
 	int joyAreaMinY = 0;
 	int joyAreaMaxX = scrwidth;
 
+	float sscale = (float)scrwidth/1024.0f;
+
 	// top left keys
 	{
-		int keyOffsetX = 10;
-		int keyOffsetY = 10;
-		int keyBtnSize = 60;
-		int keyMarginY = 2;
+		int keyOffsetX = (int)ceilf(10*sscale);
+		int keyOffsetY = (int)ceilf(10*sscale);
+		int keyBtnSize = (int)ceilf(60*sscale);
+		int keyMarginY = (int)ceilf(2*sscale);
 
 		int vkbKeys[] = {VKB_KEY_KEYBOARDTOGGLE, VKB_KEY_SCREENZOOM, VKB_KEY_KEYBOARDZOOM, VKB_KEY_MOUSETOGGLE, VKB_KEY_JOYTOGGLE};
 		QuickKeyCallback qkCallbacks[] = { VirtKB_ToggleKeyboard, VirtkKB_ScreenZoomToggle, VirtkKB_VkbZoomToggle, VirtKB_MJToggle, VirtKB_MJToggle };
@@ -499,10 +501,10 @@ void VirtKB_CreateQuickKeys()
 
 	// top right keys
 	{
-		int keyOffsetX = 10;
-		int keyOffsetY = 10;
-		int keyBtnSize = 60;
-		int keyMarginY = 2;
+		int keyOffsetX = (int)ceilf(10*sscale);
+		int keyOffsetY = (int)ceilf(10*sscale);
+		int keyBtnSize = (int)ceilf(60*sscale);
+		int keyMarginY = (int)ceilf(2*sscale);
 
 		int vkbKeys[] = {VKB_KEY_T, VKB_KEY_Y, VKB_KEY_N, VKB_KEY_1, VKB_KEY_2};
 		int numKeys = sizeof(vkbKeys)/sizeof(int);
@@ -522,11 +524,11 @@ void VirtKB_CreateQuickKeys()
 	s_mouseButtonIgnoreQuickKeyIdx[0] = -1;
 	s_mouseButtonIgnoreQuickKeyIdx[1] = -1;
 	{
-		int keyOffsetX = 30;
-		int keyOffsetY = 30;
-		int keyBtnSize = 60;
-		int keyMarginX = 64;
-		int fireBtnSize = 100;
+		int keyOffsetX = (int)ceilf(30*sscale);
+		int keyOffsetY = (int)ceilf(30*sscale);
+		int keyBtnSize = (int)ceilf(60*sscale);
+		int keyMarginX = (int)ceilf(64*sscale);
+		int fireBtnSize = (int)ceilf(100*sscale);
 
 		int vkbKeys[] = {VKB_KEY_MOUSELB, VKB_KEY_MOUSERB};
 		int x1Overlap[] = {0, (int)(keyMarginX*0.8f)};
@@ -554,11 +556,11 @@ void VirtKB_CreateQuickKeys()
 
 	// bottom right keys
 	{
-		int keyOffsetX = 30;
-		int keyOffsetY = 30;
-		int keyBtnSize = 60;
-		int keyMarginX = 2;
-		int fireBtnSize = 100;
+		int keyOffsetX = (int)ceilf(30*sscale);
+		int keyOffsetY = (int)ceilf(30*sscale);
+		int keyBtnSize = (int)ceilf(60*sscale);
+		int keyMarginX = (int)ceilf(2*sscale);
+		int fireBtnSize = (int)ceilf(100*sscale);
 
 		int vkbKeys[] = {VKB_KEY_JOYFIRE, VKB_KEY_SPACE, VKB_KEY_LEFTSHIFT, VKB_KEY_ALTERNATE};
 		int numKeys = sizeof(vkbKeys)/sizeof(int);
@@ -582,10 +584,10 @@ void VirtKB_CreateQuickKeys()
 
 	// joystick dir - from bottom left
 	{
-		int keyOffsetX = 30;
-		int keyOffsetY = 30;
-		int keyBtnSize = (int)(s_joystickSize*60.0f);
-		int keyMarginY = 2;
+		int keyOffsetX = (int)ceilf(30*sscale);
+		int keyOffsetY = (int)ceilf(30*sscale);
+		int keyBtnSize = (int)ceilf(s_joystickSize*60.0f*sscale);
+		int keyMarginY = (int)ceilf(2*sscale);
 
 		int joyAreaMinWidth = keyOffsetX + (keyBtnSize*3);
 		int joyAreaMinHeight = keyOffsetY + (keyBtnSize*3);
