@@ -54,7 +54,7 @@ public class FileBrowser extends ListActivity
 	private boolean				_resetST = true;
 
 	private String []			_exts = null;
-	private String				_root;
+	private String				_root = "/";
 
 	private Intent				_retIntent;
 
