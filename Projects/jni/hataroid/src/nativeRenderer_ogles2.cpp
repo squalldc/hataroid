@@ -66,11 +66,11 @@ static const char gSimpleFragmentShader[] =
 	"	gl_FragColor = v_color * texture2D(s_texture, v_texCoord); \n"
 	"}													 \n";
 
-Shader s_vertTexShader;
-Shader s_simpleShader;
+static Shader s_vertTexShader;
+static Shader s_simpleShader;
 
-GLuint gTextureID = 0;
-GLuint gWhiteTexID = 0;
+static GLuint gTextureID = 0;
+static GLuint gWhiteTexID = 0;
 
 static int gScrWidth = 0;
 static int gScrHeight = 0;
@@ -79,12 +79,16 @@ static int sTexWidth = 0;
 static int sTexHeight = 0;
 static GLenum sTexFilter = GL_LINEAR;
 
-float minZoom = 0.3f;
-float curZoom = 1.0f;
-float curPanX = 0;
-float curPanY = 0;
+static float minZoom = 0.3f;
+static float curZoom = 1.0f;
+static float curPanX = 0;
+static float curPanY = 0;
+static bool fullScreen = false;
+static float fsZoomX = 1;
+static float fsZoomY = 1;
 
-bool dispParamsChanged = true;
+static bool dispParamsChanged = true;
+
 GLfloat emuScreenVerts[] =
 {
 	-0.75f, 1.0f, 0.0f, // Position 0
@@ -412,10 +416,21 @@ bool setupGraphics(int w, int h)
 	return true;
 }
 
-float Renderer_getEmuScreenZoom() { return curZoom; }
+float Renderer_getEmuScreenZoomX()
+{
+	if (fullScreen) { return fsZoomX; }
+	return curZoom;
+}
+float Renderer_getEmuScreenZoomY()
+{
+	if (fullScreen) { return fsZoomY; }
+	return curZoom;
+}
 
 void Renderer_zoomEmuScreen(float absChange)
 {
+	if (fullScreen) { return; }
+
 	if (gScrWidth > 0 && gScrHeight > 0)
 	{
 		dispParamsChanged = true;
@@ -433,6 +448,8 @@ void Renderer_zoomEmuScreen(float absChange)
 
 void Renderer_panEmuScreen(float absX, float absY)
 {
+	if (fullScreen) { return; }
+
 	if (gScrWidth > 0 && gScrHeight > 0)
 	{
 		dispParamsChanged = true;
@@ -443,6 +460,22 @@ void Renderer_panEmuScreen(float absX, float absY)
 		curPanX += dX;
 		curPanY -= dY;
 	}
+}
+
+void Renderer_setFullScreenStretch(bool fs)
+{
+	fullScreen = fs;
+	dispParamsChanged = true;
+}
+
+bool Renderer_isFullScreenStretch()
+{
+	return fullScreen;
+}
+
+void Renderer_refreshDispParams()
+{
+	dispParamsChanged = true;
 }
 
 void updateDispParams(int scrWidth, int scrHeight, int texWidth, int texHeight)
@@ -456,34 +489,47 @@ void updateDispParams(int scrWidth, int scrHeight, int texWidth, int texHeight)
 	GLfloat texW = (float)scrWidth / (float)texWidth;
 	GLfloat texH = (float)scrHeight / (float)texHeight;
 
-	float targetAspect = 4.0f/3.0f;
-	float aspect = (float)gScrWidth / (float)gScrHeight;
-
-	float targetWn = targetAspect / aspect;
-	if (targetWn > 1.0f)
+	if (fullScreen)
 	{
-		targetWn = 1.0f;
-	}
-	float targetHn = (targetWn / targetAspect) * aspect;
+		 v[0] = -1;  v[1] = 1;		// Position 0
+		 v[5] = -1;  v[6] = -1;		// Position 1
+		v[10] = 1;	v[11] = -1;		// Position 2
+		v[15] = 1;	v[16] = 1;		// Position 3
 
-	float offsetWn = 0.0f;
-	float offsetHn = 0.0f;
-	if (gScrWidth < gScrHeight)
+		fsZoomX = 1.0f / texW;
+		fsZoomY = 1.0f;
+	}
+	else
 	{
-		offsetHn = 1.0f - (curZoom*targetHn);
+		float targetAspect = 4.0f/3.0f;
+		float aspect = (float)gScrWidth / (float)gScrHeight;
+
+		float targetWn = targetAspect / aspect;
+		if (targetWn > 1.0f)
+		{
+			targetWn = 1.0f;
+		}
+		float targetHn = (targetWn / targetAspect) * aspect;
+
+		float offsetWn = 0.0f;
+		float offsetHn = 0.0f;
+		if (gScrWidth < gScrHeight)
+		{
+			offsetHn = 1.0f - (curZoom*targetHn);
+		}
+
+		offsetWn += curPanX;
+		offsetHn += curPanY;
+
+	//	Debug_Printf("Scr (%d x %d)", gScrWidth, gScrHeight);
+	//	Debug_Printf("Tgt (%f x %f)", targetWn, targetHn);
+	//	Debug_Printf("Off (%f x %f)", offsetWn, offsetHn);
+
+		 v[0] = (-targetWn + offsetWn)*curZoom;  v[1] = (targetHn + offsetHn)*curZoom;		// Position 0
+		 v[5] = (-targetWn + offsetWn)*curZoom;  v[6] = (-targetHn + offsetHn)*curZoom;		// Position 1
+		v[10] = (targetWn + offsetWn)*curZoom; v[11] = (-targetHn + offsetHn)*curZoom;		// Position 2
+		v[15] = (targetWn + offsetWn)*curZoom; v[16] =  (targetHn + offsetHn)*curZoom;		// Position 3
 	}
-
-	offsetWn += curPanX;
-	offsetHn += curPanY;
-
-//	Debug_Printf("Scr (%d x %d)", gScrWidth, gScrHeight);
-//	Debug_Printf("Tgt (%f x %f)", targetWn, targetHn);
-//	Debug_Printf("Off (%f x %f)", offsetWn, offsetHn);
-
-	 v[0] = (-targetWn + offsetWn)*curZoom;  v[1] = (targetHn + offsetHn)*curZoom;		// Position 0
-	 v[5] = (-targetWn + offsetWn)*curZoom;  v[6] = (-targetHn + offsetHn)*curZoom;		// Position 1
-	v[10] = (targetWn + offsetWn)*curZoom; v[11] = (-targetHn + offsetHn)*curZoom;		// Position 2
-	v[15] = (targetWn + offsetWn)*curZoom; v[16] =  (targetHn + offsetHn)*curZoom;		// Position 3
 
 	// 1:1
 /*

@@ -206,6 +206,12 @@
 				android:title="@string/display_bilinearfilter"
 				android:summary="@string/display_bilinearfilter_summary"
 				android:defaultValue="true" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_display_fullscreen"
+				android:title="@string/display_fullscreen"
+				android:summary="@string/display_fullscreen_summary"
+				android:defaultValue="false" />
 		</PreferenceCategory>
 	    <PreferenceCategory 
 	        android:title="@string/pref_display_monitory_category"

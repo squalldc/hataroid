@@ -482,6 +482,7 @@ void VirtKB_CreateQuickKeys()
 		int keyBtnSize = (int)ceilf(60*sscale);
 		int keyMarginY = (int)ceilf(2*sscale);
 
+		bool isFullScreen = Renderer_isFullScreenStretch();
 		int vkbKeys[] = {VKB_KEY_KEYBOARDTOGGLE, VKB_KEY_SCREENZOOM, VKB_KEY_KEYBOARDZOOM, VKB_KEY_MOUSETOGGLE, VKB_KEY_JOYTOGGLE};
 		QuickKeyCallback qkCallbacks[] = { VirtKB_ToggleKeyboard, VirtkKB_ScreenZoomToggle, VirtkKB_VkbZoomToggle, VirtKB_MJToggle, VirtKB_MJToggle };
 		int numKeys = sizeof(vkbKeys)/sizeof(int);
@@ -489,6 +490,8 @@ void VirtKB_CreateQuickKeys()
 		int curKeyY = keyOffsetY;
 		for (int i = 0; i < numKeys; ++i)
 		{
+			if (isFullScreen && vkbKeys[i] == VKB_KEY_SCREENZOOM) { continue; }
+
 			if (!addQuickKey(0, curKeyY, keyOffsetX+keyBtnSize, curKeyY+keyBtnSize,
 						keyOffsetX, curKeyY, keyOffsetX+keyBtnSize, curKeyY+keyBtnSize,
 						2, 2, -2, -2, 0, qkCallbacks[i], &g_vkbKeyDefs[vkbKeys[i]])) { continue; }
@@ -1114,7 +1117,8 @@ static void VirtKB_updateMouse()
 		}
 	}
 
-	float emuScrZoom = Renderer_getEmuScreenZoom();
+	float emuScrZoomX = Renderer_getEmuScreenZoomX();
+	float emuScrZoomY = Renderer_getEmuScreenZoomY();
 
 	if (s_mouseFinger >= 0)
 	{
@@ -1124,14 +1128,14 @@ static void VirtKB_updateMouse()
 		s_prevMouseX = curtouchX[s_mouseFinger];
 		s_prevMouseY = curtouchY[s_mouseFinger];
 
-		if (s_mouseDx != 0.0 || s_mouseDy != 0.0)
+		if (s_mouseDx != 0.0f || s_mouseDy != 0.0f)
 		{
 			s_mouseMoved = 1;
 
 			float sX = (STRes == ST_LOW_RES) ? 0.5f : 1;
 			float sY = (STRes == ST_MEDIUM_RES || STRes == ST_LOW_RES) ? 0.5f : 1;
-			sX *= s_mouseSpeed / emuScrZoom;
-			sY *= s_mouseSpeed / emuScrZoom;
+			sX *= s_mouseSpeed / emuScrZoomX;
+			sY *= s_mouseSpeed / emuScrZoomY;
 
 			int dx = (int)(s_mouseDx * sX);
 			int dy = (int)(s_mouseDy * sY);
@@ -1532,7 +1536,17 @@ static void VirtKB_ToggleKeyboard(bool down)
 
 static void VirtkKB_ScreenZoomToggle(bool down)
 {
-	s_screenZoomMode = !s_screenZoomMode;
+	VirtKB_setScreenZoomMode(!s_screenZoomMode);
+}
+
+void VirtKB_setScreenZoomMode(bool set)
+{
+	if (s_screenZoomMode == set)
+	{
+		return;
+	}
+
+	s_screenZoomMode = set;
 
 	if (s_screenZoomMode)
 	{

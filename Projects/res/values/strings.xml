@@ -113,6 +113,8 @@
     <string name="display_indicators">Indicators</string>
     <string name="display_bilinearfilter">Bi-linear filter</string>
     <string name="display_bilinearfilter_summary">Smooth the emulation screen output</string>
+    <string name="display_fullscreen">Full Screen</string>
+    <string name="display_fullscreen_summary">Stretch emulated screen to the full screen (may not be aspect correct)</string>
     <string name="pref_input_joysticks_category">Joysticks</string>
     <string name="pref_input_mouse_category">Mouse</string>
     <string name="pref_input_keyboard_category">Keyboard</string>

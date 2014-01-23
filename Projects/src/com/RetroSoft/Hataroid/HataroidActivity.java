@@ -1,6 +1,7 @@
 package com.RetroSoft.Hataroid;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -74,13 +75,9 @@ public class HataroidActivity extends Activity
 		//startEmulationThread();
 	}
 	
-	// Hack to fix Android issue where it doesn't store default values of "false" and doesn't add new values if preferences have been added
-	private void _setupDefaultCheckboxPreferences() throws XmlPullParserException, IOException
+	void _readPrefDefaults(Map<String,String[]> prefDefs) throws XmlPullParserException, IOException
 	{
 		final String CheckBoxPrefTag = "CheckBoxPreference";
-
-		Map<String,String> prefDefs = new HashMap<String,String>();
-		Map<String,String> prefTypes = new HashMap<String,String>();
 
 		XmlResourceParser p = getResources().getXml(R.xml.preferences);
 		int et = p.getEventType();
@@ -106,21 +103,28 @@ public class HataroidActivity extends Activity
 				
 				if (attrKey != null && attrDefaultVal != null)
 				{
-					prefDefs.put(attrKey,  attrDefaultVal);
-					if (p.getName().compareTo(CheckBoxPrefTag)==0)
-					{
-						prefTypes.put(attrKey, "boolean");
-					}
-					else
-					{
-						prefTypes.put(attrKey,  "string");
-					}
+					String attrType = (p.getName().compareTo(CheckBoxPrefTag)==0) ? "boolean" : "string";
+					prefDefs.put(attrKey, new String[] {attrDefaultVal, attrType});
 				}
 			}
 
 			et = p.next();
 		}
-		
+	}
+
+	// Hack to fix Android issue where it doesn't store default values of "false" and doesn't add new values if preferences have been added
+	private void _setupDefaultCheckboxPreferences()
+	{
+		Map<String,String[]> prefDefs = new HashMap<String,String[]>();
+
+		boolean error = false;
+		try { _readPrefDefaults(prefDefs); }
+		catch (Exception e) { error = true; }
+		if (error)
+		{
+			showErrorDialog("Error Reading Preferences", "Please let the author know.\n. Some things might not work correctly");
+		}
+
 		// get a list of missing prefs
 		List<String> missingPrefs = new LinkedList<String>();
 		Map<String, Object> options = getEmulatorOptions();
@@ -143,15 +147,21 @@ public class HataroidActivity extends Activity
 		}
 
 		// now add the missing prefs
-		if (missingPrefs.size() > 0)
+		_setPreferenceList(missingPrefs, prefDefs);
+	}
+	
+	void _setPreferenceList(List<String> updatedPrefs, Map<String,String[]> prefDefs)
+	{
+		if (updatedPrefs.size() > 0)
 		{
 			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 			Editor ed = prefs.edit();
-			for (int i = 0; i < missingPrefs.size(); ++i)
+			for (int i = 0; i < updatedPrefs.size(); ++i)
 			{
-				String curKey = missingPrefs.get(i);
-				String defVal = (String)prefDefs.get(curKey);
-				String attrType = (String)prefTypes.get(curKey);
+				String curKey = updatedPrefs.get(i);
+				String[] valPair = prefDefs.get(curKey);
+				String defVal = valPair[0];
+				String attrType = valPair[1];
 	
 				if (attrType.compareTo("boolean")==0)
 				{
@@ -300,27 +310,87 @@ public class HataroidActivity extends Activity
     	{
     		Log.i(LOG_TAG, "Starting Audio. freq: " + freq + ", bits: " + bits + ", channels: " + channels + ", bufSizeBytes: " + bufSizeBytes);
 
-    		_audioTrack = new AudioTrack(
-    				AudioManager.STREAM_MUSIC,
-    				freq,
-    				(channels == 2) ? AudioFormat.CHANNEL_CONFIGURATION_STEREO : AudioFormat.CHANNEL_CONFIGURATION_MONO,
-    				(bits == 8) ? AudioFormat.ENCODING_PCM_8BIT : AudioFormat.ENCODING_PCM_16BIT,
-    				bufSizeBytes,
-    				AudioTrack.MODE_STREAM);
-
-    		_audioTrack.play();
-    		_audioPaused = false;
+    		boolean error = false;
+    		try
+    		{
+	    		_audioTrack = new AudioTrack(
+	    				AudioManager.STREAM_MUSIC,
+	    				freq,
+	    				(channels == 2) ? AudioFormat.CHANNEL_CONFIGURATION_STEREO : AudioFormat.CHANNEL_CONFIGURATION_MONO,
+	    				(bits == 8) ? AudioFormat.ENCODING_PCM_8BIT : AudioFormat.ENCODING_PCM_16BIT,
+	    				bufSizeBytes,
+	    				AudioTrack.MODE_STREAM);
+	
+	    		_audioTrack.play();
+	    		_audioPaused = false;
+    		}
+    		catch (Exception e)
+    		{
+    			error = true;
+    		}
+    		
+    		if (error)
+    		{
+    			_showAudioErrorDialog();
+    		}
     	}
     }
+	
+	void _showAudioErrorDialog()
+	{
+    	this.runOnUiThread(new Runnable()
+    	{
+			public void run()
+			{
+    			AlertDialog alertDialog = new AlertDialog.Builder(HataroidActivity.this).create();
+    			alertDialog.setTitle("Unsupported audio setting");
+    			alertDialog.setMessage("The chosen audio setting is not supported on this device.\nResetting to default audio settings.");
+				alertDialog.setButton("Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _resetAudioSettings(); } });
+    			alertDialog.show();
+			}
+    	});
+	}
+
+	void _resetAudioSettings()
+	{
+		Map<String,String[]> prefDefs = new HashMap<String,String[]>();
+
+		boolean error = false;
+		try { _readPrefDefaults(prefDefs); }
+		catch (Exception e) { error = true; }
+		if (error)
+		{
+			showErrorDialog("Error Reading Preferences", "Please let the author know.\n. Some things might not work correctly");
+		}
+		
+		List<String> audioPrefs = Arrays.asList("pref_sound_quality");
+		for (int i = 0; i < audioPrefs.size(); ++i)
+		{
+			if (!prefDefs.containsKey(audioPrefs.get(i)))
+			{
+				audioPrefs.remove(i);
+				--i;
+			}
+		}
+
+		// now add the missing prefs
+		_setPreferenceList(audioPrefs, prefDefs);
+	}
     
     public void deinitAudio()
     {
 		if (_audioTrack != null)
 		{
-			_audioTrack.pause();
-			_audioTrack.flush();
-			_audioTrack.stop();
-			_audioTrack.release();
+			try
+			{
+				_audioTrack.pause();
+				_audioTrack.flush();
+				_audioTrack.stop();
+				_audioTrack.release();
+			}
+			catch (Exception e)
+			{
+			}
 
 			_audioTrack = null;
 		}
@@ -547,7 +617,16 @@ public class HataroidActivity extends Activity
 		alertDialog.show();
 	}
 	
-    public void showOptionsDialog()
+	public void showErrorDialog(String title, String message)
+	{
+		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+		alertDialog.setTitle(title);
+		alertDialog.setMessage(message);
+		alertDialog.setButton("Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { } });
+		alertDialog.show();
+	}
+
+	public void showOptionsDialog()
     {
     	this.runOnUiThread(new Runnable()
     	{

@@ -131,7 +131,7 @@ void RequestAndWaitQuit()
 
 	for (;;)
 	{
-		usleep(500000); // 0.5 sec
+		usleep(200000); // 0.2 sec
 	}
 }
 
@@ -398,7 +398,11 @@ void _optionSetMachineType(const OptionSetting *setting, const char *val, EmuCom
 		}
 	}
 }
-void _optionShowBorders(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.Screen.bAllowOverscan = (strcmp(val, "true") == 0); }
+void _optionShowBorders(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.Screen.bAllowOverscan = (strcmp(val, "true") == 0);
+	Renderer_refreshDispParams();
+}
 void _optionShowIndicators(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.Screen.bShowStatusbar = false;
@@ -481,6 +485,15 @@ void _optionSetBilinearFilter(const OptionSetting *setting, const char *val, Emu
 	Renderer_setFilterEmuScreeen(filter);
 }
 
+void _optionSetFullScreenStretch(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	bool fullscreen = (strcmp(val, "true")==0);
+	Renderer_setFullScreenStretch(fullscreen);
+	if (fullscreen)
+	{
+		VirtKB_setScreenZoomMode(false);
+	}
+}
 void _optionSetMouseEmuType(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	if (strcmp(val, "direct") == 0)
@@ -549,6 +562,7 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_system_tos", 0 },
 	{ "pref_system_tos_ste", 0 },
 	{ "pref_display_bilinearfilter", _optionSetBilinearFilter },
+	{ "pref_display_fullscreen", _optionSetFullScreenStretch },
 	{ "pref_display_extendedvdi", 0 },
 	{ "pref_display_extendedvdi_colors", 0 },
 	{ "pref_display_extendedvdi_resolution", 0 },
@@ -625,9 +639,11 @@ void EmuCommandSetOptions_Run(EmuCommand *command)
 	// If a memory snapshot has been loaded, no further changes are required
 	if (!bLoadedSnapshot)
 	{
+		//Debug_Printf("----> Apply [%s]", (data->apply?"true":"false"));
+
 		if (data->apply)
 		{
-			bool bOKDialog = false;
+			bool bOKDialog = true;
 
 			// Check if reset is required and ask user if he really wants to continue then
 			if (!bForceReset

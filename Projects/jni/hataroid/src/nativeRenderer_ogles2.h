@@ -33,10 +33,14 @@ extern bool Renderer_addRenderCallback(RenderCallback pCallback);
 extern int getScreenWidth();
 extern int getScreenHeight();
 
-extern float Renderer_getEmuScreenZoom();
+extern float Renderer_getEmuScreenZoomX();
+extern float Renderer_getEmuScreenZoomY();
 extern void Renderer_zoomEmuScreen(float absChange);
 extern void Renderer_panEmuScreen(float absX, float absY);
 extern void Renderer_setFilterEmuScreeen(bool filter);
+extern void Renderer_setFullScreenStretch(bool fs);
+extern bool Renderer_isFullScreenStretch();
+extern void Renderer_refreshDispParams();
 
 extern unsigned int roundUpPower2(unsigned int v);
 

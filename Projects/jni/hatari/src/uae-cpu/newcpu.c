@@ -1004,7 +1004,7 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	      if (bExceptionDebugging)
 	        DebugUI(REASON_CPU_EXCEPTION);
 	      else
-		DlgAlert_Notice("Detected double bus error => CPU halted!\nEmulation needs to be reset.\n");
+		DlgAlert_Notice("Detected double bus error => CPU halted!\nPlease quit and restart Hataroid.\n");
 	      regs.intmask = 7;
 	      m68k_setstopped(true);
 	      return;

@@ -15,5 +15,6 @@ extern void VirtKB_SetMouseEmuButtons();
 extern void VirtKB_SetMouseEmuSpeed(float speed);
 extern void VirtKB_SetControlAlpha(float alpha);
 extern void VirtKB_SetJoystickSize(float size);
+extern void VirtKB_setScreenZoomMode(bool set);
 
 #endif /* VIRTKB_H_ */
