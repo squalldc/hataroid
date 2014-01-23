@@ -375,6 +375,8 @@ public class HataroidActivity extends Activity
 
 		// now add the missing prefs
 		_setPreferenceList(audioPrefs, prefDefs);
+
+		_updateOptions();
 	}
     
     public void deinitAudio()
@@ -584,13 +586,18 @@ public class HataroidActivity extends Activity
 			
 			case ACTIVITYRESULT_SETTINGS:
 			{
-				Map<String, Object> options = getEmulatorOptions();
-				String [] optionKeys = (String [])options.get("keys");
-				String [] valKeys = (String [])options.get("vals");
-				HataroidNativeLib.emulatorSetOptions(optionKeys, valKeys);
+				_updateOptions();
 				break;
 			}
 		}
+	}
+	
+	void _updateOptions()
+	{
+		Map<String, Object> options = getEmulatorOptions();
+		String [] optionKeys = (String [])options.get("keys");
+		String [] valKeys = (String [])options.get("vals");
+		HataroidNativeLib.emulatorSetOptions(optionKeys, valKeys);
 	}
 
 	@Override public boolean onKeyDown(int keyCode, KeyEvent event)
