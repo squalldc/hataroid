@@ -13,6 +13,9 @@ extern int hasDialogResult();
 extern int getDialogResult();
 extern void clearDialogResult();
 
+extern int getTurboSpeed();
+extern void setTurboSpeed(int set);
+
 extern JavaVM *g_jvm;
 
 struct JNIAudio

@@ -7,6 +7,7 @@
 extern int VirtKB_OnSurfaceChanged(int width, int height);
 extern void VirtKB_CleanUp();
 extern void VirtKB_EnableInput(bool enable);
+extern void VirtKB_RefreshKB();
 extern void VirtKB_SetJoystickPort(int port);
 extern int VirtKB_GetJoystickPort();
 extern void VirtKB_MapJoysticksToArrowKeys(bool map);

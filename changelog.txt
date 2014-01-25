@@ -1,3 +1,8 @@
+version 1.37
+- added turbo speed toggle (top right button)
+- added keep screen awake option (default: off)
+- various bug fixes
+
 version 1.36
 - added fullscreen option
 - fix toggling border option

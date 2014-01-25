@@ -67,6 +67,9 @@ static volatile bool emuInited = false;
 static volatile bool videoReady = false;
 static volatile bool envInited = false;
 
+static int s_turboSpeed = 0;
+static int s_turboPrevFrameSkips = 0;
+
 static void SetEmulatorOptions(JNIEnv * env, jobjectArray keyarray, jobjectArray valarray, bool apply, bool init, bool queueCommand);
 
 //---------------
@@ -295,6 +298,7 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationPa
 {
 	Debug_Printf("----> emulationPause");
 
+	setTurboSpeed(0);
 	VirtKB_EnableInput(false);
 
 	emuReady = false;
@@ -331,6 +335,33 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_onDrawFrame
 		//hatari_main_doframe();
 		renderFrame();
 	}
+}
+
+int getTurboSpeed() { return s_turboSpeed; }
+
+void setTurboSpeed(int set)
+{
+	if (s_turboSpeed == set)
+	{
+		return;
+	}
+
+	s_turboSpeed = set;
+
+	CNF_PARAMS current = ConfigureParams;
+	ConfigureParams.System.bFastForward = (s_turboSpeed!=0);
+	if (ConfigureParams.System.bFastForward)
+	{
+		s_turboPrevFrameSkips = ConfigureParams.Screen.nFrameSkips;
+		ConfigureParams.Screen.nFrameSkips = 5;
+	}
+	else
+	{
+		ConfigureParams.Screen.nFrameSkips = s_turboPrevFrameSkips;
+	}
+	Change_CopyChangedParamsToConfiguration(&current, &ConfigureParams, false);
+
+	VirtKB_RefreshKB();
 }
 
 char * _stringArrayElemToCStr(JNIEnv* env, jobjectArray array, int elem)
@@ -563,6 +594,7 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_system_tos_ste", 0 },
 	{ "pref_display_bilinearfilter", _optionSetBilinearFilter },
 	{ "pref_display_fullscreen", _optionSetFullScreenStretch },
+	{ "pref_display_keepscreenawake", 0 },
 	{ "pref_display_extendedvdi", 0 },
 	{ "pref_display_extendedvdi_colors", 0 },
 	{ "pref_display_extendedvdi_resolution", 0 },
@@ -723,7 +755,12 @@ static void SetEmulatorOptions(JNIEnv * env, jobjectArray keyarray, jobjectArray
 	}
 }
 
-void EmuCommandResetCold_Run(EmuCommand *command) { Debug_Printf("----> Cold Reset"); Reset_Cold(); }
+void EmuCommandResetCold_Run(EmuCommand *command)
+{
+	Debug_Printf("----> Cold Reset");
+	setTurboSpeed(0);
+	Reset_Cold();
+}
 
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorResetCold(JNIEnv * env, jobject obj)
 {
@@ -731,7 +768,12 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorRes
 	if (emuInited) { addEmuCommand(EmuCommandResetCold_Run, NULL, NULL); }
 }
 
-void EmuCommandResetWarm_Run(EmuCommand *command) { Debug_Printf("----> Warm Reset"); Reset_Warm(); }
+void EmuCommandResetWarm_Run(EmuCommand *command)
+{
+	Debug_Printf("----> Warm Reset");
+	setTurboSpeed(0);
+	Reset_Warm();
+}
 
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorResetWarm(JNIEnv * env, jobject obj)
 {
@@ -770,6 +812,7 @@ void EmuCommandInsertFloppy_Run(EmuCommand *command)
 	Debug_Printf("----> Insert Floppy");
 
 	EmuCommandInsertFloppy_Data *data = (EmuCommandInsertFloppy_Data*)command->data;
+
 	Floppy_SetDiskFileName(data->floppyID, data->floppyFileName, data->floppyZipPath);
 	Floppy_InsertDiskIntoDrive(data->floppyID);
 
@@ -806,6 +849,11 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorIns
 		{
 			data->floppyZipPath = new char [strlen(zippathptr)+1];
 			strcpy(data->floppyZipPath, zippathptr);
+		}
+		else
+		{
+			data->floppyZipPath = new char [1];
+			data->floppyZipPath[0] = 0;
 		}
 
 		env->ReleaseStringUTFChars(filename, fnameptr);

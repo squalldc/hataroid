@@ -68,7 +68,7 @@ struct QuickKey
 	const VirtKeyDef *pKeyDef;
 };
 
-#define DEFAULT_INPUT_FLAGS (FLAG_PERSIST|FLAG_JOY|FLAG_SCREEN|FLAG_STKEY|FLAG_STFNKEY)
+#define DEFAULT_INPUT_FLAGS (FLAG_PERSIST|FLAG_JOY|FLAG_SCREEN|FLAG_STKEY|FLAG_STFNKEY|FLAG_MAIN)
 
 static volatile bool	s_InputReady = false;
 static volatile bool	s_InputEnabled = false;
@@ -166,12 +166,18 @@ static void VirtKB_UpdateRectVerts(	GLfloat *v, float x1, float y1, float x2, fl
 								float r, float g, float b, float a);
 static void VirtKB_UpdatePolyVerts(GLfloat *v, float *x, float *y, float *tu, float *tv, float r, float g, float b, float a);
 
+static void VirtKB_ToggleTurboSpeed(bool down);
 static void VirtKB_ToggleKeyboard(bool down);
 static void VirtkKB_ScreenZoomToggle(bool down);
 static void VirtkKB_VkbZoomToggle(bool down);
 static void VirtKB_MJToggle(bool down);
 static void VirtKB_MouseLB(bool down);
 static void VirtkKB_MouseRB(bool down);
+
+void VirtKB_RefreshKB()
+{
+	s_recreateQuickKeys = true;
+}
 
 int VirtKB_GetJoystickPort()
 {
@@ -202,7 +208,9 @@ void VirtKB_MapJoysticksToArrowKeys(bool map)
 
 void VirtKB_SetMouseEmuDirect()
 {
-	s_curInputFlags &= ~(FLAG_MOUSEBUTTON);
+	if (s_showKeyboard || s_screenZoomMode)	{ s_prevInputFlags &= ~(FLAG_MOUSEBUTTON); }
+	else									{ s_curInputFlags &= ~(FLAG_MOUSEBUTTON); }
+
 	s_recreateQuickKeys = true;
 
 	VirtKB_clearMousePresses();
@@ -210,7 +218,9 @@ void VirtKB_SetMouseEmuDirect()
 
 void VirtKB_SetMouseEmuButtons()
 {
-	s_curInputFlags |= (FLAG_MOUSEBUTTON);
+	if (s_showKeyboard || s_screenZoomMode)	{ s_prevInputFlags |= (FLAG_MOUSEBUTTON); }
+	else									{ s_curInputFlags |= (FLAG_MOUSEBUTTON); }
+
 	s_recreateQuickKeys = true;
 
 	VirtKB_clearMousePresses();
@@ -257,6 +267,7 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_toggleMouse
 void VirtKB_EnableInput(bool enable)
 {
 	s_InputEnabled = enable;
+	s_recreateQuickKeys = true;
 }
 
 int VirtKB_OnSurfaceChanged(int width, int height)
@@ -463,6 +474,7 @@ static bool addQuickKey(int x1, int y1, int x2, int y2,
 	return true;
 }
 
+// TODO: customizable layout
 void VirtKB_CreateQuickKeys()
 {
 	VirtKB_ClearQuickKeys();
@@ -492,6 +504,10 @@ void VirtKB_CreateQuickKeys()
 		{
 			if (isFullScreen && vkbKeys[i] == VKB_KEY_SCREENZOOM) { continue; }
 
+			if (s_showKeyboard && vkbKeys[i]==VKB_KEY_KEYBOARDTOGGLE) { vkbKeys[i] = VKB_KEY_KEYBOARDTOGGLE_SEL; }
+			if (s_keyboardZoomMode && vkbKeys[i]==VKB_KEY_KEYBOARDZOOM) { vkbKeys[i] = VKB_KEY_KEYBOARDZOOM_SEL; }
+			if (s_screenZoomMode && vkbKeys[i]==VKB_KEY_SCREENZOOM) { vkbKeys[i] = VKB_KEY_SCREENZOOM_SEL; }
+
 			if (!addQuickKey(0, curKeyY, keyOffsetX+keyBtnSize, curKeyY+keyBtnSize,
 						keyOffsetX, curKeyY, keyOffsetX+keyBtnSize, curKeyY+keyBtnSize,
 						2, 2, -2, -2, 0, qkCallbacks[i], &g_vkbKeyDefs[vkbKeys[i]])) { continue; }
@@ -509,15 +525,23 @@ void VirtKB_CreateQuickKeys()
 		int keyBtnSize = (int)ceilf(60*sscale);
 		int keyMarginY = (int)ceilf(2*sscale);
 
-		int vkbKeys[] = {VKB_KEY_T, VKB_KEY_Y, VKB_KEY_N, VKB_KEY_1, VKB_KEY_2};
+		int vkbKeys[] = {VKB_KEY_NORMALSPEED, VKB_KEY_Y, VKB_KEY_N, VKB_KEY_1, VKB_KEY_2};
 		int numKeys = sizeof(vkbKeys)/sizeof(int);
 
 		int curKeyY = keyOffsetY;
 		for (int i = 0; i < numKeys; ++i)
 		{
+			QuickKeyCallback qkCB = 0;
+			if (i == 0) // speed button hack
+			{
+				bool turbo = getTurboSpeed()!=0;
+				qkCB = VirtKB_ToggleTurboSpeed;
+				vkbKeys[i] = turbo ? VKB_KEY_TURBOSPEED : VKB_KEY_NORMALSPEED;
+			}
+
 			if (!addQuickKey(scrwidth - keyOffsetX-keyBtnSize, curKeyY, scrwidth, curKeyY+keyBtnSize,
 						scrwidth-keyOffsetX-keyBtnSize, curKeyY, scrwidth-keyOffsetX, curKeyY+keyBtnSize,
-						2, 2, -2, -2, 0, 0, &g_vkbKeyDefs[vkbKeys[i]])) { continue; }
+						2, 2, -2, -2, 0, qkCB, &g_vkbKeyDefs[vkbKeys[i]])) { continue; }
 
 			curKeyY = s_QuickKeys[s_numQuickKeys-1].y2 + keyMarginY;
 		}
@@ -1514,6 +1538,17 @@ static const VirtKeyDef *VirtKB_VkbHitTest(float x, float y)
 	return 0;
 }
 
+static void VirtKB_ToggleTurboSpeed(bool down)
+{
+	if (down)
+	{
+		int curTurbo = getTurboSpeed();
+		setTurboSpeed(1-curTurbo);
+
+		s_recreateQuickKeys = true;
+	}
+}
+
 static void VirtKB_ToggleKeyboard(bool down)
 {
 	s_showKeyboard = !s_showKeyboard;
@@ -1567,13 +1602,16 @@ static void VirtkKB_VkbZoomToggle(bool down)
 {
 	s_keyboardZoomMode = !s_keyboardZoomMode;
 	s_prevZoomPanCount = 0;
+	s_recreateQuickKeys = true;
 
 	VirtKB_clearMousePresses();
 }
 
 static void VirtKB_MJToggle(bool down)
 {
-	s_curInputFlags ^= (FLAG_MOUSE|FLAG_JOY);
+	if (s_showKeyboard || s_screenZoomMode)	{ s_prevInputFlags ^= (FLAG_MOUSE|FLAG_JOY); }
+	else									{ s_curInputFlags ^= (FLAG_MOUSE|FLAG_JOY); }
+
 	s_recreateQuickKeys = true;
 
 	VirtKB_clearMousePresses();

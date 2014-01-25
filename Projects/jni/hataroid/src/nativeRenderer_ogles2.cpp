@@ -347,6 +347,10 @@ void updateVideoTex2D(GLuint textureid, GLubyte * pixels, int scrWidth, int scrH
 	// Bind the texture object
 	glBindTexture(GL_TEXTURE_2D, textureid);
 
+	// Set the filtering mode
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, sTexFilter);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, sTexFilter);
+
 	// Load the texture
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, scrHeight, format, formatDataType, pixels);
 }

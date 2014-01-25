@@ -103,21 +103,26 @@ const VirtKeyDef g_vkbKeyDefs[] =
 	{ VKB_KEY_NUMPAD_PERIOD, "Num.", 0x71, { 688, 208, 719, 239, 0, 0, 0, 0 }, FLAG_STKEY, { 133, 455, 165, 486 }, 1, 0 },
 	{ VKB_KEY_NUMPAD_ENTER, "NumEnt", 0x72, { 720, 208, 751, 239, 0, 0, 0, 0 }, FLAG_STKEY, { 166, 455, 198, 486 }, 2, s_refs_id_VKB_KEY_NUMPAD_ENTER },
 	{ VKB_KEY_KEYBOARDTOGGLE, "KbdToggle", 0xff, { 1, 257, 32, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_PERSIST, { 1, 257, 33, 288 }, 1, 0 },
-	{ VKB_KEY_JOYLEFT, "Jleft", 0xff, { 34, 257, 65, 288, 0, 0, 0, 0 }, FLAG_JOY, { 34, 257, 66, 288 }, 1, 0 },
-	{ VKB_KEY_JOYRIGHT, "Jright", 0xff, { 67, 257, 98, 288, 0, 0, 0, 0 }, FLAG_JOY, { 67, 257, 99, 288 }, 1, 0 },
-	{ VKB_KEY_JOYDOWN, "Jdown", 0xff, { 100, 257, 131, 288, 0, 0, 0, 0 }, FLAG_JOY, { 100, 257, 132, 288 }, 1, 0 },
-	{ VKB_KEY_JOYUP, "Jup", 0xff, { 133, 257, 164, 288, 0, 0, 0, 0 }, FLAG_JOY, { 133, 257, 165, 288 }, 1, 0 },
-	{ VKB_KEY_JOYFIRE_OLD, "JfireOld", 0xff, { 166, 257, 197, 288, 0, 0, 0, 0 }, FLAG_JOY, { 166, 257, 198, 288 }, 1, 0 },
-	{ VKB_KEY_KEYBOARDZOOM, "KbdZoom", 0xff, { 199, 257, 230, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_VKB, { 199, 257, 231, 288 }, 1, 0 },
-	{ VKB_KEY_SCREENZOOM, "ScrnZoom", 0xff, { 232, 257, 263, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_SCREEN, { 232, 257, 264, 288 }, 1, 0 },
-	{ VKB_KEY_MOUSETOGGLE, "MJToggle", 0xff, { 265, 257, 296, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_JOY, { 265, 257, 297, 288 }, 1, 0 },
-	{ VKB_KEY_JOYTOGGLE, "MJToggle", 0xff, { 298, 257, 329, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_MOUSE, { 298, 257, 330, 288 }, 1, 0 },
-	{ VKB_KEY_MOUSELB, "MouseLB", 0xff, { 1, 257, 32, 288, 0, 0, 0, 0 }, FLAG_MOUSEBUTTON, { 331, 257, 363, 288 }, 1, 0 },
-	{ VKB_KEY_MOUSERB, "MouseRB", 0xff, { 34, 257, 65, 288, 0, 0, 0, 0 }, FLAG_MOUSEBUTTON, { 364, 257, 396, 288 }, 1, 0 },
+	{ VKB_KEY_KEYBOARDTOGGLE_SEL, "KbdToggleSel", 0xff, { 34, 257, 65, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_PERSIST, { 34, 257, 66, 288 }, 1, 0 },
+	{ VKB_KEY_JOYLEFT, "Jleft", 0xff, { 67, 257, 98, 288, 0, 0, 0, 0 }, FLAG_JOY, { 67, 257, 99, 288 }, 1, 0 },
+	{ VKB_KEY_JOYRIGHT, "Jright", 0xff, { 100, 257, 131, 288, 0, 0, 0, 0 }, FLAG_JOY, { 100, 257, 132, 288 }, 1, 0 },
+	{ VKB_KEY_JOYDOWN, "Jdown", 0xff, { 133, 257, 164, 288, 0, 0, 0, 0 }, FLAG_JOY, { 133, 257, 165, 288 }, 1, 0 },
+	{ VKB_KEY_JOYUP, "Jup", 0xff, { 166, 257, 197, 288, 0, 0, 0, 0 }, FLAG_JOY, { 166, 257, 198, 288 }, 1, 0 },
+	{ VKB_KEY_JOYFIRE_OLD, "JfireOld", 0xff, { 199, 257, 230, 288, 0, 0, 0, 0 }, FLAG_JOY, { 199, 257, 231, 288 }, 1, 0 },
+	{ VKB_KEY_KEYBOARDZOOM, "KbdZoom", 0xff, { 232, 257, 263, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_VKB, { 232, 257, 264, 288 }, 1, 0 },
+	{ VKB_KEY_KEYBOARDZOOM_SEL, "KbdZoomSel", 0xff, { 265, 257, 296, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_VKB, { 265, 257, 297, 288 }, 1, 0 },
+	{ VKB_KEY_SCREENZOOM, "ScrnZoom", 0xff, { 298, 257, 329, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_SCREEN, { 298, 257, 330, 288 }, 1, 0 },
+	{ VKB_KEY_SCREENZOOM_SEL, "ScrnZoomSel", 0xff, { 331, 257, 362, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_SCREEN, { 331, 257, 363, 288 }, 1, 0 },
+	{ VKB_KEY_MOUSETOGGLE, "MJToggle", 0xff, { 364, 257, 395, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_JOY, { 364, 257, 396, 288 }, 1, 0 },
+	{ VKB_KEY_JOYTOGGLE, "MJToggle", 0xff, { 397, 257, 428, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_MOUSE, { 397, 257, 429, 288 }, 1, 0 },
+	{ VKB_KEY_MOUSELB, "MouseLB", 0xff, { 430, 257, 461, 288, 0, 0, 0, 0 }, FLAG_MOUSEBUTTON, { 430, 257, 462, 288 }, 1, 0 },
+	{ VKB_KEY_MOUSERB, "MouseRB", 0xff, { 463, 257, 494, 288, 0, 0, 0, 0 }, FLAG_MOUSEBUTTON, { 463, 257, 495, 288 }, 1, 0 },
+	{ VKB_KEY_NORMALSPEED, "NormalSpd", 0xff, { 496, 257, 527, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_MAIN, { 496, 257, 528, 288 }, 1, 0 },
+	{ VKB_KEY_TURBOSPEED, "TurboSpd", 0xff, { 529, 257, 560, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_MAIN, { 529, 257, 561, 288 }, 1, 0 },
 	{ VKB_KEY_JOYFIRE, "Jfire", 0xff, { 701, 421, 766, 486, 0, 0, 0, 0 }, FLAG_JOY, { 701, 421, 766, 486 }, 1, 0 }
 };
 
-const int g_vkbKeyDefsSize = 110;
+const int g_vkbKeyDefsSize = 115;
 
 const int g_vkbTexFullW		= 768;
 const int g_vkbTexFullH		= 488;

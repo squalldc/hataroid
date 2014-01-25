@@ -26,6 +26,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.WindowManager;
 
 import com.RetroSoft.Hataroid.FileBrowser.FileBrowser;
 import com.RetroSoft.Hataroid.Help.HelpActivity;
@@ -59,6 +60,7 @@ public class HataroidActivity extends Activity
 		try
 		{
 			_setupDefaultCheckboxPreferences();
+			_setupDeviceOptions();
 		}
 		catch (Exception e)
 		{
@@ -176,6 +178,28 @@ public class HataroidActivity extends Activity
 			ed.commit();
 		}
 	}
+
+	void _setupDeviceOptions()
+	{
+		try
+		{
+	    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+	    	Map<String,?> allPrefs = prefs.getAll();
+	    	
+	    	Object val = allPrefs.get("pref_display_keepscreenawake");
+	    	if (val != null)
+	    	{
+	    		String sval = val.toString();
+	    		boolean bval = (sval.compareTo("true")==0 || sval.compareTo("1")==0);
+	    		_keepScreenAwake(bval);
+	    	}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
 	
 	@Override protected void onDestroy()
 	{
@@ -587,6 +611,7 @@ public class HataroidActivity extends Activity
 			case ACTIVITYRESULT_SETTINGS:
 			{
 				_updateOptions();
+				_setupDeviceOptions();
 				break;
 			}
 		}
@@ -670,5 +695,17 @@ public class HataroidActivity extends Activity
     			alertDialog.show();
 			}
     	});
+	}
+
+	void _keepScreenAwake(boolean set)
+	{
+		if (set)
+		{
+			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		}
+		else
+		{
+			getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+		}
 	}
 }
