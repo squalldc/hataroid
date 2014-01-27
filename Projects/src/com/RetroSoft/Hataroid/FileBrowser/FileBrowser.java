@@ -20,7 +20,9 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.View.OnClickListener;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -31,6 +33,7 @@ public class FileBrowser extends ListActivity
 	public static final String CONFIG_OPENZIPS = "Config_OpenZips";
 	public static final String CONFIG_EXT = "Config_Ext";
 	public static final String CONFIG_RESETST = "Config_ResetST";
+	public static final String CONFIG_SELECTFOLDER = "Config_SelectFolder";
 	
 	public static final String RESULT_PATH = "ResultPath";
 	public static final String RESULT_ZIPPATH = "ResultZipPath";
@@ -52,6 +55,9 @@ public class FileBrowser extends ListActivity
 
 	private boolean				_openZips = true;
 	private boolean				_resetST = true;
+	private boolean				_selectFolder = false;
+	
+	private SelectFolderClickListener	_selectFolderListener = null;
 
 	private String []			_exts = null;
 	private String				_root = "/";
@@ -156,9 +162,10 @@ public class FileBrowser extends ListActivity
 			
 			_openZips = b.getBoolean(CONFIG_OPENZIPS, true);
 			_resetST = b.getBoolean(CONFIG_RESETST, true);
+			_selectFolder = b.getBoolean(CONFIG_SELECTFOLDER, false);
 		}
 		
-		if (_openZips)
+		if (_openZips && !_allowAllFiles())
 		{
 			int curLen = _exts.length;
 			String [] curExts = _exts;
@@ -175,6 +182,11 @@ public class FileBrowser extends ListActivity
 	
 	@Override protected void onDestroy()
 	{
+		if (_selectFolderListener != null)
+		{
+			_selectFolderListener.deinit();
+		}
+			
 		_closeZipFile(_curZipFile);
 		super.onDestroy();
 	}
@@ -185,12 +197,15 @@ public class FileBrowser extends ListActivity
 		_prevFirstVisibleItem = v.getFirstVisiblePosition();
 
 		FileListItem item = (FileListItem)v.getItemAtPosition(_prevFirstVisibleItem);
-		String itemname = item.getName();
-    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-		Editor ed = prefs.edit();
-		ed.putString(LastFloppyDirItemPathKey, (_savedPath == null) ? "" : _savedPath);
-		ed.putString(LastFloppyDirItemNameKey, (itemname == null) ? "" : itemname);
-		ed.commit();
+		if (item != null)
+		{
+			String itemname = item.getName();
+	    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+			Editor ed = prefs.edit();
+			ed.putString(LastFloppyDirItemPathKey, (_savedPath == null) ? "" : _savedPath);
+			ed.putString(LastFloppyDirItemNameKey, (itemname == null) ? "" : itemname);
+			ed.commit();
+		}
 
 		super.onPause();
 	}
@@ -254,7 +269,63 @@ public class FileBrowser extends ListActivity
 				sendFinish(RESULT_CANCELED);
 			}
 		});
+
+		try
+		{
+			View selectBtnView = findViewById(R.id.fb_selectBtn);
+			if (selectBtnView != null)
+			{
+				if (_selectFolder)
+				{
+					if (_selectFolderListener == null)
+					{
+						_selectFolderListener = new SelectFolderClickListener(this);
+						selectBtnView.setOnClickListener(_selectFolderListener);
+					}
+				}
+				else
+				{
+					selectBtnView.setEnabled(false);
+					selectBtnView.setVisibility(View.INVISIBLE);
+					
+					((ViewGroup)selectBtnView.getParent()).removeView(selectBtnView);
+				}
+			}
+
+			ListView fileListView = (ListView)findViewById(android.R.id.list);
+			if (fileListView != null)
+			{
+				Object lpObj = fileListView.getLayoutParams();
+				if (lpObj instanceof LinearLayout.LayoutParams)
+				{
+					LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams)lpObj;
+					lp.weight = (_selectFolder) ? 0.9f : 0.95f;
+					fileListView.setLayoutParams(lp);
+					View root = fileListView.getRootView();
+					if (root != null)
+					{
+						root.requestLayout();
+					}
+				}
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
+
+	boolean _allowAllFiles()
+	{
+		boolean allFiles = false;
+		if (_exts!=null && _exts.length == 1 && _exts[0].compareTo("*")==0) // HACK: should support rexp instead
+		{
+			allFiles = true;
+		}
+		return allFiles;
+	}
+
+	
 	
 	/*private String _getFileName(String fullname)
 	{
@@ -399,17 +470,25 @@ public class FileBrowser extends ListActivity
 
 			if (!f.isDirectory())
 			{
-				for (String ext : validExts)
+				String flc = f.getName().toLowerCase();
+				if (!flc.endsWith(".zip"))
 				{
-					String flc = f.getName().toLowerCase();
-					if (!flc.endsWith(".zip") && flc.endsWith(ext))
+					if (_allowAllFiles()) // HACK: should allow rexp
 					{
 						++validDiscCount;
-						if (validDiscCount > 1)
+						if (validDiscCount > 1) { return false; }
+					}
+					else
+					{
+						for (String ext : validExts)
 						{
-							return false;
+							if (flc.endsWith(ext))
+							{
+								++validDiscCount;
+								if (validDiscCount > 1) { return false; }
+								break;
+							}
 						}
-						break;
 					}
 				}
 			}
@@ -453,8 +532,34 @@ public class FileBrowser extends ListActivity
 		}
 	}
 	
+	public void onSelectButtonClicked()
+	{
+		if (_selectFolder)
+		{
+			String selectedPath = null;
+			if (_curDir != null)
+			{
+				if (_curDir.isDirectory())
+				{
+					selectedPath = _curDir.getPath();
+				}
+			}
+	
+			if (selectedPath != null)
+			{
+				_retIntent.putExtra(RESULT_PATH, selectedPath);
+				sendFinish(RESULT_OK);
+			}
+		}
+	}
+
 	private void onFileClicked(FileListItem item)
 	{
+		if (_selectFolder)
+		{
+			return;
+		}
+
 		String itemPath = item.getPath();
 
 		_retIntent.putExtra(RESULT_PATH, itemPath);
@@ -547,7 +652,7 @@ public class FileBrowser extends ListActivity
 				else
 				{
 					boolean valid = true;
-					if (validExtsLower != null)
+					if (!_allowAllFiles() && validExtsLower != null)
 					{
 						valid = false;
 						for (String ext : validExtsLower)
@@ -653,5 +758,25 @@ public class FileBrowser extends ListActivity
 			tv.setText(s);
 		}
 	}
-
 }
+
+class SelectFolderClickListener implements OnClickListener
+{
+	FileBrowser _fb = null;
+	public SelectFolderClickListener(FileBrowser fb)
+	{
+		_fb = fb;
+	}
+	public void deinit()
+	{
+		_fb = null;
+	}
+	
+	public void onClick(View v) {
+		if (_fb != null)
+		{
+			_fb.onSelectButtonClicked();
+		}
+	}
+}
+

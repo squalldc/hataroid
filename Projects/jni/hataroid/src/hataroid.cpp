@@ -444,7 +444,7 @@ void _optionShowIndicators(const OptionSetting *setting, const char *val, EmuCom
 }
 void _optionAutoInsertDiskB(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.DiskImage.bAutoInsertDiskB = (strcmp(val, "1") == 0); }
 void _optionWriteProtectFloppy(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.DiskImage.nWriteProtection = (strcmp(val, "0") == 0) ? WRITEPROT_OFF : (strcmp(val, "1") == 0) ? WRITEPROT_ON : WRITEPROT_AUTO; }
-void _optionFastFloppy(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.DiskImage.FastFloppy = (strcmp(val, "1") == 0); }
+void _optionFastFloppy(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.DiskImage.FastFloppy = (strcmp(val, "true") == 0); }
 void _optionsSetCompatibleCPU(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.System.bCompatibleCpu = (strcmp(val, "true")==0); }
 void _optionSetSoundEnabled(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.Sound.bEnableSound = (strcmp(val, "true")==0); }
 void _optionSetSoundSync(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.Sound.bEnableSoundSync = (strcmp(val, "true")==0); }
@@ -569,6 +569,42 @@ void _optionSetJoystickSize(const OptionSetting *setting, const char *val, EmuCo
 	VirtKB_SetJoystickSize(size);
 }
 
+void _optionBootFromHD(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.HardDisk.bBootFromHardDisk = (strcmp(val, "true")==0) || (strcmp(val, "1")==0); }
+
+void _optionACSIAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.HardDisk.bUseHardDiskImage = (strcmp(val, "true")==0) || (strcmp(val, "1")==0); }
+void _optionIDEMasterAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = (strcmp(val, "true")==0) || (strcmp(val, "1")==0); }
+void _optionIDESlaveAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = (strcmp(val, "true")==0) || (strcmp(val, "1")==0); }
+void _optionGEMDOSAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.HardDisk.bUseHardDiskDirectories = (strcmp(val, "true")==0) || (strcmp(val, "1")==0); }
+
+void _optionACSIImage(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	strncpy(ConfigureParams.HardDisk.szHardDiskImage, ((val==0)||strcmp(val,"none")==0) ? "" : val, FILENAME_MAX);
+	ConfigureParams.HardDisk.szHardDiskImage[FILENAME_MAX-1]=0;
+}
+void _optionIDEMasterImage(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	strncpy(ConfigureParams.HardDisk.szIdeMasterHardDiskImage, ((val==0)||strcmp(val,"none")==0) ? "" : val, FILENAME_MAX);
+	ConfigureParams.HardDisk.szIdeMasterHardDiskImage[FILENAME_MAX-1]=0;
+}
+void _optionIDESlaveImage(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	strncpy(ConfigureParams.HardDisk.szIdeSlaveHardDiskImage, ((val==0)||strcmp(val,"none")==0) ? "" : val, FILENAME_MAX);
+	ConfigureParams.HardDisk.szIdeSlaveHardDiskImage[FILENAME_MAX-1]=0;
+}
+void _optionGEMDOSFolder(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	strncpy(ConfigureParams.HardDisk.szHardDiskDirectories[0], ((val==0)||strcmp(val,"none")==0) ? "" : val, FILENAME_MAX);
+	ConfigureParams.HardDisk.szHardDiskDirectories[0][FILENAME_MAX-1]=0;
+}
+void _optionGEMDOSWriteProtection(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	int optionVal = atoi(val);
+
+	if (optionVal == 0) { ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_OFF; } // off
+	else if (optionVal == 1) { ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_ON; } // on
+	else if (optionVal == 2) { ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_AUTO; } // auto
+}
+
 static const OptionSetting s_OptionsMap[] =
 {
 	{ "pref_input_joystick_port", _optionSetJoystickPort },
@@ -607,12 +643,16 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_storage_floppydisks_fastfloppyaccess", _optionFastFloppy },
 	{ "pref_storage_floppydisks_imagedir", 0 },
 	{ "pref_storage_floppydisks_writeprotection", _optionWriteProtectFloppy },
-	{ "pref_storage_harddisks_acsiimage", 0 },
-	{ "pref_storage_harddisks_bootfromharddisk", 0 },
-	{ "pref_storage_harddisks_gemdosdrive", 0 },
-	{ "pref_storage_harddisks_gemdoswriteprotection", 0 },
-	{ "pref_storage_harddisks_idemasterimage", 0 },
-	{ "pref_storage_harddisks_ideslaveimage", 0 },
+	{ "pref_storage_harddisks_acsiimage", _optionACSIImage },
+	{ "pref_storage_harddisks_acsi_attach", _optionACSIAttach },
+	{ "pref_storage_harddisks_bootfromharddisk", _optionBootFromHD },
+	{ "pref_storage_harddisks_gemdosdrive", _optionGEMDOSFolder },
+	{ "pref_storage_harddisks_gemdosdrive_attach", _optionGEMDOSAttach},
+	{ "pref_storage_harddisks_gemdoswriteprotection", _optionGEMDOSWriteProtection },
+	{ "pref_storage_harddisks_idemasterimage", _optionIDEMasterImage },
+	{ "pref_storage_harddisks_idemaster_attach", _optionIDEMasterAttach },
+	{ "pref_storage_harddisks_ideslaveimage", _optionIDESlaveImage },
+	{ "pref_storage_harddisks_ideslave_attach", _optionIDESlaveAttach },
 	{ "pref_sound_enabled", _optionSetSoundEnabled  },
 	{ "pref_sound_quality", _optionSetSoundQuality },
 	{ "pref_sound_synchronize_enabled", _optionSetSoundSync },

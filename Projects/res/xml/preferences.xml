@@ -359,24 +359,52 @@
 		</PreferenceCategory>			
 	    <PreferenceCategory 
 	        android:title="@string/pref_storage_harddisks_category"
-			android:enabled="false"
+			android:enabled="true"
 	        android:key="pref_storage_harddisks_category">
-			<EditTextPreference
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_storage_harddisks_acsi_attach"
+				android:title="@string/harddisks_acsi_attach"
+				android:summaryOn="@string/harddisks_acsi_attach_summary"
+				android:summaryOff="@string/harddisks_acsi_attach_summary"
+				android:defaultValue="false" />
+			<Preference
 				android:persistent="true"
 				android:key="pref_storage_harddisks_acsiimage"
 				android:title="@string/harddisks_acsiimage"
 				android:defaultValue="none" />
-			<EditTextPreference
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_storage_harddisks_idemaster_attach"
+				android:title="@string/harddisks_idemaster_attach"
+				android:summaryOn="@string/harddisks_idemaster_attach_summary"
+				android:summaryOff="@string/harddisks_idemaster_attach_summary"
+				android:defaultValue="false" />						
+			<Preference
 				android:persistent="true"
 				android:key="pref_storage_harddisks_idemasterimage"
 				android:title="@string/harddisks_idemasterimage"
 				android:defaultValue="none" />
-			<EditTextPreference
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_storage_harddisks_ideslave_attach"
+				android:title="@string/harddisks_ideslave_attach"
+				android:summaryOn="@string/harddisks_ideslave_attach_summary"
+				android:summaryOff="@string/harddisks_ideslave_attach_summary"
+				android:defaultValue="false" />						
+			<Preference
 				android:persistent="true"
 				android:key="pref_storage_harddisks_ideslaveimage"
 				android:title="@string/harddisks_ideslaveimage"
 				android:defaultValue="none" />
-			<EditTextPreference
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_storage_harddisks_gemdosdrive_attach"
+				android:title="@string/harddisks_gemdosdrive_attach"
+				android:summaryOn="@string/harddisks_gemdosdrive_attach_summary"
+				android:summaryOff="@string/harddisks_gemdosdrive_attach_summary"
+				android:defaultValue="false" />
+			<Preference
 				android:persistent="true"
 				android:key="pref_storage_harddisks_gemdosdrive"
 				android:title="@string/harddisks_gemdosdrive"

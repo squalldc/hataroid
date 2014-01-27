@@ -69,9 +69,17 @@
     <string name="floppydisks_fastfloppyaccess_summary">Speed up floppy disc access (may cause incompatibilities)</string>
     <string name="floppydisks_writeprotection">Write protection</string>
     <string name="harddisks_acsiimage">ACSI HD image</string>
+    <string name="harddisks_acsi_attach">Attach ACSI HD</string>
+    <string name="harddisks_acsi_attach_summary">Connect the ACSI HD to the emulated system</string>
     <string name="harddisks_idemasterimage">IDE HD master image</string>
+    <string name="harddisks_idemaster_attach">Attach IDE Master</string>
+    <string name="harddisks_idemaster_attach_summary">Connect the IDE Master HD to the emulated system</string>
     <string name="harddisks_ideslaveimage">IDE HD slave image</string>
-    <string name="harddisks_gemdosdrive">GEMDOS drive</string>
+    <string name="harddisks_ideslave_attach">Attach IDE Slave</string>
+    <string name="harddisks_ideslave_attach_summary">Connect the IDE Slave HD to the emulated system</string>
+    <string name="harddisks_gemdosdrive">GEMDOS drive directory</string>
+    <string name="harddisks_gemdosdrive_attach">Attach GEMDOS drive</string>
+    <string name="harddisks_gemdosdrive_attach_summary">Connect the GEMDOS drive to the emulated system</string>
     <string name="harddisks_gemdoswriteprotection">GEMDOS drive write protection</string>
     <string name="harddisks_bootfromharddisk">Boot from HD</string>
     <string name="harddisks_bootfromharddisk_summary">Executes the AUTO folder on the hard disk</string>
@@ -134,5 +142,9 @@
     <string name="mousespeed">Mouse Emulation Speed</string>
     <string name="AppDescription">Atari ST Emulator</string>
     <string name="title_activity_help">About Hataroid</string>
+    <string name="select">Select</string>
+    <string name="device">Device</string>
+    <string name="device_kitkat_immersive">Immersive Mode</string>
+    <string name="device_kitkat_immersive_summary">Enable Immersive Mode (Android Kit Kat or newer required)</string>
 
 </resources>

@@ -19,11 +19,21 @@ import com.RetroSoft.Hataroid.FileBrowser.FileBrowser;
 
 public class Settings extends PreferenceActivity implements OnSharedPreferenceChangeListener
 {
-	private static final int FILEACTIVITYRESULT_STTOSIMAGE = 1;
-	private static final int FILEACTIVITYRESULT_STETOSIMAGE = 2;
+	private static final int FILEACTIVITYRESULT_STTOSIMAGE		= 1;
+	private static final int FILEACTIVITYRESULT_STETOSIMAGE		= 2;
+	private static final int FILEACTIVITYRESULT_ACSI_IMAGE		= 3;
+	private static final int FILEACTIVITYRESULT_IDEMASTER_IMAGE	= 4;
+	private static final int FILEACTIVITYRESULT_IDESLAVE_IMAGE	= 5;
+	private static final int FILEACTIVITYRESULT_GEMDOS_FOLDER	= 6;
 
-	private static final String kPrefName_ST_TosImage = "pref_system_tos";
-	private static final String kPrefName_STE_TosImage = "pref_system_tos_ste";
+	public static final String kPrefName_ST_TosImage		= "pref_system_tos";
+	public static final String kPrefName_STE_TosImage		= "pref_system_tos_ste";
+
+	public static final String kPrefName_ACSI_Image			= "pref_storage_harddisks_acsiimage";
+	public static final String kPrefName_IDEMaster_Image	= "pref_storage_harddisks_idemasterimage";
+	public static final String kPrefName_IDESlave_Image		= "pref_storage_harddisks_ideslaveimage";
+
+	public static final String kPrefName_GEMDOS_Folder		= "pref_storage_harddisks_gemdosdrive";
 
 	@Override protected void onCreate(Bundle savedInstanceState)
 	{		
@@ -40,14 +50,24 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		}
 
 		// add rom file chooser hooks
-		linkFileSelector(kPrefName_ST_TosImage, FILEACTIVITYRESULT_STTOSIMAGE);
-		linkFileSelector(kPrefName_STE_TosImage, FILEACTIVITYRESULT_STETOSIMAGE);
+		linkFileSelector(kPrefName_ST_TosImage, FILEACTIVITYRESULT_STTOSIMAGE, false, false);
+		linkFileSelector(kPrefName_STE_TosImage, FILEACTIVITYRESULT_STETOSIMAGE, false, false);
+		
+		// add hd image file chooser hooks
+		linkFileSelector(kPrefName_ACSI_Image, FILEACTIVITYRESULT_ACSI_IMAGE, true, false);
+		linkFileSelector(kPrefName_IDEMaster_Image, FILEACTIVITYRESULT_IDEMASTER_IMAGE, true, false);
+		linkFileSelector(kPrefName_IDESlave_Image, FILEACTIVITYRESULT_IDESLAVE_IMAGE, true, false);
+		
+		// gemdos folder
+		linkFileSelector(kPrefName_GEMDOS_Folder, FILEACTIVITYRESULT_GEMDOS_FOLDER, true, true);
 	}
 	
-	void linkFileSelector(String prefKey, int fileResultID)
+	void linkFileSelector(String prefKey, int fileResultID, boolean allFiles, boolean selectFolder)
 	{
 		final Settings ctx = this;
 		final int resultID = fileResultID;
+		final boolean allowAllFiles = allFiles;
+		final boolean chooseFolder = selectFolder;
 
 		Preference fileSelector = (Preference)findPreference(prefKey);
 		fileSelector.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
@@ -55,7 +75,8 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		        Intent fileBrowser = new Intent(ctx, FileBrowser.class);
 		        fileBrowser.putExtra(FileBrowser.CONFIG_OPENZIPS, false);
 		        fileBrowser.putExtra(FileBrowser.CONFIG_RESETST, false);
-		        fileBrowser.putExtra(FileBrowser.CONFIG_EXT, new String [] {".img", ".rom"});
+		        fileBrowser.putExtra(FileBrowser.CONFIG_SELECTFOLDER, chooseFolder);
+		        fileBrowser.putExtra(FileBrowser.CONFIG_EXT, allowAllFiles ? new String[] {"*"} : new String[] {".img", ".rom"});
 		        ctx.startActivityForResult(fileBrowser, resultID);
 				return true;
 			}
@@ -64,23 +85,28 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 
 	@Override protected void onActivityResult(int requestCode, int resultCode, Intent data)
 	{
+		String key = null;
 		switch (requestCode)
 		{
-			case FILEACTIVITYRESULT_STTOSIMAGE:
-			case FILEACTIVITYRESULT_STETOSIMAGE:
+			case FILEACTIVITYRESULT_STTOSIMAGE:			key = kPrefName_ST_TosImage; break;
+			case FILEACTIVITYRESULT_STETOSIMAGE:		key = kPrefName_STE_TosImage; break;
+			case FILEACTIVITYRESULT_ACSI_IMAGE:			key = kPrefName_ACSI_Image; break;
+			case FILEACTIVITYRESULT_IDEMASTER_IMAGE:	key = kPrefName_IDEMaster_Image; break;
+			case FILEACTIVITYRESULT_IDESLAVE_IMAGE:		key = kPrefName_IDESlave_Image; break;
+			case FILEACTIVITYRESULT_GEMDOS_FOLDER:		key = kPrefName_GEMDOS_Folder; break;
+		}
+		
+		if (key != null)
+		{
+			if (resultCode == RESULT_OK)
 			{
-				if (resultCode == RESULT_OK)
-				{
-					String tosPath = data.getStringExtra(FileBrowser.RESULT_PATH);
-					SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-					Editor ed = prefs.edit();
-					String key = (requestCode==FILEACTIVITYRESULT_STTOSIMAGE)?kPrefName_ST_TosImage:kPrefName_STE_TosImage;
-					ed.putString(key, tosPath);
-					ed.commit();
+				String tosPath = data.getStringExtra(FileBrowser.RESULT_PATH);
+				SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+				Editor ed = prefs.edit();
+				ed.putString(key, tosPath);
+				ed.commit();
 
-					onSharedPreferenceChanged(prefs, key);
-				}
-				break;
+				onSharedPreferenceChanged(prefs, key);
 			}
 		}
 	}

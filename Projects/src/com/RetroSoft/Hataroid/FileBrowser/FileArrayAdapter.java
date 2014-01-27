@@ -29,7 +29,11 @@ public class FileArrayAdapter extends ArrayAdapter<FileListItem>
 	
 	public FileListItem getItem(int i)
 	{
-		return _items.get(i);
+		if (_items != null && i < _items.size())
+		{
+			return _items.get(i);
+		}
+		return null;
 	}
 	
 	@Override public View getView(int position, View convertView, ViewGroup parent)

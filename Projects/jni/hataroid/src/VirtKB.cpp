@@ -1663,6 +1663,8 @@ void VirtKB_SetControlAlpha(float alpha)
 	s_QuickKeyAlpha = alpha;
 	s_VkbAlpha = alpha;
 	s_recreateQuickKeys = true;
+
+	VirtKB_UpdateVkbVerts();
 }
 
 void VirtKB_SetJoystickSize(float size)

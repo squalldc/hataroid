@@ -1,3 +1,7 @@
+version 1.38
+- add hard disk support
+- fix fast floppy access
+
 version 1.37
 - added turbo speed toggle (top right button)
 - added keep screen awake option (default: off)

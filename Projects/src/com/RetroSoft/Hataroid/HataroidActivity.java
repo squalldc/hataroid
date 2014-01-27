@@ -19,6 +19,7 @@ import android.content.res.XmlResourceParser;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -293,10 +294,23 @@ public class HataroidActivity extends Activity
 		}
 		else
 		{
+			_setupImmersiveMode();
+
 			if (_lostFocus)
 			{
 				_resume();
 			}
+		}
+	}
+
+	void _setupImmersiveMode()
+	{
+		try
+		{
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
 		}
 	}
 	
