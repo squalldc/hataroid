@@ -34,6 +34,8 @@ public class FileBrowser extends ListActivity
 	public static final String CONFIG_EXT = "Config_Ext";
 	public static final String CONFIG_RESETST = "Config_ResetST";
 	public static final String CONFIG_SELECTFOLDER = "Config_SelectFolder";
+	public static final String CONFIG_PREFLASTITEMPATH = "Config_PrefLastItemPath";
+	public static final String CONFIG_PREFLASTITEMNAME = "Config_PrefLastItemName";
 	
 	public static final String RESULT_PATH = "ResultPath";
 	public static final String RESULT_ZIPPATH = "ResultZipPath";
@@ -42,6 +44,9 @@ public class FileBrowser extends ListActivity
 
 	private static final String LastFloppyDirItemPathKey = "pref_storage_floppydisks_lastdir_itempath";
 	private static final String LastFloppyDirItemNameKey = "pref_storage_floppydisks_lastdir_itemname";
+
+	public static final String LastTOSDirItemPathKey = "pref_system_tosimage_lastdir_itempath";
+	public static final String LastTOSDirItemNameKey = "pref_system_tosimage_lastdir_itemname";
 
 	private static boolean		_firstCreate = true;
 
@@ -56,6 +61,8 @@ public class FileBrowser extends ListActivity
 	private boolean				_openZips = true;
 	private boolean				_resetST = true;
 	private boolean				_selectFolder = false;
+	private String				_prefLastItemPathKey = LastFloppyDirItemPathKey;
+	private String				_prefLastItemNameKey = LastFloppyDirItemNameKey;
 	
 	private SelectFolderClickListener	_selectFolderListener = null;
 
@@ -77,12 +84,12 @@ public class FileBrowser extends ListActivity
 		if (_firstCreate)
 		{
 	    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-	    	_savedPath = prefs.getString(LastFloppyDirItemPathKey, "");
+	    	_savedPath = prefs.getString(_prefLastItemPathKey, "");
 	    	if (_savedPath.length() == 0)
 	    	{
 	    		_savedPath = null;
 	    	}
-	    	lastItemName = prefs.getString(LastFloppyDirItemNameKey, "");
+	    	lastItemName = prefs.getString(_prefLastItemNameKey, "");
 	    	if (lastItemName.length() == 0)
 	    	{
 	    		lastItemName = null;
@@ -163,7 +170,13 @@ public class FileBrowser extends ListActivity
 			_openZips = b.getBoolean(CONFIG_OPENZIPS, true);
 			_resetST = b.getBoolean(CONFIG_RESETST, true);
 			_selectFolder = b.getBoolean(CONFIG_SELECTFOLDER, false);
+			
+			_prefLastItemPathKey = b.getString(CONFIG_PREFLASTITEMPATH);
+			_prefLastItemNameKey = b.getString(CONFIG_PREFLASTITEMNAME);
 		}
+
+		if (_prefLastItemPathKey == null) { _prefLastItemPathKey = LastFloppyDirItemPathKey; }
+		if (_prefLastItemNameKey == null) { _prefLastItemNameKey = LastFloppyDirItemNameKey; }
 		
 		if (_openZips && !_allowAllFiles())
 		{
@@ -197,13 +210,13 @@ public class FileBrowser extends ListActivity
 		_prevFirstVisibleItem = v.getFirstVisiblePosition();
 
 		FileListItem item = (FileListItem)v.getItemAtPosition(_prevFirstVisibleItem);
-		if (item != null)
+		if (item != null && _prefLastItemPathKey != null && _prefLastItemNameKey != null)
 		{
 			String itemname = item.getName();
 	    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 			Editor ed = prefs.edit();
-			ed.putString(LastFloppyDirItemPathKey, (_savedPath == null) ? "" : _savedPath);
-			ed.putString(LastFloppyDirItemNameKey, (itemname == null) ? "" : itemname);
+			ed.putString(_prefLastItemPathKey, (_savedPath == null) ? "" : _savedPath);
+			ed.putString(_prefLastItemNameKey, (itemname == null) ? "" : itemname);
 			ed.commit();
 		}
 

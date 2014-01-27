@@ -50,24 +50,25 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		}
 
 		// add rom file chooser hooks
-		linkFileSelector(kPrefName_ST_TosImage, FILEACTIVITYRESULT_STTOSIMAGE, false, false);
-		linkFileSelector(kPrefName_STE_TosImage, FILEACTIVITYRESULT_STETOSIMAGE, false, false);
+		linkFileSelector(kPrefName_ST_TosImage, FILEACTIVITYRESULT_STTOSIMAGE, false, false, true);
+		linkFileSelector(kPrefName_STE_TosImage, FILEACTIVITYRESULT_STETOSIMAGE, false, false, true);
 		
 		// add hd image file chooser hooks
-		linkFileSelector(kPrefName_ACSI_Image, FILEACTIVITYRESULT_ACSI_IMAGE, true, false);
-		linkFileSelector(kPrefName_IDEMaster_Image, FILEACTIVITYRESULT_IDEMASTER_IMAGE, true, false);
-		linkFileSelector(kPrefName_IDESlave_Image, FILEACTIVITYRESULT_IDESLAVE_IMAGE, true, false);
+		linkFileSelector(kPrefName_ACSI_Image, FILEACTIVITYRESULT_ACSI_IMAGE, true, false, false);
+		linkFileSelector(kPrefName_IDEMaster_Image, FILEACTIVITYRESULT_IDEMASTER_IMAGE, true, false, false);
+		linkFileSelector(kPrefName_IDESlave_Image, FILEACTIVITYRESULT_IDESLAVE_IMAGE, true, false, false);
 		
 		// gemdos folder
-		linkFileSelector(kPrefName_GEMDOS_Folder, FILEACTIVITYRESULT_GEMDOS_FOLDER, true, true);
+		linkFileSelector(kPrefName_GEMDOS_Folder, FILEACTIVITYRESULT_GEMDOS_FOLDER, true, true, false);
 	}
 	
-	void linkFileSelector(String prefKey, int fileResultID, boolean allFiles, boolean selectFolder)
+	void linkFileSelector(String prefKey, int fileResultID, boolean allFiles, boolean selectFolder, boolean tosImage)
 	{
 		final Settings ctx = this;
 		final int resultID = fileResultID;
 		final boolean allowAllFiles = allFiles;
 		final boolean chooseFolder = selectFolder;
+		final boolean isTosImage = tosImage;
 
 		Preference fileSelector = (Preference)findPreference(prefKey);
 		fileSelector.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
@@ -77,6 +78,12 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		        fileBrowser.putExtra(FileBrowser.CONFIG_RESETST, false);
 		        fileBrowser.putExtra(FileBrowser.CONFIG_SELECTFOLDER, chooseFolder);
 		        fileBrowser.putExtra(FileBrowser.CONFIG_EXT, allowAllFiles ? new String[] {"*"} : new String[] {".img", ".rom"});
+		        if (isTosImage)
+		        {
+			        fileBrowser.putExtra(FileBrowser.CONFIG_PREFLASTITEMPATH, FileBrowser.LastTOSDirItemPathKey);
+			        fileBrowser.putExtra(FileBrowser.CONFIG_PREFLASTITEMNAME, FileBrowser.LastTOSDirItemNameKey);
+		        }
+
 		        ctx.startActivityForResult(fileBrowser, resultID);
 				return true;
 			}
