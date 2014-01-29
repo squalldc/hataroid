@@ -157,19 +157,27 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_libExit(JNI
 {
 	Debug_Printf("----> libExit");
 
+	if (g_jniMainInterface.mainActivityGlobalRefObtained!=0)
+	{
+		(env)->DeleteGlobalRef(g_jniMainInterface.android_mainActivity);
+		g_jniMainInterface.mainActivityGlobalRefObtained = 0;
+	}
+
 	exit(0);
 }
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 {
 	g_jvm = jvm;
+	g_jniMainInterface.mainActivityGlobalRefObtained = 0;
 
 	return JNI_VERSION_1_6;
 }
 
 static void registerJNIcallbacks(JNIEnv * env, jobject activityInstance)
 {
+	jobject mainActivityRef = (env)->NewGlobalRef(activityInstance);
 	g_jniAudioInterface.android_env = env;
-	g_jniAudioInterface.android_mainActivity = activityInstance;
+	g_jniAudioInterface.android_mainActivity = mainActivityRef;
 
 	jclass activityClass = (env)->GetObjectClass(activityInstance);
 
@@ -184,10 +192,12 @@ static void registerJNIcallbacks(JNIEnv * env, jobject activityInstance)
 
 	g_jniMainInterface.android_env = env;
 	g_jniMainInterface.android_mainEmuThreadEnv = NULL;
-	g_jniMainInterface.android_mainActivity = activityInstance;
+	g_jniMainInterface.android_mainActivity = mainActivityRef;
 	g_jniMainInterface.showGenericDialog = (env)->GetMethodID(activityClass, "showGenericDialog", "(IILjava/lang/String;)V");
 	g_jniMainInterface.showOptionsDialog = (env)->GetMethodID(activityClass, "showOptionsDialog", "()V");
 	g_jniMainInterface.quitHataroid = (env)->GetMethodID(activityClass, "quitHataroid", "()V");
+
+	g_jniMainInterface.mainActivityGlobalRefObtained = 1;
 }
 
 static int waitDebugger = 0;
