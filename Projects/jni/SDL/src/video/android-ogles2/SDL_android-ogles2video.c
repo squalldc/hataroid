@@ -43,6 +43,7 @@
 /* globals */
 volatile int g_videoFrameReady = 0;
 volatile int g_curVideoFrame = 0;
+volatile int g_doubleBuffer = 1;
 
 SDL_mutex* g_videoTex_mutex = 0;
 int g_videoTex_width = 0;
@@ -323,7 +324,11 @@ static void ANDROID_OGLES2_UnlockHWSurface(_THIS, SDL_Surface *surface)
 
 static void ANDROID_OGLES2_FlipHWSurface(_THIS, SDL_Surface *surface)
 {
-//	SDL_LockMutex(g_videoTex_mutex); // not worth it, just double buffer it and accept the occasional tear
+	int doubleBuffer = g_doubleBuffer;
+	if (doubleBuffer==0)
+	{
+		SDL_LockMutex(g_videoTex_mutex); // not worth it, just double buffer it and accept the occasional tear
+	}
 
 	SDL_Rect rect;
 	rect.x = 0;
@@ -345,11 +350,21 @@ static void ANDROID_OGLES2_FlipHWSurface(_THIS, SDL_Surface *surface)
 		}
 	#endif
 
-	g_videoTex_pixels = this->hidden->texbuf[g_curVideoFrame];
-	g_curVideoFrame = 1-g_curVideoFrame;
-	g_videoFrameReady = 1;
+	if (doubleBuffer==0)
+	{
+		g_curVideoFrame = 1-g_curVideoFrame;
+		g_videoTex_pixels = this->hidden->texbuf[g_curVideoFrame];
+		g_videoFrameReady = 1;
 
-//	SDL_UnlockMutex(g_videoTex_mutex);
+		SDL_UnlockMutex(g_videoTex_mutex);
+	}
+	else
+	{
+		g_videoTex_pixels = this->hidden->texbuf[g_curVideoFrame];
+		g_curVideoFrame = 1-g_curVideoFrame;
+		g_videoFrameReady = 1;
+	}
+
 	return;
 }
 

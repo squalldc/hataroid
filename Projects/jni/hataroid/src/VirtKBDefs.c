@@ -119,10 +119,12 @@ const VirtKeyDef g_vkbKeyDefs[] =
 	{ VKB_KEY_MOUSERB, "MouseRB", 0xff, { 463, 257, 494, 288, 0, 0, 0, 0 }, FLAG_MOUSEBUTTON, { 463, 257, 495, 288 }, 1, 0 },
 	{ VKB_KEY_NORMALSPEED, "NormalSpd", 0xff, { 496, 257, 527, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_MAIN, { 496, 257, 528, 288 }, 1, 0 },
 	{ VKB_KEY_TURBOSPEED, "TurboSpd", 0xff, { 529, 257, 560, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_MAIN, { 529, 257, 561, 288 }, 1, 0 },
-	{ VKB_KEY_JOYFIRE, "Jfire", 0xff, { 701, 421, 766, 486, 0, 0, 0, 0 }, FLAG_JOY, { 701, 421, 766, 486 }, 1, 0 }
+	{ VKB_KEY_JOYFIRE, "Jfire", 0xff, { 701, 421, 766, 486, 0, 0, 0, 0 }, FLAG_JOY, { 701, 421, 766, 486 }, 1, 0 },
+	{ VKB_KEY_LEFTSHIFT_BUTTON, "Lshift_Btn", 0x2a, { 701, 421, 766, 486, 0, 0, 0, 0 }, FLAG_STKEY, { 701, 421, 766, 486 }, 1, 0 },
+	{ VKB_KEY_RIGHTSHIFT_BUTTON, "Rshift_btn", 0x36, { 701, 421, 766, 486, 0, 0, 0, 0 }, FLAG_STKEY, { 701, 421, 766, 486 }, 1, 0 }
 };
 
-const int g_vkbKeyDefsSize = 115;
+const int g_vkbKeyDefsSize = 117;
 
 const int g_vkbTexFullW		= 768;
 const int g_vkbTexFullH		= 488;

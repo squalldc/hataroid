@@ -31,6 +31,8 @@ extern "C"
 																						jboolean t1, jfloat tx1, jfloat ty1,
 																						jboolean t2, jfloat tx2, jfloat ty2);
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_toggleMouseJoystick(JNIEnv * env, jobject obj);
+
+	extern volatile int g_doubleBuffer;
 };
 
 #define MAKE_DWORD(lo16, hi16)				((((hi16)&0xffff)<<16)|((lo16)&0xffff))
@@ -529,10 +531,12 @@ void VirtKB_CreateQuickKeys()
 
 		int vkbKeysNormal[] = {VKB_KEY_NORMALSPEED, VKB_KEY_Y, VKB_KEY_N, VKB_KEY_1, VKB_KEY_2};
 		int vkbKeysExtra[] = {VKB_KEY_NORMALSPEED, VKB_KEY_Y, VKB_KEY_N, VKB_KEY_1, VKB_KEY_2, VKB_KEY_RETURN};
+		int vkbKeysObsession[] = {VKB_KEY_NORMALSPEED, VKB_KEY_F1, VKB_KEY_F2, VKB_KEY_F3, VKB_KEY_F4};
 		int numNormalKeys = sizeof(vkbKeysNormal)/sizeof(int);
 		int numExtraKeys = sizeof(vkbKeysExtra)/sizeof(int);
-		int* vkbKeys = s_vkbExtraKeys ? vkbKeysExtra : vkbKeysNormal;
-		int numKeys = s_vkbExtraKeys ? numExtraKeys : numNormalKeys;
+		int numObsessionKeys = sizeof(vkbKeysObsession)/sizeof(int);
+		int* vkbKeys = s_vkbObsessionKeys ? vkbKeysObsession : (s_vkbExtraKeys ? vkbKeysExtra : vkbKeysNormal);
+		int numKeys = s_vkbObsessionKeys ? numObsessionKeys : (s_vkbExtraKeys ? numExtraKeys : numNormalKeys);
 
 		int curKeyY = keyOffsetY;
 		for (int i = 0; i < numKeys; ++i)
@@ -553,7 +557,7 @@ void VirtKB_CreateQuickKeys()
 		}
 	}
 
-	// bottom left keys
+	// mouse keys (bottom left)
 	s_mouseButtonIgnoreQuickKeyIdx[0] = -1;
 	s_mouseButtonIgnoreQuickKeyIdx[1] = -1;
 	{
@@ -588,27 +592,31 @@ void VirtKB_CreateQuickKeys()
 	}
 
 	// bottom right keys
+	bool joyMode = (s_curInputFlags & FLAG_JOY) != 0;
+	int obsessionButtonSize = 120;
 	{
 		int keyOffsetX = (int)ceilf(30*sscale);
 		int keyOffsetY = (int)ceilf(30*sscale);
 		int keyBtnSize = (int)ceilf(60*sscale);
 		int keyMarginX = (int)ceilf(2*sscale);
-		int fireBtnSize = (int)ceilf(100*sscale);
+		int fireBtnSize = (int)ceilf((s_vkbObsessionKeys?obsessionButtonSize:100)*sscale);
 
 		int vkbKeysNormal[] = {VKB_KEY_JOYFIRE, VKB_KEY_SPACE, VKB_KEY_LEFTSHIFT, VKB_KEY_ALTERNATE};
 		int vkbKeysExtra[] = {VKB_KEY_JOYFIRE, VKB_KEY_SPACE, VKB_KEY_LEFTSHIFT, VKB_KEY_ALTERNATE, VKB_KEY_CONTROL};
+		int vkbKeysObsession[] = {VKB_KEY_RIGHTSHIFT_BUTTON, VKB_KEY_SPACE};
 		int numNormalKeys = sizeof(vkbKeysNormal)/sizeof(int);
 		int numExtraKeys = sizeof(vkbKeysExtra)/sizeof(int);
-
-		int* vkbKeys = s_vkbExtraKeys ? vkbKeysExtra : vkbKeysNormal;
-		int numKeys = s_vkbExtraKeys ? numExtraKeys : numNormalKeys;
+		int numObsessionKeys = sizeof(vkbKeysObsession)/sizeof(int);
+		int* vkbKeys = (joyMode&&s_vkbObsessionKeys) ? vkbKeysObsession : (s_vkbExtraKeys ? vkbKeysExtra : vkbKeysNormal);
+		int numKeys = (joyMode&&s_vkbObsessionKeys) ? numObsessionKeys : (s_vkbExtraKeys ? numExtraKeys : numNormalKeys);
 
 		int curKeyX = scrwidth - keyOffsetX;
 
 		for (int i = 0; i < numKeys; ++i)
 		{
 			bool isFire = (vkbKeys[i] == VKB_KEY_JOYFIRE);
-			int btnSize = isFire ? fireBtnSize : keyBtnSize;	// the fire button is a special case (bigger hit area)
+			bool isBigButton = isFire || (vkbKeys[i] == VKB_KEY_LEFTSHIFT_BUTTON) || (vkbKeys[i] == VKB_KEY_RIGHTSHIFT_BUTTON);
+			int btnSize = isBigButton ? fireBtnSize : keyBtnSize;	// the fire button is a special case (bigger hit area)
 			if (!addQuickKey(curKeyX-btnSize, scrheight-keyOffsetY-btnSize, curKeyX, scrheight,
 						curKeyX-btnSize, scrheight-keyOffsetY-btnSize, curKeyX, scrheight-keyOffsetY,
 						2, 2, -2, -2, isFire ? ATARIJOY_BITMASK_FIRE : 0,
@@ -620,48 +628,82 @@ void VirtKB_CreateQuickKeys()
 		joyAreaMaxX = curKeyX;
 	}
 
-	// joystick dir - from bottom left
+	if (joyMode && s_vkbObsessionKeys)
 	{
-		int keyOffsetX = (int)ceilf(30*sscale);
-		int keyOffsetY = (int)ceilf(30*sscale);
-		int keyBtnSize = (int)ceilf(s_joystickSize*60.0f*sscale);
-		int keyMarginY = (int)ceilf(2*sscale);
-
-		int joyAreaMinWidth = keyOffsetX + (keyBtnSize*3);
-		int joyAreaMinHeight = keyOffsetY + (keyBtnSize*3);
-
-		if ((scrheight - joyAreaMinY) < joyAreaMinHeight)
+		// bottom left keys
 		{
-			joyAreaMinY = scrheight - joyAreaMinHeight;
+			int keyOffsetX = (int)ceilf(30*sscale);
+			int keyOffsetY = (int)ceilf(30*sscale);
+			int keyBtnSize = (int)ceilf(60*sscale);
+			int keyMarginX = (int)ceilf(2*sscale);
+			int fireBtnSize = (int)ceilf(obsessionButtonSize*sscale);
+
+			int vkbKeys[] = {VKB_KEY_LEFTSHIFT_BUTTON, VKB_KEY_DOWNARROW};
+			int numKeys = sizeof(vkbKeys)/sizeof(int);
+
+			int curKeyX = keyOffsetX;
+
+			for (int i = 0; i < numKeys; ++i)
+			{
+				bool isFire = (vkbKeys[i] == VKB_KEY_JOYFIRE);
+				bool isBigButton = isFire || (vkbKeys[i] == VKB_KEY_LEFTSHIFT_BUTTON) || (vkbKeys[i] == VKB_KEY_RIGHTSHIFT_BUTTON);
+				int btnSize = isBigButton ? fireBtnSize : keyBtnSize;	// the fire button is a special case (bigger hit area)
+				if (!addQuickKey(curKeyX, scrheight-keyOffsetY-btnSize, curKeyX+btnSize, scrheight,
+							curKeyX, scrheight-keyOffsetY-btnSize, curKeyX+btnSize, scrheight-keyOffsetY,
+							2, 2, -2, -2, isFire ? ATARIJOY_BITMASK_FIRE : 0,
+							0, &g_vkbKeyDefs[vkbKeys[i]])) { continue; }
+
+				curKeyX = s_QuickKeys[s_numQuickKeys-1].x2 + keyMarginX + ((i==0)? keyOffsetX : 0);
+			}
+
+			joyAreaMaxX = curKeyX;
 		}
-		if (joyAreaMaxX < joyAreaMinWidth)
+	}
+	else
+	{
+		// joystick dir - from bottom left
 		{
-			joyAreaMaxX = joyAreaMinWidth;
+			int keyOffsetX = (int)ceilf(30*sscale);
+			int keyOffsetY = (int)ceilf(30*sscale);
+			int keyBtnSize = (int)ceilf(s_joystickSize*60.0f*sscale);
+			int keyMarginY = (int)ceilf(2*sscale);
+
+			int joyAreaMinWidth = keyOffsetX + (keyBtnSize*3);
+			int joyAreaMinHeight = keyOffsetY + (keyBtnSize*3);
+
+			if ((scrheight - joyAreaMinY) < joyAreaMinHeight)
+			{
+				joyAreaMinY = scrheight - joyAreaMinHeight;
+			}
+			if (joyAreaMaxX < joyAreaMinWidth)
+			{
+				joyAreaMaxX = joyAreaMinWidth;
+			}
+
+			// left
+			if (!addQuickKey(0, joyAreaMinY, keyOffsetX+keyBtnSize, scrheight,
+						keyOffsetX, scrheight-keyOffsetY-keyBtnSize*2, keyOffsetX+keyBtnSize, scrheight-keyOffsetY-keyBtnSize,
+						2, 2, -2, -2, MAKE_DWORD(ATARIJOY_BITMASK_LEFT, ATARIJOY_BITMASK_RIGHT),
+						0, &g_vkbKeyDefs[VKB_KEY_JOYLEFT])) { }
+
+			// right
+			if (!addQuickKey(keyOffsetX+keyBtnSize*2, joyAreaMinY, joyAreaMaxX, scrheight,
+						keyOffsetX+keyBtnSize*2, scrheight-keyOffsetY-keyBtnSize*2, keyOffsetX+keyBtnSize*3, scrheight-keyOffsetY-keyBtnSize,
+						2, 2, -2, -2, MAKE_DWORD(ATARIJOY_BITMASK_RIGHT, ATARIJOY_BITMASK_LEFT),
+						0, &g_vkbKeyDefs[VKB_KEY_JOYRIGHT])) { }
+
+			// up
+			if (!addQuickKey(0, joyAreaMinY, joyAreaMaxX, scrheight-keyOffsetY-keyBtnSize*2,
+						keyOffsetX+keyBtnSize, scrheight-keyOffsetY-keyBtnSize*3, keyOffsetX+keyBtnSize*2, scrheight-keyOffsetY-keyBtnSize*2,
+						2, 2, -2, -2, MAKE_DWORD(ATARIJOY_BITMASK_UP, ATARIJOY_BITMASK_DOWN),
+						0, &g_vkbKeyDefs[VKB_KEY_JOYUP])) { }
+
+			// down
+			if (!addQuickKey(0, scrheight-keyOffsetY-keyBtnSize, joyAreaMaxX, scrheight,
+						keyOffsetX+keyBtnSize, scrheight-keyOffsetY-keyBtnSize, keyOffsetX+keyBtnSize*2, scrheight-keyOffsetY,
+						2, 2, -2, -2, MAKE_DWORD(ATARIJOY_BITMASK_DOWN, ATARIJOY_BITMASK_UP),
+						0, &g_vkbKeyDefs[VKB_KEY_JOYDOWN])) { }
 		}
-
-		// left
-		if (!addQuickKey(0, joyAreaMinY, keyOffsetX+keyBtnSize, scrheight,
-					keyOffsetX, scrheight-keyOffsetY-keyBtnSize*2, keyOffsetX+keyBtnSize, scrheight-keyOffsetY-keyBtnSize,
-					2, 2, -2, -2, MAKE_DWORD(ATARIJOY_BITMASK_LEFT, ATARIJOY_BITMASK_RIGHT),
-					0, &g_vkbKeyDefs[VKB_KEY_JOYLEFT])) { }
-
-		// right
-		if (!addQuickKey(keyOffsetX+keyBtnSize*2, joyAreaMinY, joyAreaMaxX, scrheight,
-					keyOffsetX+keyBtnSize*2, scrheight-keyOffsetY-keyBtnSize*2, keyOffsetX+keyBtnSize*3, scrheight-keyOffsetY-keyBtnSize,
-					2, 2, -2, -2, MAKE_DWORD(ATARIJOY_BITMASK_RIGHT, ATARIJOY_BITMASK_LEFT),
-					0, &g_vkbKeyDefs[VKB_KEY_JOYRIGHT])) { }
-
-		// up
-		if (!addQuickKey(0, joyAreaMinY, joyAreaMaxX, scrheight-keyOffsetY-keyBtnSize*2,
-					keyOffsetX+keyBtnSize, scrheight-keyOffsetY-keyBtnSize*3, keyOffsetX+keyBtnSize*2, scrheight-keyOffsetY-keyBtnSize*2,
-					2, 2, -2, -2, MAKE_DWORD(ATARIJOY_BITMASK_UP, ATARIJOY_BITMASK_DOWN),
-					0, &g_vkbKeyDefs[VKB_KEY_JOYUP])) { }
-
-		// down
-		if (!addQuickKey(0, scrheight-keyOffsetY-keyBtnSize, joyAreaMaxX, scrheight,
-					keyOffsetX+keyBtnSize, scrheight-keyOffsetY-keyBtnSize, keyOffsetX+keyBtnSize*2, scrheight-keyOffsetY,
-					2, 2, -2, -2, MAKE_DWORD(ATARIJOY_BITMASK_DOWN, ATARIJOY_BITMASK_UP),
-					0, &g_vkbKeyDefs[VKB_KEY_JOYDOWN])) { }
 	}
 
 	VirtKB_UpdateQuickKeyVerts();
@@ -1692,6 +1734,8 @@ void VirtKB_setExtraKeys(bool set)
 
 void VirtKB_setObsessionKeys(bool set)
 {
+	g_doubleBuffer = set ? 0 : 1;
+
 	s_vkbObsessionKeys = set;
 	s_recreateQuickKeys = true;
 }
