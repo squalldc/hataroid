@@ -19,7 +19,6 @@ import android.content.res.XmlResourceParser;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -43,15 +42,14 @@ public class HataroidActivity extends Activity
 	private static final int ACTIVITYRESULT_SETTINGS =3;
 
 	public static HataroidActivity	instance = null;
-
+	private boolean				_lostFocus = false;
+	
 	private HataroidViewGL2		_viewGL2;
 	private Thread				_emuThread;
 
 	private AudioTrack			_audioTrack;
 	private Boolean				_audioPaused = true;
 
-	private boolean				_lostFocus = false;
-	
 	@Override protected void onCreate(Bundle icicle)
 	{
 		super.onCreate(icicle);
@@ -496,26 +494,47 @@ public class HataroidActivity extends Activity
     
     @Override public boolean onPrepareOptionsMenu(Menu menu)
     {
-		// update floppy option strings
-		int [] itemID = { R.id.ejecta, R.id.ejectb };
-		String [] title = { "Eject Floppy A", "Eject Floppy B" };
-		for (int i = 0; i < 2; ++i)
-		{
-			String filename = HataroidNativeLib.emulatorGetCurFloppy(i);
-			String zipname = HataroidNativeLib.emulatorGetCurFloppyZip(i);
-			MenuItem item = menu.findItem(itemID[i]);
-			if (filename.length() == 0 && zipname.length() == 0)
+    	try
+    	{
+			// update floppy option strings
+			int [] itemID = { R.id.ejecta, R.id.ejectb };
+			String [] title = { "Eject Floppy A", "Eject Floppy B" };
+			for (int i = 0; i < 2; ++i)
 			{
-				item.setEnabled(false);
-				item.setTitle(title[i]);
+				String filename = HataroidNativeLib.emulatorGetCurFloppy(i);
+				String zipname = HataroidNativeLib.emulatorGetCurFloppyZip(i);
+				MenuItem item = menu.findItem(itemID[i]);
+				if (filename.length() == 0 && zipname.length() == 0)
+				{
+					item.setEnabled(false);
+					item.setTitle(title[i]);
+				}
+				else
+				{
+					item.setEnabled(true);
+					String [] fileSplit = filename.split("/");
+					item.setTitle(title[i] + " (" + fileSplit[fileSplit.length-1] + (zipname.length()>0 ? ("/" + zipname) : "") + ")");
+				}
 			}
-			else
+			
+			// update pause/unpause option strings
 			{
-				item.setEnabled(true);
-				String [] fileSplit = filename.split("/");
-				item.setTitle(title[i] + " (" + fileSplit[fileSplit.length-1] + (zipname.length()>0 ? ("/" + zipname) : "") + ")");
+				MenuItem item = menu.findItem(R.id.pause);
+				if (item != null)
+				{
+					boolean paused = HataroidNativeLib.emulatorGetUserPaused();
+					
+					String s = getApplicationContext().getResources().getString(paused ? R.string.Unpause : R.string.Pause);
+					item.setTitle(s);
+					item.setTitleCondensed(s);
+				}
 			}
-		}
+    	}
+    	catch (Exception e)
+    	{
+    		e.printStackTrace();
+    	}
+		
 		return super.onPrepareOptionsMenu(menu);
     }
     
@@ -552,12 +571,17 @@ public class HataroidActivity extends Activity
 			}
 			case R.id.coldreset:
 			{
-				HataroidNativeLib.emulatorResetCold();
+				_resetEmu(true);
 				return true;
 			}
 			case R.id.warmreset:
 			{
-				HataroidNativeLib.emulatorResetWarm();
+				_resetEmu(false);
+				return true;
+			}
+			case R.id.pause:
+			{
+				HataroidNativeLib.emulatorToggleUserPaused();
 				return true;
 			}
 			case R.id.quit:
@@ -571,11 +595,6 @@ public class HataroidActivity extends Activity
 		        startActivityForResult(settings, ACTIVITYRESULT_SETTINGS);
 		        return true;
 			}
-			//case R.id.togglemousejoystick:
-			//{
-			//	HataroidNativeLib.toggleMouseJoystick();
-			//	return true;
-			//}
 			case R.id.help:
 			{
 		        Intent help = new Intent(this, HelpActivity.class);
@@ -586,6 +605,18 @@ public class HataroidActivity extends Activity
 			{
 				return super.onOptionsItemSelected(item);
 			}
+		}
+	}
+	
+	void _resetEmu(boolean cold)
+	{
+		if (cold)
+		{
+			HataroidNativeLib.emulatorResetCold();
+		}
+		else
+		{
+			HataroidNativeLib.emulatorResetWarm();
 		}
 	}
 
@@ -607,7 +638,7 @@ public class HataroidActivity extends Activity
 						Boolean coldReset = data.getBooleanExtra(FileBrowser.RESULT_RESETCOLD, false);
 						if (coldReset)
 						{
-							HataroidNativeLib.emulatorResetCold();
+							_resetEmu(true);
 						}
 					}
 					else if (data.hasExtra(FileBrowser.RESULT_RESETWARM))
@@ -615,7 +646,7 @@ public class HataroidActivity extends Activity
 						Boolean coldReset = data.getBooleanExtra(FileBrowser.RESULT_RESETWARM, false);
 						if (coldReset)
 						{
-							HataroidNativeLib.emulatorResetWarm();
+							_resetEmu(false);
 						}
 					}
 				}

@@ -83,6 +83,8 @@ static bool			s_joyMapToArrowKeys = false;
 static int			s_prevZoomPanCount = 0;
 static bool			s_waitInputCleared = false;
 static float		s_joystickSize = 1;
+static bool			s_vkbObsessionKeys = false;
+static bool			s_vkbExtraKeys = false;
 
 static GLuint		s_KbTextureID = 0;
 static int			s_VkbGPUTexWidth = 0;
@@ -525,8 +527,12 @@ void VirtKB_CreateQuickKeys()
 		int keyBtnSize = (int)ceilf(60*sscale);
 		int keyMarginY = (int)ceilf(2*sscale);
 
-		int vkbKeys[] = {VKB_KEY_NORMALSPEED, VKB_KEY_Y, VKB_KEY_N, VKB_KEY_1, VKB_KEY_2};
-		int numKeys = sizeof(vkbKeys)/sizeof(int);
+		int vkbKeysNormal[] = {VKB_KEY_NORMALSPEED, VKB_KEY_Y, VKB_KEY_N, VKB_KEY_1, VKB_KEY_2};
+		int vkbKeysExtra[] = {VKB_KEY_NORMALSPEED, VKB_KEY_Y, VKB_KEY_N, VKB_KEY_1, VKB_KEY_2, VKB_KEY_RETURN};
+		int numNormalKeys = sizeof(vkbKeysNormal)/sizeof(int);
+		int numExtraKeys = sizeof(vkbKeysExtra)/sizeof(int);
+		int* vkbKeys = s_vkbExtraKeys ? vkbKeysExtra : vkbKeysNormal;
+		int numKeys = s_vkbExtraKeys ? numExtraKeys : numNormalKeys;
 
 		int curKeyY = keyOffsetY;
 		for (int i = 0; i < numKeys; ++i)
@@ -589,8 +595,13 @@ void VirtKB_CreateQuickKeys()
 		int keyMarginX = (int)ceilf(2*sscale);
 		int fireBtnSize = (int)ceilf(100*sscale);
 
-		int vkbKeys[] = {VKB_KEY_JOYFIRE, VKB_KEY_SPACE, VKB_KEY_LEFTSHIFT, VKB_KEY_ALTERNATE};
-		int numKeys = sizeof(vkbKeys)/sizeof(int);
+		int vkbKeysNormal[] = {VKB_KEY_JOYFIRE, VKB_KEY_SPACE, VKB_KEY_LEFTSHIFT, VKB_KEY_ALTERNATE};
+		int vkbKeysExtra[] = {VKB_KEY_JOYFIRE, VKB_KEY_SPACE, VKB_KEY_LEFTSHIFT, VKB_KEY_ALTERNATE, VKB_KEY_CONTROL};
+		int numNormalKeys = sizeof(vkbKeysNormal)/sizeof(int);
+		int numExtraKeys = sizeof(vkbKeysExtra)/sizeof(int);
+
+		int* vkbKeys = s_vkbExtraKeys ? vkbKeysExtra : vkbKeysNormal;
+		int numKeys = s_vkbExtraKeys ? numExtraKeys : numNormalKeys;
 
 		int curKeyX = scrwidth - keyOffsetX;
 
@@ -1670,5 +1681,17 @@ void VirtKB_SetControlAlpha(float alpha)
 void VirtKB_SetJoystickSize(float size)
 {
 	s_joystickSize = size;
+	s_recreateQuickKeys = true;
+}
+
+void VirtKB_setExtraKeys(bool set)
+{
+	s_vkbExtraKeys = set;
+	s_recreateQuickKeys = true;
+}
+
+void VirtKB_setObsessionKeys(bool set)
+{
+	s_vkbObsessionKeys = set;
 	s_recreateQuickKeys = true;
 }

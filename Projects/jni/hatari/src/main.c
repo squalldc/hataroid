@@ -725,7 +725,7 @@ static void Main_StatusbarSetup(void)
 		__mf_register((void*)name, 32, __MF_TYPE_GUESS, "SDL keyname");
 #endif
 		keyname = Str_ToUpper(strdup(name));
-		snprintf(message, sizeof(message), "Press %s for Options", keyname);
+		snprintf(message, sizeof(message), "");//Press %s for Options", keyname);
 		free(keyname);
 
 		Statusbar_AddMessage(message, 6000);

@@ -76,6 +76,20 @@
 	    <PreferenceCategory 
 	        android:title="@string/pref_input_keyboard_category"
 	        android:key="pref_input_keyboard_category">
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_input_keyboard_extra_keys"
+				android:title="@string/input_keyboard_extra_keys"
+				android:summaryOn="@string/input_keyboard_extra_keys_summary"
+				android:summaryOff="@string/input_keyboard_extra_keys_summary"
+				android:defaultValue="false" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_input_keyboard_obsession_keys"
+				android:title="@string/input_keyboard_obsession_keys"
+				android:summaryOn="@string/input_keyboard_obsession_keys_summary"
+				android:summaryOff="@string/input_keyboard_obsession_keys_summary"
+				android:defaultValue="false" />
 		</PreferenceCategory>
 	</PreferenceScreen>
 	<PreferenceScreen

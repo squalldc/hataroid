@@ -29,6 +29,8 @@
     <string name="Hataroid_activity">Hataroid</string>
     <string name="Settings">Settings</string>
     <string name="Reset">Reset</string>
+    <string name="Pause">Pause</string>
+    <string name="Unpause">Unpause</string>
     <string name="Disk">Disk</string>
     <string name="FloppyA">Floppy A</string>
     <string name="FloppyB">Floppy B</string>
@@ -128,6 +130,10 @@
     <string name="pref_input_joysticks_category">Joysticks</string>
     <string name="pref_input_mouse_category">Mouse</string>
     <string name="pref_input_keyboard_category">Keyboard</string>
+    <string name="input_keyboard_extra_keys">Additional on-screen keys</string>
+    <string name="input_keyboard_extra_keys_summary">Show extra quick keys in the UI. NOTE: the keys may not all fit on your device.</string>
+    <string name="input_keyboard_obsession_keys">Obsession mode keys</string>
+    <string name="input_keyboard_obsession_keys_summary">Swaps the joystick out with keys suited for Obsession</string>
     <string name="pref_input_onscreen_category">On-Screen</string>
     <string name="input_joystick_port">On-screen Joystick Port</string>
     <string name="input_joysticks_autofire">Autofire</string>

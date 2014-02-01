@@ -36,6 +36,8 @@ const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
 #include "debugcpu.h"
 #include "debugdsp.h"
 
+extern void setUserEmuPaused(int paused);
+
 /*-----------------------------------------------------------------------*/
 /**
  * Reset ST emulator states, chips, interrupts and registers.
@@ -43,6 +45,8 @@ const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
  */
 static int Reset_ST(bool bCold)
 {
+	setUserEmuPaused(0);
+
 	if (bCold)
 	{
 		int ret;

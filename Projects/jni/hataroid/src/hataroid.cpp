@@ -42,6 +42,9 @@ extern "C"
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorEjectFloppy(JNIEnv * env, jobject obj, jint floppy);
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorInsertFloppy(JNIEnv * env, jobject obj, jint floppy, jstring filename, jstring zippath);
 
+	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorToggleUserPaused(JNIEnv * env, jobject obj);
+	JNIEXPORT jboolean JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorGetUserPaused(JNIEnv * env, jobject obj);
+
 	JNIEXPORT jstring JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorGetCurFloppy(JNIEnv * env, jobject obj, jint floppy);
 	JNIEXPORT jstring JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorGetCurFloppyZip(JNIEnv * env, jobject obj, jint floppy);
 
@@ -62,6 +65,7 @@ extern "C"
 	volatile int g_lastDialogResult = -1;
 };
 
+static volatile bool emuUserReady = true;
 static volatile bool emuReady = false;
 static volatile bool emuInited = false;
 static volatile bool videoReady = false;
@@ -138,6 +142,11 @@ void RequestAndWaitQuit()
 	}
 }
 
+void setUserEmuPaused(int pause)
+{
+	emuUserReady = (pause==0);
+}
+
 int hasDialogResult() { return g_lastDialogResultValid; }
 int getDialogResult() { return g_lastDialogResult; }
 void clearDialogResult() { g_lastDialogResultValid = 0; g_lastDialogResult = -1; }
@@ -200,7 +209,7 @@ static void _checkEmuReady()
 {
 	if (!emuReady)
 	{
-		emuReady = videoReady && emuInited && envInited;
+		emuReady = videoReady && emuInited && envInited;// && emuUserReady;
 		if (emuReady)
 		{
 			VirtKB_EnableInput(true);
@@ -265,7 +274,10 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationMa
 	{
 		if (emuReady)
 		{
-			hatari_main_doframe();
+			if (emuUserReady)
+			{
+				hatari_main_doframe();
+			}
 			SDL_UpdateRects(sdlscrn, 0, 0);
 			processEmuCommands();
 		}
@@ -303,6 +315,24 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationPa
 
 	emuReady = false;
 	videoReady = false;
+}
+
+JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorToggleUserPaused(JNIEnv * env, jobject obj)
+{
+	Debug_Printf("----> emulation USER Pause toggle");
+
+	setTurboSpeed(0);
+	//VirtKB_EnableInput(false);
+
+	//emuReady = false;
+	setUserEmuPaused(emuUserReady);
+
+	//_checkEmuReady();
+}
+
+JNIEXPORT jboolean JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorGetUserPaused(JNIEnv * env, jobject obj)
+{
+	return (emuUserReady) ? JNI_FALSE : JNI_TRUE;
 }
 
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationResume(JNIEnv * env, jobject obj)
@@ -604,6 +634,16 @@ void _optionGEMDOSWriteProtection(const OptionSetting *setting, const char *val,
 	else if (optionVal == 1) { ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_ON; } // on
 	else if (optionVal == 2) { ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_AUTO; } // auto
 }
+void _optionSetVKBExtraKeys(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	bool extraKeys = (strcmp(val, "true")==0);
+	VirtKB_setExtraKeys(extraKeys);
+}
+void _optionSetVKBObsessionKeys(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	bool extraKeys = (strcmp(val, "true")==0);
+	VirtKB_setObsessionKeys(extraKeys);
+}
 
 static const OptionSetting s_OptionsMap[] =
 {
@@ -657,6 +697,8 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_sound_quality", _optionSetSoundQuality },
 	{ "pref_sound_synchronize_enabled", _optionSetSoundSync },
 	{ "pref_sound_ymvoicesmixing", _optionSetYMVoicesMixing },
+	{ "pref_input_keyboard_extra_keys", _optionSetVKBExtraKeys },
+	{ "pref_input_keyboard_obsession_keys", _optionSetVKBObsessionKeys },
 };
 static const int s_NumOptionMaps = sizeof(s_OptionsMap)/sizeof(OptionSetting);
 
@@ -799,6 +841,7 @@ void EmuCommandResetCold_Run(EmuCommand *command)
 {
 	Debug_Printf("----> Cold Reset");
 	setTurboSpeed(0);
+	setUserEmuPaused(0);
 	Reset_Cold();
 }
 
@@ -812,6 +855,7 @@ void EmuCommandResetWarm_Run(EmuCommand *command)
 {
 	Debug_Printf("----> Warm Reset");
 	setTurboSpeed(0);
+	setUserEmuPaused(0);
 	Reset_Warm();
 }
 

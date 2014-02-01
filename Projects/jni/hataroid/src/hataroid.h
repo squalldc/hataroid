@@ -49,6 +49,7 @@ extern int hasEmuCommands();
 extern void processEmuCommands();
 extern void clearEmuCommands();
 extern void RequestAndWaitQuit();
+extern void setUserEmuPaused(int pause);
 
 
 #ifdef __cplusplus

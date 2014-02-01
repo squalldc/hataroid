@@ -21,6 +21,8 @@ public class HataroidNativeLib
     public static native void emulatorSetOptions(String[] keys, String[] vals);
 	public static native void emulatorResetCold();
 	public static native void emulatorResetWarm();
+	public static native void emulatorToggleUserPaused();
+	public static native boolean emulatorGetUserPaused();
 	public static native void emulatorEjectFloppy(int drive);
 	public static native void emulatorInsertFloppy(int drive, String filename, String zipPath);
 	
