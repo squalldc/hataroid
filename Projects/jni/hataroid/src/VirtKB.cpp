@@ -137,7 +137,7 @@ static float		s_vkbZoom = 1.0f;
 static float		s_vkbPanX = 0;
 static float		s_vkbPanY = 0;
 
-static int			s_curScreenZoomPreset = ScreenZoom_Fit;
+static int			s_curScreenZoomPreset = -1;
 static int			s_curKeyboardZoomPreset = VkbZoom_Fit;
 
 static int			s_mouseButtonIgnoreQuickKeyIdx[2]; // HACK
@@ -357,7 +357,11 @@ void VirtKB_Create()
 	VirtKB_UpdateVkbVerts();
 	VirtKB_SetupShader();
 
-	Renderer_setZoomPreset(s_curScreenZoomPreset);
+	if (s_curScreenZoomPreset == -1)
+	{
+		s_curScreenZoomPreset = ScreenZoom_Fit;
+		Renderer_setZoomPreset(s_curScreenZoomPreset);
+	}
 }
 
 void VirtKB_DestroyTextures()

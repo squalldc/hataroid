@@ -563,9 +563,9 @@ void _optionSetBilinearFilter(const OptionSetting *setting, const char *val, Emu
 void _optionSetFullScreenStretch(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	bool fullscreen = (strcmp(val, "true")==0);
-	Renderer_setFullScreenStretch(fullscreen);
 	if (fullscreen)
 	{
+		Renderer_setFullScreenStretch(fullscreen);
 		VirtKB_setScreenZoomMode(false);
 	}
 }
