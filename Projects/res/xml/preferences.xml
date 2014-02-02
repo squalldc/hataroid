@@ -72,6 +72,20 @@
 				robobunny:unitsLeft=""
 				robobunny:unitsRight="%"
 			/>
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_input_onscreen_hide_all"
+				android:title="@string/input_onscreen_hide_all"
+				android:summaryOn="@string/input_onscreen_hide_all_summary"
+				android:summaryOff="@string/input_onscreen_hide_all_summary"
+				android:defaultValue="false" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_input_onscreen_only_joy"
+				android:title="@string/input_onscreen_only_joy"
+				android:summaryOn="@string/input_onscreen_only_joy_summary"
+				android:summaryOff="@string/input_onscreen_only_joy_summary"
+				android:defaultValue="false" />
 		</PreferenceCategory>
 	    <PreferenceCategory 
 	        android:title="@string/pref_input_keyboard_category"
@@ -362,7 +376,7 @@
 				android:title="@string/floppydisks_fastfloppyaccess"
 				android:summaryOn="@string/floppydisks_fastfloppyaccess_summary"
 				android:summaryOff="@string/floppydisks_fastfloppyaccess_summary"
-				android:defaultValue="true" />
+				android:defaultValue="false" />
 			<ListPreference android:key="pref_storage_floppydisks_writeprotection"
 				android:persistent="true"
 				android:entries="@array/pref_storage_floppydisks_writeprotection_entries"

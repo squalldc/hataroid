@@ -42,6 +42,8 @@ extern void Renderer_setFullScreenStretch(bool fs);
 extern bool Renderer_isFullScreenStretch();
 extern void Renderer_refreshDispParams();
 
+extern void Renderer_setZoomPreset(int preset);
+
 extern unsigned int roundUpPower2(unsigned int v);
 
 #endif //__NATIVERENDERER_OGLES2_H__

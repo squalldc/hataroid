@@ -74,6 +74,8 @@ static volatile bool envInited = false;
 static int s_turboSpeed = 0;
 static int s_turboPrevFrameSkips = 0;
 
+static bool _altUpdate = false;
+
 static void SetEmulatorOptions(JNIEnv * env, jobjectArray keyarray, jobjectArray valarray, bool apply, bool init, bool queueCommand);
 
 //---------------
@@ -274,12 +276,15 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationMa
 	{
 		if (emuReady)
 		{
-			if (emuUserReady)
+			if (!_altUpdate)
 			{
-				hatari_main_doframe();
+				if (emuUserReady)
+				{
+					hatari_main_doframe();
+				}
+				SDL_UpdateRects(sdlscrn, 0, 0);
+				processEmuCommands();
 			}
-			SDL_UpdateRects(sdlscrn, 0, 0);
-			processEmuCommands();
 		}
 		else
 		{
@@ -362,7 +367,16 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_onDrawFrame
 {
 	if (emuReady)
 	{
-		//hatari_main_doframe();
+		if (_altUpdate)
+		{
+			if (emuUserReady)
+			{
+				hatari_main_doframe();
+			}
+			SDL_UpdateRects(sdlscrn, 0, 0);
+			processEmuCommands();
+		}
+
 		renderFrame();
 	}
 }
@@ -641,8 +655,19 @@ void _optionSetVKBExtraKeys(const OptionSetting *setting, const char *val, EmuCo
 }
 void _optionSetVKBObsessionKeys(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
-	bool extraKeys = (strcmp(val, "true")==0);
-	VirtKB_setObsessionKeys(extraKeys);
+	bool valSet = (strcmp(val, "true")==0);
+	_altUpdate = valSet;
+	VirtKB_setObsessionKeys(valSet);
+}
+void _optionSetVKBHideAll(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	bool valSet = (strcmp(val, "true")==0);
+	VirtKB_setHideAll(valSet);
+}
+void _optionSetVKBJoystickOnly(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	bool valSet = (strcmp(val, "true")==0);
+	VirtKB_setJoystickOnly(valSet);
 }
 
 static const OptionSetting s_OptionsMap[] =
@@ -699,6 +724,8 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_sound_ymvoicesmixing", _optionSetYMVoicesMixing },
 	{ "pref_input_keyboard_extra_keys", _optionSetVKBExtraKeys },
 	{ "pref_input_keyboard_obsession_keys", _optionSetVKBObsessionKeys },
+	{ "pref_input_onscreen_hide_all", _optionSetVKBHideAll},
+	{ "pref_input_onscreen_only_joy", _optionSetVKBJoystickOnly },
 };
 static const int s_NumOptionMaps = sizeof(s_OptionsMap)/sizeof(OptionSetting);
 

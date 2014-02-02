@@ -4,6 +4,25 @@
 #include <GLES2/gl2.h>
 #include "VirtKBDefs.h"
 
+enum
+{
+	ScreenZoom_Fit = 0,
+	ScreenZoom_1,
+	ScreenZoom_2,
+	ScreenZoom_3,
+	ScreenZoom_4,
+	ScreenZoom_Stretch,
+	ScreenZoom_NumOf
+};
+
+enum
+{
+	VkbZoom_Fit = 0,
+	VkbZoom_1,
+	VkbZoom_2,
+	VkbZoom_NumOf
+};
+
 extern int VirtKB_OnSurfaceChanged(int width, int height);
 extern void VirtKB_CleanUp();
 extern void VirtKB_EnableInput(bool enable);
@@ -19,5 +38,7 @@ extern void VirtKB_SetJoystickSize(float size);
 extern void VirtKB_setScreenZoomMode(bool set);
 extern void VirtKB_setExtraKeys(bool set);
 extern void VirtKB_setObsessionKeys(bool set);
+extern void VirtKB_setHideAll(bool set);
+extern void VirtKB_setJoystickOnly(bool set);
 
 #endif /* VIRTKB_H_ */

@@ -1,3 +1,16 @@
+version 1.39
+- mainly requests:
+    - pause/unpause emulation
+    - screen zoom presets toggle (fit, x1, x2, x3, x4, stretch full)
+    - keyboard zoom presets toggle (fit, x1, x2)
+    - remember last tos folder used (separately from disc images folder)
+    - option for additional keys in on-screen keyboard (for gem applications)
+    - on-screen keyboard option suitable for 'obsession'
+    - option to hide all on-screen buttons
+    - option to only show on-screen joystick controls
+
+- If you find a disc doesn't work, please try it out on the desktop version of Hatari 1.70 with the same settings first as there should be no difference in compatibility between Hatari and Hataroid. If they work differently, please let me know.
+
 version 1.38
 - add hard disk support
 - fix fast floppy access

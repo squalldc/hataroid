@@ -111,20 +111,22 @@ const VirtKeyDef g_vkbKeyDefs[] =
 	{ VKB_KEY_JOYFIRE_OLD, "JfireOld", 0xff, { 199, 257, 230, 288, 0, 0, 0, 0 }, FLAG_JOY, { 199, 257, 231, 288 }, 1, 0 },
 	{ VKB_KEY_KEYBOARDZOOM, "KbdZoom", 0xff, { 232, 257, 263, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_VKB, { 232, 257, 264, 288 }, 1, 0 },
 	{ VKB_KEY_KEYBOARDZOOM_SEL, "KbdZoomSel", 0xff, { 265, 257, 296, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_VKB, { 265, 257, 297, 288 }, 1, 0 },
-	{ VKB_KEY_SCREENZOOM, "ScrnZoom", 0xff, { 298, 257, 329, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_SCREEN, { 298, 257, 330, 288 }, 1, 0 },
-	{ VKB_KEY_SCREENZOOM_SEL, "ScrnZoomSel", 0xff, { 331, 257, 362, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_SCREEN, { 331, 257, 363, 288 }, 1, 0 },
+	{ VKB_KEY_SCREENZOOM, "ScrnZoom", 0xff, { 298, 257, 329, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_SCREEN|FLAG_SCREEN2, { 298, 257, 330, 288 }, 1, 0 },
+	{ VKB_KEY_SCREENZOOM_SEL, "ScrnZoomSel", 0xff, { 331, 257, 362, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_SCREEN|FLAG_SCREEN2, { 331, 257, 363, 288 }, 1, 0 },
 	{ VKB_KEY_MOUSETOGGLE, "MJToggle", 0xff, { 364, 257, 395, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_JOY, { 364, 257, 396, 288 }, 1, 0 },
 	{ VKB_KEY_JOYTOGGLE, "MJToggle", 0xff, { 397, 257, 428, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_MOUSE, { 397, 257, 429, 288 }, 1, 0 },
 	{ VKB_KEY_MOUSELB, "MouseLB", 0xff, { 430, 257, 461, 288, 0, 0, 0, 0 }, FLAG_MOUSEBUTTON, { 430, 257, 462, 288 }, 1, 0 },
 	{ VKB_KEY_MOUSERB, "MouseRB", 0xff, { 463, 257, 494, 288, 0, 0, 0, 0 }, FLAG_MOUSEBUTTON, { 463, 257, 495, 288 }, 1, 0 },
 	{ VKB_KEY_NORMALSPEED, "NormalSpd", 0xff, { 496, 257, 527, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_MAIN, { 496, 257, 528, 288 }, 1, 0 },
 	{ VKB_KEY_TURBOSPEED, "TurboSpd", 0xff, { 529, 257, 560, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_MAIN, { 529, 257, 561, 288 }, 1, 0 },
+	{ VKB_KEY_SCREENPRESETS, "ScrnPreset", 0xff, { 562, 257, 593, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_SCREEN2, { 562, 257, 594, 288 }, 1, 0 },
+	{ VKB_KEY_KEYBOARDPRESETS, "VKBPreset", 0xff, { 562, 257, 593, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_VKB, { 562, 257, 594, 288 }, 1, 0 },
 	{ VKB_KEY_JOYFIRE, "Jfire", 0xff, { 701, 421, 766, 486, 0, 0, 0, 0 }, FLAG_JOY, { 701, 421, 766, 486 }, 1, 0 },
 	{ VKB_KEY_LEFTSHIFT_BUTTON, "Lshift_Btn", 0x2a, { 701, 421, 766, 486, 0, 0, 0, 0 }, FLAG_STKEY, { 701, 421, 766, 486 }, 1, 0 },
 	{ VKB_KEY_RIGHTSHIFT_BUTTON, "Rshift_btn", 0x36, { 701, 421, 766, 486, 0, 0, 0, 0 }, FLAG_STKEY, { 701, 421, 766, 486 }, 1, 0 }
 };
 
-const int g_vkbKeyDefsSize = 117;
+const int g_vkbKeyDefsSize = 119;
 
 const int g_vkbTexFullW		= 768;
 const int g_vkbTexFullH		= 488;

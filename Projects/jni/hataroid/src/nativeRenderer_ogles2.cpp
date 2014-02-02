@@ -11,6 +11,7 @@
 #include "nativeRenderer_ogles2.h"
 
 #include "VirtKBDefs.h"
+#include "VirtKB.h"
 
 extern "C"
 {
@@ -80,14 +81,14 @@ static int sTexHeight = 0;
 static GLenum sTexFilter = GL_LINEAR;
 
 static float minZoom = 0.3f;
-static float curZoom = 1.0f;
+static float curZoomX = 1.0f;
+static float curZoomY = 1.0f;
 static float curPanX = 0;
 static float curPanY = 0;
 static bool fullScreen = false;
-static float fsZoomX = 1;
-static float fsZoomY = 1;
 
 static bool dispParamsChanged = true;
+static int _delayedPreset = -1;
 
 GLfloat emuScreenVerts[] =
 {
@@ -422,19 +423,25 @@ bool setupGraphics(int w, int h)
 
 float Renderer_getEmuScreenZoomX()
 {
-	if (fullScreen) { return fsZoomX; }
-	return curZoom;
+	int texW = g_videoTex_width;
+	int emuScrW = g_surface_width;
+
+	GLfloat texWRatio = (float)emuScrW / (float)texW;
+	return curZoomX / texWRatio;
+//	return curZoomX;
 }
 float Renderer_getEmuScreenZoomY()
 {
-	if (fullScreen) { return fsZoomY; }
-	return curZoom;
+	int texH = g_videoTex_height;
+	int emuScrH = g_surface_height;
+
+	GLfloat texHRatio = (float)emuScrH / (float)texH;
+	return curZoomY / texHRatio;
+//	return curZoomY;
 }
 
 void Renderer_zoomEmuScreen(float absChange)
 {
-	if (fullScreen) { return; }
-
 	if (gScrWidth > 0 && gScrHeight > 0)
 	{
 		dispParamsChanged = true;
@@ -442,24 +449,75 @@ void Renderer_zoomEmuScreen(float absChange)
 		float nScale = 2.0f / (float)(gScrWidth + gScrHeight);
 		float deltaZ = absChange * nScale;
 
-		curZoom += deltaZ;
-		if (curZoom < minZoom)
 		{
-			curZoom = minZoom;
+			float ratio = curZoomY / curZoomX;
+			curZoomX += deltaZ;
+			if (curZoomX < minZoom)
+			{
+				curZoomX = minZoom;
+			}
+			curZoomY = ratio * curZoomX;
 		}
+	}
+}
+
+void Renderer_setZoomPreset(int preset)
+{
+	int texW = g_videoTex_width;
+	int texH = g_videoTex_height;
+	int emuScrW = g_surface_width;
+	int emuScrH = g_surface_height;
+
+	if (gScrWidth > 0 && gScrHeight > 0 && emuScrW > 0 && emuScrH > 0)
+	{
+		dispParamsChanged = true;
+		_delayedPreset = -1;
+
+		curPanX = 0;
+		curPanY = 0;
+
+		switch (preset)
+		{
+			case ScreenZoom_1:
+			case ScreenZoom_2:
+			case ScreenZoom_3:
+			case ScreenZoom_4:
+			{
+				curZoomX = (emuScrW*(preset-ScreenZoom_1+1))/(float)gScrWidth;
+				curZoomY = (emuScrH*(preset-ScreenZoom_1+1))/(float)gScrHeight;
+				break;
+			}
+			case ScreenZoom_Stretch:
+			{
+				curZoomX = 1;
+				curZoomY = 1;
+				break;
+			}
+			case ScreenZoom_Fit:
+			default:
+			{
+				curZoomY = 1;
+				curZoomX = curZoomY * ((float)emuScrW/emuScrH) * ((float)gScrHeight/gScrWidth);
+				break;
+			}
+		}
+
+		//Debug_Printf("******** SET ZOOOM PRESET: %d, %fx%f\n", preset, curZoomX, curZoomY);
+	}
+	else
+	{
+		_delayedPreset = preset;
 	}
 }
 
 void Renderer_panEmuScreen(float absX, float absY)
 {
-	if (fullScreen) { return; }
-
 	if (gScrWidth > 0 && gScrHeight > 0)
 	{
 		dispParamsChanged = true;
-		float nScale = 2.0f / (float)(gScrWidth + gScrHeight);
-		float dX = absX * nScale;
-		float dY = absY * nScale;
+
+		float dX = (2.0f*absX) / (float)gScrWidth;
+		float dY = (2.0f*absY) / (float)gScrHeight;
 
 		curPanX += dX;
 		curPanY -= dY;
@@ -469,6 +527,14 @@ void Renderer_panEmuScreen(float absX, float absY)
 void Renderer_setFullScreenStretch(bool fs)
 {
 	fullScreen = fs;
+	if (fullScreen)
+	{
+		Renderer_setZoomPreset(ScreenZoom_Stretch);
+	}
+	else
+	{
+		Renderer_setZoomPreset(ScreenZoom_Fit);
+	}
 	dispParamsChanged = true;
 }
 
@@ -484,71 +550,29 @@ void Renderer_refreshDispParams()
 
 void updateDispParams(int scrWidth, int scrHeight, int texWidth, int texHeight)
 {
-	dispParamsChanged = false;
-
-	GLfloat *v = emuScreenVerts;
-
-	GLfloat texX = 0.0f;
-	GLfloat texY = 0.0f;
-	GLfloat texW = (float)scrWidth / (float)texWidth;
-	GLfloat texH = (float)scrHeight / (float)texHeight;
-
-	if (fullScreen)
+	if (texWidth > 0 && texHeight > 0)
 	{
-		 v[0] = -1;  v[1] = 1;		// Position 0
-		 v[5] = -1;  v[6] = -1;		// Position 1
-		v[10] = 1;	v[11] = -1;		// Position 2
-		v[15] = 1;	v[16] = 1;		// Position 3
+		dispParamsChanged = false;
 
-		fsZoomX = 1.0f / texW;
-		fsZoomY = 1.0f;
-	}
-	else
-	{
-		float targetAspect = 4.0f/3.0f;
-		float aspect = (float)gScrWidth / (float)gScrHeight;
+		GLfloat *v = emuScreenVerts;
 
-		float targetWn = targetAspect / aspect;
-		if (targetWn > 1.0f)
+		GLfloat texX = 0.0f;
+		GLfloat texY = 0.0f;
+		GLfloat texW = (float)scrWidth / (float)texWidth;
+		GLfloat texH = (float)scrHeight / (float)texHeight;
+
 		{
-			targetWn = 1.0f;
-		}
-		float targetHn = (targetWn / targetAspect) * aspect;
-
-		float offsetWn = 0.0f;
-		float offsetHn = 0.0f;
-		if (gScrWidth < gScrHeight)
-		{
-			offsetHn = 1.0f - (curZoom*targetHn);
+			 v[0] = -curZoomX+curPanX;  v[1] = curZoomY+curPanY;		// Position 0
+			 v[5] = -curZoomX+curPanX;  v[6] = -curZoomY+curPanY;		// Position 1
+			v[10] = curZoomX+curPanX;	v[11] = -curZoomY+curPanY;		// Position 2
+			v[15] = curZoomX+curPanX;	v[16] = curZoomY+curPanY;		// Position 3
 		}
 
-		offsetWn += curPanX;
-		offsetHn += curPanY;
-
-	//	Debug_Printf("Scr (%d x %d)", gScrWidth, gScrHeight);
-	//	Debug_Printf("Tgt (%f x %f)", targetWn, targetHn);
-	//	Debug_Printf("Off (%f x %f)", offsetWn, offsetHn);
-
-		 v[0] = (-targetWn + offsetWn)*curZoom;  v[1] = (targetHn + offsetHn)*curZoom;		// Position 0
-		 v[5] = (-targetWn + offsetWn)*curZoom;  v[6] = (-targetHn + offsetHn)*curZoom;		// Position 1
-		v[10] = (targetWn + offsetWn)*curZoom; v[11] = (-targetHn + offsetHn)*curZoom;		// Position 2
-		v[15] = (targetWn + offsetWn)*curZoom; v[16] =  (targetHn + offsetHn)*curZoom;		// Position 3
+		 v[3] = texX;  v[4] = texY;		// TexCoord 0
+		 v[8] = texX;  v[9] = texH;		// TexCoord 1
+		v[13] = texW; v[14] = texH;		// TexCoord 2
+		v[18] = texW; v[19] = texY;		// TexCoord 3
 	}
-
-	// 1:1
-/*
-	int scale = 2;
-	float vx = ((float)scrWidth/(float)gScrWidth) * scale;
-	float vy = ((float)scrHeight/(float)gScrHeight) * scale;
-	 v[0] = -vx + offsetWn;		 v[1] = vy + offsetHn;		// Position 0
-	 v[5] = -vx + offsetWn;		 v[6] = -vy + offsetHn;		// Position 1
-	v[10] = vx + offsetWn;		v[11] = -vy + offsetHn;		// Position 2
-	v[15] = vx + offsetWn;		v[16] =  vy + offsetHn;		// Position 3
-*/
-	 v[3] = texX;  v[4] = texY;		// TexCoord 0
-	 v[8] = texX;  v[9] = texH;		// TexCoord 1
-	v[13] = texW; v[14] = texH;		// TexCoord 2
-	v[18] = texW; v[19] = texY;		// TexCoord 3
 }
 
 void renderFrame()
@@ -569,6 +593,11 @@ void renderFrame()
 				int texH = g_videoTex_height;
 				int emuScrW = g_surface_width;
 				int emuScrH = g_surface_height;
+
+				if (_delayedPreset >= 0)
+				{
+					Renderer_setZoomPreset(_delayedPreset);
+				}
 
 				// copy the texture
 				if (gTextureID == 0 || g_videoModeChanged)

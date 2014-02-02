@@ -137,8 +137,14 @@ static float		s_vkbZoom = 1.0f;
 static float		s_vkbPanX = 0;
 static float		s_vkbPanY = 0;
 
+static int			s_curScreenZoomPreset = ScreenZoom_Fit;
+static int			s_curKeyboardZoomPreset = VkbZoom_Fit;
+
 static int			s_mouseButtonIgnoreQuickKeyIdx[2]; // HACK
 static float		s_mouseSpeed = 1;
+
+static bool			s_hideAll = false;
+static bool			s_showJoystickOnly = false;
 
 static void VirtKB_Create();
 static void VirtKB_CreateTextures();
@@ -174,6 +180,9 @@ static void VirtKB_ToggleTurboSpeed(bool down);
 static void VirtKB_ToggleKeyboard(bool down);
 static void VirtkKB_ScreenZoomToggle(bool down);
 static void VirtkKB_VkbZoomToggle(bool down);
+static void VirtkKB_ScreenPresetToggle(bool down);
+static void VirtkKB_KeyboardPresetToggle(bool down);
+static bool VirtkKB_KeyboardSetPreset(int preset);
 static void VirtKB_MJToggle(bool down);
 static void VirtKB_MouseLB(bool down);
 static void VirtkKB_MouseRB(bool down);
@@ -339,16 +348,16 @@ void VirtKB_Create()
 
 	if (!s_VkbZoomInited)
 	{
-		if (g_vkbTexKbW > 0)
+		if (VirtkKB_KeyboardSetPreset(s_curKeyboardZoomPreset))
 		{
-			int scrwidth = getScreenWidth();
-			s_vkbZoom = (float)scrwidth / (float)g_vkbTexKbW;
-			s_VkbZoomInited = false;
+			s_VkbZoomInited = true;
 		}
 	}
 
 	VirtKB_UpdateVkbVerts();
 	VirtKB_SetupShader();
+
+	Renderer_setZoomPreset(s_curScreenZoomPreset);
 }
 
 void VirtKB_DestroyTextures()
@@ -483,6 +492,11 @@ void VirtKB_CreateQuickKeys()
 {
 	VirtKB_ClearQuickKeys();
 
+	if (s_hideAll)
+	{
+		return;
+	}
+
 	int scrwidth = getScreenWidth();
 	int scrheight = getScreenHeight();
 
@@ -492,21 +506,25 @@ void VirtKB_CreateQuickKeys()
 	float sscale = (float)scrwidth/1024.0f;
 
 	// top left keys
+	if (!s_showJoystickOnly)
 	{
 		int keyOffsetX = (int)ceilf(10*sscale);
 		int keyOffsetY = (int)ceilf(10*sscale);
 		int keyBtnSize = (int)ceilf(60*sscale);
 		int keyMarginY = (int)ceilf(2*sscale);
 
-		bool isFullScreen = Renderer_isFullScreenStretch();
-		int vkbKeys[] = {VKB_KEY_KEYBOARDTOGGLE, VKB_KEY_SCREENZOOM, VKB_KEY_KEYBOARDZOOM, VKB_KEY_MOUSETOGGLE, VKB_KEY_JOYTOGGLE};
-		QuickKeyCallback qkCallbacks[] = { VirtKB_ToggleKeyboard, VirtkKB_ScreenZoomToggle, VirtkKB_VkbZoomToggle, VirtKB_MJToggle, VirtKB_MJToggle };
+		//bool isFullScreen = Renderer_isFullScreenStretch();
+		int vkbKeys[] = {	VKB_KEY_KEYBOARDTOGGLE, VKB_KEY_SCREENZOOM, VKB_KEY_SCREENPRESETS,
+							VKB_KEY_KEYBOARDZOOM, VKB_KEY_KEYBOARDPRESETS, VKB_KEY_MOUSETOGGLE, VKB_KEY_JOYTOGGLE};
+		QuickKeyCallback qkCallbacks[] = {
+							VirtKB_ToggleKeyboard, VirtkKB_ScreenZoomToggle, VirtkKB_ScreenPresetToggle,
+							VirtkKB_VkbZoomToggle, VirtkKB_KeyboardPresetToggle, VirtKB_MJToggle, VirtKB_MJToggle };
 		int numKeys = sizeof(vkbKeys)/sizeof(int);
 
 		int curKeyY = keyOffsetY;
 		for (int i = 0; i < numKeys; ++i)
 		{
-			if (isFullScreen && vkbKeys[i] == VKB_KEY_SCREENZOOM) { continue; }
+			//if (isFullScreen && vkbKeys[i] == VKB_KEY_SCREENZOOM) { continue; }
 
 			if (s_showKeyboard && vkbKeys[i]==VKB_KEY_KEYBOARDTOGGLE) { vkbKeys[i] = VKB_KEY_KEYBOARDTOGGLE_SEL; }
 			if (s_keyboardZoomMode && vkbKeys[i]==VKB_KEY_KEYBOARDZOOM) { vkbKeys[i] = VKB_KEY_KEYBOARDZOOM_SEL; }
@@ -523,6 +541,7 @@ void VirtKB_CreateQuickKeys()
 	}
 
 	// top right keys
+	if (!s_showJoystickOnly)
 	{
 		int keyOffsetX = (int)ceilf(10*sscale);
 		int keyOffsetY = (int)ceilf(10*sscale);
@@ -956,6 +975,7 @@ void VirtKB_updateInput()
 
 			if (vk->flags & (FLAG_CUSTOMKEY))
 			{
+				//(*qk->pCallback)(false);
 			}
 			else if (vk->flags & (FLAG_STKEY|FLAG_STFNKEY))
 			{
@@ -1210,7 +1230,7 @@ static void VirtKB_updateMouse()
 			s_mouseMoved = 1;
 
 			float sX = (STRes == ST_LOW_RES) ? 0.5f : 1;
-			float sY = (STRes == ST_MEDIUM_RES || STRes == ST_LOW_RES) ? 0.5f : 1;
+			float sY = 1;//(STRes == ST_MEDIUM_RES || STRes == ST_LOW_RES) ? 0.5f : 1;
 			sX *= s_mouseSpeed / emuScrZoomX;
 			sY *= s_mouseSpeed / emuScrZoomY;
 
@@ -1455,36 +1475,41 @@ static void VirtKB_GetVkbScreenOffset(int *x, int *y)
 
 static void VirtKB_UpdateVkbVerts()
 {
-	GLfloat *v = s_VkbVerts;
-
-	int tw = s_VkbGPUTexWidth;
-	int th = s_VkbGPUTexHeight;
-
 	int scrwidth = getScreenWidth();
 	int scrheight = getScreenHeight();
+	if (scrwidth > 0 && scrheight > 0)
+	{
+		GLfloat *v = s_VkbVerts;
 
-	int kbx1 = 0, kbx2 = 0;
-	VirtKB_GetVkbScreenOffset(&kbx1, &kbx2);
+		int tw = s_VkbGPUTexWidth;
+		int th = s_VkbGPUTexHeight;
 
-	float px1 = kbx1;
-	float py1 = kbx2;
-	float px2 = px1 + g_vkbTexKbW*s_vkbZoom;
-	float py2 = py1 + g_vkbTexKbH*s_vkbZoom;
+		int scrwidth = getScreenWidth();
+		int scrheight = getScreenHeight();
 
-	float x1 = ((px1/(float)scrwidth)*2.0f) - 1.0f;
-	float y1 = 1.0f - ((py1/(float)scrheight)*2.0f);
-	float x2 = ((px2/(float)scrwidth)*2.0f) - 1.0f;
-	float y2 = 1.0f - ((py2/(float)scrheight)*2.0f);
+		int kbx1 = 0, kbx2 = 0;
+		VirtKB_GetVkbScreenOffset(&kbx1, &kbx2);
 
-	float tx1 = 0.0f, ty1 = 0.0f;
-	float tx2 = (float)g_vkbTexKbW/(float)tw, ty2 = (float)g_vkbTexKbH/(float)th;
+		float px1 = kbx1;
+		float py1 = kbx2;
+		float px2 = px1 + g_vkbTexKbW*s_vkbZoom;
+		float py2 = py1 + g_vkbTexKbH*s_vkbZoom;
 
-	float a = s_VkbAlpha;
-	float r = s_VkbLum;
-	float g = s_VkbLum;
-	float b = s_VkbLum;
+		float x1 = ((px1/(float)scrwidth)*2.0f) - 1.0f;
+		float y1 = 1.0f - ((py1/(float)scrheight)*2.0f);
+		float x2 = ((px2/(float)scrwidth)*2.0f) - 1.0f;
+		float y2 = 1.0f - ((py2/(float)scrheight)*2.0f);
 
-	VirtKB_UpdateRectVerts(v, x1, y1, x2, y2, tx1, ty1, tx2, ty2, r, g, b, a);
+		float tx1 = 0.0f, ty1 = 0.0f;
+		float tx2 = (float)g_vkbTexKbW/(float)tw, ty2 = (float)g_vkbTexKbH/(float)th;
+
+		float a = s_VkbAlpha;
+		float r = s_VkbLum;
+		float g = s_VkbLum;
+		float b = s_VkbLum;
+
+		VirtKB_UpdateRectVerts(v, x1, y1, x2, y2, tx1, ty1, tx2, ty2, r, g, b, a);
+	}
 }
 
 static bool VirtKB_PointInPoly(float x, float y, const short *v, int numVerts)
@@ -1639,7 +1664,7 @@ void VirtKB_setScreenZoomMode(bool set)
 	if (s_screenZoomMode)
 	{
 		s_prevInputFlags = s_curInputFlags;
-		s_curInputFlags = FLAG_SCREEN;
+		s_curInputFlags = FLAG_SCREEN | FLAG_SCREEN2;
 	}
 	else
 	{
@@ -1658,6 +1683,62 @@ static void VirtkKB_VkbZoomToggle(bool down)
 	s_recreateQuickKeys = true;
 
 	VirtKB_clearMousePresses();
+}
+
+static void VirtkKB_ScreenPresetToggle(bool down)
+{
+	s_curScreenZoomPreset = (s_curScreenZoomPreset + 1) % ScreenZoom_NumOf;
+	Renderer_setZoomPreset(s_curScreenZoomPreset);
+}
+
+static void VirtkKB_KeyboardPresetToggle(bool down)
+{
+	VirtkKB_KeyboardSetPreset((s_curKeyboardZoomPreset + 1) % VkbZoom_NumOf);
+}
+
+static bool VirtkKB_KeyboardSetPreset(int preset)
+{
+	if (g_vkbTexKbW > 0)
+	{
+		s_curKeyboardZoomPreset = preset;
+
+		int scrwidth = getScreenWidth();
+		int scrheight = getScreenHeight();
+		switch (preset)
+		{
+			case VkbZoom_1:
+			{
+				s_vkbZoom = (float)scrwidth / (float)500;
+				float px1 = -(14*s_vkbZoom);
+				float py1 = scrheight-((g_vkbTexKbH-14)*s_vkbZoom);
+				s_vkbPanX = px1 - ((scrwidth - (g_vkbTexKbW*s_vkbZoom)) / 2);
+				s_vkbPanY = py1 - (scrheight - (g_vkbTexKbH*s_vkbZoom));
+				break;
+			}
+			case VkbZoom_2:
+			{
+				s_vkbZoom = (float)scrwidth / (float)604;
+				float px1 = -(14*s_vkbZoom);
+				float py1 = scrheight-((g_vkbTexKbH-14)*s_vkbZoom);
+				s_vkbPanX = px1 - ((scrwidth - (g_vkbTexKbW*s_vkbZoom)) / 2);
+				s_vkbPanY = py1 - (scrheight - (g_vkbTexKbH*s_vkbZoom));
+				break;
+			}
+			case VkbZoom_Fit:
+			default:
+			{
+				s_vkbZoom = (float)scrwidth / (float)g_vkbTexKbW;
+				s_vkbPanX = 0;
+				s_vkbPanY = 0;
+				break;
+			}
+		}
+
+		VirtKB_UpdateVkbVerts();
+		return true;
+	}
+
+	return false;
 }
 
 static void VirtKB_MJToggle(bool down)
@@ -1737,5 +1818,17 @@ void VirtKB_setObsessionKeys(bool set)
 	g_doubleBuffer = set ? 0 : 1;
 
 	s_vkbObsessionKeys = set;
+	s_recreateQuickKeys = true;
+}
+
+void VirtKB_setHideAll(bool set)
+{
+	s_hideAll = set;
+	s_recreateQuickKeys = true;
+}
+
+void VirtKB_setJoystickOnly(bool set)
+{
+	s_showJoystickOnly = set;
 	s_recreateQuickKeys = true;
 }
