@@ -152,6 +152,42 @@ public class FileBrowser extends ListActivity
 		}
 	}
 	
+	@Override protected void onSaveInstanceState(Bundle outState)
+	{
+		try
+		{
+			if (_exts != null)
+			{
+				int numExts = 0;
+				for (int i = 0; i < _exts.length; ++i)
+				{
+					numExts += (_exts[i].compareTo(".zip") != 0) ? 1 : 0;
+				}
+				if (numExts > 0)
+				{
+					String [] exts = new String [numExts];
+					for (int i = 0, e = 0; i < _exts.length; ++i)
+					{
+						if (_exts[i].compareTo(".zip") != 0)
+						{
+							exts[e] = _exts[i];
+							++e;
+						}
+					}
+					outState.putStringArray(CONFIG_EXT, exts);
+				}
+			}
+			
+			outState.putBoolean(CONFIG_OPENZIPS, _openZips);
+			outState.putBoolean(CONFIG_RESETST, _resetST);
+			outState.putBoolean(CONFIG_SELECTFOLDER, _selectFolder);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+	
 	void parseOptions(Bundle savedInstanceState)
 	{
 		_exts = new String [] {".st", ".msa", ".dim", ".stx"};
@@ -447,34 +483,75 @@ public class FileBrowser extends ListActivity
 			}
 			case FileListItem.TYPE_FILE:
 			{
+				boolean isPastiFile = false;
+
 				String pathLower = item.getPath().toLowerCase();
+				String nameLower = item.getName().toLowerCase();
 				if (pathLower.endsWith(".zip"))
 				{
 					// don't support recursive zip files for now
 					if (_curZipFile == null)
 					{
-						_curZipFile = _openZipFileList(item.getPath());
-						if (_curZipFile != null)
+						ZipFile zf = _openZipFileList(item.getPath());
+						if (zf != null)
 						{
-							if (!_isSingleDiscZip(_curZipFile, _exts))
+							boolean [] isPastiResult = new boolean [1];
+							if (!_isSingleDiscZip(zf, _exts, isPastiResult))
 							{
+								_curZipFile = zf;
 								retrieveZipFileList(_curZipFile, _exts);
 								_curDir = null;
 								return;
 							}
+							else
+							{
+								if (isPastiResult[0])
+								{
+									isPastiFile = true;
+								}
+
+								_closeZipFile(zf);
+								zf = null;
+							}
 						}
 					}
+					else if (nameLower.endsWith(".stx"))
+					{
+						isPastiFile = true;
+					}
 				}
-
-				onFileClicked(item);
+				else if (nameLower.endsWith(".stx"))
+				{
+					isPastiFile = true;
+				}
+				
+				if (isPastiFile)
+				{
+					_showPastiAlert();
+				}
+				else
+				{
+					onFileClicked(item);
+				}
 				break;
 			}
 		}
 	}
 	
-	private Boolean _isSingleDiscZip(ZipFile zipFile, String [] validExts)
+	void _showPastiAlert()
+	{
+		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+		alertDialog.setTitle("Pasti (.stx) is not supported");
+		alertDialog.setMessage("If you want Pasti support, please petition the Pasti author to do an Android version or open source his code");
+		alertDialog.setButton("Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { } });
+		alertDialog.show();
+	}
+	
+	private Boolean _isSingleDiscZip(ZipFile zipFile, String [] validExts, boolean [] isPasti)
 	{
 		int validDiscCount = 0;
+
+		isPasti[0] = false;
 
 		Enumeration<? extends ZipEntry> e = zipFile.entries();
 		while (e.hasMoreElements())
@@ -486,6 +563,11 @@ public class FileBrowser extends ListActivity
 				String flc = f.getName().toLowerCase();
 				if (!flc.endsWith(".zip"))
 				{
+					if (flc.endsWith(".stx"))
+					{
+						isPasti[0] = true;
+					}
+
 					if (_allowAllFiles()) // HACK: should allow rexp
 					{
 						++validDiscCount;
@@ -537,7 +619,7 @@ public class FileBrowser extends ListActivity
 		
 		try
 		{
-			_curZipFile.close();
+			zf.close();
 		}
 		catch (IOException e)
 		{

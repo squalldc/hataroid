@@ -52,8 +52,6 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 	String					_curPresetID = null;
 	InputMap				_curInputMap = null;
 
-	InputMapListItem		_curScanItem = null;
-
 	@Override public void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
@@ -400,9 +398,10 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 		final InputMapConfigureView ctx = this;
 		final int resultID = INPUTCAPTURERESULT_KEYCODE;
 
-		_curScanItem = scanItem;
         Intent view = new Intent(ctx, InputCaptureView.class);
         view.putExtra(InputCaptureView.CONFIG_EMUKEY, scanItem._vkDef.id);
+        view.putExtra(InputCaptureView.CONFIG_SYSTEMKEY, scanItem._systemKey);
+        view.putExtra(InputCaptureView.CONFIG_MAPID, _curPresetID);
         ctx.startActivityForResult(view, resultID);
 	}
     
@@ -434,24 +433,29 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 			{
 				if (resultCode == RESULT_OK)
 				{
-					if (_curInputMap == null || _curScanItem == null || _adapter == null)
+					if (_curInputMap == null || _adapter == null)
 					{
 						break;
 					}
-	
+					
+					int prevEmuKey = data.getIntExtra(InputCaptureView.RESULT_PREVEMUKEY, -1);
+					int prevSystemKey = data.getIntExtra(InputCaptureView.RESULT_PREVSYSTEMKEY, -1);
+					String prevMapId= data.getStringExtra(InputCaptureView.RESULT_PREVMAPID);
+					
+					if (prevEmuKey < 0  || prevMapId == null || prevMapId.compareTo(_curPresetID) != 0)
+					{
+						break;
+					}
+					
 					boolean unMap = data.getBooleanExtra(InputCaptureView.RESULT_UNMAP, false);
 					int systemKey = data.getIntExtra(InputCaptureView.RESULT_KEYCODE, -1);
 					if (unMap)
 					{
-						_curInputMap.removeKeyMapEntry(_curScanItem._systemKey);
-						_curScanItem._systemKey = -1;
+						_curInputMap.removeKeyMapEntry(prevSystemKey);
 					}
 					else if (systemKey >= 0)
 					{
-						if (_curInputMap.addKeyMapEntry(systemKey, _curScanItem._vkDef.id))
-						{
-							_curScanItem._systemKey = systemKey;
-						}
+						_curInputMap.addKeyMapEntry(systemKey, prevEmuKey);
 					}
 					
 					// update list items
@@ -479,8 +483,6 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 					
 					_storeInputMap(_curPresetID);
 				}
-
-				_curScanItem = null;
 				break;
 			}
 			case RENAMEINPUTMAPRESULT_KEYCODE:
@@ -519,7 +521,7 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 		}
 	}
 
-	static boolean _showingDeleteConfirm = false;
+	boolean _showingDeleteConfirm = false;
 	void _onDeleteClicked()
 	{
 		if (Input.isSystemPreset(_curPresetID))

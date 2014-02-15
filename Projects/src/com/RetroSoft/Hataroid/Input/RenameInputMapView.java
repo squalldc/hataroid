@@ -52,6 +52,18 @@ public class RenameInputMapView extends Activity
 		super.onResume();
 	}
 
+	@Override protected void onSaveInstanceState(Bundle outState)
+	{
+		try
+		{
+			outState.putString(CONFIG_CURNAME, _curName);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
 	void _parseOptions(Bundle savedInstanceState)
 	{
 		_curName = null;

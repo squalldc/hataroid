@@ -1,11 +1,12 @@
 version 1.40
-- EXPERIMENTAL: External keyboard/controller support (for Android Input (ime) Devices)
-      - enable in options 
+- EXPERIMENTAL: External keyboard/controller support (through Android Input (IME) Devices)
+      - if you want to try, enable in options 
       - (I don't have any devices to test this with so send feedback and your presets if you want them included in the default)
 - add device sound buffer size option (user can adjust latency (but may cause crackling if too low on some devices))
 - reduce audio latency on lower frequencies
 - improve audio sync after fast forwarding
 - re-enable fast floppy access, please let me know if this toggle doesn't work for you
+- show pasti message if try to open .stx files
 - minor bug fixes
 
 version 1.391
