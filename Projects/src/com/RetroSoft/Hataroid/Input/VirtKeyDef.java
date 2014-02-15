@@ -178,7 +178,7 @@ public class VirtKeyDef
 		new VirtKeyDef(VKB_KEY_0, "0", (short)7, (short)1, (short)0, FLAG_STKEY),
 		new VirtKeyDef(VKB_KEY_SUBTRACT, "- (Minus)", (short)69, (short)1, (short)0, FLAG_STKEY),
 		new VirtKeyDef(VKB_KEY_EQUAL, "= (Equal)", (short)70, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_BACKQUOTE, "` (Backquote)", (short)-1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_BACKQUOTE, "` (Backquote)", (short)68, (short)1, (short)0, FLAG_STKEY),
 		new VirtKeyDef(VKB_KEY_BACKSPACE, "Backspace", (short)67, (short)1, (short)0, FLAG_STKEY),
 		new VirtKeyDef(VKB_KEY_HELP, "Help", (short)-1, (short)1, (short)0, FLAG_STKEY),
 		new VirtKeyDef(VKB_KEY_UNDO, "Undo", (short)-1, (short)1, (short)0, FLAG_STKEY),

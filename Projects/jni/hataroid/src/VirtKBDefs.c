@@ -28,7 +28,7 @@ const VirtKeyDef g_vkbKeyDefs[] =
 	{ VKB_KEY_0, "0)", "0", 7, 1, 0, 0xb, { 336, 80, 367, 111, 0, 0, 0, 0 }, FLAG_STKEY, { 331, 323, 363, 354 }, 1, 0 },
 	{ VKB_KEY_SUBTRACT, "-_", "- (Minus)", 69, 1, 0, 0xc, { 368, 80, 399, 111, 0, 0, 0, 0 }, FLAG_STKEY, { 364, 323, 396, 354 }, 1, 0 },
 	{ VKB_KEY_EQUAL, "=+", "= (Equal)", 70, 1, 0, 0xd, { 400, 80, 431, 111, 0, 0, 0, 0 }, FLAG_STKEY, { 397, 323, 429, 354 }, 1, 0 },
-	{ VKB_KEY_BACKQUOTE, "`?", "` (Backquote)", -1, 1, 0, 0x29, { 432, 80, 463, 111, 0, 0, 0, 0 }, FLAG_STKEY, { 430, 323, 462, 354 }, 1, 0 },
+	{ VKB_KEY_BACKQUOTE, "`?", "` (Backquote)", 68, 1, 0, 0x29, { 432, 80, 463, 111, 0, 0, 0, 0 }, FLAG_STKEY, { 430, 323, 462, 354 }, 1, 0 },
 	{ VKB_KEY_BACKSPACE, "Bkspc", "Backspace", 67, 1, 0, 0xe, { 464, 80, 511, 111, 0, 0, 0, 0 }, FLAG_STKEY, { 463, 323, 495, 354 }, 1, 0 },
 	{ VKB_KEY_HELP, "Help", "Help", -1, 1, 0, 0x62, { 520, 80, 567, 111, 0, 0, 0, 0 }, FLAG_STKEY, { 496, 323, 528, 354 }, 1, 0 },
 	{ VKB_KEY_UNDO, "Undo", "Undo", -1, 1, 0, 0x61, { 568, 80, 615, 111, 0, 0, 0, 0 }, FLAG_STKEY, { 529, 323, 561, 354 }, 1, 0 },
