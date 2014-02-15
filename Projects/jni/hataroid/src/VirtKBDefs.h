@@ -9,6 +9,10 @@ typedef struct
 {
 	int		id;
 	char *		desc;
+	char *		name;
+	short		androidKeycode;
+	short		config;
+	short		sort;
 	unsigned char		scancode;
 	short		v[8];
 	unsigned int		flags;
@@ -140,7 +144,8 @@ enum
 	VKB_KEY_JOYFIRE		= 116,
 	VKB_KEY_LEFTSHIFT_BUTTON		= 117,
 	VKB_KEY_RIGHTSHIFT_BUTTON		= 118,
-	VKB_KEY_NumOf		= 119
+	VKB_KEY_TOGGLEUI		= 119,
+	VKB_KEY_NumOf		= 120
 };
 
 enum

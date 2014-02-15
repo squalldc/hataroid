@@ -3,7 +3,7 @@
 
 class BitFlags
 {
-	private:
+	public:
 		uint32_t	*_flags;
 		int			_flagSize32;
 

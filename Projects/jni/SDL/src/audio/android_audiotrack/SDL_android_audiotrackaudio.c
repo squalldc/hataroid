@@ -239,7 +239,7 @@ static void initAndroidAudio(_THIS, Uint16 format, int freq, int channels, int b
 		(*j_env)->CallVoidMethod(j_env,
 				g_jniAudioInterface.android_mainActivity, g_jniAudioInterface.initAudio,
 				freq, bits, channels,
-				(freq == 44100) ? (32 * 1024) : (16*1024));
+				bufSizeBytes);//(freq == 44100) ? (32 * 1024) : (16*1024));
 
 		this->hidden->numjShorts = bufSizeBytes/2;
 	}

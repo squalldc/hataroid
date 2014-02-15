@@ -20,8 +20,8 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.RetroSoft.Hataroid"
-    android:versionCode="1391"
-    android:versionName="1.391" >
+    android:versionCode="1400"
+    android:versionName="1.40" >
 
     <uses-sdk
         android:minSdkVersion="9"
@@ -64,6 +64,9 @@
             android:name=".Help.HelpActivity"
             android:label="@string/title_activity_help" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" android:screenOrientation="sensorLandscape">
         </activity>
+        <activity android:name=".Input.InputMapConfigureView" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" android:label="@string/title_activity_inputmap_configure"></activity>
+        <activity android:name=".Input.InputCaptureView" android:theme="@android:style/Theme.Dialog" android:label="@string/blank"></activity>
+        <activity android:theme="@android:style/Theme.Dialog" android:name=".Input.RenameInputMapView" android:label="@string/blank"></activity>
     </application>
 
 </manifest>

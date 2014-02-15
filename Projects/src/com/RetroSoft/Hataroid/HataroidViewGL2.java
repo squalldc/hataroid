@@ -12,6 +12,8 @@ import android.opengl.GLSurfaceView;
 import android.util.Log;
 import android.view.MotionEvent;
 
+import com.RetroSoft.Hataroid.Util.BitFlags;
+
 // A simple GLSurfaceView sub-class that demonstrate how to perform
 // OpenGL ES 2.0 rendering into a GL Surface. Note the following important
 // details:
@@ -373,14 +375,13 @@ class HataroidViewGL2 extends GLSurfaceView
 		{
 			HataroidViewGL2 sview = HataroidViewGL2.instance;
 
-//			HataroidNativeLib.onInputChanged(sview.m_touched[0], sview.m_touchX[0], sview.m_touchY[0],
-//					sview.m_touched[1], sview.m_touchX[1], sview.m_touchY[1]);
-
+			BitFlags keyPressFlags = HataroidActivity.instance.getInput().getKeyPresses();
+			int [] keyPresses = keyPressFlags._flags;
 			HataroidNativeLib.updateInput(
 					sview.m_touched[0], sview.m_touchX[0], sview.m_touchY[0],
 					sview.m_touched[1], sview.m_touchX[1], sview.m_touchY[1],
-					sview.m_touched[2], sview.m_touchX[2], sview.m_touchY[2]
-					);
+					sview.m_touched[2], sview.m_touchX[2], sview.m_touchY[2],
+					keyPresses);
 
 			HataroidNativeLib.onDrawFrame();
 		}

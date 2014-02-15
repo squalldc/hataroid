@@ -18,14 +18,10 @@
     <item android:id="@+id/pause" android:visible="true" android:title="@string/Pause" android:titleCondensed="@string/Pause" android:menuCategory="system" android:icon="@drawable/busybee3" android:orderInCategory="3"></item>
     
     <!--
-    <item android:id="@+id/controls" android:title="@string/Controls" android:titleCondensed="@string/Controls" android:icon="@drawable/stkeys" android:orderInCategory="3" android:menuCategory="system">
-        <menu>
-            <item android:id="@+id/togglemousejoystick" android:menuCategory="system" android:title="@string/ToggleMouseJoystick" android:titleCondensed="@string/ToggleMouseJoystick"/>
-        </menu>
-    </item>
+    <item android:id="@+id/savestate" android:visible="true" android:title="@string/SaveLoad" android:titleCondensed="@string/SaveLoad" android:menuCategory="system" android:icon="@drawable/stfloppy" android:orderInCategory="4"></item>
     -->
     
-    <item android:id="@+id/settings" android:visible="true" android:title="@string/Settings" android:titleCondensed="@string/Settings" android:menuCategory="system" android:icon="@drawable/st" android:orderInCategory="4"></item>
+    <item android:id="@+id/settings" android:visible="true" android:title="@string/Settings" android:titleCondensed="@string/Settings" android:menuCategory="system" android:icon="@drawable/st" android:orderInCategory="5"></item>
     
     <item android:id="@+id/quit" android:titleCondensed="@string/Quit" android:menuCategory="system" android:orderInCategory="5" android:title="@string/Quit" android:icon="@drawable/sttrash"></item><item android:id="@+id/help" android:title="@string/Help" android:titleCondensed="@string/Help" android:icon="@drawable/atari" android:orderInCategory="6" android:menuCategory="system"></item>
     

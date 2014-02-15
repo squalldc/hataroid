@@ -402,6 +402,9 @@ void setTurboSpeed(int set)
 	else
 	{
 		ConfigureParams.Screen.nFrameSkips = s_turboPrevFrameSkips;
+
+		// Reset the sound emulation variables:
+		Sound_BufferIndexNeedReset = true;
 	}
 	Change_CopyChangedParamsToConfiguration(&current, &ConfigureParams, false);
 
@@ -441,6 +444,8 @@ struct OptionSetting
 	OptionCallback	callback;
 };
 
+bool _getBoolVal(const char *val) { return !((strcasecmp(val, "false") == 0) || (strcmp(val, "0") == 0)); }
+
 void _optionSetMachineType(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	const char *tospref = NULL;
@@ -475,7 +480,7 @@ void _optionSetMachineType(const OptionSetting *setting, const char *val, EmuCom
 }
 void _optionShowBorders(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
-	ConfigureParams.Screen.bAllowOverscan = (strcmp(val, "true") == 0);
+	ConfigureParams.Screen.bAllowOverscan = _getBoolVal(val);
 	Renderer_refreshDispParams();
 }
 void _optionShowIndicators(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
@@ -486,12 +491,30 @@ void _optionShowIndicators(const OptionSetting *setting, const char *val, EmuCom
 	if (strcmp(val, "statusbar") == 0) { ConfigureParams.Screen.bShowStatusbar = true; }
 	else if (strcmp(val, "driveled") == 0) { ConfigureParams.Screen.bShowDriveLed = true; }
 }
-void _optionAutoInsertDiskB(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.DiskImage.bAutoInsertDiskB = (strcmp(val, "1") == 0); }
-void _optionWriteProtectFloppy(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.DiskImage.nWriteProtection = (strcmp(val, "0") == 0) ? WRITEPROT_OFF : (strcmp(val, "1") == 0) ? WRITEPROT_ON : WRITEPROT_AUTO; }
-void _optionFastFloppy(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.DiskImage.FastFloppy = (strcmp(val, "true") == 0); }
-void _optionsSetCompatibleCPU(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.System.bCompatibleCpu = (strcmp(val, "true")==0); }
-void _optionSetSoundEnabled(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.Sound.bEnableSound = (strcmp(val, "true")==0); }
-void _optionSetSoundSync(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.Sound.bEnableSoundSync = (strcmp(val, "true")==0); }
+void _optionAutoInsertDiskB(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.DiskImage.bAutoInsertDiskB = _getBoolVal(val);
+}
+void _optionWriteProtectFloppy(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.DiskImage.nWriteProtection = (strcmp(val, "0") == 0) ? WRITEPROT_OFF : (strcmp(val, "1") == 0) ? WRITEPROT_ON : WRITEPROT_AUTO;
+}
+void _optionFastFloppy(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.DiskImage.FastFloppy = _getBoolVal(val);
+}
+void _optionsSetCompatibleCPU(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.System.bCompatibleCpu = _getBoolVal(val);
+}
+void _optionSetSoundEnabled(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.Sound.bEnableSound = _getBoolVal(val);
+}
+void _optionSetSoundSync(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.Sound.bEnableSoundSync = _getBoolVal(val);
+}
 void _optionSetSoundQuality(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	int freq = atoi(val);
@@ -515,9 +538,18 @@ void _optionSetFrameSkip(const OptionSetting *setting, const char *val, EmuComma
 	int fskip = atoi(val); // 5 = auto (AUTO_FRAMESKIP_LIMIT)
 	ConfigureParams.Screen.nFrameSkips = fskip;
 }
-void _optionSetRTC(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.System.bRealTimeClock = (strcmp(val, "true")==0); }
-void _optionPatchTimerD(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.System.bPatchTimerD = (strcmp(val, "true")==0); }
-void _optionFastBoot(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.System.bFastBoot = (strcmp(val, "true")==0); }
+void _optionSetRTC(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.System.bRealTimeClock = _getBoolVal(val);
+}
+void _optionPatchTimerD(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.System.bPatchTimerD = _getBoolVal(val);
+}
+void _optionFastBoot(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.System.bFastBoot = _getBoolVal(val);
+}
 void _optionMemorySize(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	int memsize = atoi(val); // Mb (0 = 512k)
@@ -536,7 +568,10 @@ void _optionSetCPUFreq(const OptionSetting *setting, const char *val, EmuCommand
 	int freq = atoi(val);
 	ConfigureParams.System.nCpuFreq = freq;
 }
-void _optionSetBlitter(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.System.bBlitter = (strcmp(val, "true")==0); }
+void _optionSetBlitter(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.System.bBlitter = _getBoolVal(val);
+}
 void _optionSetJoystickPort(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	int port = atoi(val);
@@ -545,28 +580,37 @@ void _optionSetJoystickPort(const OptionSetting *setting, const char *val, EmuCo
 void _optionSetJoystickAutoFire(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	int port = VirtKB_GetJoystickPort();
-	bool autoFire = (strcmp(val, "true")==0);
+	bool autoFire = _getBoolVal(val);
 	ConfigureParams.Joysticks.Joy[1].bEnableAutoFire = autoFire;
 
 }
 void _optionSetJoystickMapArrowKeys(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
-	bool map = (strcmp(val, "true")==0);
+	bool map = _getBoolVal(val);
 	VirtKB_MapJoysticksToArrowKeys(map);
 }
 void _optionSetBilinearFilter(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
-	bool filter = (strcmp(val, "true")==0);
+	bool filter = _getBoolVal(val);
 	Renderer_setFilterEmuScreeen(filter);
 }
 
 void _optionSetFullScreenStretch(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
-	bool fullscreen = (strcmp(val, "true")==0);
+	bool fullscreen = _getBoolVal(val);
 	if (fullscreen)
 	{
 		Renderer_setFullScreenStretch(fullscreen);
 		VirtKB_setScreenZoomMode(false);
+	}
+	else
+	{
+		if (Renderer_isFullScreenStretch())
+		{
+			Renderer_setFullScreenStretch(false);
+			VirtKB_setDefaultScreenZoomPreset();
+			VirtKB_setScreenZoomMode(false);
+		}
 	}
 }
 void _optionSetMouseEmuType(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
@@ -613,13 +657,27 @@ void _optionSetJoystickSize(const OptionSetting *setting, const char *val, EmuCo
 	VirtKB_SetJoystickSize(size);
 }
 
-void _optionBootFromHD(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.HardDisk.bBootFromHardDisk = (strcmp(val, "true")==0) || (strcmp(val, "1")==0); }
+void _optionBootFromHD(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.HardDisk.bBootFromHardDisk = _getBoolVal(val);
+}
 
-void _optionACSIAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.HardDisk.bUseHardDiskImage = (strcmp(val, "true")==0) || (strcmp(val, "1")==0); }
-void _optionIDEMasterAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = (strcmp(val, "true")==0) || (strcmp(val, "1")==0); }
-void _optionIDESlaveAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = (strcmp(val, "true")==0) || (strcmp(val, "1")==0); }
-void _optionGEMDOSAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data) { ConfigureParams.HardDisk.bUseHardDiskDirectories = (strcmp(val, "true")==0) || (strcmp(val, "1")==0); }
-
+void _optionACSIAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.HardDisk.bUseHardDiskImage = _getBoolVal(val);
+}
+void _optionIDEMasterAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = _getBoolVal(val);
+}
+void _optionIDESlaveAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = _getBoolVal(val);
+}
+void _optionGEMDOSAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.HardDisk.bUseHardDiskDirectories = _getBoolVal(val);
+}
 void _optionACSIImage(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	strncpy(ConfigureParams.HardDisk.szHardDiskImage, ((val==0)||strcmp(val,"none")==0) ? "" : val, FILENAME_MAX);
@@ -650,23 +708,23 @@ void _optionGEMDOSWriteProtection(const OptionSetting *setting, const char *val,
 }
 void _optionSetVKBExtraKeys(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
-	bool extraKeys = (strcmp(val, "true")==0);
+	bool extraKeys = _getBoolVal(val);
 	VirtKB_setExtraKeys(extraKeys);
 }
 void _optionSetVKBObsessionKeys(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
-	bool valSet = (strcmp(val, "true")==0);
+	bool valSet = _getBoolVal(val);
 	_altUpdate = valSet;
 	VirtKB_setObsessionKeys(valSet);
 }
 void _optionSetVKBHideAll(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
-	bool valSet = (strcmp(val, "true")==0);
+	bool valSet = _getBoolVal(val);
 	VirtKB_setHideAll(valSet);
 }
 void _optionSetVKBJoystickOnly(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
-	bool valSet = (strcmp(val, "true")==0);
+	bool valSet = _getBoolVal(val);
 	VirtKB_setJoystickOnly(valSet);
 }
 
@@ -775,6 +833,11 @@ void EmuCommandSetOptions_Run(EmuCommand *command)
 				break;
 			}
 		}
+	}
+
+	{
+		// forced settings
+		ConfigureParams.Sound.SdlAudioBufferSize = 25;
 	}
 
 	// If a memory snapshot has been loaded, no further changes are required

@@ -30,6 +30,8 @@ import android.view.WindowManager;
 
 import com.RetroSoft.Hataroid.FileBrowser.FileBrowser;
 import com.RetroSoft.Hataroid.Help.HelpActivity;
+import com.RetroSoft.Hataroid.Input.Input;
+import com.RetroSoft.Hataroid.Input.InputMapConfigureView;
 import com.RetroSoft.Hataroid.Preferences.Settings;
 
 
@@ -49,17 +51,17 @@ public class HataroidActivity extends Activity
 
 	private AudioTrack			_audioTrack;
 	private Boolean				_audioPaused = true;
+	
+	private Input				_input = null;
 
 	@Override protected void onCreate(Bundle icicle)
 	{
 		super.onCreate(icicle);
 
-		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
-		
 		try
 		{
+			PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 			_setupDefaultCheckboxPreferences();
-			_setupDeviceOptions();
 		}
 		catch (Exception e)
 		{
@@ -68,11 +70,23 @@ public class HataroidActivity extends Activity
 
         instance = this;
 
+        _input = new Input();
+		_input.init(getApplicationContext());
+
         System.loadLibrary("hataroid");
         
         _viewGL2 = new HataroidViewGL2(getApplication(), false, 0, 0);
 		setContentView(_viewGL2);
 		
+		try
+		{
+			_setupDeviceOptions();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
 		//startEmulationThread();
 	}
 	
@@ -128,7 +142,7 @@ public class HataroidActivity extends Activity
 
 		// get a list of missing prefs
 		List<String> missingPrefs = new LinkedList<String>();
-		Map<String, Object> options = getEmulatorOptions();
+		Map<String, Object> options = getEmulatorOptions(false);
 		final String [] optionKeys = (String [])options.get("keys");
 		for (String curKey : prefDefs.keySet())
 		{
@@ -189,9 +203,11 @@ public class HataroidActivity extends Activity
 	    	if (val != null)
 	    	{
 	    		String sval = val.toString();
-	    		boolean bval = (sval.compareTo("true")==0 || sval.compareTo("1")==0);
+	    		boolean bval = !(sval.compareTo("false")==0 || sval.compareTo("0")==0);
 	    		_keepScreenAwake(bval);
 	    	}
+	    	
+	    	_input.setupOptionsFromPrefs(prefs);
 		}
 		catch (Exception e)
 		{
@@ -230,7 +246,7 @@ public class HataroidActivity extends Activity
 
 	public void startEmulationThread()
 	{
-		Map<String, Object> options = getEmulatorOptions();
+		Map<String, Object> options = getEmulatorOptions(true);
 		final String [] optionKeys = (String [])options.get("keys");
 		final String [] valKeys = (String [])options.get("vals");
 
@@ -467,13 +483,25 @@ public class HataroidActivity extends Activity
     	}
     }
 
-    private Map<String, Object> getEmulatorOptions()
+    private Map<String, Object> getEmulatorOptions(boolean stripJavaOptions)
     {
     	Map<String, Object> options = new HashMap<String, Object>();
 
     	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 		Map<String,?> keys = prefs.getAll();
+
 		int numKeys = keys.size();
+		if (stripJavaOptions)
+		{
+			numKeys = 0;
+			for (String key : keys.keySet())
+			{
+				if (!key.startsWith(InputMapConfigureView.kPrefPrefix))
+				{
+					++numKeys;
+				}
+			}
+		}
 
 		String [] keyarray = new String [numKeys];
 		String [] valarray = new String [numKeys];
@@ -481,7 +509,16 @@ public class HataroidActivity extends Activity
 		int i = 0;
 		for (Map.Entry<String,?> entry : keys.entrySet())
 		{
-			keyarray[i] = entry.getKey();
+			String key = entry.getKey();
+			if (stripJavaOptions)
+			{
+				if (key.startsWith(InputMapConfigureView.kPrefPrefix))
+				{
+					continue;
+				}
+			}
+
+			keyarray[i] = key;
 			valarray[i] = entry.getValue().toString();
 			++i;
 		}
@@ -601,6 +638,10 @@ public class HataroidActivity extends Activity
 		        startActivity(help);
 				return true;
 			}
+//			case R.id.savestate:
+//			{
+//				return true;
+//			}
 			default:
 			{
 				return super.onOptionsItemSelected(item);
@@ -664,7 +705,7 @@ public class HataroidActivity extends Activity
 	
 	void _updateOptions()
 	{
-		Map<String, Object> options = getEmulatorOptions();
+		Map<String, Object> options = getEmulatorOptions(true);
 		String [] optionKeys = (String [])options.get("keys");
 		String [] valKeys = (String [])options.get("vals");
 		HataroidNativeLib.emulatorSetOptions(optionKeys, valKeys);
@@ -672,6 +713,11 @@ public class HataroidActivity extends Activity
 
 	@Override public boolean onKeyDown(int keyCode, KeyEvent event)
 	{
+		if (_input.onKeyDown(keyCode, event))
+		{
+			return false;
+		}
+		
 		switch (keyCode)
 		{
 			case KeyEvent.KEYCODE_BACK:
@@ -679,19 +725,40 @@ public class HataroidActivity extends Activity
 				showQuitConfirm();
 				return false;
 			}
+			default:
+			{
+				break;
+			}
 		}
 
 		return super.onKeyDown(keyCode, event);
 	}
-	
+
+	@Override public boolean onKeyUp(int keyCode, KeyEvent event)
+	{
+		if (_input.onKeyUp(keyCode, event))
+		{
+			return false;
+		}
+
+		return super.onKeyDown(keyCode, event);
+	}
+
+	static boolean _showingQuitConfirm = false;
 	public void showQuitConfirm()
 	{
-		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
-		alertDialog.setTitle("Quit Hataroid?");
-		alertDialog.setMessage("Are you sure you want to quit?");
-		alertDialog.setButton("No", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { } });
-		alertDialog.setButton2("Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { finish(); } });
-		alertDialog.show();
+		if (!_showingQuitConfirm)
+		{
+			_showingQuitConfirm = true;
+	
+			AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+			alertDialog.setTitle("Quit Hataroid?");
+			alertDialog.setMessage("Are you sure you want to quit?");
+			alertDialog.setButton("No", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingQuitConfirm = false; } });
+			alertDialog.setButton2("Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingQuitConfirm = false; finish(); } });
+			alertDialog.setOnCancelListener(new DialogInterface.OnCancelListener() { public void onCancel(DialogInterface dialog) { _showingQuitConfirm = false; }});
+			alertDialog.show();
+		}
 	}
 	
 	public void showErrorDialog(String title, String message)
@@ -753,4 +820,6 @@ public class HataroidActivity extends Activity
 			getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 		}
 	}
+
+	public Input getInput() { return _input; }
 }

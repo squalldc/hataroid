@@ -1,7 +1,11 @@
 package com.RetroSoft.Hataroid.Preferences;
 
+import java.io.FileOutputStream;
+import java.util.HashMap;
 import java.util.Map;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
@@ -14,17 +18,22 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
 
+import com.RetroSoft.Hataroid.HataroidActivity;
 import com.RetroSoft.Hataroid.R;
 import com.RetroSoft.Hataroid.FileBrowser.FileBrowser;
+import com.RetroSoft.Hataroid.Input.Input;
+import com.RetroSoft.Hataroid.Input.InputMapConfigureView;
 
 public class Settings extends PreferenceActivity implements OnSharedPreferenceChangeListener
 {
-	private static final int FILEACTIVITYRESULT_STTOSIMAGE		= 1;
-	private static final int FILEACTIVITYRESULT_STETOSIMAGE		= 2;
-	private static final int FILEACTIVITYRESULT_ACSI_IMAGE		= 3;
-	private static final int FILEACTIVITYRESULT_IDEMASTER_IMAGE	= 4;
-	private static final int FILEACTIVITYRESULT_IDESLAVE_IMAGE	= 5;
-	private static final int FILEACTIVITYRESULT_GEMDOS_FOLDER	= 6;
+	private static final int FILEACTIVITYRESULT_STTOSIMAGE				= 1;
+	private static final int FILEACTIVITYRESULT_STETOSIMAGE				= 2;
+	private static final int FILEACTIVITYRESULT_ACSI_IMAGE				= 3;
+	private static final int FILEACTIVITYRESULT_IDEMASTER_IMAGE			= 4;
+	private static final int FILEACTIVITYRESULT_IDESLAVE_IMAGE			= 5;
+	private static final int FILEACTIVITYRESULT_GEMDOS_FOLDER			= 6;
+	private static final int FILEACTIVITYRESULT_DUMPINPUTMAPS_FOLDER	= 7;
+	private static final int INPUTMAPACTIVITYRESULT_OK					= 8;
 
 	public static final String kPrefName_ST_TosImage		= "pref_system_tos";
 	public static final String kPrefName_STE_TosImage		= "pref_system_tos_ste";
@@ -35,8 +44,20 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 
 	public static final String kPrefName_GEMDOS_Folder		= "pref_storage_harddisks_gemdosdrive";
 
+	public static final String kPrefName_DumpInputMap_Folder			= "pref_input_device_dumpmaps";
+
+	public static final String kPrefName_InputDevice_InputMethod		= "pref_input_device_inputmethod";
+	public static final String kPrefName_InputDevice_ConfigureMap		= "pref_input_device_configuremap";
+	
+	public Map<String,Boolean> _noSetSummary = new HashMap<String,Boolean>();
+
 	@Override protected void onCreate(Bundle savedInstanceState)
-	{		
+	{
+		_noSetSummary.clear();
+		_noSetSummary.put(kPrefName_InputDevice_InputMethod, true);
+		_noSetSummary.put(kPrefName_InputDevice_ConfigureMap, true);
+		_noSetSummary.put(kPrefName_DumpInputMap_Folder, true);
+		
 		super.onCreate(savedInstanceState);
 		addPreferencesFromResource(R.xml.preferences);
 
@@ -60,6 +81,13 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		
 		// gemdos folder
 		linkFileSelector(kPrefName_GEMDOS_Folder, FILEACTIVITYRESULT_GEMDOS_FOLDER, true, true, false);
+		
+		// add input device click hooks
+		linkInputDeviceSelector(kPrefName_InputDevice_InputMethod);
+		linkInputMethodConfigureView(kPrefName_InputDevice_ConfigureMap, INPUTMAPACTIVITYRESULT_OK);
+		
+		// dump map folder
+		linkFileSelector(kPrefName_DumpInputMap_Folder, FILEACTIVITYRESULT_DUMPINPUTMAPS_FOLDER, true, true, false);
 	}
 	
 	void linkFileSelector(String prefKey, int fileResultID, boolean allFiles, boolean selectFolder, boolean tosImage)
@@ -89,6 +117,35 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 			}
 		});
 	}
+	
+	void linkInputDeviceSelector(String prefKey)
+	{
+		Preference item = (Preference)findPreference(prefKey);
+
+		item.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+			public boolean onPreferenceClick(Preference preference) {
+				// show input method selector
+				Input input = HataroidActivity.instance.getInput();
+				input.showInputMethodSelector();
+				return true;
+			}
+		});
+	}
+
+	void linkInputMethodConfigureView(String prefKey, int viewResultID)
+	{
+		final Settings ctx = this;
+		final int resultID = viewResultID;
+		Preference item = (Preference)findPreference(prefKey);
+
+		item.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+			public boolean onPreferenceClick(Preference preference) {
+		        Intent view = new Intent(ctx, InputMapConfigureView.class);
+		        ctx.startActivityForResult(view, resultID);
+				return true;
+			}
+		});
+	}
 
 	@Override protected void onActivityResult(int requestCode, int resultCode, Intent data)
 	{
@@ -101,6 +158,15 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 			case FILEACTIVITYRESULT_IDEMASTER_IMAGE:	key = kPrefName_IDEMaster_Image; break;
 			case FILEACTIVITYRESULT_IDESLAVE_IMAGE:		key = kPrefName_IDESlave_Image; break;
 			case FILEACTIVITYRESULT_GEMDOS_FOLDER:		key = kPrefName_GEMDOS_Folder; break;
+			case FILEACTIVITYRESULT_DUMPINPUTMAPS_FOLDER:
+			{
+				if (resultCode == RESULT_OK)
+				{
+					String path = data.getStringExtra(FileBrowser.RESULT_PATH);
+					_dumpInputMap(path);
+				}
+				return;
+			}
 		}
 		
 		if (key != null)
@@ -117,7 +183,7 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 			}
 		}
 	}
-
+	
 	@Override protected void onResume()
 	{
 		super.onResume();
@@ -141,7 +207,12 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
     
     private void _setPreferenceSummary(SharedPreferences sharedPrefs, Preference pref, String key)
     {
-		if (pref instanceof ListPreference)
+    	if (key == null || _noSetSummary.containsKey(key))
+    	{
+    		return;
+    	}
+
+    	if (pref instanceof ListPreference)
 		{
 			ListPreference listPref = (ListPreference) pref;
 			pref.setSummary(listPref.getEntry());
@@ -166,11 +237,66 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 					prefVal = "";
 				}
 			}
-
+			
 			if (prefVal != null)
 			{
 				pref.setSummary(prefVal);
 			}
 		}
     }
+
+    void _dumpInputMap(String path)
+	{
+    	boolean done = false;
+
+    	String fname = path + "/inputmaps.txt";
+    	FileOutputStream out = null;
+    	try
+    	{
+    		String userMaps = Input.getUserInputMaps(PreferenceManager.getDefaultSharedPreferences(getApplicationContext()));
+    		out = new FileOutputStream(fname);
+    		if (out != null)
+    		{
+    			out.write(userMaps.getBytes());
+    			out.flush();
+    			out.close();
+    		}
+    		done = true;
+    	}
+    	catch (Exception e)
+    	{
+    		e.printStackTrace();
+    	}
+    	finally
+    	{
+    		try
+    		{
+    			if (out != null)
+    			{
+    				out.close();
+    			}
+    		}
+    		catch (Exception e)
+    		{
+    			e.printStackTrace();
+    		}
+    	}
+    	
+		if (done)
+    	{
+			AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+			alertDialog.setTitle("Saved Input Maps");
+			alertDialog.setMessage("Your input maps have been saved to:\n" + fname + "\nPlease email these to the developer if you want these in the default presets");
+			alertDialog.setButton("Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) {  } });
+			alertDialog.show();
+    	}
+    	else
+    	{
+    		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+    		alertDialog.setTitle("Error occured");
+    		alertDialog.setMessage("There was a problem saving your input maps. Please try again or log a bug report");
+    		alertDialog.setButton("Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) {  } });
+    		alertDialog.show();
+    	}
+	}
 }

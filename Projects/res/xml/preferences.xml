@@ -7,6 +7,35 @@
 		xmlns:robobunny="http://robobunny.com">
 
 	    <PreferenceCategory 
+	        android:title="@string/pref_input_device"
+	        android:key="pref_input_device_category">
+			<Preference
+				android:persistent="true"
+				android:key="pref_input_device_inputmethod"
+				android:title="@string/input_device_inputmethod"
+				android:summary="@string/input_device_inputmethod_summary"
+				android:defaultValue="none" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_input_device_enable_inputmethod"
+				android:title="@string/input_device_enable_inputmethod"
+				android:summaryOn="@string/input_device_enable_inputmethod_summary"
+				android:summaryOff="@string/input_device_enable_inputmethod_summary"
+				android:defaultValue="false" />
+			<Preference
+				android:persistent="true"
+				android:key="pref_input_device_configuremap"
+				android:title="@string/input_device_configuremap"
+				android:summary="@string/input_device_configuremap_summary"
+				android:defaultValue="none" />
+			<Preference
+				android:persistent="true"
+				android:key="pref_input_device_dumpmaps"
+				android:title="@string/input_device_dumpmaps"
+				android:summary="@string/input_device_dumpmaps_summary"
+				android:defaultValue="none" />
+		</PreferenceCategory>
+	    <PreferenceCategory 
 	        android:title="@string/pref_input_joysticks_category"
 	        android:key="pref_input_joysticks_category">
 			<ListPreference android:key="pref_input_joystick_port"
@@ -148,6 +177,12 @@
 				android:key="pref_system_tos_ste"
 				android:title="@string/tosimage_ste"
 				android:defaultValue="/sdcard/hataroid/tos_ste.img" />
+			<Preference
+				android:persistent="true"
+				android:enabled="false"
+				android:key="pref_system_tos_falcon"
+				android:title="@string/tosimage_falcon"
+				android:defaultValue="/sdcard/hataroid/tos_falcon.img" />
 		</PreferenceCategory>
 	    <PreferenceCategory 
 	        android:title="@string/pref_system_tweaks_category"
@@ -331,7 +366,7 @@
 			android:entryValues="@array/pref_sound_playbackquality_values"
 			android:dialogTitle="@string/playbackquality"
 			android:title="@string/playbackquality"
-			android:defaultValue="22050" />
+			android:defaultValue="48000" />
 		<ListPreference android:key="pref_sound_ymvoicesmixing"
 			android:persistent="true"
 			android:entries="@array/pref_sound_ymvoicesmixing_entries"
@@ -357,12 +392,6 @@
 	    <PreferenceCategory 
 	        android:title="@string/pref_storage_floppydisks_category"
 	        android:key="pref_storage_floppydisks_category">
-			<EditTextPreference
-				android:persistent="true"
-				android:enabled="false"
-				android:key="pref_storage_floppydisks_imagedir"
-				android:title="@string/pref_storage_floppydisks_imagedir"
-				android:defaultValue="/sdcard/hataroid/disks" />
 			<CheckBoxPreference
 				android:persistent="true"
 				android:key="pref_storage_floppydisks_autoinsertb"
