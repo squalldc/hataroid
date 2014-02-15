@@ -173,6 +173,7 @@ static void registerJNIcallbacks(JNIEnv * env, jobject activityInstance)
 
 	jclass activityClass = (env)->GetObjectClass(activityInstance);
 
+	g_jniAudioInterface.getMinBufSize = (env)->GetMethodID(activityClass, "getMinBufSize", "(III)I");
 	g_jniAudioInterface.initAudio = (env)->GetMethodID(activityClass, "initAudio", "(IIII)V");
 	g_jniAudioInterface.deinitAudio = (env)->GetMethodID(activityClass, "deinitAudio", "()V");
 
@@ -526,6 +527,13 @@ void _optionSetYMVoicesMixing(const OptionSetting *setting, const char *val, Emu
 	else if (strcmp(val, "st") == 0) ConfigureParams.Sound.YmVolumeMixing = YM_TABLE_MIXING;
 	else if (strcmp(val, "linear") == 0) ConfigureParams.Sound.YmVolumeMixing = YM_LINEAR_MIXING;
 }
+void _optionSoundBufferSize(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	int bufSize = atoi(val);
+	if (bufSize < 1)		{ bufSize = 1; }
+	else if (bufSize > 50) {  bufSize = 50; }
+	ConfigureParams.Hataroid.deviceSoundBufSize = bufSize;
+}
 void _optionSetMonitorType(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	if (strcmp(val, "Mono") == 0) ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_MONO;
@@ -780,6 +788,7 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_sound_quality", _optionSetSoundQuality },
 	{ "pref_sound_synchronize_enabled", _optionSetSoundSync },
 	{ "pref_sound_ymvoicesmixing", _optionSetYMVoicesMixing },
+	{ "pref_sound_buffer_size", _optionSoundBufferSize },
 	{ "pref_input_keyboard_extra_keys", _optionSetVKBExtraKeys },
 	{ "pref_input_keyboard_obsession_keys", _optionSetVKBObsessionKeys },
 	{ "pref_input_onscreen_hide_all", _optionSetVKBHideAll},
@@ -838,6 +847,9 @@ void EmuCommandSetOptions_Run(EmuCommand *command)
 	{
 		// forced settings
 		ConfigureParams.Sound.SdlAudioBufferSize = 25;
+
+		// Reset the sound emulation variables:
+		Sound_BufferIndexNeedReset = true;
 	}
 
 	// If a memory snapshot has been loaded, no further changes are required

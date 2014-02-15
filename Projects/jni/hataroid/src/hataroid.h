@@ -23,6 +23,7 @@ struct JNIAudio
 	JNIEnv *android_env;
 	jobject android_mainActivity;
 
+	jmethodID getMinBufSize;
 	jmethodID initAudio;
 	jmethodID deinitAudio;
 	jmethodID sendAudio;

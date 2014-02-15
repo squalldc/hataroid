@@ -53,8 +53,6 @@ typedef struct
   int YmVolumeMixing;
 } CNF_SOUND;
 
-
-
 /* RS232 configuration */
 typedef struct
 {
@@ -310,6 +308,13 @@ typedef struct
   char AviRecordFile[FILENAME_MAX];
 } CNF_VIDEO;
 
+// extra data for hataroid (so we can easily keep memorysnapshots compatible between other versions)
+typedef struct
+{
+	int deviceSoundBufSize;
+} CNF_HATAROID;
+
+
 /* State of system is stored in this structure */
 /* On reset, variables are copied into system globals and used. */
 typedef struct
@@ -331,6 +336,7 @@ typedef struct
   CNF_MIDI Midi;
   CNF_SYSTEM System;
   CNF_VIDEO Video;
+  CNF_HATAROID Hataroid;
 } CNF_PARAMS;
 
 

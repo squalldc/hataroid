@@ -274,7 +274,7 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_updateInput
 		}
 
 		(env)->ReleaseIntArrayElements(keyPresses, keyPressVals, JNI_ABORT);
-		(env)->DeleteLocalRef(keyPresses); // explicitly releasing to assist garbage collection, though not required
+		//(env)->DeleteLocalRef(keyPresses); // explicitly releasing to assist garbage collection, though not required
 	}
 
 	bool *curtouched = s_curtouched[s_curIndex];

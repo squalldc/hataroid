@@ -51,6 +51,8 @@ extern struct JNIAudio g_jniAudioInterface;
 static void initAndroidAudio(_THIS, Uint16 format, int freq, int channels, int bufSizeBytes);
 static void deinitAndroidAudio(_THIS);
 
+int SdlDeviceBufferSizeScale = 18;
+
 /* Audio driver bootstrap functions */
 static int ANDROIDAUDIOTRACK_Available(void)
 {
@@ -224,14 +226,41 @@ static void initAndroidAudio(_THIS, Uint16 format, int freq, int channels, int b
 	if (j_env)
 	{
 		int bits = 16;
+		int bytes = 2;
 		switch (format)
 		{
 			case AUDIO_U8:
 			case AUDIO_S8:
 			{
 				bits = 8;
+				bytes = 1;
 				break;
 			}
+		}
+
+		Debug_Printf("SDL_Audio Native->Java AudioInit_callback");
+
+		jint minBufSize = (*j_env)->CallIntMethod(j_env,
+				g_jniAudioInterface.android_mainActivity, g_jniAudioInterface.getMinBufSize,
+				freq, bits, channels);
+
+		float scale = (SdlDeviceBufferSizeScale<=0) ? 1 : ((SdlDeviceBufferSizeScale > 50) ? 50 : SdlDeviceBufferSizeScale);
+		scale *= 1.0f/100.0f;
+		const int roundSize = 1024; // pow2
+		int reqBufSize = (int)((freq * bytes * channels) * (scale));
+		reqBufSize = (reqBufSize + (roundSize-1)) & ~(roundSize-1);
+
+		Debug_Printf("SDL_Audio Requested BufSize: %d", reqBufSize);
+
+		int deviceBufSize = reqBufSize;
+		if (deviceBufSize < bufSizeBytes)
+		{
+			deviceBufSize = bufSizeBytes;
+		}
+		if (deviceBufSize < minBufSize)
+		{
+			Debug_Printf("Device MinBufSize: %d", minBufSize);
+			deviceBufSize = minBufSize;
 		}
 
 		Debug_Printf("SDL_Audio Native->Java AudioInit_callback");
@@ -239,7 +268,8 @@ static void initAndroidAudio(_THIS, Uint16 format, int freq, int channels, int b
 		(*j_env)->CallVoidMethod(j_env,
 				g_jniAudioInterface.android_mainActivity, g_jniAudioInterface.initAudio,
 				freq, bits, channels,
-				bufSizeBytes);//(freq == 44100) ? (32 * 1024) : (16*1024));
+				deviceBufSize);
+				//(freq == 44100) ? (32 * 1024) : (16*1024));
 
 		this->hidden->numjShorts = bufSizeBytes/2;
 	}

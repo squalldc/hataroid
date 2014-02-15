@@ -211,7 +211,8 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	}
 
 	/* Did stop sound? Or change playback Hz. If so, also stop sound recording */
-	if (!changed->Sound.bEnableSound || changed->Sound.nPlaybackFreq != current->Sound.nPlaybackFreq)
+	if (!changed->Sound.bEnableSound || changed->Sound.nPlaybackFreq != current->Sound.nPlaybackFreq
+		|| changed->Hataroid.deviceSoundBufSize != current->Hataroid.deviceSoundBufSize)
 	{
 		Dprintf("- sound>\n");
 		if (Sound_AreWeRecording())

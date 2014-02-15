@@ -30,6 +30,7 @@ const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __T
 #include "clocks_timings.h"
 #include "68kDisass.h"
 
+extern int SdlDeviceBufferSizeScale;
 
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
 char sConfigFileName[FILENAME_MAX];         /* Stores the name of the configuration file */
@@ -355,6 +356,12 @@ static const struct Config_Tag configs_Video[] =
 	{ NULL , Error_Tag, NULL }
 };
 
+// extra options for hataroid
+static const struct Config_Tag configs_Hataroid[] =
+{
+	{ "deviceSoundBufSize", Int_Tag, &ConfigureParams.Hataroid.deviceSoundBufSize },
+	{ NULL , Error_Tag, NULL }
+};
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -551,6 +558,9 @@ void Configuration_SetDefault(void)
 	ConfigureParams.System.bRealTimeClock = true;
 	ConfigureParams.System.bFastForward = false;
 
+	// Hataroid extra
+	ConfigureParams.Hataroid.deviceSoundBufSize = 18;
+
 	/* Set defaults for Video */
 #if HAVE_LIBPNG
 	ConfigureParams.Video.AviRecordVcodec = AVI_RECORD_VIDEO_CODEC_PNG;
@@ -615,6 +625,9 @@ void Configuration_Apply(bool bReset)
 		SdlAudioBufferSize = 10;
 	else if ( SdlAudioBufferSize > 100 )		/* max of 100 ms */
 		SdlAudioBufferSize = 100;
+
+	// device audio buffer size
+	SdlDeviceBufferSizeScale = ConfigureParams.Hataroid.deviceSoundBufSize;
 
 	/* Set playback frequency */
 	Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackFreq);
@@ -713,6 +726,7 @@ void Configuration_Load(const char *psFileName)
 	Configuration_LoadSection(psFileName, configs_Midi, "[Midi]");
 	Configuration_LoadSection(psFileName, configs_System, "[System]");
 	Configuration_LoadSection(psFileName, configs_Video, "[Video]");
+	Configuration_LoadSection(psFileName, configs_Hataroid, "[Hataroid]");
 }
 
 
@@ -765,6 +779,7 @@ void Configuration_Save(void)
 	Configuration_SaveSection(sConfigFileName, configs_Midi, "[Midi]");
 	Configuration_SaveSection(sConfigFileName, configs_System, "[System]");
 	Configuration_SaveSection(sConfigFileName, configs_Video, "[Video]");
+	Configuration_SaveSection(sConfigFileName, configs_Hataroid, "[Hataroid]");
 }
 
 

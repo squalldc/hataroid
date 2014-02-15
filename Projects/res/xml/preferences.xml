@@ -345,7 +345,19 @@
 	<PreferenceScreen
 		android:key="sound_category_key"
 		android:title="@string/sound"
-		android:persistent="false">
+		android:persistent="false"
+		xmlns:robobunny="http://robobunny.com">
+		<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
+			android:persistent="true"
+			android:key="pref_sound_buffer_size"
+			android:title="@string/sound_buffer_size"
+			android:summary="@string/sound_buffer_size_summary"
+			android:defaultValue="18"
+			android:max="50"
+			robobunny:min="1"
+			robobunny:unitsLeft=""
+			robobunny:unitsRight="+"
+		/>
 		<CheckBoxPreference
 			android:persistent="true"
 			android:key="pref_sound_enabled"

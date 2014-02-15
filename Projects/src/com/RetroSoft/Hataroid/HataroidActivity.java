@@ -356,6 +356,15 @@ public class HataroidActivity extends Activity
 		HataroidNativeLib.emulationResume();
 	}
 	
+	public int getMinBufSize(int freq, int bits, int channels)
+	{
+		int minBufSize = AudioTrack.getMinBufferSize(
+				freq,
+				(channels == 2) ? AudioFormat.CHANNEL_OUT_STEREO : AudioFormat.CHANNEL_OUT_MONO,
+				(bits == 8) ? AudioFormat.ENCODING_PCM_8BIT : AudioFormat.ENCODING_PCM_16BIT);
+		return minBufSize;
+	}
+	
 	public void initAudio(int freq, int bits, int channels, int bufSizeBytes)
     {
     	if (_audioTrack == null)
@@ -368,7 +377,7 @@ public class HataroidActivity extends Activity
 	    		_audioTrack = new AudioTrack(
 	    				AudioManager.STREAM_MUSIC,
 	    				freq,
-	    				(channels == 2) ? AudioFormat.CHANNEL_CONFIGURATION_STEREO : AudioFormat.CHANNEL_CONFIGURATION_MONO,
+	    				(channels == 2) ? AudioFormat.CHANNEL_OUT_STEREO : AudioFormat.CHANNEL_OUT_MONO,
 	    				(bits == 8) ? AudioFormat.ENCODING_PCM_8BIT : AudioFormat.ENCODING_PCM_16BIT,
 	    				bufSizeBytes,
 	    				AudioTrack.MODE_STREAM);
@@ -379,6 +388,7 @@ public class HataroidActivity extends Activity
     		catch (Exception e)
     		{
     			error = true;
+    			deinitAudio();
     		}
     		
     		if (error)

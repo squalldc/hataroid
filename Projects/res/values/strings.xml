@@ -173,9 +173,9 @@
     <string name="storage_savestate_auto_reload">Auto restore last session</string>
     <string name="storage_savestate_auto_reload_summary">Automatically saves on quit and restores on load of last running session</string>
     <string name="pref_input_device">Input (Method) Devices</string>
-    <string name="input_device_inputmethod">Select Current Input Device</string>
+    <string name="input_device_inputmethod">Switch Current Input Device</string>
     <string name="input_device_inputmethod_summary">Choose the current input device from the Android System menu</string>
-    <string name="input_device_enable_inputmethod">Use Input Method Device</string>
+    <string name="input_device_enable_inputmethod">Use Input Method Device (EXPERIMENTAL)</string>
     <string name="input_device_enable_inputmethod_summary">Enables receiving input from the chosen Input Method Device</string>
     <string name="input_device_configuremap">Configure Input Mapping</string>
     <string name="input_device_configuremap_summary">Configure which input keys map to which emulator keys</string>
@@ -183,7 +183,8 @@
     <string name="capture_status"> </string>
     <string name="input_device_dumpmaps">Dump Input Maps to file</string>
     <string name="input_device_dumpmaps_summary">Saves the user input maps to a file for sending to the developer</string>
-
+    <string name="sound_buffer_size">Device sound buffer size (latency vs crackling)</string>
+    <string name="sound_buffer_size_summary">Adjust down to reduce audio latency or up to remove popping</string>
     <string name="blank"> </string>
     
 </resources>
