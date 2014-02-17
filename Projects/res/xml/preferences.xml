@@ -378,7 +378,7 @@
 			android:entryValues="@array/pref_sound_playbackquality_values"
 			android:dialogTitle="@string/playbackquality"
 			android:title="@string/playbackquality"
-			android:defaultValue="44100" />
+			android:defaultValue="22050" />
 		<ListPreference android:key="pref_sound_ymvoicesmixing"
 			android:persistent="true"
 			android:entries="@array/pref_sound_ymvoicesmixing_entries"

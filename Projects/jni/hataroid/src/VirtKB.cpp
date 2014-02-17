@@ -771,9 +771,10 @@ void VirtKB_CreateQuickKeys()
 		joyAreaMaxX = curKeyX;
 	}
 
-	if (joyMode && s_vkbObsessionKeys)
+	if (joyMode)
 	{
 		// bottom left keys
+		if (s_vkbObsessionKeys)
 		{
 			int keyOffsetX = (int)ceilf(30*sscale);
 			int keyOffsetY = (int)ceilf(30*sscale);
@@ -800,47 +801,47 @@ void VirtKB_CreateQuickKeys()
 
 			joyAreaMaxX = curKeyX;
 		}
-	}
-	else
-	{
-		// joystick dir - from bottom left
+		else
 		{
-			int keyOffsetX = (int)ceilf(30*sscale);
-			int keyOffsetY = (int)ceilf(30*sscale);
-			int keyBtnSize = (int)ceilf(s_joystickSize*60.0f*sscale);
-			int keyMarginY = (int)ceilf(2*sscale);
-
-			int joyAreaMinWidth = keyOffsetX + (keyBtnSize*3);
-			int joyAreaMinHeight = keyOffsetY + (keyBtnSize*3);
-
-			if ((scrheight - joyAreaMinY) < joyAreaMinHeight)
+			// joystick dir - from bottom left
 			{
-				joyAreaMinY = scrheight - joyAreaMinHeight;
+				int keyOffsetX = (int)ceilf(30*sscale);
+				int keyOffsetY = (int)ceilf(30*sscale);
+				int keyBtnSize = (int)ceilf(s_joystickSize*60.0f*sscale);
+				int keyMarginY = (int)ceilf(2*sscale);
+
+				int joyAreaMinWidth = keyOffsetX + (keyBtnSize*3);
+				int joyAreaMinHeight = keyOffsetY + (keyBtnSize*3);
+
+				if ((scrheight - joyAreaMinY) < joyAreaMinHeight)
+				{
+					joyAreaMinY = scrheight - joyAreaMinHeight;
+				}
+				if (joyAreaMaxX < joyAreaMinWidth)
+				{
+					joyAreaMaxX = joyAreaMinWidth;
+				}
+
+				// left
+				if (!addQuickKey(0, joyAreaMinY, keyOffsetX+keyBtnSize, scrheight,
+							keyOffsetX, scrheight-keyOffsetY-keyBtnSize*2, keyOffsetX+keyBtnSize, scrheight-keyOffsetY-keyBtnSize,
+							2, 2, -2, -2, &g_vkbKeyDefs[s_joyMapToArrowKeys?VKB_KEY_LEFTARROW:VKB_KEY_JOYLEFT])) { }
+
+				// right
+				if (!addQuickKey(keyOffsetX+keyBtnSize*2, joyAreaMinY, joyAreaMaxX, scrheight,
+							keyOffsetX+keyBtnSize*2, scrheight-keyOffsetY-keyBtnSize*2, keyOffsetX+keyBtnSize*3, scrheight-keyOffsetY-keyBtnSize,
+							2, 2, -2, -2, &g_vkbKeyDefs[s_joyMapToArrowKeys?VKB_KEY_RIGHTARROW:VKB_KEY_JOYRIGHT])) { }
+
+				// up
+				if (!addQuickKey(0, joyAreaMinY, joyAreaMaxX, scrheight-keyOffsetY-keyBtnSize*2,
+							keyOffsetX+keyBtnSize, scrheight-keyOffsetY-keyBtnSize*3, keyOffsetX+keyBtnSize*2, scrheight-keyOffsetY-keyBtnSize*2,
+							2, 2, -2, -2, &g_vkbKeyDefs[s_joyMapToArrowKeys?VKB_KEY_UPARROW:VKB_KEY_JOYUP])) { }
+
+				// down
+				if (!addQuickKey(0, scrheight-keyOffsetY-keyBtnSize, joyAreaMaxX, scrheight,
+							keyOffsetX+keyBtnSize, scrheight-keyOffsetY-keyBtnSize, keyOffsetX+keyBtnSize*2, scrheight-keyOffsetY,
+							2, 2, -2, -2, &g_vkbKeyDefs[s_joyMapToArrowKeys?VKB_KEY_DOWNARROW:VKB_KEY_JOYDOWN])) { }
 			}
-			if (joyAreaMaxX < joyAreaMinWidth)
-			{
-				joyAreaMaxX = joyAreaMinWidth;
-			}
-
-			// left
-			if (!addQuickKey(0, joyAreaMinY, keyOffsetX+keyBtnSize, scrheight,
-						keyOffsetX, scrheight-keyOffsetY-keyBtnSize*2, keyOffsetX+keyBtnSize, scrheight-keyOffsetY-keyBtnSize,
-						2, 2, -2, -2, &g_vkbKeyDefs[s_joyMapToArrowKeys?VKB_KEY_LEFTARROW:VKB_KEY_JOYLEFT])) { }
-
-			// right
-			if (!addQuickKey(keyOffsetX+keyBtnSize*2, joyAreaMinY, joyAreaMaxX, scrheight,
-						keyOffsetX+keyBtnSize*2, scrheight-keyOffsetY-keyBtnSize*2, keyOffsetX+keyBtnSize*3, scrheight-keyOffsetY-keyBtnSize,
-						2, 2, -2, -2, &g_vkbKeyDefs[s_joyMapToArrowKeys?VKB_KEY_RIGHTARROW:VKB_KEY_JOYRIGHT])) { }
-
-			// up
-			if (!addQuickKey(0, joyAreaMinY, joyAreaMaxX, scrheight-keyOffsetY-keyBtnSize*2,
-						keyOffsetX+keyBtnSize, scrheight-keyOffsetY-keyBtnSize*3, keyOffsetX+keyBtnSize*2, scrheight-keyOffsetY-keyBtnSize*2,
-						2, 2, -2, -2, &g_vkbKeyDefs[s_joyMapToArrowKeys?VKB_KEY_UPARROW:VKB_KEY_JOYUP])) { }
-
-			// down
-			if (!addQuickKey(0, scrheight-keyOffsetY-keyBtnSize, joyAreaMaxX, scrheight,
-						keyOffsetX+keyBtnSize, scrheight-keyOffsetY-keyBtnSize, keyOffsetX+keyBtnSize*2, scrheight-keyOffsetY,
-						2, 2, -2, -2, &g_vkbKeyDefs[s_joyMapToArrowKeys?VKB_KEY_DOWNARROW:VKB_KEY_JOYDOWN])) { }
 		}
 	}
 

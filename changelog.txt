@@ -1,4 +1,4 @@
-version 1.40
+version 1.401
 - EXPERIMENTAL: External keyboard/controller support (through Android Input (IME) Devices)
       - if you want to try, enable in options 
       - (I don't have any devices to test this with so send feedback and your presets if you want them included in the default)
