@@ -3,6 +3,7 @@ package com.RetroSoft.Hataroid.FileBrowser;
 import java.util.List;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -55,6 +56,7 @@ public class FileArrayAdapter extends ArrayAdapter<FileListItem>
 			if (t1 != null)
 			{
 				t1.setText(item.getName());
+				t1.setTextColor(Color.WHITE);
 			}
 			if (i1 != null)
 			{

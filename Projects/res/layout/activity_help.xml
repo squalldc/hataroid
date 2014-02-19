@@ -8,7 +8,7 @@
         android:id="@+id/HelpLinearLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#a0a0a0" >
+        android:background="@drawable/gradient_drawable" >
 
         <TextView
             android:id="@+id/helpTitle"

@@ -55,6 +55,7 @@ public class InputMapArrayAdapter extends ArrayAdapter<InputMapListItem>
 			if (t1 != null)
 			{
 				t1.setText(item.getEmuKeyName());
+				t1.setTextColor(Color.WHITE);
 			}
 			if (t2 != null)
 			{

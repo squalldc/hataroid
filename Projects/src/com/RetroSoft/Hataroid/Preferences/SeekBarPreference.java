@@ -4,6 +4,7 @@ package com.RetroSoft.Hataroid.Preferences;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.graphics.Color;
 import android.preference.Preference;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -33,7 +34,7 @@ public class SeekBarPreference extends Preference implements OnSeekBarChangeList
 	private String mUnitsRight = "";
 	private SeekBar mSeekBar;
 	
-	//private TextView mStatusText;
+	private TextView mStatusText;
 
 	boolean _storeValue = false;
 
@@ -141,19 +142,20 @@ public class SeekBarPreference extends Preference implements OnSeekBarChangeList
 	protected void updateView(View view) {
 
 		try {
-			//mStatusText = (TextView) view.findViewById(R.id.seekBarPrefValue);
+			mStatusText = (TextView) view.findViewById(R.id.seekBarPrefValue);
 
-			//mStatusText.setText(String.valueOf(mCurrentValue));
-			//mStatusText.setMinimumWidth(30);
+			mStatusText.setText(String.valueOf(mCurrentValue));
+			mStatusText.setMinimumWidth(30);
 			
 			mSeekBar.setProgress(mCurrentValue - mMinValue);
 
 			TextView unitsRight = (TextView)view.findViewById(R.id.seekBarPrefUnitsRight);
 			unitsRight.setText(mUnitsRight);
+			unitsRight.setTextColor(Color.WHITE);
 			
 			TextView unitsLeft = (TextView)view.findViewById(R.id.seekBarPrefUnitsLeft);
 			unitsLeft.setText(mUnitsLeft);
-			
+			unitsLeft.setTextColor(Color.WHITE);
 		}
 		catch(Exception e) {
 			Log.e(TAG, "Error updating seek bar preference", e);
@@ -185,7 +187,7 @@ public class SeekBarPreference extends Preference implements OnSeekBarChangeList
 
 		// change accepted, store it
 		mCurrentValue = newValue;
-		//mStatusText.setText(String.valueOf(newValue));
+		mStatusText.setText(String.valueOf(newValue));
 		
 		//boolean tryString = false;
 		//try { persistInt(newValue); } catch (Exception e) { tryString = true; }

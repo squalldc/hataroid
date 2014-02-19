@@ -9,7 +9,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="0.05"
-        android:background="#a0a0a0" >
+        android:background="@drawable/gradient_drawable" >
 
         <TextView
             android:id="@+id/fb_curPathText"
@@ -40,9 +40,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="0.90"
-        android:background="#000000"
+        android:background="@drawable/bg_gradient"
         android:choiceMode="singleChoice"
         android:clickable="true"
+        android:divider="#66888888"
+        android:dividerHeight="1px"
         android:drawSelectorOnTop="false" >
     </ListView>
 

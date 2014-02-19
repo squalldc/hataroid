@@ -68,7 +68,7 @@
 				android:max="200"
 				robobunny:min="10"
 				robobunny:unitsLeft=""
-				robobunny:unitsRight="%"
+				robobunny:unitsRight=" %"
 			/>
 		</PreferenceCategory>
 	    <PreferenceCategory 
@@ -99,7 +99,7 @@
 				android:max="100"
 				robobunny:min="0"
 				robobunny:unitsLeft=""
-				robobunny:unitsRight="%"
+				robobunny:unitsRight=" %"
 			/>
 			<CheckBoxPreference
 				android:persistent="true"
@@ -356,7 +356,7 @@
 			android:max="50"
 			robobunny:min="1"
 			robobunny:unitsLeft=""
-			robobunny:unitsRight="+"
+			robobunny:unitsRight=""
 		/>
 		<CheckBoxPreference
 			android:persistent="true"

@@ -295,7 +295,7 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 		Spinner spList = (Spinner)findViewById(R.id.im_presetSpinner);
 		if (spList != null)
 		{
-			ArrayAdapter<String> presetListAdapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_dropdown_item);
+			ArrayAdapter<String> presetListAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item);
 			for (int i = 0; i < _presetIDList.size(); ++i)
 			{
 				presetListAdapter.add(_presetNameList.get(i));

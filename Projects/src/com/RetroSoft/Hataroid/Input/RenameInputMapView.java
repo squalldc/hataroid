@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.Window;
 import android.widget.EditText;
 
 import com.RetroSoft.Hataroid.HataroidActivity;
@@ -21,8 +22,19 @@ public class RenameInputMapView extends Activity
 	@Override public void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
+
+		try
+		{
+			requestWindowFeature(Window.FEATURE_NO_TITLE);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
 		setContentView(R.layout.renameinputmap_view);
 		
+
 		_parseOptions(savedInstanceState);
 		_retIntent = new Intent();
 		
