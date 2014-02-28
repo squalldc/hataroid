@@ -33,8 +33,11 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 	private static final int FILEACTIVITYRESULT_IDESLAVE_IMAGE			= 5;
 	private static final int FILEACTIVITYRESULT_GEMDOS_FOLDER			= 6;
 	private static final int FILEACTIVITYRESULT_DUMPINPUTMAPS_FOLDER	= 7;
-	private static final int INPUTMAPACTIVITYRESULT_OK					= 8;
+	private static final int FILEACTIVITYRESULT_SAVESTATE_FOLDER		= 8;
+	private static final int INPUTMAPACTIVITYRESULT_OK					= 9;
 
+	
+		
 	public static final String kPrefName_ST_TosImage		= "pref_system_tos";
 	public static final String kPrefName_STE_TosImage		= "pref_system_tos_ste";
 
@@ -45,6 +48,8 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 	public static final String kPrefName_GEMDOS_Folder		= "pref_storage_harddisks_gemdosdrive";
 
 	public static final String kPrefName_DumpInputMap_Folder			= "pref_input_device_dumpmaps";
+
+	public static final String kPrefName_SaveState_Folder				= "pref_storage_savestate_folder";
 
 	public static final String kPrefName_InputDevice_InputMethod		= "pref_input_device_inputmethod";
 	public static final String kPrefName_InputDevice_ConfigureMap		= "pref_input_device_configuremap";
@@ -88,6 +93,9 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		
 		// dump map folder
 		linkFileSelector(kPrefName_DumpInputMap_Folder, FILEACTIVITYRESULT_DUMPINPUTMAPS_FOLDER, true, true, false);
+		
+		// save state folder
+		linkFileSelector(kPrefName_SaveState_Folder, FILEACTIVITYRESULT_SAVESTATE_FOLDER, true, true, false);
 	}
 	
 	void linkFileSelector(String prefKey, int fileResultID, boolean allFiles, boolean selectFolder, boolean tosImage)
@@ -158,6 +166,7 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 			case FILEACTIVITYRESULT_IDEMASTER_IMAGE:	key = kPrefName_IDEMaster_Image; break;
 			case FILEACTIVITYRESULT_IDESLAVE_IMAGE:		key = kPrefName_IDESlave_Image; break;
 			case FILEACTIVITYRESULT_GEMDOS_FOLDER:		key = kPrefName_GEMDOS_Folder; break;
+			case FILEACTIVITYRESULT_SAVESTATE_FOLDER:	key = kPrefName_SaveState_Folder; break;
 			case FILEACTIVITYRESULT_DUMPINPUTMAPS_FOLDER:
 			{
 				if (resultCode == RESULT_OK)

@@ -1,5 +1,6 @@
 package com.RetroSoft.Hataroid;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,15 +34,19 @@ import com.RetroSoft.Hataroid.Help.HelpActivity;
 import com.RetroSoft.Hataroid.Input.Input;
 import com.RetroSoft.Hataroid.Input.InputMapConfigureView;
 import com.RetroSoft.Hataroid.Preferences.Settings;
+import com.RetroSoft.Hataroid.SaveState.SaveStateBrowser;
 
 
 public class HataroidActivity extends Activity
 {
 	public static final String LOG_TAG = "hataroid";
 
-	private static final int ACTIVITYRESULT_FLOPPYA = 1;
-	private static final int ACTIVITYRESULT_FLOPPYB = 2;
-	private static final int ACTIVITYRESULT_SETTINGS =3;
+	private static final int ACTIVITYRESULT_FLOPPYA		= 1;
+	private static final int ACTIVITYRESULT_FLOPPYB		= 2;
+	private static final int ACTIVITYRESULT_SETTINGS	= 3;
+	private static final int ACTIVITYRESULT_SS_SAVE		= 4;
+	private static final int ACTIVITYRESULT_SS_LOAD		= 5;
+	private static final int ACTIVITYRESULT_SS_DELETE	= 6;
 
 	public static HataroidActivity	instance = null;
 	private boolean				_lostFocus = false;
@@ -261,8 +266,11 @@ public class HataroidActivity extends Activity
 				}
 			};
 			_emuThread.start();
+
+			_checkAutoSaveOnStart();
 		}
 	}
+
 	private void stopEmulationThread()
 	{
 		if (_emuThread != null)
@@ -598,10 +606,6 @@ public class HataroidActivity extends Activity
 		int id = item.getItemId();
 		switch (id)
 		{
-			//case R.id.controls:
-			//{
-			//	return true;
-			//}
 			case R.id.floppya:
 			case R.id.floppyb:
 			{
@@ -648,15 +652,30 @@ public class HataroidActivity extends Activity
 		        startActivity(help);
 				return true;
 			}
-//			case R.id.savestate:
-//			{
-//				return true;
-//			}
-			default:
+			case R.id.ss_save:
+			case R.id.ss_load:
+			case R.id.ss_delete:
 			{
-				return super.onOptionsItemSelected(item);
+				int mode = -1;
+				int resultId = -1;
+				switch (id)
+				{
+					case R.id.ss_save:	{ mode = SaveStateBrowser.SSMODE_SAVE; resultId = ACTIVITYRESULT_SS_SAVE; break; }
+					case R.id.ss_load:	{ mode = SaveStateBrowser.SSMODE_LOAD; resultId = ACTIVITYRESULT_SS_LOAD; break; }
+					case R.id.ss_delete:{ mode = SaveStateBrowser.SSMODE_DELETE; resultId = ACTIVITYRESULT_SS_DELETE; break; }
+				}
+				if (mode >= 0)
+				{
+			        Intent browser = new Intent(this, SaveStateBrowser.class);
+			        browser.putExtra(SaveStateBrowser.CONFIG_MODE, mode);
+			        startActivityForResult(browser, resultId);
+			        return true;
+				}
+				break;
 			}
 		}
+
+		return super.onOptionsItemSelected(item);
 	}
 	
 	void _resetEmu(boolean cold)
@@ -708,6 +727,35 @@ public class HataroidActivity extends Activity
 			{
 				_updateOptions();
 				_setupDeviceOptions();
+				break;
+			}
+			
+			case ACTIVITYRESULT_SS_SAVE:
+			case ACTIVITYRESULT_SS_LOAD:
+			{
+				if (resultCode == RESULT_OK)
+				{
+					int saveSlot = data.getIntExtra(SaveStateBrowser.RESULT_SAVESTATE_SLOT, -1);
+					String filePath = data.getStringExtra(SaveStateBrowser.RESULT_SAVESTATE_FILENAME);
+
+					String path = filePath;
+					int lastIndex = filePath.lastIndexOf("/");
+					if (lastIndex > 0)
+					{
+						path = filePath.substring(0, lastIndex);
+					}
+					
+					Log.i(LOG_TAG, "save/load: path: " + path + ", file: " + filePath + ", slot: " + saveSlot);
+					
+					if (requestCode == ACTIVITYRESULT_SS_SAVE)
+					{
+						HataroidNativeLib.emulatorSaveStateSave(path, filePath, saveSlot);
+					}
+					else if (requestCode == ACTIVITYRESULT_SS_LOAD)
+					{
+						HataroidNativeLib.emulatorSaveStateLoad(path, filePath, saveSlot);
+					}
+				}
 				break;
 			}
 		}
@@ -765,9 +813,18 @@ public class HataroidActivity extends Activity
 			alertDialog.setTitle("Quit Hataroid?");
 			alertDialog.setMessage("Are you sure you want to quit?");
 			alertDialog.setButton("No", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingQuitConfirm = false; } });
-			alertDialog.setButton2("Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingQuitConfirm = false; finish(); } });
+			alertDialog.setButton2("Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingQuitConfirm = false; _onQuit(); } });
 			alertDialog.setOnCancelListener(new DialogInterface.OnCancelListener() { public void onCancel(DialogInterface dialog) { _showingQuitConfirm = false; }});
 			alertDialog.show();
+		}
+	}
+	
+	void _onQuit()
+	{
+		// auto save
+		if (!_storeAutoSaveOnExit())
+		{
+			finish();
 		}
 	}
 	
@@ -832,4 +889,99 @@ public class HataroidActivity extends Activity
 	}
 
 	public Input getInput() { return _input; }
+
+	String _getAutoSaveFolder()
+	{
+		try
+		{
+	    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+	    	String saveFolder = prefs.getString(Settings.kPrefName_SaveState_Folder, null);
+	    	if (saveFolder != null)
+	    	{
+	    		return saveFolder;
+	    	}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+
+	boolean _autoSaveOnExitEnabled()
+	{
+		try
+		{
+	    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+	    	Map<String,?> allPrefs = prefs.getAll();
+	    	
+	    	Object val = allPrefs.get("pref_storage_savestate_exitautosave");
+	    	if (val != null)
+	    	{
+	    		String sval = val.toString();
+	    		boolean bval = !(sval.compareTo("false")==0 || sval.compareTo("0")==0);
+
+	    		return bval;
+	    	}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		
+		return false;
+	}
+	
+	boolean _storeAutoSaveOnExit()
+	{
+		String saveFolder = _getAutoSaveFolder();
+		if (saveFolder != null)
+		{
+			HataroidNativeLib.emulatorAutoSaveStoreOnExit(saveFolder);
+			return true;
+		}
+		return false;
+	}
+	
+	void _checkAutoSaveOnStart()
+	{
+		// check load auto save
+		if (_autoSaveOnExitEnabled())
+		{
+			String saveFolder = _getAutoSaveFolder();
+			if (saveFolder != null)
+			{
+				String autoSaveMetaName = saveFolder + "/as.qs";
+				String autoSaveName = saveFolder + "/as.sav";
+				File metaFile = new File(autoSaveMetaName);
+				File saveFile = new File(autoSaveName);
+				if (metaFile.exists() && saveFile.exists())
+				{
+					_showLoadAutoSaveDialog(saveFolder);
+				}
+			}
+		}
+	}
+
+	void _showLoadAutoSaveDialog(String saveFolder_)
+	{
+		final String saveFolder = saveFolder_;
+    	this.runOnUiThread(new Runnable()
+    	{
+			public void run()
+			{
+    			AlertDialog alertDialog = new AlertDialog.Builder(HataroidActivity.this).create();
+    			alertDialog.setTitle("Restore previous session?");
+    			alertDialog.setMessage("Do you want to load the last auto saved session?");
+    			alertDialog.setButton("No", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { } });
+    			alertDialog.setButton2("Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { HataroidNativeLib.emulatorAutoSaveLoadOnStart(saveFolder); } });
+    			alertDialog.setOnCancelListener(new DialogInterface.OnCancelListener() { public void onCancel(DialogInterface dialog) { }});
+    			alertDialog.setCanceledOnTouchOutside(false);
+    			alertDialog.show();
+			}
+    	});
+		;
+	}
+
 }

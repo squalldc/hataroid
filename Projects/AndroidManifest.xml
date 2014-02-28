@@ -67,6 +67,7 @@
         <activity android:name=".Input.InputMapConfigureView" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" android:label="@string/title_activity_inputmap_configure"></activity>
         <activity android:name=".Input.InputCaptureView" android:theme="@android:style/Theme.Dialog" android:label="@string/blank"></activity>
         <activity android:theme="@android:style/Theme.Dialog" android:name=".Input.RenameInputMapView" android:label="@string/blank"></activity>
+        <activity android:name=".SaveState.SaveStateBrowser" android:theme="@android:style/Theme.Dialog" android:label="@string/blank"></activity>
     </application>
 
 </manifest>

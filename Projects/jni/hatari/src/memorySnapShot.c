@@ -73,7 +73,9 @@ typedef FILE* MSS_File;
 
 static MSS_File CaptureFile;
 static bool bCaptureSave, bCaptureError;
+static bool gConfirmOnOverwiteSave = true;
 
+void MemorySnapShot_setConfirmOnOverwriteSave(bool set) { gConfirmOnOverwiteSave = set; }
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -148,8 +150,11 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 	 */
 	if (bSave)
 	{
-		if (!File_QueryOverwrite(pszFileName))
-			return false;
+		if (gConfirmOnOverwiteSave)
+		{
+			if (!File_QueryOverwrite(pszFileName))
+				return false;
+		}
 
 		/* Save */
 		CaptureFile = MemorySnapShot_fopen(pszFileName, "wb");

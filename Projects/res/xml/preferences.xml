@@ -392,14 +392,21 @@
 		android:title="@string/storage"
 		android:persistent="false">
 	    <PreferenceCategory 
-	        android:title="@string/pref_storage_rom_category"
-			android:enabled="false"
-	        android:key="pref_storage_rom_category">
-			<EditTextPreference
+	        android:title="@string/pref_storage_savestates_category"
+			android:enabled="true"
+	        android:key="pref_storage_savestates_category">
+   			<Preference
 				android:persistent="true"
-				android:key="pref_storage_cartridge"
-				android:title="@string/cartridgeimage"
-				android:defaultValue="none" />
+				android:key="pref_storage_savestate_folder"
+				android:title="@string/storage_savestate_folder"
+				android:defaultValue="" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_storage_savestate_exitautosave"
+				android:title="@string/storage_savestate_exitautosave"
+				android:summaryOn="@string/storage_savestate_exitautosave_summary"
+				android:summaryOff="@string/storage_savestate_exitautosave_summary"
+				android:defaultValue="false" />
 		</PreferenceCategory>
 	    <PreferenceCategory 
 	        android:title="@string/pref_storage_floppydisks_category"
@@ -425,7 +432,7 @@
 				android:dialogTitle="@string/floppydisks_writeprotection"
 				android:title="@string/floppydisks_writeprotection"
 				android:defaultValue="1" />
-		</PreferenceCategory>			
+		</PreferenceCategory>
 	    <PreferenceCategory 
 	        android:title="@string/pref_storage_harddisks_category"
 			android:enabled="true"
@@ -492,6 +499,16 @@
 				android:summaryOn="@string/harddisks_bootfromharddisk_summary"
 				android:summaryOff="@string/harddisks_bootfromharddisk_summary"
 				android:defaultValue="false" />
-		</PreferenceCategory>			
+		</PreferenceCategory>
+	    <PreferenceCategory 
+	        android:title="@string/pref_storage_rom_category"
+			android:enabled="false"
+	        android:key="pref_storage_rom_category">
+			<EditTextPreference
+				android:persistent="true"
+				android:key="pref_storage_cartridge"
+				android:title="@string/cartridgeimage"
+				android:defaultValue="none" />
+		</PreferenceCategory>
 	</PreferenceScreen>
 </PreferenceScreen>

@@ -22,6 +22,7 @@ extern "C"
 	#include <change.h>
 	#include <dialog.h>
 	#include <sound.h>
+	#include <memorySnapShot.h>
 
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_libExit(JNIEnv * env, jobject obj);
 
@@ -42,6 +43,12 @@ extern "C"
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorEjectFloppy(JNIEnv * env, jobject obj, jint floppy);
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorInsertFloppy(JNIEnv * env, jobject obj, jint floppy, jstring filename, jstring zippath);
 
+	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSaveStateSave(JNIEnv * env, jobject obj, jstring path, jstring filepath, jint saveSlot);
+	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSaveStateLoad(JNIEnv * env, jobject obj, jstring path, jstring filepath, jint saveSlot);
+
+	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorAutoSaveStoreOnExit(JNIEnv * env, jobject obj, jstring saveFolder);
+	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorAutoSaveLoadOnStart(JNIEnv * env, jobject obj, jstring saveFolder);
+
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorToggleUserPaused(JNIEnv * env, jobject obj);
 	JNIEXPORT jboolean JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorGetUserPaused(JNIEnv * env, jobject obj);
 
@@ -60,12 +67,25 @@ extern "C"
 	extern void SDL_CloseAudio();
 	extern bool Main_PauseEmulation(bool visualize);
 	extern bool Main_UnPauseEmulation(void);
+	extern void MemorySnapShot_setConfirmOnOverwriteSave(bool set);
 
 	volatile int g_lastDialogResultValid = 0;
 	volatile int g_lastDialogResult = -1;
+
+	extern int g_videoTex_width;
+	extern int g_videoTex_height;
+	extern void *g_videoTex_pixels;
+	extern int g_surface_width;
+	extern int g_surface_height;
 };
 
-static volatile bool emuUserReady = true;
+enum
+{
+	EMUPAUSETYPE_USER = (1<<0),
+	EMUPAUSETYPE_SAVE = (1<<1),
+};
+
+static volatile int emuUserPaused = 0;
 static volatile bool emuReady = false;
 static volatile bool emuInited = false;
 static volatile bool videoReady = false;
@@ -77,6 +97,7 @@ static int s_turboPrevFrameSkips = 0;
 static bool _altUpdate = false;
 
 static void SetEmulatorOptions(JNIEnv * env, jobjectArray keyarray, jobjectArray valarray, bool apply, bool init, bool queueCommand);
+void _storeSaveState(const char *saveMetaFilePath);
 
 //---------------
 struct EmuCommand;
@@ -146,7 +167,8 @@ void RequestAndWaitQuit()
 
 void setUserEmuPaused(int pause)
 {
-	emuUserReady = (pause==0);
+	if (pause)	{ emuUserPaused |= EMUPAUSETYPE_USER; }
+	else		{ emuUserPaused &= ~EMUPAUSETYPE_USER; }
 }
 
 int hasDialogResult() { return g_lastDialogResultValid; }
@@ -289,7 +311,7 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationMa
 		{
 			if (!_altUpdate)
 			{
-				if (emuUserReady)
+				if (emuUserPaused == 0)
 				{
 					hatari_main_doframe();
 				}
@@ -341,14 +363,14 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorTog
 	//VirtKB_EnableInput(false);
 
 	//emuReady = false;
-	setUserEmuPaused(emuUserReady);
+	setUserEmuPaused((emuUserPaused & EMUPAUSETYPE_USER) == 0);
 
 	//_checkEmuReady();
 }
 
 JNIEXPORT jboolean JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorGetUserPaused(JNIEnv * env, jobject obj)
 {
-	return (emuUserReady) ? JNI_FALSE : JNI_TRUE;
+	return ((emuUserPaused & EMUPAUSETYPE_USER) != 0);
 }
 
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationResume(JNIEnv * env, jobject obj)
@@ -380,7 +402,7 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_onDrawFrame
 	{
 		if (_altUpdate)
 		{
-			if (emuUserReady)
+			if (emuUserPaused == 0)
 			{
 				hatari_main_doframe();
 			}
@@ -1023,6 +1045,290 @@ void EmuCommandInsertFloppy_Cleanup(EmuCommand *command)
 	delete data;
 }
 
+struct EmuCommandSaveState_Data
+{
+	static const int OpSave				= 0;
+	static const int OpLoad				= 1;
+	static const int OpSaveAutoSave		= 2;
+	static const int OpLoadAutoSave		= 3;
+
+	int saveStateOp;
+	int saveSlot;
+	char *saveStatePath;
+	char *saveStateFilePath;
+};
+
+void EmuCommandSaveState_Run(EmuCommand *command)
+{
+	Debug_Printf("----> Save State Operation");
+
+	EmuCommandSaveState_Data *data = (EmuCommandSaveState_Data*)command->data;
+
+	switch (data->saveStateOp)
+	{
+		case EmuCommandSaveState_Data::OpSave:
+		{
+			remove(data->saveStateFilePath); // TODO: check error codes
+
+			// create new save name based on inserted floppy
+			char* saveMetaBaseName = new char [FILENAME_MAX];
+			char* saveMetaFilePath = new char [FILENAME_MAX];
+
+			char* tempFloppyName = 0;
+
+			const char *sFloppyName = 0;
+			for (int d = 0; d < MAX_FLOPPYDRIVES; ++d)
+			{
+				if (ConfigureParams.DiskImage.szDiskFileName[d][0] != 0)
+				{
+					sFloppyName = ConfigureParams.DiskImage.szDiskFileName[d];
+					break;
+				}
+				else if (ConfigureParams.DiskImage.szDiskZipPath[d][0] != 0)
+				{
+					sFloppyName = ConfigureParams.DiskImage.szDiskZipPath[d];
+					break;
+				}
+			}
+			if (sFloppyName == 0)
+			{
+				sFloppyName = "unknown";
+			}
+			else
+			{
+				const char *floppyBase = strrchr(sFloppyName, '/');
+				if (floppyBase != 0)
+				{
+					sFloppyName = &floppyBase[1];
+				}
+
+				tempFloppyName = new char [FILENAME_MAX];
+				strncpy(tempFloppyName, sFloppyName, FILENAME_MAX);
+
+				int nameLen = strlen(tempFloppyName);
+				for (int c = nameLen-1; c >= 0; --c)
+				{
+					if (tempFloppyName[c] == '.')
+					{
+						tempFloppyName[c] = 0;
+						break;
+					}
+				}
+
+				sFloppyName = tempFloppyName;
+			}
+
+			if (data->saveSlot >= 0)
+			{
+				snprintf(saveMetaBaseName, FILENAME_MAX, "%03d_%s", data->saveSlot, sFloppyName);
+				snprintf(ConfigureParams.Memory.szMemoryCaptureFileName, FILENAME_MAX, "%s/%03d.sav", data->saveStatePath, data->saveSlot);
+			}
+			else
+			{
+				snprintf(saveMetaBaseName, FILENAME_MAX, "xxx_%s", data->saveSlot, sFloppyName);
+				snprintf(ConfigureParams.Memory.szMemoryCaptureFileName, FILENAME_MAX, "%s/xxx.sav", data->saveStatePath);
+			}
+			ConfigureParams.Memory.szMemoryCaptureFileName[FILENAME_MAX-1]=0;
+			saveMetaBaseName[FILENAME_MAX-1]=0;
+
+			snprintf(saveMetaFilePath, FILENAME_MAX, "%s/%s.ss", data->saveStatePath, saveMetaBaseName);
+			saveMetaFilePath[FILENAME_MAX-1]=0;
+
+			Debug_Printf("Floppy: %s, SaveName: %s, MetaName: %s", sFloppyName, ConfigureParams.Memory.szMemoryCaptureFileName, saveMetaFilePath);
+
+			_storeSaveState(saveMetaFilePath);
+
+			if (tempFloppyName != 0)
+			{
+				delete [] tempFloppyName;
+			}
+			delete [] saveMetaFilePath;
+			delete [] saveMetaBaseName;
+
+			emuUserPaused &= ~EMUPAUSETYPE_SAVE;
+			break;
+		}
+		case EmuCommandSaveState_Data::OpLoad:
+		{
+			if (data->saveSlot >= 0)
+			{
+				snprintf(ConfigureParams.Memory.szMemoryCaptureFileName, FILENAME_MAX, "%s/%03d.sav", data->saveStatePath, data->saveSlot);
+			}
+			else
+			{
+				snprintf(ConfigureParams.Memory.szMemoryCaptureFileName, FILENAME_MAX, "%s/xxx.sav", data->saveStatePath);
+			}
+			ConfigureParams.Memory.szMemoryCaptureFileName[FILENAME_MAX-1]=0;
+
+			MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, false);
+			break;
+		}
+		case EmuCommandSaveState_Data::OpSaveAutoSave:
+		{
+			Debug_Printf("----> Saving auto save...");
+
+			char* saveMetaFilePath = new char [FILENAME_MAX];
+			snprintf(saveMetaFilePath, FILENAME_MAX, "%s/as.qs", data->saveStatePath);
+			saveMetaFilePath[FILENAME_MAX-1] = 0;
+
+			snprintf(ConfigureParams.Memory.szMemoryCaptureFileName, FILENAME_MAX, "%s/as.sav", data->saveStatePath);
+			ConfigureParams.Memory.szMemoryCaptureFileName[FILENAME_MAX-1] = 0;
+
+			_storeSaveState(saveMetaFilePath);
+
+			delete [] saveMetaFilePath;
+			emuUserPaused &= ~EMUPAUSETYPE_SAVE;
+
+			Debug_Printf("----> Auto Save saved...");
+
+			RequestAndWaitQuit();
+			return;
+		}
+		case EmuCommandSaveState_Data::OpLoadAutoSave:
+		{
+			Debug_Printf("----> Loading auto save...");
+
+			snprintf(ConfigureParams.Memory.szMemoryCaptureFileName, FILENAME_MAX, "%s/as.sav", data->saveStatePath);
+			ConfigureParams.Memory.szMemoryCaptureFileName[FILENAME_MAX-1]=0;
+
+			MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, false);
+			break;
+		}
+	}
+
+	// Reset the sound emulation variables:
+	Sound_BufferIndexNeedReset = true;
+}
+
+void _storeSaveState(const char *saveMetaFilePath)
+{
+	// save state
+	{
+		MemorySnapShot_setConfirmOnOverwriteSave(false);
+		MemorySnapShot_Capture(ConfigureParams.Memory.szMemoryCaptureFileName, false);
+	}
+
+	// save meta info
+	{
+		FILE *metaFile = fopen(saveMetaFilePath, "w");
+		if (metaFile != 0)
+		{
+			const int kVersion = 1;
+			const int kHeaderSize = 3 * 4;
+
+			fwrite("hsst", 4, 1, metaFile);
+			fwrite(&kHeaderSize, 4, 1, metaFile);
+			fwrite(&kVersion, 4, 1, metaFile);
+
+			// generate thumbnail
+			{
+				unsigned short *emuScrPixels = (unsigned short*)g_videoTex_pixels;
+				if (emuScrPixels)
+				{
+					int texW = g_videoTex_width;
+					int emuScrW = g_surface_width;
+					int emuScrH = g_surface_height;
+
+					const int kThumbWidth = 80;
+					const int kThumbHeight = 60;
+					float skipX = emuScrW / (float)kThumbWidth;
+					float skipY = emuScrH / (float)kThumbHeight;
+					int iSkipX = (int)skipX;
+					int iSkipY = (int)skipY;
+
+					fwrite(&kThumbWidth, 4, 1, metaFile);
+					fwrite(&kThumbHeight, 4, 1, metaFile);
+
+					int maxSrcW = emuScrW-1;
+					int maxSrcH = emuScrH-2; // not correct, but I don't have to deal with edge cases due to fp error for now
+
+					int* rt = new int [kThumbWidth];
+					int* gt = new int [kThumbWidth];
+					int* bt = new int [kThumbWidth];
+
+					float y = 0;
+					for (int savedH = 0; savedH < kThumbHeight; ++savedH)
+					{
+						int ny = (int)y;
+						y += skipY;
+
+						memset(rt, 0, sizeof(int)*kThumbWidth);
+						memset(gt, 0, sizeof(int)*kThumbWidth);
+						memset(bt, 0, sizeof(int)*kThumbWidth);
+
+						int yc = 0;
+						for (int ay = 0; ay < iSkipY; ++ay)
+						{
+							int iy = ny + ay;
+							iy = (iy >= maxSrcH) ? maxSrcH : iy;
+
+							unsigned short *curPixs = emuScrPixels + (iy * texW);
+							float x = 0;
+							for (int savedW = 0; savedW < kThumbWidth; ++savedW)
+							{
+								int nx = (int)x;
+								x += skipX;
+
+								int r = 0, g = 0, b = 0;
+								if (iSkipX > 0)
+								{
+									for (int ax = 0; ax < iSkipX; ++ax)
+									{
+										int ix = nx + ax;
+										ix = (ix >= maxSrcW) ? maxSrcW : ix;
+										unsigned short c = *(curPixs + ix);
+										r += c&31;
+										g += (c>>5)&63;
+										b += (c>>11)&31;
+									}
+									r /= iSkipX;
+									g /= iSkipX;
+									b /= iSkipX;
+								}
+
+								rt[savedW] += r;
+								gt[savedW] += g;
+								bt[savedW] += b;
+							}
+							++yc;
+						}
+
+						{
+							if (yc == 0)
+							{
+								yc = 1;
+							}
+							for (int x = 0; x < kThumbWidth; ++x)
+							{
+								int r = rt[x] / yc;
+								int g = gt[x] / yc;
+								int b = bt[x] / yc;
+
+								unsigned short nc = r | (g<<5) | (b<<11);
+								fwrite(&nc, 2, 1, metaFile); // (fwrite should already buffer internally, so should be ok to write small values like this)
+							}
+						}
+					}
+
+					delete [] rt;
+					delete [] gt;
+					delete [] bt;
+				}
+			}
+
+			fclose(metaFile);
+		}
+	}
+}
+
+void EmuCommandSaveState_Cleanup(EmuCommand *command)
+{
+	EmuCommandSaveState_Data *data = (EmuCommandSaveState_Data*)command->data;
+	if (data->saveStateFilePath) delete [] data->saveStateFilePath;
+	if (data->saveStatePath) delete [] data->saveStatePath;
+	delete data;
+}
+
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorInsertFloppy(JNIEnv * env, jobject obj, jint floppy, jstring filename, jstring zippath)
 {
 	Debug_Printf("----> Insert Floppy Command");
@@ -1060,6 +1366,63 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorIns
 
 		addEmuCommand(EmuCommandInsertFloppy_Run, EmuCommandInsertFloppy_Cleanup, data);
 	}
+}
+
+void _createNewSaveStateCommand(JNIEnv * env, jobject obj, jstring path, jstring filepath, jint saveSlot, int op)
+{
+	if (emuInited)
+	{
+		EmuCommandSaveState_Data *data = new EmuCommandSaveState_Data;
+		memset(data, 0, sizeof(EmuCommandSaveState_Data));
+
+		data->saveStateOp = op;
+		data->saveSlot = saveSlot;
+
+		if (path != 0)
+		{
+			const char *fnameptr = env->GetStringUTFChars(path, NULL);
+			data->saveStatePath = new char [strlen(fnameptr)+1];
+			strcpy(data->saveStatePath, fnameptr);
+			env->ReleaseStringUTFChars(path, fnameptr);
+		}
+
+		if (filepath != 0)
+		{
+			const char *fnameptr = env->GetStringUTFChars(filepath, NULL);
+			data->saveStateFilePath = new char [strlen(fnameptr)+1];
+			strcpy(data->saveStateFilePath, fnameptr);
+			env->ReleaseStringUTFChars(filepath, fnameptr);
+		}
+
+		addEmuCommand(EmuCommandSaveState_Run, EmuCommandSaveState_Cleanup, data);
+	}
+}
+
+JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSaveStateSave(JNIEnv * env, jobject obj, jstring path, jstring filepath, jint saveSlot)
+{
+	Debug_Printf("----> Save State Save Command");
+	_createNewSaveStateCommand(env, obj, path, filepath, saveSlot, EmuCommandSaveState_Data::OpSave);
+
+	emuUserPaused |= EMUPAUSETYPE_SAVE;
+}
+
+JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSaveStateLoad(JNIEnv * env, jobject obj, jstring path, jstring filepath, jint saveSlot)
+{
+	Debug_Printf("----> Save State Load Command");
+	_createNewSaveStateCommand(env, obj, path, filepath, saveSlot, EmuCommandSaveState_Data::OpLoad);
+}
+
+JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorAutoSaveStoreOnExit(JNIEnv * env, jobject obj, jstring saveFolder)
+{
+	_createNewSaveStateCommand(env, obj, saveFolder, 0, -1, EmuCommandSaveState_Data::OpSaveAutoSave);
+
+	emuUserPaused |= EMUPAUSETYPE_SAVE;
+}
+
+JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorAutoSaveLoadOnStart(JNIEnv * env, jobject obj, jstring saveFolder)
+{
+	Debug_Printf("----> Save State AutoLoadOnStart Command");
+	_createNewSaveStateCommand(env, obj, saveFolder, 0, -1, EmuCommandSaveState_Data::OpLoadAutoSave);
 }
 
 static EmuCommand *createEmuCommand(EmuCommandRunCallback runCallback, EmuCommandCleanupCallback cleanupCallback, void *data)

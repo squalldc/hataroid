@@ -61,6 +61,7 @@ class HataroidViewGL2 extends GLSurfaceView
 		synchronized (m_inputMuteX)
 		{
 			int action = event.getActionMasked();
+			//Log.i(TAG, "action: " + action);
 			switch (action)
 			{
 				case MotionEvent.ACTION_DOWN:

@@ -19,4 +19,26 @@ public class BitFlags
 	public boolean getBit(int bit)	{ return (((_flags[bit>>5] >> (bit&31)) & 1) != 0) ? true : false; }
 	public void setBit(int bit)		{ _flags[bit>>5] |= (1<<(bit&31)); }
 	public void clearBit(int bit)	{ _flags[bit>>5] &= ~(1<<(bit&31)); }
+	
+	public int findFirstEmptyBit()
+	{
+		for (int i = 0; i < _flagSize32; ++i)
+		{
+			if (_flags[i] != (int)0xffffffff)
+			{
+				int f = _flags[i];
+				for (int b = 0; b < 32; ++b)
+				{
+					if ((f & 1) == 0)
+					{
+						return (i<<5) + b;
+					}
+					f = f >> 1;
+				}
+				
+				_flags[i] = 0;
+			}
+		}
+		return -1;
+	}
 }

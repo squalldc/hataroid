@@ -58,7 +58,7 @@ public class HelpActivity extends Activity {
 		    Display display = getWindowManager().getDefaultDisplay();
 		    int dw = display.getWidth();
 		    int dh = display.getHeight();
-		    
+
 		    Bitmap src = BitmapFactory.decodeResource(getApplicationContext().getResources(), R.drawable.atari_full);
 		    int sw = src.getWidth();
 		    int sh = src.getHeight();
