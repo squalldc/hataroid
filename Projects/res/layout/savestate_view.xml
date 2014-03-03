@@ -45,6 +45,7 @@
         android:clickable="true"
         android:divider="#66888888"
         android:dividerHeight="1px"
+		android:cacheColorHint="#00000000"
         android:drawSelectorOnTop="false" >
     </ListView>
 

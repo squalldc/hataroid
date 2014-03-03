@@ -41,5 +41,6 @@ extern void VirtKB_setExtraKeys(bool set);
 extern void VirtKB_setObsessionKeys(bool set);
 extern void VirtKB_setHideAll(bool set);
 extern void VirtKB_setJoystickOnly(bool set);
+extern void VirtKB_ResetAllInputPresses();
 
 #endif /* VIRTKB_H_ */

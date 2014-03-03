@@ -22,6 +22,7 @@ extern "C"
 	extern int g_surface_width;
 	extern int g_surface_height;
 	extern int g_videoModeChanged;
+	extern int g_videoTex_Bpp;
 	extern volatile int g_videoFrameReady;
 };
 
@@ -593,6 +594,8 @@ void renderFrame()
 				int texH = g_videoTex_height;
 				int emuScrW = g_surface_width;
 				int emuScrH = g_surface_height;
+				GLenum fmt = (g_videoTex_Bpp == 32) ? GL_RGBA : GL_RGB;
+				GLenum fmtDataType = (g_videoTex_Bpp == 32) ? GL_UNSIGNED_BYTE : GL_UNSIGNED_SHORT_5_6_5;
 
 				if (_delayedPreset >= 0)
 				{
@@ -602,8 +605,7 @@ void renderFrame()
 				// copy the texture
 				if (gTextureID == 0 || g_videoModeChanged)
 				{
-					//allocVideoTex2D(emuScrW, emuScrH, texW, texH, GL_RGBA, GL_UNSIGNED_BYTE);
-					allocVideoTex2D(emuScrW, emuScrH, texW, texH, GL_RGB, GL_UNSIGNED_SHORT_5_6_5);
+					allocVideoTex2D(emuScrW, emuScrH, texW, texH, fmt, fmtDataType);
 					g_videoModeChanged = 0;
 					dispParamsChanged = true;
 				}
@@ -611,8 +613,7 @@ void renderFrame()
 				{
 					updateDispParams(emuScrW, emuScrH, texW, texH);
 				}
-				//updateVideoTex2D(gTextureID, emuScrPixels, emuScrW, emuScrH, texW, texH, GL_RGBA, GL_UNSIGNED_BYTE);
-				updateVideoTex2D(gTextureID, emuScrPixels, emuScrW, emuScrH, texW, texH, GL_RGB, GL_UNSIGNED_SHORT_5_6_5);
+				updateVideoTex2D(gTextureID, emuScrPixels, emuScrW, emuScrH, texW, texH, fmt, fmtDataType);
 
 				//g_videoFrameReady = false;
 				validTex = true;

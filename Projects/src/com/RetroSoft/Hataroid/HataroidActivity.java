@@ -27,6 +27,7 @@ import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.WindowManager;
 
 import com.RetroSoft.Hataroid.FileBrowser.FileBrowser;
@@ -41,12 +42,13 @@ public class HataroidActivity extends Activity
 {
 	public static final String LOG_TAG = "hataroid";
 
-	private static final int ACTIVITYRESULT_FLOPPYA		= 1;
-	private static final int ACTIVITYRESULT_FLOPPYB		= 2;
-	private static final int ACTIVITYRESULT_SETTINGS	= 3;
-	private static final int ACTIVITYRESULT_SS_SAVE		= 4;
-	private static final int ACTIVITYRESULT_SS_LOAD		= 5;
-	private static final int ACTIVITYRESULT_SS_DELETE	= 6;
+	private static final int ACTIVITYRESULT_FLOPPYA					= 1;
+	private static final int ACTIVITYRESULT_FLOPPYB					= 2;
+	private static final int ACTIVITYRESULT_SETTINGS				= 3;
+	private static final int ACTIVITYRESULT_SS_SAVE					= 4;
+	private static final int ACTIVITYRESULT_SS_LOAD					= 5;
+	private static final int ACTIVITYRESULT_SS_DELETE				= 6;
+	private static final int ACTIVITYRESULT_SS_QUICKSAVESLOT		= 7;
 
 	public static HataroidActivity	instance = null;
 	private boolean				_lostFocus = false;
@@ -59,9 +61,16 @@ public class HataroidActivity extends Activity
 	
 	private Input				_input = null;
 
+	boolean						_waitSaveAndQuit = false;
+
+	boolean						_tryUseImmersiveMode = true;
+	boolean						_wantImmersiveMode = false;
+
 	@Override protected void onCreate(Bundle icicle)
 	{
 		super.onCreate(icicle);
+		
+		_tryUseImmersiveMode = android.os.Build.VERSION.SDK_INT >= 19;
 
 		try
 		{
@@ -77,6 +86,15 @@ public class HataroidActivity extends Activity
 
         _input = new Input();
 		_input.init(getApplicationContext());
+		try
+		{
+			View rootView = findViewById(android.R.id.content);
+			_input.initMouse(rootView);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 
         System.loadLibrary("hataroid");
         
@@ -212,6 +230,15 @@ public class HataroidActivity extends Activity
 	    		_keepScreenAwake(bval);
 	    	}
 	    	
+	    	val = allPrefs.get("pref_device_kitkat_immersive");
+	    	if (val != null)
+	    	{
+	    		String sval = val.toString();
+	    		boolean bval = !(sval.compareTo("false")==0 || sval.compareTo("0")==0);
+	    		_wantImmersiveMode = bval;
+	    		_setupImmersiveMode();
+	    	}
+
 	    	_input.setupOptionsFromPrefs(prefs);
 		}
 		catch (Exception e)
@@ -327,13 +354,44 @@ public class HataroidActivity extends Activity
 
 	void _setupImmersiveMode()
 	{
+		if (!_tryUseImmersiveMode)
+		{
+			return;
+		}
+
+		// UNTESTED, need some people to test before I enable this for everyone
+		/*
 		try
 		{
+			View decorView = getWindow().getDecorView();
+			
+			int visibility = 0;
+
+            if (_wantImmersiveMode)
+			{
+				visibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+			}
+            else
+            {
+            	visibility = View.SYSTEM_UI_FLAG_VISIBLE;
+            }
+
+            decorView.setSystemUiVisibility(visibility);
+		}
+		catch (Error e)
+		{
+			_tryUseImmersiveMode = false;
 		}
 		catch (Exception e)
 		{
-			e.printStackTrace();
+			_tryUseImmersiveMode = false;
 		}
+		*/
 	}
 	
 	private void _pause()
@@ -602,6 +660,11 @@ public class HataroidActivity extends Activity
 
 	@Override public boolean onOptionsItemSelected(MenuItem item)
 	{
+		if (_waitSaveAndQuit)
+		{
+			return true;
+		}
+
 		// Handle item selection
 		int id = item.getItemId();
 		switch (id)
@@ -655,6 +718,7 @@ public class HataroidActivity extends Activity
 			case R.id.ss_save:
 			case R.id.ss_load:
 			case R.id.ss_delete:
+			case R.id.ss_quicksaveslot:
 			{
 				int mode = -1;
 				int resultId = -1;
@@ -663,6 +727,7 @@ public class HataroidActivity extends Activity
 					case R.id.ss_save:	{ mode = SaveStateBrowser.SSMODE_SAVE; resultId = ACTIVITYRESULT_SS_SAVE; break; }
 					case R.id.ss_load:	{ mode = SaveStateBrowser.SSMODE_LOAD; resultId = ACTIVITYRESULT_SS_LOAD; break; }
 					case R.id.ss_delete:{ mode = SaveStateBrowser.SSMODE_DELETE; resultId = ACTIVITYRESULT_SS_DELETE; break; }
+					case R.id.ss_quicksaveslot: { mode = SaveStateBrowser.SSMODE_QUICKSAVESLOT; resultId = ACTIVITYRESULT_SS_QUICKSAVESLOT; break; }
 				}
 				if (mode >= 0)
 				{
@@ -756,6 +821,15 @@ public class HataroidActivity extends Activity
 						HataroidNativeLib.emulatorSaveStateLoad(path, filePath, saveSlot);
 					}
 				}
+
+				_updateOptions();
+				break;
+			}
+			
+			case ACTIVITYRESULT_SS_DELETE:
+			case ACTIVITYRESULT_SS_QUICKSAVESLOT:
+			{
+				_updateOptions();
 				break;
 			}
 		}
@@ -768,7 +842,7 @@ public class HataroidActivity extends Activity
 		String [] valKeys = (String [])options.get("vals");
 		HataroidNativeLib.emulatorSetOptions(optionKeys, valKeys);
 	}
-
+	
 	@Override public boolean onKeyDown(int keyCode, KeyEvent event)
 	{
 		if (_input.onKeyDown(keyCode, event))
@@ -805,6 +879,11 @@ public class HataroidActivity extends Activity
 	static boolean _showingQuitConfirm = false;
 	public void showQuitConfirm()
 	{
+		if (_waitSaveAndQuit)
+		{
+			return;
+		}
+
 		if (!_showingQuitConfirm)
 		{
 			_showingQuitConfirm = true;
@@ -821,6 +900,11 @@ public class HataroidActivity extends Activity
 	
 	void _onQuit()
 	{
+		if (_waitSaveAndQuit)
+		{
+			return;
+		}
+
 		// auto save
 		if (!_storeAutoSaveOnExit())
 		{
@@ -848,9 +932,17 @@ public class HataroidActivity extends Activity
 			}
 		});
     }
-
+	
+	static boolean _showingGenericDialog = false;
     public void showGenericDialog(final int ok, final int noyes, final String message)
     {
+    	if (_showingGenericDialog || _waitSaveAndQuit)
+    	{
+    		return;
+    	}
+    	
+    	_showingGenericDialog = true;
+
     	this.runOnUiThread(new Runnable()
     	{
 			public void run()
@@ -862,30 +954,36 @@ public class HataroidActivity extends Activity
 				alertDialog.setCanceledOnTouchOutside(false);
     			if (ok==1)
    				{
-    				alertDialog.setButton("Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { HataroidNativeLib.hataroidDialogResult(0); } });
+    				alertDialog.setButton("Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingGenericDialog = false; HataroidNativeLib.hataroidDialogResult(0); } });
    				}
     			else if (noyes==1)
     			{
     				//alertDialog.setOnDismissListener( new DialogInterface.OnDismissListener() { public void onDismiss(DialogInterface dialog) { HataroidNativeLib.hataroidDialogResult(0); } });
-    				//alertDialog.setOnCancelListener( new DialogInterface.OnCancelListener() { public void onCancel(DialogInterface dialog) { HataroidNativeLib.hataroidDialogResult(0); } });
-    				alertDialog.setButton("No", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { HataroidNativeLib.hataroidDialogResult(0); } });
-    				alertDialog.setButton2("Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { HataroidNativeLib.hataroidDialogResult(1); } });
+    				alertDialog.setOnCancelListener( new DialogInterface.OnCancelListener() { public void onCancel(DialogInterface dialog) { _showingGenericDialog = false; HataroidNativeLib.hataroidDialogResult(0); } });
+    				alertDialog.setButton("No", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingGenericDialog = false; HataroidNativeLib.hataroidDialogResult(0); } });
+    				alertDialog.setButton2("Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingGenericDialog = false; HataroidNativeLib.hataroidDialogResult(1); } });
     			}
     			alertDialog.show();
 			}
     	});
 	}
 
-	void _keepScreenAwake(boolean set)
+    void _keepScreenAwake(boolean set)
 	{
-		if (set)
-		{
-			getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		}
-		else
-		{
-			getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-		}
+    	try
+    	{
+			if (set)
+			{
+				getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+			}
+			else
+			{
+				getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+			}
+    	}
+    	catch (Exception e)
+    	{
+    	}
 	}
 
 	public Input getInput() { return _input; }
@@ -938,6 +1036,7 @@ public class HataroidActivity extends Activity
 		String saveFolder = _getAutoSaveFolder();
 		if (saveFolder != null)
 		{
+			_waitSaveAndQuit = true;
 			HataroidNativeLib.emulatorAutoSaveStoreOnExit(saveFolder);
 			return true;
 		}
@@ -982,6 +1081,77 @@ public class HataroidActivity extends Activity
 			}
     	});
 		;
+	}
+
+	public void setConfigOnSaveStateLoad(String options [])
+	{
+		try
+		{
+			if (options.length > 1)
+			{
+				SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+		    	Map<String,?> allPrefs = prefs.getAll();
+
+		    	Editor ed = prefs.edit();
+				for (int i = 0; i < options.length-1; i+=2)
+				{
+					String key = options[i];
+					String valStr = options[i+1];
+					if (valStr.compareTo("_dk_") == 0)
+					{
+						continue;
+					}
+					
+					if (key.compareTo("pref_display_showborders")==0)
+					{
+						int z =0;
+						++z;
+					}
+
+					Object curVal = allPrefs.get(key);
+					if (curVal != null)
+					{
+						if (curVal instanceof Boolean)
+						{
+							ed.putBoolean(key, ((valStr.compareTo("false")==0) || (valStr.compareTo("0")==0)) ? false : true);
+						}
+						else if (curVal instanceof Integer)
+						{
+							int val = 0;
+							if (valStr.compareTo("false") == 0)		{ val = 0; }
+							else if (valStr.compareTo("true") == 0) { val = 1; }
+							else									{ val = Integer.parseInt(valStr); }
+							ed.putInt(key, val);
+						}
+						else if (curVal instanceof Long)
+						{
+							long val = 0;
+							if (valStr.compareTo("false") == 0)		{ val = 0; }
+							else if (valStr.compareTo("true") == 0) { val = 1; }
+							else									{ val = Long.parseLong(valStr); }
+							ed.putLong(key, val);
+						}
+						else if (curVal instanceof Float)
+						{
+							float val = Float.parseFloat(valStr);
+							ed.putFloat(key, val);
+						}
+						else if (curVal instanceof String)
+						{
+							ed.putString(key, valStr);
+						}
+					}
+				}
+	
+				ed.commit();
+
+				_updateOptions();
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 }

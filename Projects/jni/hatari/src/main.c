@@ -72,6 +72,7 @@ static bool bEmulationActive = true;      /* Run emulation when started */
 static bool bAccurateDelays;              /* Host system has an accurate SDL_Delay()? */
 static bool bIgnoreNextMouseMotion = false;  /* Next mouse motion will be ignored (needed after SDL_WarpMouse) */
 
+extern void _checkHataroidSaveRequests();
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -274,6 +275,8 @@ void Main_SetRunVBLs(Uint32 vbls)
  */
 void Main_WaitOnVbl(void)
 {
+	_checkHataroidSaveRequests();
+
 	Sint64 CurrentTicks;
 	static Sint64 DestTicks = 0;
 	Sint64 FrameDuration_micro;

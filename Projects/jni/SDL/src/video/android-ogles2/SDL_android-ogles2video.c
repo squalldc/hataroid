@@ -38,8 +38,6 @@
 	//#define __USE_ARM_ASM__
 #endif
 
-
-
 /* globals */
 volatile int g_videoFrameReady = 0;
 volatile int g_curVideoFrame = 0;
@@ -164,8 +162,12 @@ int ANDROID_OGLES2_VideoInit(_THIS, SDL_PixelFormat *vformat)
 	/* Determine the screen depth (use default 32-bit depth) */
 	/* we change this during the SDL_SetVideoMode implementation... */
 
-	vformat->BitsPerPixel = 16;
-	vformat->BytesPerPixel = 4;
+	vformat->BitsPerPixel = g_videoTex_Bpp;
+	vformat->BytesPerPixel = g_videoTex_Bpp>>3;
+
+	vformat->Rmask = 0xF800;
+    vformat->Gmask = 0x07E0;
+    vformat->Bmask = 0x001F;
 
 	/* We're done! */
 	return(0);
@@ -206,6 +208,11 @@ SDL_Surface *ANDROID_OGLES2_SetVideoMode(_THIS, SDL_Surface *current,
 SDL_Surface *_setAndroidVideoMode(_THIS, SDL_Surface *current, int width, int height, int bpp, Uint32 flags)
 {
 	int t;
+
+	if (bpp == 0)
+	{
+		bpp = 16;
+	}
 
 	int texw = roundUpPower2(width);
     int texh = roundUpPower2(height);
@@ -283,7 +290,16 @@ SDL_Surface *_setAndroidVideoMode(_THIS, SDL_Surface *current, int width, int he
 /* 	printf("Setting mode %dx%d\n", width, height); */
 
 	/* Allocate the new pixel format for the screen */
-	if ( ! SDL_ReallocFormat(current, bpp, 0, 0, 0, 0) ) {
+    Uint32 Rmask, Gmask, Bmask;
+    if (bpp == 16) {
+		Rmask = 0xF800;
+		Gmask = 0x07E0;
+		Bmask = 0x001F;
+    } else {
+    	Rmask = Gmask = Bmask = 0;
+    }
+
+    if ( ! SDL_ReallocFormat(current, bpp, Rmask, Gmask, Bmask, 0) ) {
 		SDL_free(this->hidden->buffer);
 		this->hidden->buffer = NULL;
 		SDL_SetError("Couldn't allocate new pixel format for requested mode");

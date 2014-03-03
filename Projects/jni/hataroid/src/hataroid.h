@@ -15,6 +15,11 @@ extern void clearDialogResult();
 
 extern int getTurboSpeed();
 extern void setTurboSpeed(int set);
+extern int getShortcutAutoFire();
+extern void setShortcutAutoFire(int enable, int set);
+
+extern void quickSaveLoad();
+extern void quickSaveStore();
 
 extern JavaVM *g_jvm;
 
@@ -41,6 +46,7 @@ struct JNIMainMethodCache
 	jmethodID showGenericDialog;
 	jmethodID showOptionsDialog;
 	jmethodID quitHataroid;
+	jmethodID setConfigOnSaveStateLoad;
 };
 
 extern struct JNIAudio g_jniAudioInterface;

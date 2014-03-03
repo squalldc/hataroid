@@ -21,6 +21,7 @@
         	<item android:id="@+id/ss_save" android:title="@string/save" android:titleCondensed="@string/save" android:orderInCategory="1" android:menuCategory="system" android:visible="true" android:enabled="true" />
             <item android:id="@+id/ss_load" android:title="@string/load" android:titleCondensed="@string/load" android:orderInCategory="2" android:menuCategory="system" android:visible="true" android:enabled="true"/>
             <item android:id="@+id/ss_delete" android:title="@string/delete" android:titleCondensed="@string/delete" android:orderInCategory="3" android:menuCategory="system" android:visible="true" android:enabled="true"/>
+            <item android:id="@+id/ss_quicksaveslot" android:title="@string/selectquicksaveslot" android:titleCondensed="@string/quicksaveslot" android:orderInCategory="4" android:menuCategory="system" android:visible="true" android:enabled="true"/>
         </menu>
     </item>
 

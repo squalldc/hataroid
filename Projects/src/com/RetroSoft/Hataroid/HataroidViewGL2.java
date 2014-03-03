@@ -12,6 +12,8 @@ import android.opengl.GLSurfaceView;
 import android.util.Log;
 import android.view.MotionEvent;
 
+import com.RetroSoft.Hataroid.Input.Input;
+import com.RetroSoft.Hataroid.Input.InputMouse;
 import com.RetroSoft.Hataroid.Util.BitFlags;
 
 // A simple GLSurfaceView sub-class that demonstrate how to perform
@@ -43,6 +45,11 @@ class HataroidViewGL2 extends GLSurfaceView
 	public float		m_touchX[] = new float [MaxSimultaneousTouches];
 	public float		m_touchY[] = new float [MaxSimultaneousTouches];
 	public boolean		m_touched[] = new boolean [MaxSimultaneousTouches];
+	public int			m_mouseButtons = 0;
+	public float		m_mouseX = 0;
+	public float		m_mouseY = 0;
+	
+	public boolean		m_tryMouse = true;
 
 	public HataroidViewGL2(Context context)
 	{
@@ -61,6 +68,7 @@ class HataroidViewGL2 extends GLSurfaceView
 		synchronized (m_inputMuteX)
 		{
 			int action = event.getActionMasked();
+
 			//Log.i(TAG, "action: " + action);
 			switch (action)
 			{
@@ -69,7 +77,33 @@ class HataroidViewGL2 extends GLSurfaceView
 				{
 					int pointerIndex = event.getActionIndex();
 					int pointerId = event.getPointerId(pointerIndex);
-					if (pointerId < MaxSimultaneousTouches)
+					//Log.i(TAG, "pointerIndex: " + pointerIndex + ", pointerID: " + pointerId + ", pos: " + event.getX(pointerIndex) + ", " + event.getY(pointerIndex));
+
+					boolean isMouse = false;
+					if (m_tryMouse)
+					{
+						try
+						{
+							if (event.getToolType(pointerIndex) == MotionEvent.TOOL_TYPE_MOUSE)
+							{
+								m_mouseButtons = event.getButtonState();
+								m_mouseX = event.getX(pointerIndex);
+								m_mouseY = event.getY(pointerIndex);
+								//Log.i(TAG, "btn: " + m_mouseButtons);
+								isMouse = true;
+							}
+						}
+						catch (Error e)
+						{
+							m_tryMouse = false;
+						}
+						catch (Exception e)
+						{
+							m_tryMouse = false;
+						}
+					}
+
+					if (!isMouse && pointerId < MaxSimultaneousTouches)
 					{
 						m_touchX[pointerId] = event.getX(pointerIndex);
 						m_touchY[pointerId] = event.getY(pointerIndex);
@@ -83,7 +117,32 @@ class HataroidViewGL2 extends GLSurfaceView
 				{
 					int pointerIndex = event.getActionIndex();
 					int pointerId = event.getPointerId(pointerIndex);
-					if (pointerId < MaxSimultaneousTouches)
+					
+					boolean isMouse = false;
+					if (m_tryMouse)
+					{
+						try
+						{
+							if (event.getToolType(pointerIndex) == MotionEvent.TOOL_TYPE_MOUSE)
+							{
+								m_mouseButtons = event.getButtonState();
+								m_mouseX = event.getX(pointerIndex);
+								m_mouseY = event.getY(pointerIndex);
+								//Log.i(TAG, "btn: " + m_mouseButtons);
+								isMouse = true;
+							}
+						}
+						catch (Error e)
+						{
+							m_tryMouse = false;
+						}
+						catch (Exception e)
+						{
+							m_tryMouse = false;
+						}
+					}
+
+					if (!isMouse && pointerId < MaxSimultaneousTouches)
 					{
 						m_touchX[pointerId] = event.getX(pointerIndex);
 						m_touchY[pointerId] = event.getY(pointerIndex);
@@ -94,13 +153,40 @@ class HataroidViewGL2 extends GLSurfaceView
 				case MotionEvent.ACTION_MOVE:
 				{
 					int pointerCount = event.getPointerCount();
-					for (int i = 0; i < pointerCount; ++i)
+					for (int pointerIndex = 0; pointerIndex < pointerCount; ++pointerIndex)
 					{
-						int pointerId = event.getPointerId(i);
+						int pointerId = event.getPointerId(pointerIndex);
 						if (pointerId < MaxSimultaneousTouches)
 						{
-							m_touchX[pointerId] = event.getX(i);
-							m_touchY[pointerId] = event.getY(i);
+							boolean isMouse = false;
+							if (m_tryMouse)
+							{
+								try
+								{
+									if (event.getToolType(pointerIndex) == MotionEvent.TOOL_TYPE_MOUSE)
+									{
+										m_mouseButtons = event.getButtonState();
+										m_mouseX = event.getX(pointerIndex);
+										m_mouseY = event.getY(pointerIndex);
+										//Log.i(TAG, "btn: " + m_mouseButtons + " pos: " + m_mouseX + ", " + m_mouseY);
+										isMouse = true;
+									}
+								}
+								catch (Error e)
+								{
+									m_tryMouse = false;
+								}
+								catch (Exception e)
+								{
+									m_tryMouse = false;
+								}
+							}
+
+							if (!isMouse && pointerId < MaxSimultaneousTouches)
+							{
+								m_touchX[pointerId] = event.getX(pointerIndex);
+								m_touchY[pointerId] = event.getY(pointerIndex);
+							}
 						}
 					}
 				}
@@ -117,6 +203,8 @@ class HataroidViewGL2 extends GLSurfaceView
 		instance = this;
 
 		m_inputMuteX = new Object();
+
+		m_tryMouse = (android.os.Build.VERSION.SDK_INT >= 12);
 
 		// By default, GLSurfaceView() creates a RGB_565 opaque surface.
 		// If we want a translucent one, we should change the surface's
@@ -376,12 +464,47 @@ class HataroidViewGL2 extends GLSurfaceView
 		{
 			HataroidViewGL2 sview = HataroidViewGL2.instance;
 
+			HataroidActivity ha = HataroidActivity.instance;
+			Input input = ha.getInput();
+			
+			float mouseX = 0, mouseY = 0;
+			int mouseBtns = sview.m_mouseButtons;
+			if (sview.m_tryMouse)
+			{
+				try
+				{
+					InputMouse inputMouse = input.getInputMouse();
+					if (inputMouse != null)
+					{
+						if (mouseBtns == 0)
+						{
+							mouseX = inputMouse.getMouseX();
+							mouseY = inputMouse.getMouseY();
+						}
+						else
+						{
+							mouseX = sview.m_mouseX;
+							mouseY = sview.m_mouseY;
+						}
+					}
+				}
+				catch (Error e)
+				{
+					sview.m_tryMouse = false;
+				}
+				catch (Exception e)
+				{
+					sview.m_tryMouse = false;
+				}
+			}
+
 			BitFlags keyPressFlags = HataroidActivity.instance.getInput().getKeyPresses();
 			int [] keyPresses = keyPressFlags._flags;
 			HataroidNativeLib.updateInput(
 					sview.m_touched[0], sview.m_touchX[0], sview.m_touchY[0],
 					sview.m_touched[1], sview.m_touchX[1], sview.m_touchY[1],
 					sview.m_touched[2], sview.m_touchX[2], sview.m_touchY[2],
+					mouseX, mouseY, mouseBtns,
 					keyPresses);
 
 			HataroidNativeLib.onDrawFrame();

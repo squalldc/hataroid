@@ -53,7 +53,8 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "statusbar.h"
 
 
-#define VERSION_STRING      "1.7.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_STRING        "1.7.1"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_INT			   1701
 
 #define COMPRESS_MEMORYSNAPSHOT       /* Compress snapshots to reduce disk space used */
 
@@ -74,6 +75,7 @@ typedef FILE* MSS_File;
 static MSS_File CaptureFile;
 static bool bCaptureSave, bCaptureError;
 static bool gConfirmOnOverwiteSave = true;
+int gSaveVersion = VERSION_INT;
 
 void MemorySnapShot_setConfirmOnOverwriteSave(bool set) { gConfirmOnOverwiteSave = set; }
 
@@ -141,6 +143,7 @@ static int MemorySnapShot_fwrite(MSS_File fhndl, const char *buf, int len)
 static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 {
 	char VersionString[] = VERSION_STRING;
+	gSaveVersion = VERSION_INT;
 
 	/* Set error */
 	bCaptureError = false;
@@ -183,8 +186,13 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 		bCaptureSave = false;
 		/* Restore version string */
 		MemorySnapShot_Store(VersionString, sizeof(VersionString));
+
+		gSaveVersion = 0;
+		if (strcasecmp(VersionString, VERSION_STRING)==0)	{ gSaveVersion = VERSION_INT; }
+		else if (strcasecmp(VersionString, "1.7.0")==0)		{ gSaveVersion = 1700; }
+
 		/* Does match current version? */
-		if (strcasecmp(VersionString, VERSION_STRING))
+		if (gSaveVersion == 0)
 		{
 			/* No, inform user and error */
 			Log_AlertDlg(LOG_ERROR, "Unable to restore Hatari memory state. File\n"
@@ -286,8 +294,10 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 /**
  * Restore 'snapshot' of memory/chips/emulation variables
  */
-void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
+int MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 {
+	int result = 0;
+
 	/* Set to 'restore' */
 	if (MemorySnapShot_OpenFile(pszFileName, false))
 	{
@@ -332,6 +342,13 @@ void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		Log_AlertDlg(LOG_ERROR, "Unable to restore memory state from file.");
 	else if (bConfirm)
 		Log_AlertDlg(LOG_INFO, "Memory state file restored.");
+
+	if (bCaptureError)
+	{
+		result = -1;
+	}
+
+	return result;
 }
 
 

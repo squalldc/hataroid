@@ -18,8 +18,8 @@ public class HataroidNativeLib
     public static native void updateInput(	boolean t0, float tx0, float ty0,
     										boolean t1, float tx1, float ty1,
     										boolean t2, float tx2, float ty2,
+    										float mouseX, float mouseY, int mouseBtns,
     										int[] keyPresses);
-    //public static native void toggleMouseJoystick();
 
     public static native void emulatorSetOptions(String[] keys, String[] vals);
 	public static native void emulatorResetCold();

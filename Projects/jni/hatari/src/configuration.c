@@ -501,7 +501,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.nFrameSkips = AUTO_FRAMESKIP_LIMIT;
 	ConfigureParams.Screen.bAllowOverscan = true;
 	ConfigureParams.Screen.nSpec512Threshold = 16;
-	ConfigureParams.Screen.nForceBpp = 0;
+	ConfigureParams.Screen.nForceBpp = 16;
 	ConfigureParams.Screen.bAspectCorrect = true;
 	ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_RGB;
 	ConfigureParams.Screen.bUseExtVdiResolutions = false;
@@ -810,6 +810,10 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.Screen.nVdiWidth, sizeof(ConfigureParams.Screen.nVdiWidth));
 	MemorySnapShot_Store(&ConfigureParams.Screen.nVdiHeight, sizeof(ConfigureParams.Screen.nVdiHeight));
 	MemorySnapShot_Store(&ConfigureParams.Screen.nVdiColors, sizeof(ConfigureParams.Screen.nVdiColors));
+	if (gSaveVersion >= 1701)
+	{
+		MemorySnapShot_Store(&ConfigureParams.Screen.bAllowOverscan, sizeof(ConfigureParams.Screen.bAllowOverscan));
+	}
 
 	MemorySnapShot_Store(&ConfigureParams.System.nCpuLevel, sizeof(ConfigureParams.System.nCpuLevel));
 	MemorySnapShot_Store(&ConfigureParams.System.nCpuFreq, sizeof(ConfigureParams.System.nCpuFreq));

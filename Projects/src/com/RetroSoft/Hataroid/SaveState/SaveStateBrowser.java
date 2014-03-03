@@ -21,7 +21,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.RetroSoft.Hataroid.R;
-import com.RetroSoft.Hataroid.Input.Input;
 import com.RetroSoft.Hataroid.Preferences.Settings;
 import com.RetroSoft.Hataroid.Util.BitFlags;
 
@@ -34,6 +33,7 @@ public class SaveStateBrowser extends ListActivity
 	public static final int		SSMODE_SAVE					= 0;
 	public static final int		SSMODE_LOAD					= 1;
 	public static final int		SSMODE_DELETE				= 2;
+	public static final int		SSMODE_QUICKSAVESLOT		= 3;
 	
 	public static final String	CONFIG_MODE = "Config_Mode";
 	
@@ -41,14 +41,16 @@ public class SaveStateBrowser extends ListActivity
 	public static final String	RESULT_SAVESTATE_SLOT		= "Result_SaveStateSlot";
 
 	static final String			kPrefLastLoadedSlot			= "_pref_savestate_lastloadedslot";
+	public static final String	kPrefQuickSaveSlot			= "pref_savestate_quicksaveslot";
 
-	private static boolean		_firstCreate = true;
+	//private static boolean		_firstCreate = true;
 	
 	private int					_mode = SSMODE_SAVE;
 	
 	private String				_saveFolder = null;
 	private File				_curDir;
 	private int					_lastSavedSlot = 0;
+	private int					_quickSaveSlot = -1;
 
 	private SaveStateAdapter	_adapter;
 	private BitFlags			_usedSlots = new BitFlags(kMaxSlots);
@@ -79,6 +81,7 @@ public class SaveStateBrowser extends ListActivity
 			case SSMODE_SAVE:	titleStrId = R.string.savestate_save_title; break;
 			case SSMODE_LOAD:	titleStrId = R.string.savestate_load_title; break;
 			case SSMODE_DELETE:	titleStrId = R.string.savestate_delete_title; break;
+			case SSMODE_QUICKSAVESLOT: titleStrId = R.string.savestate_quicksaveslot_title; break;
 		}
 		if (titleStrId >= 0)
 		{
@@ -91,13 +94,14 @@ public class SaveStateBrowser extends ListActivity
 
 		_retIntent = new Intent();
 		
-		if (_firstCreate)
+		//if (_firstCreate)
 		{
 			try
 			{
 		    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 		    	_saveFolder = prefs.getString(Settings.kPrefName_SaveState_Folder, null);
 		    	_lastSavedSlot = prefs.getInt(kPrefLastLoadedSlot, 0);
+		    	_quickSaveSlot = prefs.getInt(kPrefQuickSaveSlot, -1);
 			}
 			catch (Exception e)
 			{
@@ -250,7 +254,7 @@ public class SaveStateBrowser extends ListActivity
 				{
 					if (f.getName().toLowerCase().endsWith(".ss"))
 					{
-						SaveStateListItem item = new SaveStateListItem(f.getAbsolutePath(), f.getName(), f.lastModified(), false, _lastSavedSlot);
+						SaveStateListItem item = new SaveStateListItem(f.getAbsolutePath(), f.getName(), f.lastModified(), false, _lastSavedSlot, _quickSaveSlot);
 						int itemSlot = item.getSlotID();
 						if (itemSlot >= 0 && itemSlot < kMaxSlots)
 						{
@@ -265,6 +269,7 @@ public class SaveStateBrowser extends ListActivity
 			switch (_mode)
 			{
 				case SSMODE_SAVE:
+				case SSMODE_QUICKSAVESLOT:
 				{
 					dummyItemName = "New Save Slot";
 					break;
@@ -282,7 +287,7 @@ public class SaveStateBrowser extends ListActivity
 			
 			if (dummyItemName != null)
 			{
-				items.add(new SaveStateListItem(dummyItemName, dummyItemName, 0, true, _lastSavedSlot));
+				items.add(new SaveStateListItem(dummyItemName, dummyItemName, 0, true, _lastSavedSlot, _quickSaveSlot));
 			}
 		}
 		catch (Exception e)
@@ -379,6 +384,32 @@ public class SaveStateBrowser extends ListActivity
 				}
 				break;
 			}
+			case SSMODE_QUICKSAVESLOT:
+			{
+				int itemSlot = item.getSlotID();
+
+				if (item.isDummyItem())
+				{
+					itemSlot = _usedSlots.findFirstEmptyBit();
+					if (itemSlot >= kMaxSlots)
+					{
+						// show error, max slots reached
+						break;
+					}
+				}
+				
+				// set quick save slot
+				{
+					_quickSaveSlot = itemSlot;
+					SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+					Editor ed = prefs.edit();
+					ed.putInt(kPrefQuickSaveSlot, _quickSaveSlot);
+					ed.commit();
+				}
+
+				sendFinish(RESULT_OK);
+				break;
+			}
 		}
 	}
 
@@ -421,6 +452,16 @@ public class SaveStateBrowser extends ListActivity
 
 				File file = new File(saveFilePath);
 				/*boolean deleted =*/ file.delete(); // TODO: check result
+			}
+			
+			// reset quick save
+			if (itemSlot == _quickSaveSlot)
+			{
+				_quickSaveSlot = -1;
+				SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+				Editor ed = prefs.edit();
+				ed.putInt(kPrefQuickSaveSlot, _quickSaveSlot);
+				ed.commit();
 			}
 			
 			// refresh list

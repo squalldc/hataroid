@@ -30,6 +30,7 @@ extern "C"
 																						jboolean t0, jfloat tx0, jfloat ty0,
 																						jboolean t1, jfloat tx1, jfloat ty1,
 																						jboolean t2, jfloat tx2, jfloat ty2,
+																						jfloat mouseX, jfloat mouseY, jint mouseBtns,
 																						jintArray keyPresses);
 	//JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_toggleMouseJoystick(JNIEnv * env, jobject obj);
 
@@ -154,6 +155,28 @@ static KeyCallback*	s_keyCallbacks = 0;
 
 static BitFlags*	s_jKeyPresses = new BitFlags(VKB_KEY_NumOf);
 
+static int s_mouseFinger = -1;
+static int s_mouseMoved = 0;
+static float s_prevMouseX = 0;
+static float s_prevMouseY = 0;
+static float s_mouseDx = 0;
+static float s_mouseDy = 0;
+
+static bool s_LMB = false;
+static bool s_RMB = false;
+
+static int s_prevFingerCount = 0;
+static int s_mousePresses = 0;
+static float s_mousePressTime = 0;
+
+static bool s_mouseQuickPress = false;
+
+static float		_prevHWMouseX = MAXFLOAT;
+static float		_prevHWMouseY = MAXFLOAT;
+static float		_curHWMouseX = MAXFLOAT;
+static float		_curHWMouseY = MAXFLOAT;
+static int			_curHWMouseBtns = 0;
+
 static void VirtKB_Create();
 static void VirtKB_CreateTextures();
 static void VirtKB_DestroyTextures();
@@ -176,6 +199,8 @@ static const VirtKeyDef *VirtKB_VkbHitTest(float x, float y);
 
 static void VirtKB_updateInput();
 static void VirtKB_updateMouse();
+static void VirtKB_updateHardwareMouse();
+
 static void VirtKB_clearMousePresses();
 
 static void VirtKB_onRender();
@@ -196,6 +221,9 @@ static void VirtKB_ToggleShowUI(const VirtKeyDef *keyDef, uint32_t uParam1, bool
 static void VirtKB_MJToggle(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 static void VirtKB_MouseLB(bool down);
 static void VirtKB_MouseRB(bool down);
+static void VirtKB_ToggleAutoFire(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
+static void VirtKB_QuickSaveState(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
+static void VirtKB_QuickLoadState(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 
 void VirtKB_RefreshKB()
 {
@@ -259,6 +287,7 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_updateInput
 		jboolean t0, jfloat tx0, jfloat ty0,
 		jboolean t1, jfloat  tx1, jfloat ty1,
 		jboolean t2, jfloat  tx2, jfloat ty2,
+		jfloat mouseX, jfloat mouseY, jint mouseBtns,
 		jintArray keyPresses)
 {
 	if (!(s_InputReady&s_InputEnabled)) return;
@@ -284,6 +313,15 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_updateInput
 	curtouched[0] = t0;	curtouchX[0] = tx0;	curtouchY[0] = ty0;
 	curtouched[1] = t1;	curtouchX[1] = tx1;	curtouchY[1] = ty1;
 	curtouched[2] = t2;	curtouchX[2] = tx2;	curtouchY[2] = ty2;
+
+	if (_prevHWMouseX == MAXFLOAT)
+	{
+		_prevHWMouseX = mouseX;
+		_prevHWMouseY = mouseY;
+	}
+	_curHWMouseX = mouseX;
+	_curHWMouseY = mouseY;
+	_curHWMouseBtns = mouseBtns;
 
 	VirtKB_updateInput();
 
@@ -583,6 +621,11 @@ static void VirtKB_InitCallbacks()
 				case VKB_KEY_NORMALSPEED:			kcb->onKeyEvent = VirtKB_ToggleTurboSpeed; break;
 
 				case VKB_KEY_TOGGLEUI:				kcb->onKeyEvent = VirtKB_ToggleShowUI; break;
+
+				case VKB_KEY_AUTOFIRE:				kcb->onKeyEvent = VirtKB_ToggleAutoFire; break;
+
+				case VKB_KEY_QUICKSAVESTATE:		kcb->onKeyEvent = VirtKB_QuickSaveState; break;
+				case VKB_KEY_QUICKLOADSTATE:		kcb->onKeyEvent = VirtKB_QuickLoadState; break;
 			}
 		}
 		else if (vk->flags & (FLAG_STKEY|FLAG_STFNKEY))
@@ -1170,9 +1213,50 @@ void VirtKB_updateInput()
 	}
 
 	// update mouse
-	if (((prevInputFlags&s_curInputFlags)&FLAG_MOUSE))
 	{
-		VirtKB_updateMouse();
+		if (((prevInputFlags&s_curInputFlags)&FLAG_MOUSE))
+		{
+			VirtKB_updateMouse();
+		}
+
+		VirtKB_updateHardwareMouse();
+
+		if (s_mouseDx != 0.0f || s_mouseDy != 0.0f)
+		{
+			float emuScrZoomX = Renderer_getEmuScreenZoomX();
+			float emuScrZoomY = Renderer_getEmuScreenZoomY();
+
+			//s_mouseMoved = 1;
+
+			float sX = (STRes == ST_LOW_RES) ? 0.5f : 1;
+			float sY = 1;//(STRes == ST_MEDIUM_RES || STRes == ST_LOW_RES) ? 0.5f : 1;
+			sX *= s_mouseSpeed / emuScrZoomX;
+			sY *= s_mouseSpeed / emuScrZoomY;
+
+			if (!ConfigureParams.Screen.bAllowOverscan && (STRes == ST_MEDIUM_RES || STRes == ST_LOW_RES))
+			{
+				// HACK: TODO: work out properly
+				sX *= (1.13f/1.15f);
+				sY *= (0.55f/1.19f);
+			}
+
+			int dx = (int)(s_mouseDx * sX);
+			int dy = (int)(s_mouseDy * sY);
+			if (dx != 0 || dy != 0)
+			{
+				hatari_onMouseMoved(dx, dy);
+				s_mouseDx -= (float)dx/sX ; s_mouseDy -= (float)dy/sY;
+			}
+		}
+
+		bool lmb = s_LMB || ((_curHWMouseBtns & 1)!=0);
+		bool rmb = s_RMB || ((_curHWMouseBtns & 2)!=0);
+
+		if (lmb)	{ Keyboard.bLButtonDown |= BUTTON_MOUSE; }
+		else		{ Keyboard.bLButtonDown &= ~BUTTON_MOUSE; }
+
+		if (rmb)	{ Keyboard.bRButtonDown |= BUTTON_MOUSE; }
+		else		{ Keyboard.bRButtonDown &= ~BUTTON_MOUSE; }
 	}
 
 	//if (s_recreateQuickKeys)
@@ -1181,18 +1265,22 @@ void VirtKB_updateInput()
 	//}
 }
 
-static int s_mouseFinger = -1;
-static int s_mouseMoved = 0;
-static float s_prevMouseX = 0;
-static float s_prevMouseY = 0;
-static float s_mouseDx = 0;
-static float s_mouseDy = 0;
+static void VirtKB_updateHardwareMouse()
+{
+	if (_prevHWMouseX != MAXFLOAT)
+	{
+		float dmx = _curHWMouseX - _prevHWMouseX;
+		float dmy = _curHWMouseY - _prevHWMouseY;
+		_prevHWMouseX = _curHWMouseX;
+		_prevHWMouseY = _curHWMouseY;
 
-static int s_prevFingerCount = 0;
-static int s_mousePresses = 0;
-static float s_mousePressTime = 0;
-
-static bool s_mouseQuickPress = false;
+		if (dmx != 0.0f || dmy != 0.0f)
+		{
+			s_mouseDx += dmx;
+			s_mouseDy += dmy;
+		}
+	}
+}
 
 static void VirtKB_updateMouse()
 {
@@ -1211,7 +1299,6 @@ static void VirtKB_updateMouse()
 	int fingers = 0;
 
 
-
 	int prevMousePresses = s_mousePresses;
 	int curMousePresses = s_mousePresses;
 
@@ -1222,8 +1309,8 @@ static void VirtKB_updateMouse()
 		quickPressed = true;
 		if ((s_curInputFlags & (FLAG_MOUSEBUTTON)) == 0)
 		{
-			if (prevMousePresses & 1) { Keyboard.bLButtonDown &= ~BUTTON_MOUSE; }
-			if (prevMousePresses & 2) { Keyboard.bRButtonDown &= ~BUTTON_MOUSE; }
+			if (prevMousePresses & 1) { s_LMB = false; }
+			if (prevMousePresses & 2) { s_RMB = false; }
 		}
 
 //Debug_Printf("Mouse Released: %d", prevMousePresses);
@@ -1310,9 +1397,6 @@ static void VirtKB_updateMouse()
 		}
 	}
 
-	float emuScrZoomX = Renderer_getEmuScreenZoomX();
-	float emuScrZoomY = Renderer_getEmuScreenZoomY();
-
 	if (s_mouseFinger >= 0)
 	{
 		s_mouseDx += curtouchX[s_mouseFinger] - s_prevMouseX;
@@ -1324,19 +1408,6 @@ static void VirtKB_updateMouse()
 		if (s_mouseDx != 0.0f || s_mouseDy != 0.0f)
 		{
 			s_mouseMoved = 1;
-
-			float sX = (STRes == ST_LOW_RES) ? 0.5f : 1;
-			float sY = 1;//(STRes == ST_MEDIUM_RES || STRes == ST_LOW_RES) ? 0.5f : 1;
-			sX *= s_mouseSpeed / emuScrZoomX;
-			sY *= s_mouseSpeed / emuScrZoomY;
-
-			int dx = (int)(s_mouseDx * sX);
-			int dy = (int)(s_mouseDy * sY);
-			if (dx != 0 || dy != 0)
-			{
-				hatari_onMouseMoved(dx, dy);
-				s_mouseDx -= (float)dx/sX ; s_mouseDy -= (float)dy/sY;
-			}
 		}
 	}
 
@@ -1348,14 +1419,14 @@ if (s_mouseQuickPress)
 }
 		if ((s_curInputFlags & (FLAG_MOUSEBUTTON)) == 0)
 		{
-			if (prevMousePresses & 1) { Keyboard.bLButtonDown &= ~BUTTON_MOUSE; }
-			if (prevMousePresses & 2) { Keyboard.bRButtonDown &= ~BUTTON_MOUSE; }
+			if (prevMousePresses & 1) { s_LMB = false; }
+			if (prevMousePresses & 2) { s_RMB = false; }
 
 			if (curMousePresses != 0)
 			{
 //Debug_Printf("Mouse Pressed: %d", curMousePresses);
-				if (curMousePresses & 1) { Keyboard.bLButtonDown |= BUTTON_MOUSE; }
-				if (curMousePresses & 2) { Keyboard.bRButtonDown |= BUTTON_MOUSE; }
+				if (curMousePresses & 1) { s_LMB = true; }
+				if (curMousePresses & 2) { s_RMB = true; }
 			}
 			else
 			{
@@ -1877,8 +1948,11 @@ static void VirtKB_clearMousePresses()
 	{
 		Debug_Printf("Mouse Released: %d", s_mousePresses);
 
-		if (s_mousePresses & 1) { Keyboard.bLButtonDown &= ~BUTTON_MOUSE; }
-		if (s_mousePresses & 2) { Keyboard.bRButtonDown &= ~BUTTON_MOUSE; }
+		if (s_mousePresses & 1) { s_LMB = false; }
+		if (s_mousePresses & 2) { s_RMB = false; }
+
+		Keyboard.bLButtonDown &= ~BUTTON_MOUSE;
+		Keyboard.bRButtonDown &= ~BUTTON_MOUSE;
 
 		s_mousePresses = 0;
 	}
@@ -1902,14 +1976,14 @@ Debug_Printf("mouse reset");
 
 static void VirtKB_MouseLB(bool down)
 {
-	if (down)	{ Keyboard.bLButtonDown |= BUTTON_MOUSE; }
-	else		{ Keyboard.bLButtonDown &= ~BUTTON_MOUSE; }
+	if (down)	{ s_LMB = true; }
+	else		{ s_LMB = false; }
 }
 
 static void VirtKB_MouseRB(bool down)
 {
-	if (down)	{ Keyboard.bRButtonDown |= BUTTON_MOUSE; }
-	else		{ Keyboard.bRButtonDown &= ~BUTTON_MOUSE; }
+	if (down)	{ s_RMB = true; }
+	else		{ s_RMB = false; }
 }
 
 void VirtKB_SetControlAlpha(float alpha)
@@ -1960,4 +2034,49 @@ void VirtKB_setJoystickOnly(bool set)
 {
 	s_showJoystickOnly = set;
 	s_recreateQuickKeys = true;
+}
+
+static void VirtKB_ToggleAutoFire(const VirtKeyDef *keyDef, uint32_t uParam1, bool down)
+{
+	if (down)
+	{
+		int curShortcutAutoFire = getShortcutAutoFire();
+		bool newAutoFire = (curShortcutAutoFire < 0 || curShortcutAutoFire == 0) ? true : false;
+
+		setShortcutAutoFire(true, newAutoFire);
+	}
+}
+
+static void VirtKB_QuickSaveState(const VirtKeyDef *keyDef, uint32_t uParam1, bool down)
+{
+	if (down)
+	{
+		quickSaveStore();
+	}
+}
+
+static void VirtKB_QuickLoadState(const VirtKeyDef *keyDef, uint32_t uParam1, bool down)
+{
+	if (down)
+	{
+		quickSaveLoad();
+	}
+}
+
+void VirtKB_ResetAllInputPresses()
+{
+/*	Keyboard.bLButtonDown &= ~BUTTON_MOUSE;
+	Keyboard.bRButtonDown &= ~BUTTON_MOUSE;
+
+	KeyboardProcessor.Mouse.dx = 0;
+	KeyboardProcessor.Mouse.dy = 0;
+
+	Joy_SetCustomEmu(0);
+	Joy_SetCustomEmu(1);
+
+	//for (int i = 0; i < 128; ++i)
+	//{
+	//	IKBD_PressSTKey(i, false);
+	//}
+*/
 }

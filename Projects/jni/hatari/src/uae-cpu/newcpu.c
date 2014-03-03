@@ -1950,7 +1950,6 @@ static void m68k_run_frame_1 (struct ResumeFrameData *resumeData)
 	}
 
 	// done 1 frame
-	// done 1 frame
 	if (nVBLCount != prevVBLCount)
 	{
 		if (nVBLs % (nFrameSkips+1))

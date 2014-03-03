@@ -1070,7 +1070,6 @@ static void Screen_UnLock(void)
 /**
  * Blit our converted ST screen to window/full-screen
  */
-int g_flipScreen = 0;
 
 static void Screen_Blit(void)
 {
@@ -1091,9 +1090,7 @@ static void Screen_Blit(void)
 # endif
 #endif
 	{
-		g_flipScreen = 1;
 		SDL_UpdateRects(sdlscrn, 1, &STScreenRect);
-		g_flipScreen = 0;
 	}
 
 	/* Swap copy/raster buffers in screen. */

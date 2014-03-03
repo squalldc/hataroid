@@ -8,4 +8,6 @@
 
 extern void MemorySnapShot_Store(void *pData, int Size);
 extern void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm);
-extern void MemorySnapShot_Restore(const char *pszFileName, bool bConfirm);
+extern int MemorySnapShot_Restore(const char *pszFileName, bool bConfirm);
+
+extern int gSaveVersion;

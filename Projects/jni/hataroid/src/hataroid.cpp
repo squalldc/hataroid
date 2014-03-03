@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <time.h>
 
+#include <sys/types.h>
+#include <dirent.h>
+
 #include <sdl.h>
 #include <math.h>
 
@@ -82,7 +85,7 @@ extern "C"
 enum
 {
 	EMUPAUSETYPE_USER = (1<<0),
-	EMUPAUSETYPE_SAVE = (1<<1),
+	//EMUPAUSETYPE_SAVE = (1<<1),
 };
 
 static volatile int emuUserPaused = 0;
@@ -90,14 +93,24 @@ static volatile bool emuReady = false;
 static volatile bool emuInited = false;
 static volatile bool videoReady = false;
 static volatile bool envInited = false;
+static volatile bool emuQuit = false;
+static volatile bool _saveAndQuit = false;
 
 static int s_turboSpeed = 0;
 static int s_turboPrevFrameSkips = 0;
 
 static bool _altUpdate = false;
 
+static int _shortcutAutoFire = -1;
+
+static int _quickSaveSlot = -1;
+static char _quickSavePath[FILENAME_MAX] = {0};
+
 static void SetEmulatorOptions(JNIEnv * env, jobjectArray keyarray, jobjectArray valarray, bool apply, bool init, bool queueCommand);
 void _storeSaveState(const char *saveMetaFilePath);
+void _loadSaveState();
+void _generateSaveNames(const char *savePath, int saveSlot, char* saveMetaFilePathResult);
+bool _findSaveStateMetaFile(int slotID, char *resultBuf);
 
 //---------------
 struct EmuCommand;
@@ -116,6 +129,11 @@ EmuCommand *s_headCommand = 0;
 
 static EmuCommand *createEmuCommand(EmuCommandRunCallback runCallback, EmuCommandCleanupCallback cleanupCallback, void *data);
 static void addEmuCommand(EmuCommandRunCallback runCallback, EmuCommandCleanupCallback cleanupCallback, void *data);
+
+volatile int s_loadingCommand = 0;
+volatile int s_saveCommandLock = 0;
+EmuCommand *s_saveCommand = 0;
+void _addSaveCommand(EmuCommandRunCallback runCallback, EmuCommandCleanupCallback cleanupCallback, void *data);
 //---------------
 
 void Debug_Printf(const char *a_pszformat, ...)
@@ -157,12 +175,15 @@ static void requestQuitHataroid()
 
 void RequestAndWaitQuit()
 {
+	emuQuit = true;
 	requestQuitHataroid();
 
-	for (;;)
-	{
-		usleep(200000); // 0.2 sec
-	}
+	exit(0);
+
+	//for (;;)
+	//{
+	//	usleep(100000); // 0.1 sec
+	//}
 }
 
 void setUserEmuPaused(int pause)
@@ -218,6 +239,7 @@ static void registerJNIcallbacks(JNIEnv * env, jobject activityInstance)
 	g_jniMainInterface.showGenericDialog = (env)->GetMethodID(activityClass, "showGenericDialog", "(IILjava/lang/String;)V");
 	g_jniMainInterface.showOptionsDialog = (env)->GetMethodID(activityClass, "showOptionsDialog", "()V");
 	g_jniMainInterface.quitHataroid = (env)->GetMethodID(activityClass, "quitHataroid", "()V");
+	g_jniMainInterface.setConfigOnSaveStateLoad = (env)->GetMethodID(activityClass, "setConfigOnSaveStateLoad", "([Ljava/lang/String;)V");
 
 	g_jniMainInterface.mainActivityGlobalRefObtained = 1;
 }
@@ -307,11 +329,16 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationMa
 
 	for (;;)
 	{
+		if (emuQuit)
+		{
+			exit(0);
+			return;
+		}
 		if (emuReady)
 		{
 			if (!_altUpdate)
 			{
-				if (emuUserPaused == 0)
+				if (emuUserPaused == 0 || _saveAndQuit)
 				{
 					hatari_main_doframe();
 				}
@@ -336,12 +363,15 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationDe
 	videoReady = false;
 	emuInited = false;
 	envInited = false;
+	emuQuit = true;
 
 	memset(&g_jniAudioInterface, 0, sizeof(JNIAudio));
 	registerJNIcallbacks(env, activityInstance);
 
 	SDL_CloseAudio();
 	//hatari_main_exit();
+
+	exit(0);
 }
 
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationPause(JNIEnv * env, jobject obj)
@@ -402,12 +432,20 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_onDrawFrame
 	{
 		if (_altUpdate)
 		{
-			if (emuUserPaused == 0)
+			if (emuUserPaused == 0 || _saveAndQuit)
 			{
 				hatari_main_doframe();
 			}
+			if (emuQuit)
+			{
+				return;
+			}
 			SDL_UpdateRects(sdlscrn, 0, 0);
 			processEmuCommands();
+		}
+		if (emuQuit)
+		{
+			return;
 		}
 
 		renderFrame();
@@ -471,13 +509,35 @@ struct EmuCommandSetOptions_Data
 
 struct OptionSetting;
 typedef void (*OptionCallback)(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data);
+typedef bool (*OptionValCallback)(const OptionSetting *setting, char *dstBuf, int dstBufLen);
 struct OptionSetting
 {
-	const char		*key;
-	OptionCallback	callback;
+	const char			*key;
+	OptionCallback		callback;
+	OptionValCallback	valCallback;
 };
 
 bool _getBoolVal(const char *val) { return !((strcasecmp(val, "false") == 0) || (strcmp(val, "0") == 0)); }
+
+bool _optionValMachineType(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)		{ strncpy(dstBuf, "Falcon", dstBufLen); return true; }
+	else if (ConfigureParams.System.nMachineType == MACHINE_STE)	{ strncpy(dstBuf, "STE", dstBufLen); return true; }
+	else if (ConfigureParams.System.nMachineType == MACHINE_TT)		{ strncpy(dstBuf, "TT", dstBufLen); return true; }
+	else if (ConfigureParams.System.nMachineType == MACHINE_ST)		{ strncpy(dstBuf, "ST", dstBufLen); return true; }
+	return false;
+}
+
+bool _optionValTOSST(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	if (ConfigureParams.System.nMachineType == MACHINE_ST) { strncpy(dstBuf, ConfigureParams.Rom.szTosImageFileName, dstBufLen); return true; }
+	return false;
+}
+bool _optionValTOSSTE(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	if (ConfigureParams.System.nMachineType == MACHINE_STE) { strncpy(dstBuf, ConfigureParams.Rom.szTosImageFileName, dstBufLen); return true; }
+	return false;
+}
 
 void _optionSetMachineType(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
@@ -511,11 +571,26 @@ void _optionSetMachineType(const OptionSetting *setting, const char *val, EmuCom
 		}
 	}
 }
+
+bool _optionValShowBorders(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.Screen.bAllowOverscan?"true":"false", dstBufLen);
+	return true;
+}
+
 void _optionShowBorders(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.Screen.bAllowOverscan = _getBoolVal(val);
 	Renderer_refreshDispParams();
 }
+
+bool _optionValShowIndicators(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	if (ConfigureParams.Screen.bShowStatusbar) { strncpy(dstBuf, "statusbar", dstBufLen); return true; }
+	if (ConfigureParams.Screen.bShowDriveLed) { strncpy(dstBuf, "driveled", dstBufLen); return true; }
+	return false;
+}
+
 void _optionShowIndicators(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.Screen.bShowStatusbar = false;
@@ -524,41 +599,108 @@ void _optionShowIndicators(const OptionSetting *setting, const char *val, EmuCom
 	if (strcmp(val, "statusbar") == 0) { ConfigureParams.Screen.bShowStatusbar = true; }
 	else if (strcmp(val, "driveled") == 0) { ConfigureParams.Screen.bShowDriveLed = true; }
 }
+
+bool _optionValAutoInsertDiskB(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.DiskImage.bAutoInsertDiskB?"true":"false", dstBufLen);
+	return true;
+}
+
 void _optionAutoInsertDiskB(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.DiskImage.bAutoInsertDiskB = _getBoolVal(val);
 }
+
+bool _optionValWriteProtectFloppy(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	if (ConfigureParams.DiskImage.nWriteProtection == WRITEPROT_OFF)		{ strncpy(dstBuf, "0", dstBufLen); return true; }
+	else if (ConfigureParams.DiskImage.nWriteProtection == WRITEPROT_ON)	{ strncpy(dstBuf, "1", dstBufLen); return true; }
+	else if (ConfigureParams.DiskImage.nWriteProtection == WRITEPROT_AUTO)	{ strncpy(dstBuf, "2", dstBufLen); return true; }
+	return false;
+}
+
 void _optionWriteProtectFloppy(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.DiskImage.nWriteProtection = (strcmp(val, "0") == 0) ? WRITEPROT_OFF : (strcmp(val, "1") == 0) ? WRITEPROT_ON : WRITEPROT_AUTO;
 }
+
+bool _optionValFastFloppy(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.DiskImage.FastFloppy?"true":"false", dstBufLen);
+	return true;
+}
+
 void _optionFastFloppy(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.DiskImage.FastFloppy = _getBoolVal(val);
 }
+
+bool _optionValCompatibleCPU(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.System.bCompatibleCpu?"true":"false", dstBufLen);
+	return true;
+}
+
 void _optionsSetCompatibleCPU(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.System.bCompatibleCpu = _getBoolVal(val);
 }
+
+bool _optionValSoundEnabled(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.Sound.bEnableSound?"true":"false", dstBufLen);
+	return true;
+}
+
 void _optionSetSoundEnabled(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.Sound.bEnableSound = _getBoolVal(val);
 }
+
+bool _optionValSoundSync(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.Sound.bEnableSoundSync?"true":"false", dstBufLen);
+	return true;
+}
+
 void _optionSetSoundSync(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.Sound.bEnableSoundSync = _getBoolVal(val);
 }
+
+bool _optionValSoundQuality(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	snprintf(dstBuf, dstBufLen, "%d", ConfigureParams.Sound.nPlaybackFreq);
+	return true;
+}
+
 void _optionSetSoundQuality(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	int freq = atoi(val);
 	ConfigureParams.Sound.nPlaybackFreq = freq;
 }
+
+bool _optionValYMVoicesMixing(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	if (ConfigureParams.Sound.YmVolumeMixing == YM_MODEL_MIXING)		{ strncpy(dstBuf, "math", dstBufLen); return true; }
+	else if (ConfigureParams.Sound.YmVolumeMixing == YM_TABLE_MIXING)	{ strncpy(dstBuf, "st", dstBufLen); return true; }
+	else if (ConfigureParams.Sound.YmVolumeMixing == YM_LINEAR_MIXING)	{ strncpy(dstBuf, "linear", dstBufLen); return true; }
+	return false;
+}
+
 void _optionSetYMVoicesMixing(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	if (strcmp(val, "math") == 0) ConfigureParams.Sound.YmVolumeMixing = YM_MODEL_MIXING;
 	else if (strcmp(val, "st") == 0) ConfigureParams.Sound.YmVolumeMixing = YM_TABLE_MIXING;
 	else if (strcmp(val, "linear") == 0) ConfigureParams.Sound.YmVolumeMixing = YM_LINEAR_MIXING;
 }
+
+bool _optionValSoundBufferSize(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	snprintf(dstBuf, dstBufLen, "%d", ConfigureParams.Hataroid.deviceSoundBufSize);
+	return true;
+}
+
 void _optionSoundBufferSize(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	int bufSize = atoi(val);
@@ -566,6 +708,16 @@ void _optionSoundBufferSize(const OptionSetting *setting, const char *val, EmuCo
 	else if (bufSize > 50) {  bufSize = 50; }
 	ConfigureParams.Hataroid.deviceSoundBufSize = bufSize;
 }
+
+bool _optionValMonitorType(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	if (ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_MONO)		{ strncpy(dstBuf, "Mono", dstBufLen); return true; }
+	else if (ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_RGB)	{ strncpy(dstBuf, "RGB", dstBufLen); return true; }
+	else if (ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_VGA)	{ strncpy(dstBuf, "VGA", dstBufLen); return true; }
+	else if (ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_TV)	{ strncpy(dstBuf, "TV", dstBufLen); return true; }
+	return false;
+}
+
 void _optionSetMonitorType(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	if (strcmp(val, "Mono") == 0) ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_MONO;
@@ -573,28 +725,76 @@ void _optionSetMonitorType(const OptionSetting *setting, const char *val, EmuCom
 	else if (strcmp(val, "VGA") == 0) ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_VGA;
 	else if (strcmp(val, "TV") == 0) ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_TV;
 }
+
+bool _optionValFrameSkip(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	snprintf(dstBuf, dstBufLen, "%d", ConfigureParams.Screen.nFrameSkips);
+	return true;
+}
+
 void _optionSetFrameSkip(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	int fskip = atoi(val); // 5 = auto (AUTO_FRAMESKIP_LIMIT)
 	ConfigureParams.Screen.nFrameSkips = fskip;
 }
+
+bool _optionValSetRTC(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.System.bRealTimeClock?"true":"false", dstBufLen);
+	return true;
+}
+
 void _optionSetRTC(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.System.bRealTimeClock = _getBoolVal(val);
 }
+
+bool _optionValPatchTimerD(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.System.bPatchTimerD?"true":"false", dstBufLen);
+	return true;
+}
+
 void _optionPatchTimerD(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.System.bPatchTimerD = _getBoolVal(val);
 }
+
+bool _optionValFastBoot(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.System.bFastBoot?"true":"false", dstBufLen);
+	return true;
+}
+
 void _optionFastBoot(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.System.bFastBoot = _getBoolVal(val);
 }
+
+bool _optionValMemorySize(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	snprintf(dstBuf, dstBufLen, "%d", ConfigureParams.Memory.nMemorySize);
+	return true;
+}
+
 void _optionMemorySize(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	int memsize = atoi(val); // Mb (0 = 512k)
 	ConfigureParams.Memory.nMemorySize = memsize;
 }
+
+bool _optionValCPUType(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	const char* cpuTypeNames[] = { "68000", "68010", "68020", "68EC030FPU", "68040" };
+	const int numCPUTypeNames = sizeof(cpuTypeNames)/sizeof(char*);
+	if (ConfigureParams.System.nCpuLevel >= 0 && ConfigureParams.System.nCpuLevel < numCPUTypeNames)
+	{
+		strncpy(dstBuf, cpuTypeNames[ConfigureParams.System.nCpuLevel], dstBufLen);
+		return true;
+	}
+	return false;
+}
+
 void _optionSetCPUType(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	if (strcmp(val, "68000") == 0) ConfigureParams.System.nCpuLevel = 0;
@@ -603,32 +803,71 @@ void _optionSetCPUType(const OptionSetting *setting, const char *val, EmuCommand
 	else if (strcmp(val, "68EC030FPU") == 0) ConfigureParams.System.nCpuLevel = 3;
 	else if (strcmp(val, "68040") == 0) ConfigureParams.System.nCpuLevel = 4;
 }
+
+bool _optionValCPUFreq(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	snprintf(dstBuf, dstBufLen, "%d", ConfigureParams.System.nCpuFreq);
+	return true;
+}
+
 void _optionSetCPUFreq(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	int freq = atoi(val);
 	ConfigureParams.System.nCpuFreq = freq;
 }
+
+bool _optionValBlitter(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.System.bBlitter?"true":"false", dstBufLen);
+	return true;
+}
+
 void _optionSetBlitter(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.System.bBlitter = _getBoolVal(val);
 }
+
 void _optionSetJoystickPort(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	int port = atoi(val);
 	VirtKB_SetJoystickPort(port);
 }
+
+bool _optionValAutoFire(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.Joysticks.Joy[1].bEnableAutoFire?"true":"false", dstBufLen);
+	return true;
+}
+
 void _optionSetJoystickAutoFire(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
-	int port = VirtKB_GetJoystickPort();
+	//int port = VirtKB_GetJoystickPort();
 	bool autoFire = _getBoolVal(val);
+	if (_shortcutAutoFire >= 0)
+	{
+		autoFire = (_shortcutAutoFire != 0);
+	}
 	ConfigureParams.Joysticks.Joy[1].bEnableAutoFire = autoFire;
-
 }
+
+int getShortcutAutoFire()
+{
+	return _shortcutAutoFire;
+}
+
+void setShortcutAutoFire(int enable, int set)
+{
+	_shortcutAutoFire = enable ? (set ? 1 : 0) : -1;
+	bool autoFire = (_shortcutAutoFire > 0);
+	ConfigureParams.Joysticks.Joy[1].bEnableAutoFire = autoFire;
+}
+
 void _optionSetJoystickMapArrowKeys(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	bool map = _getBoolVal(val);
 	VirtKB_MapJoysticksToArrowKeys(map);
 }
+
 void _optionSetBilinearFilter(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	bool filter = _getBoolVal(val);
@@ -697,47 +936,117 @@ void _optionSetJoystickSize(const OptionSetting *setting, const char *val, EmuCo
 	VirtKB_SetJoystickSize(size);
 }
 
+bool _optionValBootFromHD(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.HardDisk.bBootFromHardDisk?"true":"false", dstBufLen);
+	return true;
+}
+
 void _optionBootFromHD(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.HardDisk.bBootFromHardDisk = _getBoolVal(val);
+}
+
+bool _optionValACSIAttach(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.HardDisk.bUseHardDiskImage?"true":"false", dstBufLen);
+	return true;
 }
 
 void _optionACSIAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.HardDisk.bUseHardDiskImage = _getBoolVal(val);
 }
+
+bool _optionValIDEMasterAttach(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage?"true":"false", dstBufLen);
+	return true;
+}
+
 void _optionIDEMasterAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = _getBoolVal(val);
 }
+
+bool _optionValIDESlaveAttach(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage?"true":"false", dstBufLen);
+	return true;
+}
+
 void _optionIDESlaveAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = _getBoolVal(val);
 }
+
+bool _optionValGEMDOSAttach(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.HardDisk.bUseHardDiskDirectories?"true":"false", dstBufLen);
+	return true;
+}
+
 void _optionGEMDOSAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.HardDisk.bUseHardDiskDirectories = _getBoolVal(val);
 }
+
+bool _optionValACSIImage(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.HardDisk.szHardDiskImage, dstBufLen);
+	return true;
+}
+
 void _optionACSIImage(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	strncpy(ConfigureParams.HardDisk.szHardDiskImage, ((val==0)||strcmp(val,"none")==0) ? "" : val, FILENAME_MAX);
 	ConfigureParams.HardDisk.szHardDiskImage[FILENAME_MAX-1]=0;
 }
+
+bool _optionValIDEMasterImage(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.HardDisk.szIdeMasterHardDiskImage, dstBufLen);
+	return true;
+}
+
 void _optionIDEMasterImage(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	strncpy(ConfigureParams.HardDisk.szIdeMasterHardDiskImage, ((val==0)||strcmp(val,"none")==0) ? "" : val, FILENAME_MAX);
 	ConfigureParams.HardDisk.szIdeMasterHardDiskImage[FILENAME_MAX-1]=0;
 }
+
+bool _optionValIDESlaveImage(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.HardDisk.szIdeSlaveHardDiskImage, dstBufLen);
+	return true;
+}
+
 void _optionIDESlaveImage(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	strncpy(ConfigureParams.HardDisk.szIdeSlaveHardDiskImage, ((val==0)||strcmp(val,"none")==0) ? "" : val, FILENAME_MAX);
 	ConfigureParams.HardDisk.szIdeSlaveHardDiskImage[FILENAME_MAX-1]=0;
 }
+
+bool _optionValGEMDOSFolder(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	strncpy(dstBuf, ConfigureParams.HardDisk.szHardDiskDirectories[0], dstBufLen);
+	return true;
+}
+
 void _optionGEMDOSFolder(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	strncpy(ConfigureParams.HardDisk.szHardDiskDirectories[0], ((val==0)||strcmp(val,"none")==0) ? "" : val, FILENAME_MAX);
 	ConfigureParams.HardDisk.szHardDiskDirectories[0][FILENAME_MAX-1]=0;
 }
+
+bool _optionValGEMDOSWriteProtection(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+	if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_OFF)			{ strncpy(dstBuf, "0", dstBufLen); return true; }
+	else if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_ON	)	{ strncpy(dstBuf, "1", dstBufLen); return true; }
+	else if (ConfigureParams.HardDisk.nWriteProtection == WRITEPROT_AUTO)	{ strncpy(dstBuf, "2", dstBufLen); return true; }
+	return false;
+}
+
 void _optionGEMDOSWriteProtection(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	int optionVal = atoi(val);
@@ -746,85 +1055,103 @@ void _optionGEMDOSWriteProtection(const OptionSetting *setting, const char *val,
 	else if (optionVal == 1) { ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_ON; } // on
 	else if (optionVal == 2) { ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_AUTO; } // auto
 }
+
 void _optionSetVKBExtraKeys(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	bool extraKeys = _getBoolVal(val);
 	VirtKB_setExtraKeys(extraKeys);
 }
+
 void _optionSetVKBObsessionKeys(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	bool valSet = _getBoolVal(val);
 	_altUpdate = valSet;
 	VirtKB_setObsessionKeys(valSet);
 }
+
 void _optionSetVKBHideAll(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	bool valSet = _getBoolVal(val);
 	VirtKB_setHideAll(valSet);
 }
+
 void _optionSetVKBJoystickOnly(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	bool valSet = _getBoolVal(val);
 	VirtKB_setJoystickOnly(valSet);
 }
 
+void _optionSetSaveStateFolder(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	strncpy(_quickSavePath, val, FILENAME_MAX);
+	_quickSavePath[FILENAME_MAX-1] = 0;
+}
+
+void _optionSetQuickSaveSlot(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	int slot = atoi(val);
+	_quickSaveSlot = slot;
+}
+
 static const OptionSetting s_OptionsMap[] =
 {
-	{ "pref_input_joystick_port", _optionSetJoystickPort },
-	{ "pref_input_joysticks_autofire", _optionSetJoystickAutoFire },
-	{ "pref_input_joysticks_maparrowkeys", _optionSetJoystickMapArrowKeys },
-	{ "pref_input_joysticks_size", _optionSetJoystickSize },
-	{ "pref_input_mouse_emutype", _optionSetMouseEmuType },
-	{ "pref_input_mouse_speed", _optionSetMouseSpeed },
-	{ "pref_input_onscreen_alpha", _optionSetOnScreenAlpha },
-	{ "pref_system_blitteremulation", _optionSetBlitter },
-	{ "pref_system_cpuclock", _optionSetCPUFreq },
-	{ "pref_system_cputype", _optionSetCPUType },
-	{ "pref_system_compatiblecpu", _optionsSetCompatibleCPU },
-	{ "pref_system_machinetype", _optionSetMachineType },
-	{ "pref_system_memory", _optionMemorySize },
-	{ "pref_system_midiemulation", 0 },
-	{ "pref_system_patchtimerd", _optionPatchTimerD },
-	{ "pref_system_patchtosfasterboot", _optionFastBoot },
-	{ "pref_system_printeremulation", 0 },
-	{ "pref_system_rs232emulation", 0 },
-	{ "pref_system_rtc", _optionSetRTC },
-	{ "pref_system_tos", 0 },
-	{ "pref_system_tos_ste", 0 },
-	{ "pref_display_bilinearfilter", _optionSetBilinearFilter },
-	{ "pref_display_fullscreen", _optionSetFullScreenStretch },
-	{ "pref_display_keepscreenawake", 0 },
-	{ "pref_display_extendedvdi", 0 },
-	{ "pref_display_extendedvdi_colors", 0 },
-	{ "pref_display_extendedvdi_resolution", 0 },
-	{ "pref_storage_cartridge", 0 },
-	{ "pref_display_frameskip", _optionSetFrameSkip },
-	{ "pref_display_indicators", _optionShowIndicators },
-	{ "pref_display_monitortype", _optionSetMonitorType },
-	{ "pref_display_showborders", _optionShowBorders },
-	{ "pref_storage_floppydisks_autoinsertb", _optionAutoInsertDiskB },
-	{ "pref_storage_floppydisks_fastfloppyaccess", _optionFastFloppy },
-	{ "pref_storage_floppydisks_imagedir", 0 },
-	{ "pref_storage_floppydisks_writeprotection", _optionWriteProtectFloppy },
-	{ "pref_storage_harddisks_acsiimage", _optionACSIImage },
-	{ "pref_storage_harddisks_acsi_attach", _optionACSIAttach },
-	{ "pref_storage_harddisks_bootfromharddisk", _optionBootFromHD },
-	{ "pref_storage_harddisks_gemdosdrive", _optionGEMDOSFolder },
-	{ "pref_storage_harddisks_gemdosdrive_attach", _optionGEMDOSAttach},
-	{ "pref_storage_harddisks_gemdoswriteprotection", _optionGEMDOSWriteProtection },
-	{ "pref_storage_harddisks_idemasterimage", _optionIDEMasterImage },
-	{ "pref_storage_harddisks_idemaster_attach", _optionIDEMasterAttach },
-	{ "pref_storage_harddisks_ideslaveimage", _optionIDESlaveImage },
-	{ "pref_storage_harddisks_ideslave_attach", _optionIDESlaveAttach },
-	{ "pref_sound_enabled", _optionSetSoundEnabled  },
-	{ "pref_sound_quality", _optionSetSoundQuality },
-	{ "pref_sound_synchronize_enabled", _optionSetSoundSync },
-	{ "pref_sound_ymvoicesmixing", _optionSetYMVoicesMixing },
-	{ "pref_sound_buffer_size", _optionSoundBufferSize },
-	{ "pref_input_keyboard_extra_keys", _optionSetVKBExtraKeys },
-	{ "pref_input_keyboard_obsession_keys", _optionSetVKBObsessionKeys },
-	{ "pref_input_onscreen_hide_all", _optionSetVKBHideAll},
-	{ "pref_input_onscreen_only_joy", _optionSetVKBJoystickOnly },
+	{ "pref_input_joystick_port", _optionSetJoystickPort, 0 },
+	{ "pref_input_joysticks_autofire", _optionSetJoystickAutoFire, _optionValAutoFire },
+	{ "pref_input_joysticks_maparrowkeys", _optionSetJoystickMapArrowKeys, 0 },
+	{ "pref_input_joysticks_size", _optionSetJoystickSize, 0 },
+	{ "pref_input_mouse_emutype", _optionSetMouseEmuType, 0 },
+	{ "pref_input_mouse_speed", _optionSetMouseSpeed, 0 },
+	{ "pref_input_onscreen_alpha", _optionSetOnScreenAlpha, 0 },
+	{ "pref_system_blitteremulation", _optionSetBlitter, _optionValBlitter },
+	{ "pref_system_cpuclock", _optionSetCPUFreq, _optionValCPUFreq },
+	{ "pref_system_cputype", _optionSetCPUType, _optionValCPUType },
+	{ "pref_system_compatiblecpu", _optionsSetCompatibleCPU, _optionValCompatibleCPU },
+	{ "pref_system_machinetype", _optionSetMachineType, _optionValMachineType },
+	{ "pref_system_memory", _optionMemorySize, _optionValMemorySize },
+	{ "pref_system_midiemulation", 0, 0 },
+	{ "pref_system_patchtimerd", _optionPatchTimerD, _optionValPatchTimerD },
+	{ "pref_system_patchtosfasterboot", _optionFastBoot, _optionValFastBoot },
+	{ "pref_system_printeremulation", 0, 0 },
+	{ "pref_system_rs232emulation", 0, 0 },
+	{ "pref_system_rtc", _optionSetRTC, _optionValSetRTC },
+	{ "pref_system_tos", 0, _optionValTOSST },
+	{ "pref_system_tos_ste", 0, _optionValTOSSTE },
+	{ "pref_display_bilinearfilter", _optionSetBilinearFilter, 0 },
+	{ "pref_display_fullscreen", _optionSetFullScreenStretch, 0 },
+	{ "pref_display_keepscreenawake", 0, 0 },
+	{ "pref_display_extendedvdi", 0, 0 },
+	{ "pref_display_extendedvdi_colors", 0, 0 },
+	{ "pref_display_extendedvdi_resolution", 0, 0 },
+	{ "pref_storage_cartridge", 0, 0 },
+	{ "pref_display_frameskip", _optionSetFrameSkip, _optionValFrameSkip },
+	{ "pref_display_indicators", _optionShowIndicators, _optionValShowIndicators },
+	{ "pref_display_monitortype", _optionSetMonitorType, _optionValMonitorType },
+	{ "pref_display_showborders", _optionShowBorders, _optionValShowBorders },
+	{ "pref_storage_floppydisks_autoinsertb", _optionAutoInsertDiskB, _optionValAutoInsertDiskB },
+	{ "pref_storage_floppydisks_fastfloppyaccess", _optionFastFloppy, _optionValFastFloppy },
+	{ "pref_storage_floppydisks_writeprotection", _optionWriteProtectFloppy, _optionValWriteProtectFloppy },
+	{ "pref_storage_harddisks_acsiimage", _optionACSIImage, _optionValACSIImage },
+	{ "pref_storage_harddisks_acsi_attach", _optionACSIAttach, _optionValACSIAttach },
+	{ "pref_storage_harddisks_bootfromharddisk", _optionBootFromHD, _optionValBootFromHD },
+	{ "pref_storage_harddisks_gemdosdrive", _optionGEMDOSFolder, _optionValGEMDOSFolder },
+	{ "pref_storage_harddisks_gemdosdrive_attach", _optionGEMDOSAttach, _optionValGEMDOSAttach },
+	{ "pref_storage_harddisks_gemdoswriteprotection", _optionGEMDOSWriteProtection, _optionValGEMDOSWriteProtection },
+	{ "pref_storage_harddisks_idemasterimage", _optionIDEMasterImage, _optionValIDEMasterImage },
+	{ "pref_storage_harddisks_idemaster_attach", _optionIDEMasterAttach, _optionValIDEMasterAttach },
+	{ "pref_storage_harddisks_ideslaveimage", _optionIDESlaveImage, _optionValIDESlaveImage },
+	{ "pref_storage_harddisks_ideslave_attach", _optionIDESlaveAttach, _optionValIDESlaveAttach },
+	{ "pref_sound_enabled", _optionSetSoundEnabled, _optionValSoundEnabled },
+	{ "pref_sound_quality", _optionSetSoundQuality, _optionValSoundQuality },
+	{ "pref_sound_synchronize_enabled", _optionSetSoundSync, _optionValSoundSync },
+	{ "pref_sound_ymvoicesmixing", _optionSetYMVoicesMixing, _optionValYMVoicesMixing },
+	{ "pref_sound_buffer_size", _optionSoundBufferSize, _optionValSoundBufferSize },
+	{ "pref_input_keyboard_extra_keys", _optionSetVKBExtraKeys, 0 },
+	{ "pref_input_keyboard_obsession_keys", _optionSetVKBObsessionKeys, 0 },
+	{ "pref_input_onscreen_hide_all", _optionSetVKBHideAll, 0 },
+	{ "pref_input_onscreen_only_joy", _optionSetVKBJoystickOnly, 0 },
+	{ "pref_storage_savestate_folder", _optionSetSaveStateFolder, 0 },
+	{ "pref_savestate_quicksaveslot", _optionSetQuickSaveSlot, 0 },
+
 };
 static const int s_NumOptionMaps = sizeof(s_OptionsMap)/sizeof(OptionSetting);
 
@@ -848,7 +1175,7 @@ void EmuCommandSetOptions_Run(EmuCommand *command)
 
 	if (!s_optionsIniting)//data->init)
 	{
-		Main_PauseEmulation(true);
+		Main_PauseEmulation(false);
 	}
 
 	// Copy details (this is so can restore if 'Cancel' dialog)
@@ -896,6 +1223,7 @@ void EmuCommandSetOptions_Run(EmuCommand *command)
 			// Check if reset is required and ask user if he really wants to continue then
 			if (!bForceReset
 				&& Change_DoNeedReset(&current, &ConfigureParams)
+				&& (s_loadingCommand == 0)
 			)
 			{
 				bOKDialog = DlgAlert_Query("The emulated system must be "
@@ -942,6 +1270,16 @@ void EmuCommandSetOptions_Cleanup(EmuCommand *command)
 static void SetEmulatorOptions(JNIEnv * env, jobjectArray keyarray, jobjectArray valarray, bool apply, bool init, bool queueCommand)
 {
 	Debug_Printf("----> Set Options Command");
+	if (s_loadingCommand > 0)
+	{
+		Debug_Printf("----> Ignored as load command pending");
+		return;
+	}
+	if (emuQuit || _saveAndQuit)
+	{
+		Debug_Printf("----> Ignored as quiting");
+		return;
+	}
 
 	EmuCommandSetOptions_Data *data = new EmuCommandSetOptions_Data;
 	memset(data, 0, sizeof(EmuCommandSetOptions_Data));
@@ -974,9 +1312,11 @@ static void SetEmulatorOptions(JNIEnv * env, jobjectArray keyarray, jobjectArray
 void EmuCommandResetCold_Run(EmuCommand *command)
 {
 	Debug_Printf("----> Cold Reset");
+	Main_PauseEmulation(false);
 	setTurboSpeed(0);
 	setUserEmuPaused(0);
 	Reset_Cold();
+	Main_UnPauseEmulation();
 }
 
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorResetCold(JNIEnv * env, jobject obj)
@@ -988,9 +1328,11 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorRes
 void EmuCommandResetWarm_Run(EmuCommand *command)
 {
 	Debug_Printf("----> Warm Reset");
+	Main_PauseEmulation(false);
 	setTurboSpeed(0);
 	setUserEmuPaused(0);
 	Reset_Warm();
+	Main_UnPauseEmulation();
 }
 
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorResetWarm(JNIEnv * env, jobject obj)
@@ -1002,6 +1344,7 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorRes
 void EmuCommandEjectFloppy_Run(EmuCommand *command)
 {
 	Debug_Printf("----> Eject Floppy");
+	Main_PauseEmulation(false);
 
 	int floppyID = (int)command->data;
 
@@ -1010,6 +1353,8 @@ void EmuCommandEjectFloppy_Run(EmuCommand *command)
 	Floppy_EjectDiskFromDrive(floppyID);
 
 	Debug_Printf("----> Ejected Floppy from drive (%c)", floppyID?'B':'A');
+
+	Main_UnPauseEmulation();
 }
 
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorEjectFloppy(JNIEnv * env, jobject obj, jint floppy)
@@ -1028,6 +1373,7 @@ struct EmuCommandInsertFloppy_Data
 void EmuCommandInsertFloppy_Run(EmuCommand *command)
 {
 	Debug_Printf("----> Insert Floppy");
+	Main_PauseEmulation(false);
 
 	EmuCommandInsertFloppy_Data *data = (EmuCommandInsertFloppy_Data*)command->data;
 
@@ -1035,6 +1381,8 @@ void EmuCommandInsertFloppy_Run(EmuCommand *command)
 	Floppy_InsertDiskIntoDrive(data->floppyID);
 
 	Debug_Printf("----> Inserted Floppy: (%s)(%s) into drive (%c)", data->floppyFileName, data->floppyZipPath ? data->floppyZipPath : "direct", data->floppyID?'B':'A');
+
+	Main_UnPauseEmulation();
 }
 
 void EmuCommandInsertFloppy_Cleanup(EmuCommand *command)
@@ -1051,6 +1399,8 @@ struct EmuCommandSaveState_Data
 	static const int OpLoad				= 1;
 	static const int OpSaveAutoSave		= 2;
 	static const int OpLoadAutoSave		= 3;
+	static const int OpSaveQuickSave	= 4;
+	static const int OpLoadQuickSave	= 5;
 
 	int saveStateOp;
 	int saveSlot;
@@ -1064,88 +1414,21 @@ void EmuCommandSaveState_Run(EmuCommand *command)
 
 	EmuCommandSaveState_Data *data = (EmuCommandSaveState_Data*)command->data;
 
+	Main_PauseEmulation(false);
+
 	switch (data->saveStateOp)
 	{
 		case EmuCommandSaveState_Data::OpSave:
 		{
+			Debug_Printf("Deleting: %s\n", data->saveStateFilePath);
 			remove(data->saveStateFilePath); // TODO: check error codes
 
-			// create new save name based on inserted floppy
-			char* saveMetaBaseName = new char [FILENAME_MAX];
 			char* saveMetaFilePath = new char [FILENAME_MAX];
 
-			char* tempFloppyName = 0;
-
-			const char *sFloppyName = 0;
-			for (int d = 0; d < MAX_FLOPPYDRIVES; ++d)
-			{
-				if (ConfigureParams.DiskImage.szDiskFileName[d][0] != 0)
-				{
-					sFloppyName = ConfigureParams.DiskImage.szDiskFileName[d];
-					break;
-				}
-				else if (ConfigureParams.DiskImage.szDiskZipPath[d][0] != 0)
-				{
-					sFloppyName = ConfigureParams.DiskImage.szDiskZipPath[d];
-					break;
-				}
-			}
-			if (sFloppyName == 0)
-			{
-				sFloppyName = "unknown";
-			}
-			else
-			{
-				const char *floppyBase = strrchr(sFloppyName, '/');
-				if (floppyBase != 0)
-				{
-					sFloppyName = &floppyBase[1];
-				}
-
-				tempFloppyName = new char [FILENAME_MAX];
-				strncpy(tempFloppyName, sFloppyName, FILENAME_MAX);
-
-				int nameLen = strlen(tempFloppyName);
-				for (int c = nameLen-1; c >= 0; --c)
-				{
-					if (tempFloppyName[c] == '.')
-					{
-						tempFloppyName[c] = 0;
-						break;
-					}
-				}
-
-				sFloppyName = tempFloppyName;
-			}
-
-			if (data->saveSlot >= 0)
-			{
-				snprintf(saveMetaBaseName, FILENAME_MAX, "%03d_%s", data->saveSlot, sFloppyName);
-				snprintf(ConfigureParams.Memory.szMemoryCaptureFileName, FILENAME_MAX, "%s/%03d.sav", data->saveStatePath, data->saveSlot);
-			}
-			else
-			{
-				snprintf(saveMetaBaseName, FILENAME_MAX, "xxx_%s", data->saveSlot, sFloppyName);
-				snprintf(ConfigureParams.Memory.szMemoryCaptureFileName, FILENAME_MAX, "%s/xxx.sav", data->saveStatePath);
-			}
-			ConfigureParams.Memory.szMemoryCaptureFileName[FILENAME_MAX-1]=0;
-			saveMetaBaseName[FILENAME_MAX-1]=0;
-
-			snprintf(saveMetaFilePath, FILENAME_MAX, "%s/%s.ss", data->saveStatePath, saveMetaBaseName);
-			saveMetaFilePath[FILENAME_MAX-1]=0;
-
-			Debug_Printf("Floppy: %s, SaveName: %s, MetaName: %s", sFloppyName, ConfigureParams.Memory.szMemoryCaptureFileName, saveMetaFilePath);
-
+			_generateSaveNames(data->saveStatePath, data->saveSlot, saveMetaFilePath);
 			_storeSaveState(saveMetaFilePath);
 
-			if (tempFloppyName != 0)
-			{
-				delete [] tempFloppyName;
-			}
 			delete [] saveMetaFilePath;
-			delete [] saveMetaBaseName;
-
-			emuUserPaused &= ~EMUPAUSETYPE_SAVE;
 			break;
 		}
 		case EmuCommandSaveState_Data::OpLoad:
@@ -1160,7 +1443,7 @@ void EmuCommandSaveState_Run(EmuCommand *command)
 			}
 			ConfigureParams.Memory.szMemoryCaptureFileName[FILENAME_MAX-1]=0;
 
-			MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, false);
+			_loadSaveState();
 			break;
 		}
 		case EmuCommandSaveState_Data::OpSaveAutoSave:
@@ -1177,7 +1460,6 @@ void EmuCommandSaveState_Run(EmuCommand *command)
 			_storeSaveState(saveMetaFilePath);
 
 			delete [] saveMetaFilePath;
-			emuUserPaused &= ~EMUPAUSETYPE_SAVE;
 
 			Debug_Printf("----> Auto Save saved...");
 
@@ -1191,13 +1473,239 @@ void EmuCommandSaveState_Run(EmuCommand *command)
 			snprintf(ConfigureParams.Memory.szMemoryCaptureFileName, FILENAME_MAX, "%s/as.sav", data->saveStatePath);
 			ConfigureParams.Memory.szMemoryCaptureFileName[FILENAME_MAX-1]=0;
 
-			MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, false);
+			_loadSaveState();
+			break;
+		}
+		case EmuCommandSaveState_Data::OpSaveQuickSave:
+		{
+			Debug_Printf("----> Saving quick save...");
+
+			if (_quickSaveSlot == -1 || _quickSavePath[0] == 0)
+			{
+				break;
+			}
+			char *metaBaseName = new char [FILENAME_MAX];
+			char *saveMetaFilePath = new char [FILENAME_MAX];
+
+			if (_findSaveStateMetaFile(_quickSaveSlot, metaBaseName))
+			{
+				snprintf(saveMetaFilePath, FILENAME_MAX, "%s/%s", _quickSavePath, metaBaseName);
+				saveMetaFilePath[FILENAME_MAX-1] = 0;
+
+				Debug_Printf("Deleting: %s\n", saveMetaFilePath);
+				remove(saveMetaFilePath); // TODO: check error codes
+			}
+
+			_generateSaveNames(_quickSavePath, _quickSaveSlot, saveMetaFilePath);
+			_storeSaveState(saveMetaFilePath);
+
+			delete [] saveMetaFilePath;
+			delete [] metaBaseName;
+			break;
+		}
+		case EmuCommandSaveState_Data::OpLoadQuickSave:
+		{
+			if (_quickSaveSlot == -1 || _quickSavePath[0] == 0)
+			{
+				break;
+			}
+			Debug_Printf("----> Loading quick save...");
+
+			snprintf(ConfigureParams.Memory.szMemoryCaptureFileName, FILENAME_MAX, "%s/%03d.sav", _quickSavePath, _quickSaveSlot);
+			ConfigureParams.Memory.szMemoryCaptureFileName[FILENAME_MAX-1]=0;
+
+			_loadSaveState();
 			break;
 		}
 	}
 
 	// Reset the sound emulation variables:
 	Sound_BufferIndexNeedReset = true;
+
+	Main_UnPauseEmulation();
+}
+
+void _generateSaveNames(const char *savePath, int saveSlot, char* saveMetaFilePathResult)
+{
+	// create new save name based on inserted floppy
+	char* saveMetaBaseName = new char [FILENAME_MAX];
+
+	char* tempFloppyName = 0;
+
+	const char *sFloppyName = 0;
+	for (int d = 0; d < MAX_FLOPPYDRIVES; ++d)
+	{
+		if (ConfigureParams.DiskImage.szDiskFileName[d][0] != 0)
+		{
+			sFloppyName = ConfigureParams.DiskImage.szDiskFileName[d];
+			break;
+		}
+		else if (ConfigureParams.DiskImage.szDiskZipPath[d][0] != 0)
+		{
+			sFloppyName = ConfigureParams.DiskImage.szDiskZipPath[d];
+			break;
+		}
+	}
+	if (sFloppyName == 0)
+	{
+		sFloppyName = "unknown";
+	}
+	else
+	{
+		const char *floppyBase = strrchr(sFloppyName, '/');
+		if (floppyBase != 0)
+		{
+			sFloppyName = &floppyBase[1];
+		}
+
+		tempFloppyName = new char [FILENAME_MAX];
+		strncpy(tempFloppyName, sFloppyName, FILENAME_MAX);
+
+		int nameLen = strlen(tempFloppyName);
+		for (int c = nameLen-1; c >= 0; --c)
+		{
+			if (tempFloppyName[c] == '.')
+			{
+				tempFloppyName[c] = 0;
+				break;
+			}
+		}
+
+		sFloppyName = tempFloppyName;
+	}
+
+	if (saveSlot >= 0)
+	{
+		snprintf(saveMetaBaseName, FILENAME_MAX, "%03d_%s", saveSlot, sFloppyName);
+		snprintf(ConfigureParams.Memory.szMemoryCaptureFileName, FILENAME_MAX, "%s/%03d.sav", savePath, saveSlot);
+	}
+	else
+	{
+		snprintf(saveMetaBaseName, FILENAME_MAX, "xxx_%s", saveSlot, sFloppyName);
+		snprintf(ConfigureParams.Memory.szMemoryCaptureFileName, FILENAME_MAX, "%s/xxx.sav", savePath);
+	}
+	ConfigureParams.Memory.szMemoryCaptureFileName[FILENAME_MAX-1]=0;
+	saveMetaBaseName[FILENAME_MAX-1]=0;
+
+	snprintf(saveMetaFilePathResult, FILENAME_MAX, "%s/%s.ss", savePath, saveMetaBaseName);
+	saveMetaFilePathResult[FILENAME_MAX-1]=0;
+
+	Debug_Printf("Floppy: %s, SaveName: %s, MetaName: %s", sFloppyName, ConfigureParams.Memory.szMemoryCaptureFileName, saveMetaFilePathResult);
+
+	if (tempFloppyName != 0)
+	{
+		delete [] tempFloppyName;
+	}
+	delete [] saveMetaBaseName;
+}
+
+// TODO: to avoid this, don't bother encoding name in file, just put it in meta data instead (but requires loading meta when populating list)
+bool _findSaveStateMetaFile(int slotID, char *resultBuf)
+{
+	const int kMaxPrefix = 12;
+	char prefix[kMaxPrefix];
+	snprintf(prefix, kMaxPrefix, "%03d_", slotID);
+	prefix[kMaxPrefix-1] = 0;
+	int prefixLen = strlen(prefix);
+
+	DIR *dirp = opendir(_quickSavePath);
+
+	bool found = false;
+	while (dirp)
+	{
+	    struct dirent *entry;
+	    if ((entry = readdir(dirp)) == 0)
+	    {
+	    	break;
+	    }
+
+		// check prefix
+		if (strncmp(prefix, entry->d_name, prefixLen) == 0)
+		{
+		    // check ext
+			const char *ext = strrchr(entry->d_name, '.');
+			if (ext != 0)
+			{
+			    if (strcasecmp(ext, ".ss") == 0)
+				{
+				    strncpy(resultBuf, entry->d_name, FILENAME_MAX);
+					resultBuf[FILENAME_MAX-1]=0;
+					found = true;
+					break;
+				}
+			}
+		}
+	}
+
+	if (dirp)
+	{
+		closedir(dirp);
+	}
+
+	return found;
+}
+
+void _loadSaveState()
+{
+	int restoreResult = MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, false);
+	if (restoreResult == 0)
+	{
+		VirtKB_ResetAllInputPresses();
+
+		// back propagate settings back to java activity settings
+		JNIEnv *env = g_jniMainInterface.android_mainEmuThreadEnv;
+
+		int status = g_jvm->GetEnv((void**)&env, JNI_VERSION_1_6);
+		if (status == JNI_OK)
+		{
+			int numOptions = 0;
+			for (int i = 0; i < s_NumOptionMaps; ++i)
+			{
+				if (s_OptionsMap[i].valCallback != 0)
+				{
+					++numOptions;
+				}
+			}
+
+			jobjectArray options = (jobjectArray)env->NewObjectArray(numOptions*2, env->FindClass("java/lang/String"), env->NewStringUTF(""));
+
+			char tmpBuf[FILENAME_MAX];
+			int jIdx = 0;
+			for (int i = 0; i < s_NumOptionMaps; ++i)
+			{
+				if (s_OptionsMap[i].valCallback != 0)
+				{
+					const char *keyName = s_OptionsMap[i].key;
+					jstring jKey = env->NewStringUTF(keyName);
+					env->SetObjectArrayElement(options, jIdx++, jKey);
+					env->DeleteLocalRef(jKey);
+
+					jstring jVal = 0;
+					if ((*(s_OptionsMap[i].valCallback))(&s_OptionsMap[i], tmpBuf, FILENAME_MAX))
+					{
+						tmpBuf[FILENAME_MAX-1] = 0;
+						jVal = env->NewStringUTF(tmpBuf);
+					}
+					else
+					{
+						jVal = env->NewStringUTF("_dk_");
+					}
+					env->SetObjectArrayElement(options, jIdx++, jVal);
+					env->DeleteLocalRef(jVal);
+				}
+			}
+
+			(env)->CallVoidMethod(g_jniMainInterface.android_mainActivity, g_jniMainInterface.setConfigOnSaveStateLoad, options);
+
+			env->DeleteLocalRef(options);
+		}
+	}
+
+	--s_loadingCommand;
+	if (s_loadingCommand < 0)
+	{
+		s_loadingCommand = 0;
+	}
 }
 
 void _storeSaveState(const char *saveMetaFilePath)
@@ -1394,35 +1902,94 @@ void _createNewSaveStateCommand(JNIEnv * env, jobject obj, jstring path, jstring
 			env->ReleaseStringUTFChars(filepath, fnameptr);
 		}
 
-		addEmuCommand(EmuCommandSaveState_Run, EmuCommandSaveState_Cleanup, data);
+		if (op == EmuCommandSaveState_Data::OpSave
+		 || op == EmuCommandSaveState_Data::OpSaveAutoSave
+		 || op == EmuCommandSaveState_Data::OpSaveQuickSave)
+		{
+			_addSaveCommand(EmuCommandSaveState_Run, EmuCommandSaveState_Cleanup, data);
+		}
+		else
+		{
+			addEmuCommand(EmuCommandSaveState_Run, EmuCommandSaveState_Cleanup, data);
+		}
 	}
+}
+
+void _addSaveCommand(EmuCommandRunCallback runCallback, EmuCommandCleanupCallback cleanupCallback, void *data)
+{
+	while (s_saveCommandLock) { usleep(5000); }
+	s_saveCommandLock = 1;
+
+	if (s_saveCommand == 0)
+	{
+		EmuCommand *newCommand = createEmuCommand(runCallback, cleanupCallback, data);
+		s_saveCommand = newCommand;
+	}
+
+	s_saveCommandLock = 0;
+}
+
+void _processHataroidSaveCommands()
+{
+	while (s_saveCommandLock) { usleep(5000); }
+	s_saveCommandLock = 1;
+
+	EmuCommand *curCommand = s_saveCommand;
+	if (s_saveCommand != 0)
+	{
+		//s_headCommand = s_headCommand->next;
+		s_saveCommand = 0;
+	}
+
+	if (curCommand != 0)
+	{
+		(curCommand->runCallback)(curCommand);
+		if (curCommand->cleanupCallback)
+		{
+			(curCommand->cleanupCallback)(curCommand);
+		}
+		delete curCommand;
+	}
+
+	s_saveCommandLock = 0;
 }
 
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSaveStateSave(JNIEnv * env, jobject obj, jstring path, jstring filepath, jint saveSlot)
 {
 	Debug_Printf("----> Save State Save Command");
-	_createNewSaveStateCommand(env, obj, path, filepath, saveSlot, EmuCommandSaveState_Data::OpSave);
-
-	emuUserPaused |= EMUPAUSETYPE_SAVE;
+	if (emuInited)
+	{
+		_createNewSaveStateCommand(env, obj, path, filepath, saveSlot, EmuCommandSaveState_Data::OpSave);
+	}
 }
 
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSaveStateLoad(JNIEnv * env, jobject obj, jstring path, jstring filepath, jint saveSlot)
 {
 	Debug_Printf("----> Save State Load Command");
-	_createNewSaveStateCommand(env, obj, path, filepath, saveSlot, EmuCommandSaveState_Data::OpLoad);
+	if (emuInited)
+	{
+		_createNewSaveStateCommand(env, obj, path, filepath, saveSlot, EmuCommandSaveState_Data::OpLoad);
+		++s_loadingCommand;
+	}
 }
 
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorAutoSaveStoreOnExit(JNIEnv * env, jobject obj, jstring saveFolder)
 {
-	_createNewSaveStateCommand(env, obj, saveFolder, 0, -1, EmuCommandSaveState_Data::OpSaveAutoSave);
-
-	emuUserPaused |= EMUPAUSETYPE_SAVE;
+	if (emuInited)
+	{
+		_createNewSaveStateCommand(env, obj, saveFolder, 0, -1, EmuCommandSaveState_Data::OpSaveAutoSave);
+		_saveAndQuit = true;
+	}
 }
 
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorAutoSaveLoadOnStart(JNIEnv * env, jobject obj, jstring saveFolder)
 {
 	Debug_Printf("----> Save State AutoLoadOnStart Command");
-	_createNewSaveStateCommand(env, obj, saveFolder, 0, -1, EmuCommandSaveState_Data::OpLoadAutoSave);
+	if (emuInited)
+	{
+		_createNewSaveStateCommand(env, obj, saveFolder, 0, -1, EmuCommandSaveState_Data::OpLoadAutoSave);
+		++s_loadingCommand;
+	}
 }
 
 static EmuCommand *createEmuCommand(EmuCommandRunCallback runCallback, EmuCommandCleanupCallback cleanupCallback, void *data)
@@ -1529,4 +2096,53 @@ JNIEXPORT jstring JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulator
 	const char *zipname = ConfigureParams.DiskImage.szDiskZipPath[floppy];
 	jstring str = (env)->NewStringUTF(zipname);
 	return str;
+}
+
+void quickSaveStore()
+{
+	if (_quickSaveSlot == -1 || _quickSavePath[0] == 0)
+	{
+		showGenericDialog("Please select a quick save slot first before using Quick Saves", 1, 0);
+		return;
+	}
+
+	if (emuInited)
+	{
+		EmuCommandSaveState_Data *data = new EmuCommandSaveState_Data;
+		memset(data, 0, sizeof(EmuCommandSaveState_Data));
+
+		data->saveStateOp = EmuCommandSaveState_Data::OpSaveQuickSave;
+
+		_addSaveCommand(EmuCommandSaveState_Run, EmuCommandSaveState_Cleanup, data);
+		//addEmuCommand(EmuCommandSaveState_Run, EmuCommandSaveState_Cleanup, data);
+	}
+}
+
+void quickSaveLoad()
+{
+	if (_quickSaveSlot == -1 || _quickSavePath[0] == 0)
+	{
+		showGenericDialog("Please select a quick save slot first before using Quick Saves", 1, 0);
+		return;
+	}
+
+	if (emuInited)
+	{
+		EmuCommandSaveState_Data *data = new EmuCommandSaveState_Data;
+		memset(data, 0, sizeof(EmuCommandSaveState_Data));
+
+		data->saveStateOp = EmuCommandSaveState_Data::OpLoadQuickSave;
+
+		addEmuCommand(EmuCommandSaveState_Run, EmuCommandSaveState_Cleanup, data);
+
+		++s_loadingCommand;
+	}
+}
+
+extern "C"
+{
+	void _checkHataroidSaveRequests()
+	{
+		_processHataroidSaveCommands();
+	}
 }

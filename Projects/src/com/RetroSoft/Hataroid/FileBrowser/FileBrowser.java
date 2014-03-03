@@ -24,9 +24,12 @@ import android.view.ViewGroup;
 import android.view.View.OnClickListener;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.RetroSoft.Hataroid.R;
+import com.RetroSoft.Hataroid.Input.InputMapConfigureView;
+import com.RetroSoft.Hataroid.Input.RenameInputMapView;
 
 public class FileBrowser extends ListActivity
 {
@@ -34,6 +37,7 @@ public class FileBrowser extends ListActivity
 	public static final String CONFIG_EXT = "Config_Ext";
 	public static final String CONFIG_RESETST = "Config_ResetST";
 	public static final String CONFIG_SELECTFOLDER = "Config_SelectFolder";
+	public static final String CONFIG_NEWFOLDER = "Config_NewFolder";
 	public static final String CONFIG_PREFLASTITEMPATH = "Config_PrefLastItemPath";
 	public static final String CONFIG_PREFLASTITEMNAME = "Config_PrefLastItemName";
 	
@@ -41,6 +45,8 @@ public class FileBrowser extends ListActivity
 	public static final String RESULT_ZIPPATH = "ResultZipPath";
 	public static final String RESULT_RESETCOLD = "ResetCold";
 	public static final String RESULT_RESETWARM = "ResetWarm";
+
+	private static final int	ACTIVITYRESULT_NEWFOLDERNAME				= 1;
 
 	private static final String LastFloppyDirItemPathKey = "pref_storage_floppydisks_lastdir_itempath";
 	private static final String LastFloppyDirItemNameKey = "pref_storage_floppydisks_lastdir_itemname";
@@ -61,6 +67,7 @@ public class FileBrowser extends ListActivity
 	private boolean				_openZips = true;
 	private boolean				_resetST = true;
 	private boolean				_selectFolder = false;
+	private boolean				_newFolder = false;
 	private String				_prefLastItemPathKey = LastFloppyDirItemPathKey;
 	private String				_prefLastItemNameKey = LastFloppyDirItemNameKey;
 	
@@ -77,6 +84,7 @@ public class FileBrowser extends ListActivity
 		setContentView(R.layout.activity_file_browser_view);
 		
 		parseOptions(savedInstanceState);
+		setupButtonListeners();
 
 		_retIntent = new Intent();
 		
@@ -181,6 +189,7 @@ public class FileBrowser extends ListActivity
 			outState.putBoolean(CONFIG_OPENZIPS, _openZips);
 			outState.putBoolean(CONFIG_RESETST, _resetST);
 			outState.putBoolean(CONFIG_SELECTFOLDER, _selectFolder);
+			outState.putBoolean(CONFIG_NEWFOLDER, _newFolder);
 		}
 		catch (Exception e)
 		{
@@ -206,6 +215,7 @@ public class FileBrowser extends ListActivity
 			_openZips = b.getBoolean(CONFIG_OPENZIPS, true);
 			_resetST = b.getBoolean(CONFIG_RESETST, true);
 			_selectFolder = b.getBoolean(CONFIG_SELECTFOLDER, false);
+			_newFolder = b.getBoolean(CONFIG_NEWFOLDER, false);
 			
 			_prefLastItemPathKey = b.getString(CONFIG_PREFLASTITEMPATH);
 			_prefLastItemNameKey = b.getString(CONFIG_PREFLASTITEMNAME);
@@ -225,8 +235,6 @@ public class FileBrowser extends ListActivity
 			}
 			_exts[curLen] = ".zip";
 		}
-		
-		setupButtonListeners();
 	}
 	
 	@Override protected void onDestroy()
@@ -341,6 +349,35 @@ public class FileBrowser extends ListActivity
 				}
 			}
 
+			View newFolderBtnView = findViewById(R.id.fb_newFolderBtn);
+			if (newFolderBtnView != null)
+			{
+				if (_newFolder)
+				{
+					newFolderBtnView.setOnClickListener(new OnClickListener() {
+						public void onClick(View v) {
+							_onNewFolderBtnClicked();
+						}
+					});
+				}
+				else
+				{
+					newFolderBtnView.setEnabled(false);
+					newFolderBtnView.setVisibility(View.INVISIBLE);
+					
+					((ViewGroup)newFolderBtnView.getParent()).removeView(newFolderBtnView);
+				}
+			}
+			
+			if (!_newFolder && !_selectFolder)
+			{
+				View buttonLayoutView = findViewById(R.id.bottomButtonsLayout);
+				if (buttonLayoutView != null)
+				{
+					((ViewGroup)buttonLayoutView.getParent()).removeView(buttonLayoutView);
+				}
+			}
+
 			ListView fileListView = (ListView)findViewById(android.R.id.list);
 			if (fileListView != null)
 			{
@@ -348,7 +385,7 @@ public class FileBrowser extends ListActivity
 				if (lpObj instanceof LinearLayout.LayoutParams)
 				{
 					LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams)lpObj;
-					lp.weight = (_selectFolder) ? 0.9f : 0.95f;
+					lp.weight = (_selectFolder || _newFolder) ? 0.9f : 0.95f;
 					fileListView.setLayoutParams(lp);
 					View root = fileListView.getRootView();
 					if (root != null)
@@ -474,7 +511,7 @@ public class FileBrowser extends ListActivity
 						_curZipFile = null;
 					}
 				}
-								
+
 				_curDir = new File(item.getPath());
 				retrieveFileList(_curDir, _exts);
 
@@ -851,6 +888,46 @@ public class FileBrowser extends ListActivity
 		{
 			TextView tv = (TextView)v;
 			tv.setText(s);
+		}
+	}
+
+	void _onNewFolderBtnClicked()
+	{
+        Intent view = new Intent(this, RenameInputMapView.class);
+        view.putExtra(RenameInputMapView.CONFIG_CURNAME, "saves");
+        startActivityForResult(view, ACTIVITYRESULT_NEWFOLDERNAME);
+	}
+
+	protected void onActivityResult(int requestCode, int resultCode, Intent data)
+	{
+		switch (requestCode)
+		{
+			case ACTIVITYRESULT_NEWFOLDERNAME:
+			{
+				if (resultCode == RESULT_OK)
+				{
+					String newFolderName = data.getStringExtra(RenameInputMapView.RESULT_NAME);
+					if (newFolderName != null)
+					{
+						newFolderName = newFolderName.trim();
+					}
+					if (newFolderName != null && newFolderName.length() > 0
+					 && _curDir != null && _curDir.exists())
+					{
+						String folderPath = _curDir.getAbsolutePath() + "/" + newFolderName;
+						File newFolder = new File(folderPath);
+						if (!newFolder.exists())
+						{
+							if (newFolder.mkdir())
+							{
+								// refresh
+								retrieveFileList(_curDir, _exts);
+							}
+						}
+					}
+				}
+				break;
+			}
 		}
 	}
 }

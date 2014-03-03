@@ -45,16 +45,33 @@
         android:clickable="true"
         android:divider="#66888888"
         android:dividerHeight="1px"
+		android:cacheColorHint="#00000000"
         android:drawSelectorOnTop="false" >
     </ListView>
 
-    <Button
-        android:id="@+id/fb_selectBtn"
-        style="?android:attr/buttonStyleSmall"
-        android:layout_width="168dp"
+    <LinearLayout
+        android:id="@+id/bottomButtonsLayout"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
         android:layout_weight="0.05"
-        android:text="@string/select" />
+        android:background="@drawable/gradient_drawable"
+        android:gravity="center" >
 
+	    <Button
+	        android:id="@+id/fb_selectBtn"
+	        style="?android:attr/buttonStyleSmall"
+	        android:layout_width="168dp"
+	        android:layout_height="wrap_content"
+	        android:layout_gravity="center"
+	        android:text="@string/select" />
+	
+	    <Button
+	        android:id="@+id/fb_newFolderBtn"
+	        style="?android:attr/buttonStyleSmall"
+	        android:layout_width="168dp"
+	        android:layout_height="wrap_content"
+	        android:layout_gravity="center"
+	        android:text="@string/newfolder" />
+    </LinearLayout>
+	    
 </LinearLayout>

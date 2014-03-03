@@ -12,8 +12,9 @@ public class SaveStateListItem implements Comparable<SaveStateListItem>
 	private String		_saveName;
 	
 	private boolean		_sortFirstItem = false;
+	private boolean		_isQuickSaveSlot = false;
 	
-	public SaveStateListItem(String path, String name, long lastModified, boolean dummyItem, int firstSlotID)
+	public SaveStateListItem(String path, String name, long lastModified, boolean dummyItem, int firstSlotID, int quickSaveSlotID)
 	{
 		int extPos;
 		
@@ -47,28 +48,30 @@ public class SaveStateListItem implements Comparable<SaveStateListItem>
 		}
 
 		_sortFirstItem = (_slotID == firstSlotID);
+		_isQuickSaveSlot = !_dummyItem && (_slotID == quickSaveSlotID);
 	}
 
-	public String getPath()				{ return _path; }
+	public String getPath()					{ return _path; }
 	//public String getBasePath()			{ return _basePath; }
-	public String getName()				{ return _name; }
-	public long getLastModified()		{ return _lastModified; }
-	public boolean isDummyItem()		{ return _dummyItem; }
-	public boolean isFirstSlotItem()	{ return _sortFirstItem; }
+	public String getName()					{ return _name; }
+	public long getLastModified()			{ return _lastModified; }
+	public boolean isDummyItem()			{ return _dummyItem; }
+	public boolean isFirstSlotItem()		{ return _sortFirstItem; }
+	public boolean isQuickSaveSlotItem()	{ return _isQuickSaveSlot; }
 	
-	public int getSlotID()				{ return _slotID; }
-	public String getSaveName()			{ return _saveName; }
+	public int getSlotID()					{ return _slotID; }
+	public String getSaveName()				{ return _saveName; }
 
 	public int compareTo(SaveStateListItem o)
 	{
-		if (_dummyItem && !o._dummyItem)			{ return -1; }
-		else if (!_dummyItem && o._dummyItem)		{ return 1; }
+		if (_dummyItem && !o._dummyItem)				{ return -1; }
+		else if (!_dummyItem && o._dummyItem)			{ return 1; }
 		
 		if (_sortFirstItem && !o._sortFirstItem)		{ return -1; }
 		else if (!_sortFirstItem && o._sortFirstItem)	{ return 1; }
 		
-		if (_lastModified > o._lastModified)		{ return -1; }
-		else if (_lastModified < o._lastModified)	{ return 1; }
+		if (_lastModified > o._lastModified)			{ return -1; }
+		else if (_lastModified < o._lastModified)		{ return 1; }
 		
 	    return _name.compareToIgnoreCase(o._name);
 	}

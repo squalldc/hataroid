@@ -23,6 +23,7 @@ import com.RetroSoft.Hataroid.R;
 import com.RetroSoft.Hataroid.FileBrowser.FileBrowser;
 import com.RetroSoft.Hataroid.Input.Input;
 import com.RetroSoft.Hataroid.Input.InputMapConfigureView;
+import com.RetroSoft.Hataroid.SaveState.SaveStateBrowser;
 
 public class Settings extends PreferenceActivity implements OnSharedPreferenceChangeListener
 {
@@ -76,35 +77,36 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		}
 
 		// add rom file chooser hooks
-		linkFileSelector(kPrefName_ST_TosImage, FILEACTIVITYRESULT_STTOSIMAGE, false, false, true);
-		linkFileSelector(kPrefName_STE_TosImage, FILEACTIVITYRESULT_STETOSIMAGE, false, false, true);
+		linkFileSelector(kPrefName_ST_TosImage, FILEACTIVITYRESULT_STTOSIMAGE, false, false, true, false);
+		linkFileSelector(kPrefName_STE_TosImage, FILEACTIVITYRESULT_STETOSIMAGE, false, false, true, false);
 		
 		// add hd image file chooser hooks
-		linkFileSelector(kPrefName_ACSI_Image, FILEACTIVITYRESULT_ACSI_IMAGE, true, false, false);
-		linkFileSelector(kPrefName_IDEMaster_Image, FILEACTIVITYRESULT_IDEMASTER_IMAGE, true, false, false);
-		linkFileSelector(kPrefName_IDESlave_Image, FILEACTIVITYRESULT_IDESLAVE_IMAGE, true, false, false);
+		linkFileSelector(kPrefName_ACSI_Image, FILEACTIVITYRESULT_ACSI_IMAGE, true, false, false, false);
+		linkFileSelector(kPrefName_IDEMaster_Image, FILEACTIVITYRESULT_IDEMASTER_IMAGE, true, false, false, false);
+		linkFileSelector(kPrefName_IDESlave_Image, FILEACTIVITYRESULT_IDESLAVE_IMAGE, true, false, false, false);
 		
 		// gemdos folder
-		linkFileSelector(kPrefName_GEMDOS_Folder, FILEACTIVITYRESULT_GEMDOS_FOLDER, true, true, false);
+		linkFileSelector(kPrefName_GEMDOS_Folder, FILEACTIVITYRESULT_GEMDOS_FOLDER, true, true, false, false);
 		
 		// add input device click hooks
 		linkInputDeviceSelector(kPrefName_InputDevice_InputMethod);
 		linkInputMethodConfigureView(kPrefName_InputDevice_ConfigureMap, INPUTMAPACTIVITYRESULT_OK);
 		
 		// dump map folder
-		linkFileSelector(kPrefName_DumpInputMap_Folder, FILEACTIVITYRESULT_DUMPINPUTMAPS_FOLDER, true, true, false);
+		linkFileSelector(kPrefName_DumpInputMap_Folder, FILEACTIVITYRESULT_DUMPINPUTMAPS_FOLDER, true, true, false, false);
 		
 		// save state folder
-		linkFileSelector(kPrefName_SaveState_Folder, FILEACTIVITYRESULT_SAVESTATE_FOLDER, true, true, false);
+		linkFileSelector(kPrefName_SaveState_Folder, FILEACTIVITYRESULT_SAVESTATE_FOLDER, true, true, false, true);
 	}
 	
-	void linkFileSelector(String prefKey, int fileResultID, boolean allFiles, boolean selectFolder, boolean tosImage)
+	void linkFileSelector(String prefKey, int fileResultID, boolean allFiles, boolean selectFolder, boolean tosImage, boolean showNewFolder)
 	{
 		final Settings ctx = this;
 		final int resultID = fileResultID;
 		final boolean allowAllFiles = allFiles;
 		final boolean chooseFolder = selectFolder;
 		final boolean isTosImage = tosImage;
+		final boolean newFolder = showNewFolder;
 
 		Preference fileSelector = (Preference)findPreference(prefKey);
 		fileSelector.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
@@ -113,6 +115,7 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		        fileBrowser.putExtra(FileBrowser.CONFIG_OPENZIPS, false);
 		        fileBrowser.putExtra(FileBrowser.CONFIG_RESETST, false);
 		        fileBrowser.putExtra(FileBrowser.CONFIG_SELECTFOLDER, chooseFolder);
+		        fileBrowser.putExtra(FileBrowser.CONFIG_NEWFOLDER, newFolder);
 		        fileBrowser.putExtra(FileBrowser.CONFIG_EXT, allowAllFiles ? new String[] {"*"} : new String[] {".img", ".rom"});
 		        if (isTosImage)
 		        {
@@ -185,7 +188,13 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 				String tosPath = data.getStringExtra(FileBrowser.RESULT_PATH);
 				SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 				Editor ed = prefs.edit();
+				
 				ed.putString(key, tosPath);
+				if (requestCode == FILEACTIVITYRESULT_SAVESTATE_FOLDER)
+				{
+					ed.putInt(SaveStateBrowser.kPrefQuickSaveSlot, -1);
+				}
+				
 				ed.commit();
 
 				onSharedPreferenceChanged(prefs, key);

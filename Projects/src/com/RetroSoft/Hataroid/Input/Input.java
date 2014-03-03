@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
+import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 
 import com.RetroSoft.Hataroid.Util.BitFlags;
@@ -47,9 +49,11 @@ public class Input
 	int []		_srcToDestMap = null;
 	int			_numSrcInputs = 0;
 
-	BitFlags _curPresses = new BitFlags(VirtKeyDef.VKB_KEY_NumOf);
+	BitFlags	_curPresses = new BitFlags(VirtKeyDef.VKB_KEY_NumOf);
 	
-	Context _appContext = null;
+	InputMouse	_inputMouse = null;
+	
+	Context		_appContext = null;
 	
 	public Input()
 	{
@@ -69,6 +73,28 @@ public class Input
 		_appContext = appContext;
 	}
 	
+	public void initMouse(View rootView)
+	{
+		if (android.os.Build.VERSION.SDK_INT >= 12)
+		{
+			try
+			{
+				_inputMouse = new InputMouse();
+				rootView.setOnGenericMotionListener(_inputMouse);
+			}
+			catch (Error e)
+			{
+				_inputMouse = null;
+			}
+			catch (Exception e)
+			{
+				_inputMouse = null;
+			}
+		}
+	}
+	
+	public InputMouse getInputMouse() { return _inputMouse; }
+
 	public void setupOptionsFromPrefs(SharedPreferences prefs)
 	{
     	Map<String,?> allPrefs = prefs.getAll();
@@ -297,4 +323,5 @@ public class Input
 		}
 		return result;
 	}
+
 }

@@ -76,7 +76,11 @@ public class SaveStateAdapter extends ArrayAdapter<SaveStateListItem>
 			}
 			else if (isDummyItem)
 			{
-				color = 0xffffff00;
+				color = Color.YELLOW;
+			}
+			else if (item.isQuickSaveSlotItem())
+			{
+				color = Color.CYAN;
 			}
 
 			if (tvSlot != null)
@@ -89,7 +93,8 @@ public class SaveStateAdapter extends ArrayAdapter<SaveStateListItem>
 				}
 				else
 				{
-					tvSlot.setText((slot<0)?"-":String.valueOf(slot+1));
+					//tvSlot.setText((slot<0)?"-":String.valueOf(slot+1));
+					tvSlot.setText((slot<0)?"---":String.format("%03d", slot+1));
 				}
 				tvSlot.setTextColor(color);
 			}
@@ -112,7 +117,14 @@ public class SaveStateAdapter extends ArrayAdapter<SaveStateListItem>
 			}
 			if (tvName != null)
 			{
-				tvName.setText(item.getSaveName());
+				if (item.isQuickSaveSlotItem())
+				{
+					tvName.setText("[QuickSave] " + item.getSaveName());
+				}
+				else
+				{
+					tvName.setText(item.getSaveName());
+				}
 				tvName.setTextColor(color);
 			}
 

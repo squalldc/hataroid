@@ -124,10 +124,13 @@ const VirtKeyDef g_vkbKeyDefs[] =
 	{ VKB_KEY_JOYFIRE, "Jfire", "Joystick Fire", -1, 1, 0, 0xff, { 701, 421, 766, 486, 0, 0, 0, 0 }, FLAG_JOY, { 701, 421, 766, 486 }, 1, 0 },
 	{ VKB_KEY_LEFTSHIFT_BUTTON, "Lshift_Btn", "Left Shift Button", -1, 0, 0, 0x2a, { 701, 421, 766, 486, 0, 0, 0, 0 }, FLAG_STKEY, { 701, 421, 766, 486 }, 1, 0 },
 	{ VKB_KEY_RIGHTSHIFT_BUTTON, "Rshift_btn", "Right Shift Button", -1, 0, 0, 0x36, { 701, 421, 766, 486, 0, 0, 0, 0 }, FLAG_STKEY, { 701, 421, 766, 486 }, 1, 0 },
-	{ VKB_KEY_TOGGLEUI, "UIToggle", "Toggle UI", -1, 1, 0, 0xff, { 104, 208, 391, 239, 0, 0, 0, 0 }, FLAG_CUSTOMKEY, { 34, 455, 66, 486 }, 1, 0 }
+	{ VKB_KEY_TOGGLEUI, "UIToggle", "Toggle UI", -1, 1, 0, 0xff, { 104, 208, 391, 239, 0, 0, 0, 0 }, FLAG_CUSTOMKEY, { 34, 455, 66, 486 }, 1, 0 },
+	{ VKB_KEY_AUTOFIRE, "AutoFire", "Toggle Auto Fire", -1, 1, 0, 0xff, { 104, 208, 391, 239, 0, 0, 0, 0 }, FLAG_CUSTOMKEY, { 34, 455, 66, 486 }, 1, 0 },
+	{ VKB_KEY_QUICKSAVESTATE, "SaveState", "Quick Save State", -1, 1, 0, 0xff, { 104, 208, 391, 239, 0, 0, 0, 0 }, FLAG_CUSTOMKEY, { 34, 455, 66, 486 }, 1, 0 },
+	{ VKB_KEY_QUICKLOADSTATE, "LoadState", "Quick Load State", -1, 1, 0, 0xff, { 104, 208, 391, 239, 0, 0, 0, 0 }, FLAG_CUSTOMKEY, { 34, 455, 66, 486 }, 1, 0 }
 };
 
-const int g_vkbKeyDefsSize = 120;
+const int g_vkbKeyDefsSize = 123;
 
 const int g_vkbTexFullW		= 768;
 const int g_vkbTexFullH		= 488;
