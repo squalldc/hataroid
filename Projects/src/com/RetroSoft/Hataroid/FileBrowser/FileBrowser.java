@@ -20,15 +20,13 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.view.KeyEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.Spinner;
 import android.widget.TextView;
 
 import com.RetroSoft.Hataroid.R;
-import com.RetroSoft.Hataroid.Input.InputMapConfigureView;
 import com.RetroSoft.Hataroid.Input.RenameInputMapView;
 
 public class FileBrowser extends ListActivity
@@ -580,7 +578,7 @@ public class FileBrowser extends ListActivity
 		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
 		alertDialog.setTitle("Pasti (.stx) is not supported");
 		alertDialog.setMessage("If you want Pasti support, please petition the Pasti author to do an Android version or open source his code");
-		alertDialog.setButton("Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { } });
+		alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { } });
 		alertDialog.show();
 	}
 	
@@ -711,7 +709,7 @@ public class FileBrowser extends ListActivity
 			alertDialog.setTitle("Reset ST?");
 			alertDialog.setMessage("Do you want to the Reset the ST?");
 			
-			alertDialog.setButton("No",
+			alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "No",
 					new DialogInterface.OnClickListener()
 					{
 						public void onClick(DialogInterface dialog, int which)
@@ -721,7 +719,7 @@ public class FileBrowser extends ListActivity
 					}
 				);
 				
-			alertDialog.setButton2("Yes (Cold)",
+			alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Yes (Cold)",
 				new DialogInterface.OnClickListener()
 				{
 					public void onClick(DialogInterface dialog, int which)
@@ -732,7 +730,7 @@ public class FileBrowser extends ListActivity
 				}
 			);
 	
-			alertDialog.setButton3("Yes (Warm)",
+			alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Yes (Warm)",
 				new DialogInterface.OnClickListener()
 				{
 					public void onClick(DialogInterface dialog, int which)

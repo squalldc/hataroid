@@ -193,5 +193,8 @@
     <string name="sound_buffer_size">Device sound buffer size (latency vs crackling)</string>
     <string name="sound_buffer_size_summary">Adjust down to reduce audio latency or up to remove popping</string>
     <string name="blank"> </string>
-    
+    <string name="pref_device_developer_category">Developer Options</string>
+    <string name="device_developer_options">Toggle access to developer options (Guinea pig options)</string>
+    <string name="device_developer_options_summary">Allow un-tested (potentially unstable) and unfinished options below</string>
+
 </resources>

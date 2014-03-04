@@ -1,3 +1,12 @@
+version 1.50
+- upgrade from android sdk 8 (froyo) to 19 (kit kat)
+- save states support
+- fix colors when switching between mono and color resolutions
+- autofire quick key
+- hardware mouse (work in progress)
+- fix mouse speed when borders disabled
+- create folders in file browser support
+
 version 1.401
 - EXPERIMENTAL: External keyboard/controller support (through Android Input (IME) Devices)
       - if you want to try, enable in options 

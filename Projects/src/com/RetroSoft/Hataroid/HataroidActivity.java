@@ -63,7 +63,9 @@ public class HataroidActivity extends Activity
 
 	boolean						_waitSaveAndQuit = false;
 
-	boolean						_tryUseImmersiveMode = true;
+	boolean						_allowDeveloperOptions = false;
+	
+	boolean						_tryUseImmersiveMode = false;
 	boolean						_wantImmersiveMode = false;
 
 	@Override protected void onCreate(Bundle icicle)
@@ -71,7 +73,7 @@ public class HataroidActivity extends Activity
 		super.onCreate(icicle);
 		
 		_tryUseImmersiveMode = android.os.Build.VERSION.SDK_INT >= 19;
-
+		
 		try
 		{
 			PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
@@ -221,8 +223,17 @@ public class HataroidActivity extends Activity
 		{
 	    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 	    	Map<String,?> allPrefs = prefs.getAll();
+	    	Object val;
 	    	
-	    	Object val = allPrefs.get("pref_display_keepscreenawake");
+	    	_allowDeveloperOptions = false;
+	    	val = allPrefs.get("pref_device_developer_options");
+	    	if (val != null)
+	    	{
+	    		String sval = val.toString();
+	    		_allowDeveloperOptions = !(sval.compareTo("false")==0 || sval.compareTo("0")==0);
+	    	}
+	    	
+	    	val = allPrefs.get("pref_display_keepscreenawake");
 	    	if (val != null)
 	    	{
 	    		String sval = val.toString();
@@ -230,13 +241,19 @@ public class HataroidActivity extends Activity
 	    		_keepScreenAwake(bval);
 	    	}
 	    	
-	    	val = allPrefs.get("pref_device_kitkat_immersive");
-	    	if (val != null)
+	    	if (_allowDeveloperOptions)
 	    	{
-	    		String sval = val.toString();
-	    		boolean bval = !(sval.compareTo("false")==0 || sval.compareTo("0")==0);
-	    		_wantImmersiveMode = bval;
-	    		_setupImmersiveMode();
+	    		if (_tryUseImmersiveMode)
+	    		{
+			    	val = allPrefs.get("pref_device_kitkat_immersive");
+			    	if (val != null)
+			    	{
+			    		String sval = val.toString();
+			    		boolean bval = !(sval.compareTo("false")==0 || sval.compareTo("0")==0);
+			    		_wantImmersiveMode = bval;
+			    		_setupImmersiveMode();
+			    	}
+	    		}
 	    	}
 
 	    	_input.setupOptionsFromPrefs(prefs);
@@ -354,13 +371,12 @@ public class HataroidActivity extends Activity
 
 	void _setupImmersiveMode()
 	{
-		if (!_tryUseImmersiveMode)
+		if (!_allowDeveloperOptions || !_tryUseImmersiveMode)
 		{
 			return;
 		}
 
 		// UNTESTED, need some people to test before I enable this for everyone
-		/*
 		try
 		{
 			View decorView = getWindow().getDecorView();
@@ -391,7 +407,6 @@ public class HataroidActivity extends Activity
 		{
 			_tryUseImmersiveMode = false;
 		}
-		*/
 	}
 	
 	private void _pause()
@@ -473,7 +488,7 @@ public class HataroidActivity extends Activity
     			AlertDialog alertDialog = new AlertDialog.Builder(HataroidActivity.this).create();
     			alertDialog.setTitle("Unsupported audio setting");
     			alertDialog.setMessage("The chosen audio setting is not supported on this device.\nResetting to default audio settings.");
-				alertDialog.setButton("Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _resetAudioSettings(); } });
+				alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _resetAudioSettings(); } });
     			alertDialog.show();
 			}
     	});
@@ -891,8 +906,8 @@ public class HataroidActivity extends Activity
 			AlertDialog alertDialog = new AlertDialog.Builder(this).create();
 			alertDialog.setTitle("Quit Hataroid?");
 			alertDialog.setMessage("Are you sure you want to quit?");
-			alertDialog.setButton("No", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingQuitConfirm = false; } });
-			alertDialog.setButton2("Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingQuitConfirm = false; _onQuit(); } });
+			alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "No", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingQuitConfirm = false; } });
+			alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingQuitConfirm = false; _onQuit(); } });
 			alertDialog.setOnCancelListener(new DialogInterface.OnCancelListener() { public void onCancel(DialogInterface dialog) { _showingQuitConfirm = false; }});
 			alertDialog.show();
 		}
@@ -917,7 +932,7 @@ public class HataroidActivity extends Activity
 		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
 		alertDialog.setTitle(title);
 		alertDialog.setMessage(message);
-		alertDialog.setButton("Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { } });
+		alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { } });
 		alertDialog.show();
 	}
 
@@ -954,14 +969,14 @@ public class HataroidActivity extends Activity
 				alertDialog.setCanceledOnTouchOutside(false);
     			if (ok==1)
    				{
-    				alertDialog.setButton("Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingGenericDialog = false; HataroidNativeLib.hataroidDialogResult(0); } });
+    				alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingGenericDialog = false; HataroidNativeLib.hataroidDialogResult(0); } });
    				}
     			else if (noyes==1)
     			{
     				//alertDialog.setOnDismissListener( new DialogInterface.OnDismissListener() { public void onDismiss(DialogInterface dialog) { HataroidNativeLib.hataroidDialogResult(0); } });
     				alertDialog.setOnCancelListener( new DialogInterface.OnCancelListener() { public void onCancel(DialogInterface dialog) { _showingGenericDialog = false; HataroidNativeLib.hataroidDialogResult(0); } });
-    				alertDialog.setButton("No", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingGenericDialog = false; HataroidNativeLib.hataroidDialogResult(0); } });
-    				alertDialog.setButton2("Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingGenericDialog = false; HataroidNativeLib.hataroidDialogResult(1); } });
+    				alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "No", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingGenericDialog = false; HataroidNativeLib.hataroidDialogResult(0); } });
+    				alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingGenericDialog = false; HataroidNativeLib.hataroidDialogResult(1); } });
     			}
     			alertDialog.show();
 			}
@@ -1073,8 +1088,8 @@ public class HataroidActivity extends Activity
     			AlertDialog alertDialog = new AlertDialog.Builder(HataroidActivity.this).create();
     			alertDialog.setTitle("Restore previous session?");
     			alertDialog.setMessage("Do you want to load the last auto saved session?");
-    			alertDialog.setButton("No", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { } });
-    			alertDialog.setButton2("Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { HataroidNativeLib.emulatorAutoSaveLoadOnStart(saveFolder); } });
+    			alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "No", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { } });
+    			alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { HataroidNativeLib.emulatorAutoSaveLoadOnStart(saveFolder); } });
     			alertDialog.setOnCancelListener(new DialogInterface.OnCancelListener() { public void onCancel(DialogInterface dialog) { }});
     			alertDialog.setCanceledOnTouchOutside(false);
     			alertDialog.show();
@@ -1102,12 +1117,6 @@ public class HataroidActivity extends Activity
 						continue;
 					}
 					
-					if (key.compareTo("pref_display_showborders")==0)
-					{
-						int z =0;
-						++z;
-					}
-
 					Object curVal = allPrefs.get(key);
 					if (curVal != null)
 					{

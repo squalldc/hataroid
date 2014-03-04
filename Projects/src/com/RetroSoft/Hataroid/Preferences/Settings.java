@@ -305,7 +305,7 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 			AlertDialog alertDialog = new AlertDialog.Builder(this).create();
 			alertDialog.setTitle("Saved Input Maps");
 			alertDialog.setMessage("Your input maps have been saved to:\n" + fname + "\nPlease email these to the developer if you want these in the default presets");
-			alertDialog.setButton("Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) {  } });
+			alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) {  } });
 			alertDialog.show();
     	}
     	else
@@ -313,7 +313,7 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
     		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
     		alertDialog.setTitle("Error occured");
     		alertDialog.setMessage("There was a problem saving your input maps. Please try again or log a bug report");
-    		alertDialog.setButton("Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) {  } });
+    		alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) {  } });
     		alertDialog.show();
     	}
 	}
