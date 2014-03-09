@@ -51,6 +51,11 @@ class HataroidViewGL2 extends GLSurfaceView
 	
 	public boolean		m_tryMouse = true;
 
+	public boolean		m_newMouseDisabled = false;
+
+	public boolean		m_pendingNewMouseDisabled = false;
+	public boolean		m_newNewMouseDisabledVal = false;
+
 	public HataroidViewGL2(Context context)
 	{
 		super(context);
@@ -80,7 +85,7 @@ class HataroidViewGL2 extends GLSurfaceView
 					//Log.i(TAG, "pointerIndex: " + pointerIndex + ", pointerID: " + pointerId + ", pos: " + event.getX(pointerIndex) + ", " + event.getY(pointerIndex));
 
 					boolean isMouse = false;
-					if (m_tryMouse)
+					if (m_tryMouse && !m_newMouseDisabled)
 					{
 						try
 						{
@@ -119,7 +124,7 @@ class HataroidViewGL2 extends GLSurfaceView
 					int pointerId = event.getPointerId(pointerIndex);
 					
 					boolean isMouse = false;
-					if (m_tryMouse)
+					if (m_tryMouse && !m_newMouseDisabled)
 					{
 						try
 						{
@@ -159,7 +164,7 @@ class HataroidViewGL2 extends GLSurfaceView
 						if (pointerId < MaxSimultaneousTouches)
 						{
 							boolean isMouse = false;
-							if (m_tryMouse)
+							if (m_tryMouse && !m_newMouseDisabled) // TODO: move out of for loop
 							{
 								try
 								{
@@ -195,6 +200,47 @@ class HataroidViewGL2 extends GLSurfaceView
 
 		return true;
 	}	
+
+	public void enableNewMouse(boolean enableNewMouse)
+	{
+		try
+		{
+			synchronized (m_inputMuteX)
+			{
+				if (m_tryMouse)
+				{
+					if (m_mouseButtons == 0)
+					{
+						m_newMouseDisabled = !enableNewMouse;
+					}
+					else
+					{
+						// wait till all mouse buttons are off before disabling
+						m_pendingNewMouseDisabled = true;
+						m_newNewMouseDisabledVal = !enableNewMouse;
+					}
+				}
+			}
+		}
+		catch (Error e)
+		{
+		}
+		catch (Exception e)
+		{
+		}
+	}
+	
+	public void checkNewMouseDisabling()
+	{
+		synchronized (m_inputMuteX)
+		{
+			if (m_pendingNewMouseDisabled && m_mouseButtons == 0)
+			{
+				m_pendingNewMouseDisabled = false;
+				m_newMouseDisabled = m_newNewMouseDisabledVal;
+			}
+		}
+	}
 
 	private void init(boolean translucent, int depth, int stencil)
 	{
@@ -469,7 +515,7 @@ class HataroidViewGL2 extends GLSurfaceView
 			
 			float mouseX = 0, mouseY = 0;
 			int mouseBtns = sview.m_mouseButtons;
-			if (sview.m_tryMouse)
+			if (sview.m_tryMouse && !sview.m_newMouseDisabled)
 			{
 				try
 				{
@@ -497,6 +543,8 @@ class HataroidViewGL2 extends GLSurfaceView
 					sview.m_tryMouse = false;
 				}
 			}
+			
+			sview.checkNewMouseDisabling();
 
 			BitFlags keyPressFlags = HataroidActivity.instance.getInput().getKeyPresses();
 			int [] keyPresses = keyPressFlags._flags;

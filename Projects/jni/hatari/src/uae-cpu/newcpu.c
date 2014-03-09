@@ -839,6 +839,7 @@ static void InterruptAddJitter (int Level , int Pending)
       M68000_AddCycles ( cycles );
 }
 
+extern void hataroid_setDoubleBusError();
 
 /* Handle exceptions. We need a special case to handle MFP exceptions */
 /* on Atari ST, because it's possible to change the MFP's vector base */
@@ -1004,9 +1005,10 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	      if (bExceptionDebugging)
 	        DebugUI(REASON_CPU_EXCEPTION);
 	      else
-		DlgAlert_Notice("Detected double bus error => CPU halted!\nPlease quit and restart Hataroid.\n");
+		DlgAlert_Notice("Detected double bus error => CPU halted!\n\nPlease quit and restart Hataroid.\n");
 	      regs.intmask = 7;
 	      m68k_setstopped(true);
+	      hataroid_setDoubleBusError();
 	      return;
 	    }
 	    if (bExceptionDebugging && BusErrorAddress!=0xff8a00) {

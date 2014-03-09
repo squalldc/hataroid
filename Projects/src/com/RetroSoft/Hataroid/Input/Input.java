@@ -91,6 +91,23 @@ public class Input
 			}
 		}
 	}
+
+	public void enableNewMouse(boolean enableNewMouse)
+	{
+		try
+		{
+			if (_inputMouse != null)
+			{
+				_inputMouse.setEnabled(enableNewMouse);
+			}
+		}
+		catch (Error e)
+		{
+		}
+		catch (Exception e)
+		{
+		}
+	}
 	
 	public InputMouse getInputMouse() { return _inputMouse; }
 

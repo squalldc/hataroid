@@ -86,6 +86,13 @@
 				android:entries="@array/pref_input_mouse_speed_entries"
 				android:entryValues="@array/pref_input_mouse_speed_values"
 				android:defaultValue="1"/>
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_input_mouse_default_android"
+				android:title="@string/input_mouse_default_android"
+				android:summaryOn="@string/input_mouse_default_android_summary"
+				android:summaryOff="@string/input_mouse_default_android_summary"
+				android:defaultValue="false" />
 		</PreferenceCategory>
 	    <PreferenceCategory 
 	        android:title="@string/pref_input_onscreen_category"
@@ -114,6 +121,13 @@
 				android:title="@string/input_onscreen_only_joy"
 				android:summaryOn="@string/input_onscreen_only_joy_summary"
 				android:summaryOff="@string/input_onscreen_only_joy_summary"
+				android:defaultValue="false" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_input_onscreen_hide_extra_joy_keys"
+				android:title="@string/input_onscreen_hide_extra_joy_keys"
+				android:summaryOn="@string/input_onscreen_hide_extra_joy_keys_summary"
+				android:summaryOff="@string/input_onscreen_hide_extra_joy_keys_summary"
 				android:defaultValue="false" />
 		</PreferenceCategory>
 	    <PreferenceCategory 

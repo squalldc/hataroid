@@ -13,6 +13,11 @@ extern int hasDialogResult();
 extern int getDialogResult();
 extern void clearDialogResult();
 
+extern void clearSettingsResult();
+extern int hasSettingsResult();
+
+extern void hataroid_setDoubleBusError();
+
 extern int getTurboSpeed();
 extern void setTurboSpeed(int set);
 extern int getShortcutAutoFire();

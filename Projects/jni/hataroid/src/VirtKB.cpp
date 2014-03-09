@@ -150,6 +150,7 @@ static float		s_mouseSpeed = 1;
 
 static bool			s_hideAll = false;
 static bool			s_showJoystickOnly = false;
+static bool			s_hideExtraJoyKeys = false;
 
 static KeyCallback*	s_keyCallbacks = 0;
 
@@ -790,12 +791,15 @@ void VirtKB_CreateQuickKeys()
 
 		int vkbKeysNormal[] = {VKB_KEY_JOYFIRE, VKB_KEY_SPACE, VKB_KEY_LEFTSHIFT, VKB_KEY_ALTERNATE};
 		int vkbKeysExtra[] = {VKB_KEY_JOYFIRE, VKB_KEY_SPACE, VKB_KEY_LEFTSHIFT, VKB_KEY_ALTERNATE, VKB_KEY_CONTROL};
+		int vkbKeysHidden[] = {VKB_KEY_JOYFIRE};
 		int vkbKeysObsession[] = {VKB_KEY_RIGHTSHIFT_BUTTON, VKB_KEY_DOWNARROW};
 		int numNormalKeys = sizeof(vkbKeysNormal)/sizeof(int);
 		int numExtraKeys = sizeof(vkbKeysExtra)/sizeof(int);
+		int numHiddenKeys = sizeof(vkbKeysHidden)/sizeof(int);
 		int numObsessionKeys = sizeof(vkbKeysObsession)/sizeof(int);
-		int* vkbKeys = (joyMode&&s_vkbObsessionKeys) ? vkbKeysObsession : (s_vkbExtraKeys ? vkbKeysExtra : vkbKeysNormal);
-		int numKeys = (joyMode&&s_vkbObsessionKeys) ? numObsessionKeys : (s_vkbExtraKeys ? numExtraKeys : numNormalKeys);
+
+		int* vkbKeys = (joyMode&&s_vkbObsessionKeys) ? vkbKeysObsession : (s_hideExtraJoyKeys ? vkbKeysHidden : (s_vkbExtraKeys ? vkbKeysExtra : vkbKeysNormal));
+		int numKeys = (joyMode&&s_vkbObsessionKeys) ? numObsessionKeys : (s_hideExtraJoyKeys ? numHiddenKeys : (s_vkbExtraKeys ? numExtraKeys : numNormalKeys));
 
 		int curKeyX = scrwidth - keyOffsetX;
 
@@ -2033,6 +2037,12 @@ static void VirtKB_ToggleShowUI(const VirtKeyDef *keyDef, uint32_t uParam1, bool
 void VirtKB_setJoystickOnly(bool set)
 {
 	s_showJoystickOnly = set;
+	s_recreateQuickKeys = true;
+}
+
+void VirtKB_setHideExtraJoyKeys(bool hide)
+{
+	s_hideExtraJoyKeys = hide;
 	s_recreateQuickKeys = true;
 }
 

@@ -53,17 +53,20 @@ bool Dialog_DoProperty(void)
 	Debug_Printf("Hatari Dialog_DoProperty");
 
 	clearEmuCommands();
+	clearSettingsResult();
 
 	showOptionsDialog();
 
 	for (;;)
 	{
-		if (hasEmuCommands())
+		//if (hasEmuCommands())
+		if (hasSettingsResult())
 		{
 			break;
 		}
 		usleep(500000); // 0.5 sec
 	}
+	clearSettingsResult();
 
 	while (hasEmuCommands())
 	{

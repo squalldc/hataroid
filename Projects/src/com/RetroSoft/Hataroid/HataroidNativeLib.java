@@ -32,11 +32,12 @@ public class HataroidNativeLib
 	public static native void emulatorSaveStateSave(String path, String filepath, int saveSlot);
 	public static native void emulatorSaveStateLoad(String path, String filepath, int saveSlot);
 
-	public static native void emulatorAutoSaveStoreOnExit(String saveFolder);
+	public static native boolean emulatorAutoSaveStoreOnExit(String saveFolder);
 	public static native void emulatorAutoSaveLoadOnStart(String saveFolder);
 
 	public static native String emulatorGetCurFloppy(int floppy);
 	public static native String emulatorGetCurFloppyZip(int floppy);
 
 	public static native void hataroidDialogResult(int result);
+	public static native void hataroidSettingsResult(int result);
 }

@@ -241,6 +241,29 @@ public class HataroidActivity extends Activity
 	    		_keepScreenAwake(bval);
 	    	}
 	    	
+	    	val = allPrefs.get("pref_input_mouse_default_android");
+	    	if (val != null)
+	    	{
+	    		String sval = val.toString();
+	    		boolean bval = !(sval.compareTo("false")==0 || sval.compareTo("0")==0);
+	    		try
+	    		{
+	    			boolean newMouse = !bval;
+	    			if (_input != null)
+	    			{
+	    				_input.enableNewMouse(newMouse);
+	    			}
+	    			if (_viewGL2 != null)
+	    			{
+	    				_viewGL2.enableNewMouse(newMouse);
+	    			}
+	    		}
+	    		catch(Exception e)
+	    		{
+	    			e.printStackTrace();
+	    		}
+	    	}
+	    	
 	    	if (_allowDeveloperOptions)
 	    	{
 	    		if (_tryUseImmersiveMode)
@@ -288,7 +311,10 @@ public class HataroidActivity extends Activity
     	{
 			public void run()
 			{
-				finish();
+				if (HataroidActivity.instance != null)
+				{
+					HataroidActivity.instance.finish();
+				}
 			}
 		});
 	}
@@ -317,13 +343,23 @@ public class HataroidActivity extends Activity
 
 	private void stopEmulationThread()
 	{
-		if (_emuThread != null)
+		try
 		{
-			_emuThread.interrupt();
-			_emuThread = null;
+			if (_emuThread != null)
+			{
+				_emuThread.interrupt();
+				_emuThread = null;
+			}
 		}
+		catch (Exception e) {}
+		catch (Error e) {}
 
-		HataroidNativeLib.emulationDestroy(this);
+		try
+		{
+			HataroidNativeLib.emulationDestroy(this);
+		}
+		catch (Exception e) {}
+		catch (Error e) {}
 	}
 	
 	public void emuThreadMain()
@@ -807,6 +843,7 @@ public class HataroidActivity extends Activity
 			{
 				_updateOptions();
 				_setupDeviceOptions();
+				HataroidNativeLib.hataroidSettingsResult(1);
 				break;
 			}
 			
@@ -956,7 +993,7 @@ public class HataroidActivity extends Activity
     		return;
     	}
     	
-    	_showingGenericDialog = true;
+    	//_showingGenericDialog = true;
 
     	this.runOnUiThread(new Runnable()
     	{
@@ -1011,7 +1048,11 @@ public class HataroidActivity extends Activity
 	    	String saveFolder = prefs.getString(Settings.kPrefName_SaveState_Folder, null);
 	    	if (saveFolder != null)
 	    	{
-	    		return saveFolder;
+	    		saveFolder = saveFolder.trim();
+	    		if (saveFolder.length() > 0)
+	    		{
+		    		return saveFolder;
+	    		}
 	    	}
 		}
 		catch (Exception e)
@@ -1049,11 +1090,15 @@ public class HataroidActivity extends Activity
 	boolean _storeAutoSaveOnExit()
 	{
 		String saveFolder = _getAutoSaveFolder();
-		if (saveFolder != null)
+		boolean autoSaveOnExit = _autoSaveOnExitEnabled();
+		if (saveFolder != null && autoSaveOnExit)
 		{
-			_waitSaveAndQuit = true;
-			HataroidNativeLib.emulatorAutoSaveStoreOnExit(saveFolder);
-			return true;
+			//Log.i("hataroid", "Save FOlder: '" + saveFolder + "'");
+			if (HataroidNativeLib.emulatorAutoSaveStoreOnExit(saveFolder))
+			{
+				_waitSaveAndQuit = true;
+				return true;
+			}
 		}
 		return false;
 	}
@@ -1100,6 +1145,11 @@ public class HataroidActivity extends Activity
 
 	public void setConfigOnSaveStateLoad(String options [])
 	{
+		if (_waitSaveAndQuit)
+		{
+			return;
+		}
+
 		try
 		{
 			if (options.length > 1)

@@ -196,5 +196,9 @@
     <string name="pref_device_developer_category">Developer Options</string>
     <string name="device_developer_options">Toggle access to developer options (Guinea pig options)</string>
     <string name="device_developer_options_summary">Allow un-tested (potentially unstable) and unfinished options below</string>
-
+    <string name="input_mouse_default_android">Old Android hardware mouse behaviour</string>
+    <string name="input_mouse_default_android_summary">Hardware mice can click on-screen controls, but won\'t detect normal mouse clicks, requires holding LMB to move cursor</string>
+    <string name="input_onscreen_hide_extra_joy_keys">Hide extra joystick keys</string>
+    <string name="input_onscreen_hide_extra_joy_keys_summary">Hides the extra keys on the bottom right of the screen</string>
+    
 </resources>
