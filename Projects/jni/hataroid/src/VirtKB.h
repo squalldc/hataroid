@@ -42,6 +42,16 @@ extern void VirtKB_setObsessionKeys(bool set);
 extern void VirtKB_setHideAll(bool set);
 extern void VirtKB_setJoystickOnly(bool set);
 extern void VirtKB_setHideExtraJoyKeys(bool hide);
+extern void VirtKB_setHideShortcutKeys(bool hide);
+extern void VirtKB_setHideTurboKeys(bool hide);
 extern void VirtKB_ResetAllInputPresses();
+
+extern float VirtKB_getVKBZoom();
+extern float VirtKB_getVKBPanX();
+extern float VirtKB_getVKBPanY();
+extern void VirtKB_SetVKBPanZoom(float kbdZoom, float kbdPanX, float kbdPanY);
+
+extern bool VirtKB_getMouseActive();
+extern void VirtKB_SetMouseActive(bool mouseActive);
 
 #endif /* VIRTKB_H_ */

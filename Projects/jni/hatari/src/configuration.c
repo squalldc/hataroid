@@ -31,6 +31,7 @@ const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __T
 #include "68kDisass.h"
 
 extern int SdlDeviceBufferSizeScale;
+extern void hataroidRetrieveSaveExtraData();
 
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
 char sConfigFileName[FILENAME_MAX];         /* Stores the name of the configuration file */
@@ -360,6 +361,19 @@ static const struct Config_Tag configs_Video[] =
 static const struct Config_Tag configs_Hataroid[] =
 {
 	{ "deviceSoundBufSize", Int_Tag, &ConfigureParams.Hataroid.deviceSoundBufSize },
+
+	{ "fullScreen", Bool_Tag, &ConfigureParams.Hataroid.fullScreen },
+	{ "scrZoomX", Float_Tag, &ConfigureParams.Hataroid.scrZoomX },
+	{ "scrZoomY", Float_Tag, &ConfigureParams.Hataroid.scrZoomY },
+	{ "scrPanX", Float_Tag, &ConfigureParams.Hataroid.scrPanX },
+	{ "scrPanY", Float_Tag, &ConfigureParams.Hataroid.scrPanY },
+
+	{ "kbdZoom", Float_Tag, &ConfigureParams.Hataroid.kbdZoom },
+	{ "kbdPanX", Float_Tag, &ConfigureParams.Hataroid.kbdPanX },
+	{ "kbdPanY", Float_Tag, &ConfigureParams.Hataroid.kbdPanY },
+
+	{ "mouseActive", Bool_Tag, &ConfigureParams.Hataroid.mouseActive },
+
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -560,6 +574,20 @@ void Configuration_SetDefault(void)
 
 	// Hataroid extra
 	ConfigureParams.Hataroid.deviceSoundBufSize = 18;
+
+	{
+		ConfigureParams.Hataroid.fullScreen = false;
+		ConfigureParams.Hataroid.scrZoomX = 1;
+		ConfigureParams.Hataroid.scrZoomY = 1;
+		ConfigureParams.Hataroid.scrPanX = 0;
+		ConfigureParams.Hataroid.scrPanY = 0;
+
+		ConfigureParams.Hataroid.kbdZoom = 1;
+		ConfigureParams.Hataroid.kbdPanX = 0;
+		ConfigureParams.Hataroid.kbdPanY = 0;
+
+		ConfigureParams.Hataroid.mouseActive = false;
+	}
 
 	/* Set defaults for Video */
 #if HAVE_LIBPNG
@@ -833,6 +861,29 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 #endif
 
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.FastFloppy, sizeof(ConfigureParams.DiskImage.FastFloppy));
+
+	if (gSaveVersion >= 1702)
+	{
+		// Hataroid settings
+		gHasHataroidSaveExtra = 1;
+
+		if (bSave)
+		{
+			hataroidRetrieveSaveExtraData();
+		}
+
+		MemorySnapShot_Store(&ConfigureParams.Hataroid.fullScreen, sizeof(ConfigureParams.Hataroid.fullScreen));
+		MemorySnapShot_Store(&ConfigureParams.Hataroid.scrZoomX, sizeof(ConfigureParams.Hataroid.scrZoomX));
+		MemorySnapShot_Store(&ConfigureParams.Hataroid.scrZoomY, sizeof(ConfigureParams.Hataroid.scrZoomY));
+		MemorySnapShot_Store(&ConfigureParams.Hataroid.scrPanX, sizeof(ConfigureParams.Hataroid.scrPanX));
+		MemorySnapShot_Store(&ConfigureParams.Hataroid.scrPanY, sizeof(ConfigureParams.Hataroid.scrPanY));
+
+		MemorySnapShot_Store(&ConfigureParams.Hataroid.kbdZoom, sizeof(ConfigureParams.Hataroid.kbdZoom));
+		MemorySnapShot_Store(&ConfigureParams.Hataroid.kbdPanX, sizeof(ConfigureParams.Hataroid.kbdPanX));
+		MemorySnapShot_Store(&ConfigureParams.Hataroid.kbdPanY, sizeof(ConfigureParams.Hataroid.kbdPanY));
+
+		MemorySnapShot_Store(&ConfigureParams.Hataroid.mouseActive, sizeof(ConfigureParams.Hataroid.mouseActive));
+	}
 
 	if (!bSave)
 		Configuration_Apply(true);

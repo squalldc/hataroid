@@ -11,3 +11,4 @@ extern void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm);
 extern int MemorySnapShot_Restore(const char *pszFileName, bool bConfirm);
 
 extern int gSaveVersion;
+extern int gHasHataroidSaveExtra;

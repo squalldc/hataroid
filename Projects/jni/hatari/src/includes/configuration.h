@@ -312,8 +312,20 @@ typedef struct
 typedef struct
 {
 	int deviceSoundBufSize;
-} CNF_HATAROID;
 
+	bool fullScreen;
+	float scrZoomX;
+	float scrZoomY;
+	float scrPanX;
+	float scrPanY;
+
+	float kbdZoom;
+	float kbdPanX;
+	float kbdPanY;
+
+	bool mouseActive;
+
+} CNF_HATAROID;
 
 /* State of system is stored in this structure */
 /* On reset, variables are copied into system globals and used. */

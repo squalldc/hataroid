@@ -129,6 +129,21 @@
 				android:summaryOn="@string/input_onscreen_hide_extra_joy_keys_summary"
 				android:summaryOff="@string/input_onscreen_hide_extra_joy_keys_summary"
 				android:defaultValue="false" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_input_onscreen_hide_shortcut_keys"
+				android:title="@string/input_onscreen_hide_shortcut_keys"
+				android:summaryOn="@string/input_onscreen_hide_shortcut_keys_summary"
+				android:summaryOff="@string/input_onscreen_hide_shortcut_keys_summary"
+				android:defaultValue="false" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_input_onscreen_hide_turbo_key"
+				android:title="@string/input_onscreen_hide_turbo_key"
+				android:summaryOn="@string/input_onscreen_hide_turbo_key_summary"
+				android:summaryOff="@string/input_onscreen_hide_turbo_key_summary"
+				android:defaultValue="false" />
+									
 		</PreferenceCategory>
 	    <PreferenceCategory 
 	        android:title="@string/pref_input_keyboard_category"

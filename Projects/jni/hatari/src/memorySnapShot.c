@@ -53,8 +53,8 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "statusbar.h"
 
 
-#define VERSION_STRING        "1.7.1"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
-#define VERSION_INT			   1701
+#define VERSION_STRING        "1.7.2"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_INT			   1702
 
 #define COMPRESS_MEMORYSNAPSHOT       /* Compress snapshots to reduce disk space used */
 
@@ -76,6 +76,7 @@ static MSS_File CaptureFile;
 static bool bCaptureSave, bCaptureError;
 static bool gConfirmOnOverwiteSave = true;
 int gSaveVersion = VERSION_INT;
+int gHasHataroidSaveExtra = 0;
 
 void MemorySnapShot_setConfirmOnOverwriteSave(bool set) { gConfirmOnOverwiteSave = set; }
 
@@ -144,6 +145,7 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 {
 	char VersionString[] = VERSION_STRING;
 	gSaveVersion = VERSION_INT;
+	gHasHataroidSaveExtra = 0;
 
 	/* Set error */
 	bCaptureError = false;
@@ -189,6 +191,7 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 
 		gSaveVersion = 0;
 		if (strcasecmp(VersionString, VERSION_STRING)==0)	{ gSaveVersion = VERSION_INT; }
+		else if (strcasecmp(VersionString, "1.7.1")==0)		{ gSaveVersion = 1701; }
 		else if (strcasecmp(VersionString, "1.7.0")==0)		{ gSaveVersion = 1700; }
 
 		/* Does match current version? */

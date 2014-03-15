@@ -25,6 +25,9 @@ extern "C"
 	#include <change.h>
 	#include <dialog.h>
 	#include <sound.h>
+	#include <floppy.h>
+	#include <gemdos.h>
+	#include <hdc.h>
 	#include <memorySnapShot.h>
 
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_libExit(JNIEnv * env, jobject obj);
@@ -65,6 +68,8 @@ extern "C"
 	struct JNIAudio g_jniAudioInterface;
 	struct JNIMainMethodCache g_jniMainInterface;
 
+	extern void Ide_UnInit(void);
+
 	extern int hatari_main_init(int argc, const char *argv[]);
 	extern int hatari_main_doframe();
 	extern void hatari_main_exit();
@@ -82,6 +87,8 @@ extern "C"
 	extern void *g_videoTex_pixels;
 	extern int g_surface_width;
 	extern int g_surface_height;
+
+	extern int gHasHataroidSaveExtra;
 };
 
 enum
@@ -118,6 +125,7 @@ void _loadSaveState();
 void _generateSaveNames(const char *savePath, int saveSlot, char* saveMetaFilePathResult);
 bool _findSaveStateMetaFile(int slotID, char *resultBuf);
 void _clearHataroidSaveCommands();
+void _hataroidRetrieveSaveExtraData();
 
 //---------------
 struct EmuCommand;
@@ -375,6 +383,22 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationMa
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationDestroy(JNIEnv * env, jobject obj, jobject activityInstance)
 {
 	Debug_Printf("----> emulationDestroy");
+
+	if (emuInited)
+	{
+		Debug_Printf("----> floppy uninit");
+		Floppy_UnInit();
+		Debug_Printf("----> hdc uninit");
+		HDC_UnInit();
+		//Debug_Printf("----> nvram uninit"); // Falcon
+		//NvRam_UnInit();
+		Debug_Printf("----> gemdos uninit");
+		GemDOS_UnInitDrives();
+		Debug_Printf("----> ide uninit");
+		Ide_UnInit();
+	}
+
+	Debug_Printf("----> hataroid uninit ");
 
 	Main_UnPauseEmulation();
 
@@ -1121,6 +1145,18 @@ void _optionSetVKBHideExtraJoyKeys(const OptionSetting *setting, const char *val
 	VirtKB_setHideExtraJoyKeys(valSet);
 }
 
+void _optionSetVKBHideShortcutKeys(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	bool valSet = _getBoolVal(val);
+	VirtKB_setHideShortcutKeys(valSet);
+}
+
+void _optionSetVKBHideTurboKey(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	bool valSet = _getBoolVal(val);
+	VirtKB_setHideTurboKeys(valSet);
+}
+
 void _optionSetSaveStateFolder(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	strncpy(_quickSavePath, val, FILENAME_MAX);
@@ -1190,6 +1226,8 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_input_onscreen_hide_all", _optionSetVKBHideAll, 0 },
 	{ "pref_input_onscreen_only_joy", _optionSetVKBJoystickOnly, 0 },
 	{ "pref_input_onscreen_hide_extra_joy_keys", _optionSetVKBHideExtraJoyKeys, 0 },
+	{ "pref_input_onscreen_hide_shortcut_keys", _optionSetVKBHideShortcutKeys, 0 },
+	{ "pref_input_onscreen_hide_turbo_key", _optionSetVKBHideTurboKey, 0 },
 	{ "pref_storage_savestate_folder", _optionSetSaveStateFolder, 0 },
 	{ "pref_savestate_quicksaveslot", _optionSetQuickSaveSlot, 0 },
 
@@ -1687,12 +1725,52 @@ bool _findSaveStateMetaFile(int slotID, char *resultBuf)
 	return found;
 }
 
+void _hataroidRetrieveSaveExtraData()
+{
+	ConfigureParams.Hataroid.fullScreen = Renderer_isFullScreenStretch();
+	ConfigureParams.Hataroid.scrZoomX = Renderer_getScreenZoomXRaw();
+	ConfigureParams.Hataroid.scrZoomY = Renderer_getScreenZoomYRaw();
+	ConfigureParams.Hataroid.scrPanX = Renderer_getScreenPanXRaw();
+	ConfigureParams.Hataroid.scrPanY = Renderer_getScreenPanYRaw();
+
+	ConfigureParams.Hataroid.kbdZoom = VirtKB_getVKBZoom();
+	ConfigureParams.Hataroid.kbdPanX = VirtKB_getVKBPanX();
+	ConfigureParams.Hataroid.kbdPanY = VirtKB_getVKBPanY();
+
+	ConfigureParams.Hataroid.mouseActive = VirtKB_getMouseActive();
+}
+
 void _loadSaveState()
 {
 	int restoreResult = MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, false);
 	if (restoreResult == 0)
 	{
 		VirtKB_ResetAllInputPresses();
+
+		int numSaveExtraOptions = 0;
+		bool hataroidExtraFullScreen = false;
+
+		if (gHasHataroidSaveExtra != 0)
+		{
+			// restore hataroid settings
+			hataroidExtraFullScreen = ConfigureParams.Hataroid.fullScreen;
+			++numSaveExtraOptions;
+			_optionSetFullScreenStretch(0, hataroidExtraFullScreen ? "true" : "false", 0);
+
+			if (!hataroidExtraFullScreen)
+			{
+				float scrZoomX = ConfigureParams.Hataroid.scrZoomX, scrZoomY = ConfigureParams.Hataroid.scrZoomY;
+				float scrPanX = ConfigureParams.Hataroid.scrPanX, scrPanY = ConfigureParams.Hataroid.scrPanY;
+				Renderer_setScreenPanZoomRaw(scrZoomX, scrZoomY, scrPanX, scrPanY);
+			}
+
+			float kbdZoom = ConfigureParams.Hataroid.kbdZoom;
+			float kbdPanX = ConfigureParams.Hataroid.kbdPanX, kbdPanY = ConfigureParams.Hataroid.kbdPanY;
+			VirtKB_SetVKBPanZoom(kbdZoom, kbdPanX, kbdPanY);
+
+			bool mouseActive = ConfigureParams.Hataroid.mouseActive;
+			VirtKB_SetMouseActive(mouseActive);
+		}
 
 		// back propagate settings back to java activity settings
 		JNIEnv *env = g_jniMainInterface.android_mainEmuThreadEnv;
@@ -1708,6 +1786,8 @@ void _loadSaveState()
 					++numOptions;
 				}
 			}
+
+			numOptions += numSaveExtraOptions;
 
 			jobjectArray options = (jobjectArray)env->NewObjectArray(numOptions*2, env->FindClass("java/lang/String"), env->NewStringUTF(""));
 
@@ -1735,6 +1815,18 @@ void _loadSaveState()
 					env->SetObjectArrayElement(options, jIdx++, jVal);
 					env->DeleteLocalRef(jVal);
 				}
+			}
+
+			// extra options
+			if (numSaveExtraOptions > 0)
+			{
+				jstring jKey = env->NewStringUTF("pref_display_fullscreen");
+				env->SetObjectArrayElement(options, jIdx++, jKey);
+				env->DeleteLocalRef(jKey);
+
+				jKey = env->NewStringUTF(hataroidExtraFullScreen ? "true" : "false");
+				env->SetObjectArrayElement(options, jIdx++, jKey);
+				env->DeleteLocalRef(jKey);
 			}
 
 			(env)->CallVoidMethod(g_jniMainInterface.android_mainActivity, g_jniMainInterface.setConfigOnSaveStateLoad, options);
@@ -2240,5 +2332,10 @@ extern "C"
 	void _checkHataroidSaveRequests()
 	{
 		_processHataroidSaveCommands();
+	}
+
+	void hataroidRetrieveSaveExtraData()
+	{
+		_hataroidRetrieveSaveExtraData();
 	}
 }

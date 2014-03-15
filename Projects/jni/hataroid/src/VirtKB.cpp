@@ -151,6 +151,8 @@ static float		s_mouseSpeed = 1;
 static bool			s_hideAll = false;
 static bool			s_showJoystickOnly = false;
 static bool			s_hideExtraJoyKeys = false;
+static bool			s_hideShortcutKeys = false;
+static bool			s_hideTurboKey = false;
 
 static KeyCallback*	s_keyCallbacks = 0;
 
@@ -714,26 +716,42 @@ void VirtKB_CreateQuickKeys()
 	}
 
 	// top right keys
-	if (!s_showJoystickOnly)
+	if (!s_showJoystickOnly && !(s_hideShortcutKeys && s_hideTurboKey))
 	{
 		int keyOffsetX = (int)ceilf(10*sscale);
 		int keyOffsetY = (int)ceilf(10*sscale);
 		int keyBtnSize = (int)ceilf(60*sscale);
 		int keyMarginY = (int)ceilf(2*sscale);
 
-		int vkbKeysNormal[] = {VKB_KEY_NORMALSPEED, VKB_KEY_Y, VKB_KEY_N, VKB_KEY_1, VKB_KEY_2};
-		int vkbKeysExtra[] = {VKB_KEY_NORMALSPEED, VKB_KEY_Y, VKB_KEY_N, VKB_KEY_1, VKB_KEY_2, VKB_KEY_RETURN};
-		int vkbKeysObsession[] = {VKB_KEY_NORMALSPEED, VKB_KEY_F1, VKB_KEY_F2, VKB_KEY_F3, VKB_KEY_F4};
-		int numNormalKeys = sizeof(vkbKeysNormal)/sizeof(int);
-		int numExtraKeys = sizeof(vkbKeysExtra)/sizeof(int);
-		int numObsessionKeys = sizeof(vkbKeysObsession)/sizeof(int);
-		int* vkbKeys = s_vkbObsessionKeys ? vkbKeysObsession : (s_vkbExtraKeys ? vkbKeysExtra : vkbKeysNormal);
-		int numKeys = s_vkbObsessionKeys ? numObsessionKeys : (s_vkbExtraKeys ? numExtraKeys : numNormalKeys);
+		const int kMaxTRKeys = 12;
+		int vkbKeys[kMaxTRKeys];
+		int numKeys = 0;
+
+		if (!s_hideTurboKey)
+		{
+			vkbKeys[numKeys++] = VKB_KEY_NORMALSPEED;
+		}
+
+		if (s_vkbObsessionKeys)
+		{
+			vkbKeys[numKeys++] = VKB_KEY_F1; vkbKeys[numKeys++] = VKB_KEY_F2; vkbKeys[numKeys++] = VKB_KEY_F3; vkbKeys[numKeys++] = VKB_KEY_F4;
+		}
+		else
+		{
+			if (!s_hideShortcutKeys)
+			{
+				vkbKeys[numKeys++] = VKB_KEY_Y; vkbKeys[numKeys++] = VKB_KEY_N; vkbKeys[numKeys++] = VKB_KEY_1; vkbKeys[numKeys++] = VKB_KEY_2;
+				if (s_vkbExtraKeys)
+				{
+					vkbKeys[numKeys++] = VKB_KEY_RETURN;
+				}
+			}
+		}
 
 		int curKeyY = keyOffsetY;
 		for (int i = 0; i < numKeys; ++i)
 		{
-			if (i == 0) // speed button hack
+			if (vkbKeys[i] == VKB_KEY_NORMALSPEED) // speed button hack
 			{
 				bool turbo = getTurboSpeed()!=0;
 				vkbKeys[i] = turbo ? VKB_KEY_TURBOSPEED : VKB_KEY_NORMALSPEED;
@@ -2046,6 +2064,18 @@ void VirtKB_setHideExtraJoyKeys(bool hide)
 	s_recreateQuickKeys = true;
 }
 
+void VirtKB_setHideShortcutKeys(bool hide)
+{
+	s_hideShortcutKeys = hide;
+	s_recreateQuickKeys = true;
+}
+
+void VirtKB_setHideTurboKeys(bool hide)
+{
+	s_hideTurboKey = hide;
+	s_recreateQuickKeys = true;
+}
+
 static void VirtKB_ToggleAutoFire(const VirtKeyDef *keyDef, uint32_t uParam1, bool down)
 {
 	if (down)
@@ -2089,4 +2119,49 @@ void VirtKB_ResetAllInputPresses()
 	//	IKBD_PressSTKey(i, false);
 	//}
 */
+}
+
+float VirtKB_getVKBZoom() { return s_vkbZoom; }
+float VirtKB_getVKBPanX() { return s_vkbPanX; }
+float VirtKB_getVKBPanY() { return s_vkbPanY; }
+
+void VirtKB_SetVKBPanZoom(float kbdZoom, float kbdPanX, float kbdPanY)
+{
+	s_vkbZoom = kbdZoom;
+	s_vkbPanX = kbdPanX;
+	s_vkbPanY = kbdPanY;
+
+	if (s_vkbZoom < s_VkbMinZoom)
+	{
+		s_vkbZoom = s_VkbMinZoom;
+	}
+
+	VirtKB_UpdateVkbVerts();
+}
+
+bool VirtKB_getMouseActive()
+{
+	if (s_showKeyboard || s_screenZoomMode)
+	{
+		return (s_prevInputFlags & FLAG_MOUSE) != 0;
+	}
+	return (s_curInputFlags & FLAG_MOUSE) != 0;
+}
+
+void VirtKB_SetMouseActive(bool mouseActive)
+{
+	if (s_showKeyboard || s_screenZoomMode)
+	{
+		s_prevInputFlags &= ~(FLAG_MOUSE|FLAG_JOY);
+		s_prevInputFlags |= mouseActive ? FLAG_MOUSE : FLAG_JOY;
+	}
+	else
+	{
+		s_curInputFlags &= ~(FLAG_MOUSE|FLAG_JOY);
+		s_curInputFlags |= mouseActive ? FLAG_MOUSE : FLAG_JOY;
+	}
+
+	s_recreateQuickKeys = true;
+
+	VirtKB_clearMousePresses();
 }

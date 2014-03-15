@@ -422,6 +422,31 @@ bool setupGraphics(int w, int h)
 	return true;
 }
 
+float Renderer_getScreenZoomXRaw() { return curZoomX; }
+float Renderer_getScreenZoomYRaw() { return curZoomY; }
+float Renderer_getScreenPanXRaw() { return curPanX; }
+float Renderer_getScreenPanYRaw() { return curPanY; }
+
+void Renderer_setScreenPanZoomRaw(float scrZoomX, float scrZoomY, float scrPanX, float scrPanY)
+{
+	curZoomX = scrZoomX;
+	curZoomY = scrZoomY;
+	curPanX = scrPanX;
+	curPanY = scrPanY;
+
+	if (curZoomX < minZoom)
+	{
+		curZoomX = minZoom;
+	}
+	if (curZoomY < minZoom)
+	{
+		curZoomY = minZoom;
+	}
+
+	dispParamsChanged = true;
+	_delayedPreset = -1;
+}
+
 float Renderer_getEmuScreenZoomX()
 {
 	int texW = g_videoTex_width;

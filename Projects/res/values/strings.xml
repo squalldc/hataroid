@@ -200,5 +200,8 @@
     <string name="input_mouse_default_android_summary">Hardware mice can click on-screen controls, but won\'t detect normal mouse clicks, requires holding LMB to move cursor</string>
     <string name="input_onscreen_hide_extra_joy_keys">Hide extra joystick keys</string>
     <string name="input_onscreen_hide_extra_joy_keys_summary">Hides the extra keys on the bottom right of the screen</string>
-    
+    <string name="input_onscreen_hide_shortcut_keys">Hide shortcut keys</string>
+    <string name="input_onscreen_hide_shortcut_keys_summary">Hides the shortcut keys on the top right of the screen</string>
+    <string name="input_onscreen_hide_turbo_key">Hide turbo key</string>
+    <string name="input_onscreen_hide_turbo_key_summary">Hides the turbo key on the top right of the screen</string>
 </resources>
