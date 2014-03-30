@@ -12,6 +12,7 @@
 #include "VirtKBTex.h"
 #include "uncompressGZ.h"
 #include "nativeRenderer_ogles2.h"
+#include "ShortcutMap.h"
 #include "VirtKB.h"
 #include "BitFlags.h"
 #include "hataroid.h"
@@ -91,7 +92,7 @@ static int			s_prevZoomPanCount = 0;
 static bool			s_waitInputCleared = false;
 static float		s_joystickSize = 1;
 static bool			s_vkbObsessionKeys = false;
-static bool			s_vkbExtraKeys = false;
+//static bool			s_vkbExtraKeys = false;
 
 static GLuint		s_KbTextureID = 0;
 static int			s_VkbGPUTexWidth = 0;
@@ -152,11 +153,13 @@ static bool			s_hideAll = false;
 static bool			s_showJoystickOnly = false;
 static bool			s_hideExtraJoyKeys = false;
 static bool			s_hideShortcutKeys = false;
-static bool			s_hideTurboKey = false;
+//static bool			s_hideTurboKey = false;
 
 static KeyCallback*	s_keyCallbacks = 0;
 
 static BitFlags*	s_jKeyPresses = new BitFlags(VKB_KEY_NumOf);
+
+static ShortcutMap*	s_shortcutMap = new ShortcutMap();
 
 static int s_mouseFinger = -1;
 static int s_mouseMoved = 0;
@@ -716,35 +719,47 @@ void VirtKB_CreateQuickKeys()
 	}
 
 	// top right keys
-	if (!s_showJoystickOnly && !(s_hideShortcutKeys && s_hideTurboKey))
+	//if (!s_showJoystickOnly && !(s_hideShortcutKeys && s_hideTurboKey))
+	if (!s_showJoystickOnly && !(s_hideShortcutKeys))
 	{
 		int keyOffsetX = (int)ceilf(10*sscale);
 		int keyOffsetY = (int)ceilf(10*sscale);
 		int keyBtnSize = (int)ceilf(60*sscale);
 		int keyMarginY = (int)ceilf(2*sscale);
 
-		const int kMaxTRKeys = 12;
+		const int kMaxTRKeys = 16; // TODO: FIXME
 		int vkbKeys[kMaxTRKeys];
 		int numKeys = 0;
 
-		if (!s_hideTurboKey)
-		{
-			vkbKeys[numKeys++] = VKB_KEY_NORMALSPEED;
-		}
+		//if (!s_hideTurboKey)
+		//{
+		//	vkbKeys[numKeys++] = VKB_KEY_NORMALSPEED;
+		//}
 
 		if (s_vkbObsessionKeys)
 		{
+			vkbKeys[numKeys++] = VKB_KEY_NORMALSPEED;
 			vkbKeys[numKeys++] = VKB_KEY_F1; vkbKeys[numKeys++] = VKB_KEY_F2; vkbKeys[numKeys++] = VKB_KEY_F3; vkbKeys[numKeys++] = VKB_KEY_F4;
 		}
 		else
 		{
 			if (!s_hideShortcutKeys)
 			{
-				vkbKeys[numKeys++] = VKB_KEY_Y; vkbKeys[numKeys++] = VKB_KEY_N; vkbKeys[numKeys++] = VKB_KEY_1; vkbKeys[numKeys++] = VKB_KEY_2;
-				if (s_vkbExtraKeys)
+				const int *shortcutKeys = s_shortcutMap->getCurAnchorList(ShortcutMap::kAnchorTR);
+				for (int k = 0; k < ShortcutMap::kMaxKeys[ShortcutMap::kAnchorTR]; ++k)
 				{
-					vkbKeys[numKeys++] = VKB_KEY_RETURN;
+					int vkId = shortcutKeys[k];
+					if (vkId >= 0)
+					{
+						vkbKeys[numKeys++] = vkId;
+					}
 				}
+
+				//vkbKeys[numKeys++] = VKB_KEY_Y; vkbKeys[numKeys++] = VKB_KEY_N; vkbKeys[numKeys++] = VKB_KEY_1; vkbKeys[numKeys++] = VKB_KEY_2;
+				//if (s_vkbExtraKeys)
+				//{
+				//	vkbKeys[numKeys++] = VKB_KEY_RETURN;
+				//}
 			}
 		}
 
@@ -807,22 +822,44 @@ void VirtKB_CreateQuickKeys()
 		int keyMarginX = (int)ceilf(2*sscale);
 		int fireBtnSize = (int)ceilf((s_vkbObsessionKeys?obsessionButtonSize:100)*sscale);
 
-		int vkbKeysNormal[] = {VKB_KEY_JOYFIRE, VKB_KEY_SPACE, VKB_KEY_LEFTSHIFT, VKB_KEY_ALTERNATE};
-		int vkbKeysExtra[] = {VKB_KEY_JOYFIRE, VKB_KEY_SPACE, VKB_KEY_LEFTSHIFT, VKB_KEY_ALTERNATE, VKB_KEY_CONTROL};
+		const int kMaxBRKeys = 16; // TODO: FIXME
+		int vkbKeysNormal[kMaxBRKeys];
+		int numNormalKeys = 0;
+		const int *shortcutKeys = s_shortcutMap->getCurAnchorList(ShortcutMap::kAnchorBR);
+		vkbKeysNormal[numNormalKeys++] = VKB_KEY_JOYFIRE;
+		for (int k = 0; k < ShortcutMap::kMaxKeys[ShortcutMap::kAnchorBR]; ++k)
+		{
+			int vkId = shortcutKeys[k];
+			if (vkId >= 0)
+			{
+				vkbKeysNormal[numNormalKeys++] = vkId;
+			}
+		}
+
+		//int vkbKeysNormal[] = {VKB_KEY_JOYFIRE, VKB_KEY_SPACE, VKB_KEY_LEFTSHIFT, VKB_KEY_ALTERNATE};
+		//int vkbKeysExtra[] = {VKB_KEY_JOYFIRE, VKB_KEY_SPACE, VKB_KEY_LEFTSHIFT, VKB_KEY_ALTERNATE, VKB_KEY_CONTROL};
 		int vkbKeysHidden[] = {VKB_KEY_JOYFIRE};
 		int vkbKeysObsession[] = {VKB_KEY_RIGHTSHIFT_BUTTON, VKB_KEY_DOWNARROW};
-		int numNormalKeys = sizeof(vkbKeysNormal)/sizeof(int);
-		int numExtraKeys = sizeof(vkbKeysExtra)/sizeof(int);
+		//int numNormalKeys = sizeof(vkbKeysNormal)/sizeof(int);
+		//int numExtraKeys = sizeof(vkbKeysExtra)/sizeof(int);
 		int numHiddenKeys = sizeof(vkbKeysHidden)/sizeof(int);
 		int numObsessionKeys = sizeof(vkbKeysObsession)/sizeof(int);
 
-		int* vkbKeys = (joyMode&&s_vkbObsessionKeys) ? vkbKeysObsession : (s_hideExtraJoyKeys ? vkbKeysHidden : (s_vkbExtraKeys ? vkbKeysExtra : vkbKeysNormal));
-		int numKeys = (joyMode&&s_vkbObsessionKeys) ? numObsessionKeys : (s_hideExtraJoyKeys ? numHiddenKeys : (s_vkbExtraKeys ? numExtraKeys : numNormalKeys));
+		//int* vkbKeys = (joyMode&&s_vkbObsessionKeys) ? vkbKeysObsession : (s_hideExtraJoyKeys ? vkbKeysHidden : (s_vkbExtraKeys ? vkbKeysExtra : vkbKeysNormal));
+		//int numKeys = (joyMode&&s_vkbObsessionKeys) ? numObsessionKeys : (s_hideExtraJoyKeys ? numHiddenKeys : (s_vkbExtraKeys ? numExtraKeys : numNormalKeys));
+		int* vkbKeys = (joyMode&&s_vkbObsessionKeys) ? vkbKeysObsession : (s_hideExtraJoyKeys ? vkbKeysHidden : vkbKeysNormal);
+		int numKeys = (joyMode&&s_vkbObsessionKeys) ? numObsessionKeys : (s_hideExtraJoyKeys ? numHiddenKeys : numNormalKeys);
 
 		int curKeyX = scrwidth - keyOffsetX;
 
 		for (int i = 0; i < numKeys; ++i)
 		{
+			if (vkbKeys[i] == VKB_KEY_NORMALSPEED) // speed button hack
+			{
+				bool turbo = getTurboSpeed()!=0;
+				vkbKeys[i] = turbo ? VKB_KEY_TURBOSPEED : VKB_KEY_NORMALSPEED;
+			}
+
 			bool isFire = (vkbKeys[i] == VKB_KEY_JOYFIRE);
 			bool isBigButton = isFire || (vkbKeys[i] == VKB_KEY_LEFTSHIFT_BUTTON) || (vkbKeys[i] == VKB_KEY_RIGHTSHIFT_BUTTON);
 			int btnSize = isBigButton ? fireBtnSize : keyBtnSize;	// the fire button is a special case (bigger hit area)
@@ -2023,11 +2060,11 @@ void VirtKB_SetJoystickSize(float size)
 	s_recreateQuickKeys = true;
 }
 
-void VirtKB_setExtraKeys(bool set)
-{
-	s_vkbExtraKeys = set;
-	s_recreateQuickKeys = true;
-}
+//void VirtKB_setExtraKeys(bool set)
+//{
+//	s_vkbExtraKeys = set;
+//	s_recreateQuickKeys = true;
+//}
 
 void VirtKB_setObsessionKeys(bool set)
 {
@@ -2070,11 +2107,11 @@ void VirtKB_setHideShortcutKeys(bool hide)
 	s_recreateQuickKeys = true;
 }
 
-void VirtKB_setHideTurboKeys(bool hide)
-{
-	s_hideTurboKey = hide;
-	s_recreateQuickKeys = true;
-}
+//void VirtKB_setHideTurboKeys(bool hide)
+//{
+//	s_hideTurboKey = hide;
+//	s_recreateQuickKeys = true;
+//}
 
 static void VirtKB_ToggleAutoFire(const VirtKeyDef *keyDef, uint32_t uParam1, bool down)
 {
@@ -2164,4 +2201,10 @@ void VirtKB_SetMouseActive(bool mouseActive)
 	s_recreateQuickKeys = true;
 
 	VirtKB_clearMousePresses();
+}
+
+void VirtKB_setShortcutKeysFromPrefs(const char *pref)
+{
+	s_shortcutMap->setFromPrefString(pref);
+	s_recreateQuickKeys = true;
 }

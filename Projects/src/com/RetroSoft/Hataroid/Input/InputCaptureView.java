@@ -78,7 +78,7 @@ public class InputCaptureView extends Activity
 		try
 		{
 			outState.putInt(CONFIG_EMUKEY, _emuKey);
-			outState.putInt(CONFIG_SYSTEMKEY, _emuKey);
+			outState.putInt(CONFIG_SYSTEMKEY, _prevSystemKey);
 			outState.putString(CONFIG_MAPID, _prevMapID);
 		}
 		catch (Exception e)

@@ -20,8 +20,8 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.RetroSoft.Hataroid"
-    android:versionCode="1510"
-    android:versionName="1.510" >
+    android:versionCode="1520"
+    android:versionName="1.520" >
 
     <uses-sdk
         android:minSdkVersion="9"
@@ -68,6 +68,8 @@
         <activity android:name=".Input.InputCaptureView" android:theme="@android:style/Theme.Dialog" android:label="@string/blank"></activity>
         <activity android:theme="@android:style/Theme.Dialog" android:name=".Input.RenameInputMapView" android:label="@string/blank"></activity>
         <activity android:name=".SaveState.SaveStateBrowser" android:theme="@android:style/Theme.Dialog" android:label="@string/blank"></activity>
+        <activity android:name=".Input.Shortcut.ShortcutMapConfigureView" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" android:label="@string/title_activity_shortcut_configure"></activity>
+        <activity android:name=".Input.Shortcut.ShortcutSelectView" android:theme="@android:style/Theme.Dialog" android:label="@string/blank"></activity>
     </application>
 
 </manifest>

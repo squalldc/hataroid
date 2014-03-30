@@ -23,6 +23,7 @@ import com.RetroSoft.Hataroid.R;
 import com.RetroSoft.Hataroid.FileBrowser.FileBrowser;
 import com.RetroSoft.Hataroid.Input.Input;
 import com.RetroSoft.Hataroid.Input.InputMapConfigureView;
+import com.RetroSoft.Hataroid.Input.Shortcut.ShortcutMapConfigureView;
 import com.RetroSoft.Hataroid.SaveState.SaveStateBrowser;
 
 public class Settings extends PreferenceActivity implements OnSharedPreferenceChangeListener
@@ -36,6 +37,7 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 	private static final int FILEACTIVITYRESULT_DUMPINPUTMAPS_FOLDER	= 7;
 	private static final int FILEACTIVITYRESULT_SAVESTATE_FOLDER		= 8;
 	private static final int INPUTMAPACTIVITYRESULT_OK					= 9;
+	private static final int SHORTCUTMAPACTIVITYRESULT_OK				= 10;
 
 	
 		
@@ -55,6 +57,8 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 	public static final String kPrefName_InputDevice_InputMethod		= "pref_input_device_inputmethod";
 	public static final String kPrefName_InputDevice_ConfigureMap		= "pref_input_device_configuremap";
 	
+	public static final String kPrefName_OnScreen_ConfigureShortcutsMap	= "pref_input_onscreen_configureshortcutmap";
+
 	public Map<String,Boolean> _noSetSummary = new HashMap<String,Boolean>();
 
 	@Override protected void onCreate(Bundle savedInstanceState)
@@ -63,6 +67,7 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		_noSetSummary.put(kPrefName_InputDevice_InputMethod, true);
 		_noSetSummary.put(kPrefName_InputDevice_ConfigureMap, true);
 		_noSetSummary.put(kPrefName_DumpInputMap_Folder, true);
+		_noSetSummary.put(kPrefName_OnScreen_ConfigureShortcutsMap, true);
 		
 		super.onCreate(savedInstanceState);
 		addPreferencesFromResource(R.xml.preferences);
@@ -97,6 +102,9 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		
 		// save state folder
 		linkFileSelector(kPrefName_SaveState_Folder, FILEACTIVITYRESULT_SAVESTATE_FOLDER, true, true, false, true);
+
+		// add shorcut keys mapping click hooks
+		linkShortcutMapConfigureView(kPrefName_OnScreen_ConfigureShortcutsMap, SHORTCUTMAPACTIVITYRESULT_OK);
 	}
 	
 	void linkFileSelector(String prefKey, int fileResultID, boolean allFiles, boolean selectFolder, boolean tosImage, boolean showNewFolder)
@@ -152,6 +160,21 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		item.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
 			public boolean onPreferenceClick(Preference preference) {
 		        Intent view = new Intent(ctx, InputMapConfigureView.class);
+		        ctx.startActivityForResult(view, resultID);
+				return true;
+			}
+		});
+	}
+
+	void linkShortcutMapConfigureView(String prefKey, int viewResultID)
+	{
+		final Settings ctx = this;
+		final int resultID = viewResultID;
+		Preference item = (Preference)findPreference(prefKey);
+
+		item.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+			public boolean onPreferenceClick(Preference preference) {
+		        Intent view = new Intent(ctx, ShortcutMapConfigureView.class);
 		        ctx.startActivityForResult(view, resultID);
 				return true;
 			}

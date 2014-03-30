@@ -304,11 +304,11 @@ public class Input
 				map.init(Input.kNumSrcKeyCodes);
 				map.clear();
 
-				String name = info[0];
+				String name = info[0].trim();
 				for (int i = 1; i < info.length-1; i += 2)
 				{
-					int srcKey = Integer.parseInt(info[i].toString());
-					int destKey = Integer.parseInt(info[i+1].toString());
+					int srcKey = Integer.parseInt(info[i].toString().trim());
+					int destKey = Integer.parseInt(info[i+1].toString().trim());
 					map.addKeyMapEntry(srcKey, destKey);
 				}
 				

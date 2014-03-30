@@ -1110,11 +1110,11 @@ void _optionGEMDOSWriteProtection(const OptionSetting *setting, const char *val,
 	else if (optionVal == 2) { ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_AUTO; } // auto
 }
 
-void _optionSetVKBExtraKeys(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
-{
-	bool extraKeys = _getBoolVal(val);
-	VirtKB_setExtraKeys(extraKeys);
-}
+//void _optionSetVKBExtraKeys(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+//{
+//	bool extraKeys = _getBoolVal(val);
+//	VirtKB_setExtraKeys(extraKeys);
+//}
 
 void _optionSetVKBObsessionKeys(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
@@ -1151,11 +1151,11 @@ void _optionSetVKBHideShortcutKeys(const OptionSetting *setting, const char *val
 	VirtKB_setHideShortcutKeys(valSet);
 }
 
-void _optionSetVKBHideTurboKey(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
-{
-	bool valSet = _getBoolVal(val);
-	VirtKB_setHideTurboKeys(valSet);
-}
+//void _optionSetVKBHideTurboKey(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+//{
+//	bool valSet = _getBoolVal(val);
+//	VirtKB_setHideTurboKeys(valSet);
+//}
 
 void _optionSetSaveStateFolder(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
@@ -1167,6 +1167,11 @@ void _optionSetQuickSaveSlot(const OptionSetting *setting, const char *val, EmuC
 {
 	int slot = atoi(val);
 	_quickSaveSlot = slot;
+}
+
+void _optionVKBSetShortcutKeys(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	VirtKB_setShortcutKeysFromPrefs(val);
 }
 
 static const OptionSetting s_OptionsMap[] =
@@ -1221,16 +1226,16 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_sound_synchronize_enabled", _optionSetSoundSync, _optionValSoundSync },
 	{ "pref_sound_ymvoicesmixing", _optionSetYMVoicesMixing, _optionValYMVoicesMixing },
 	{ "pref_sound_buffer_size", _optionSoundBufferSize, _optionValSoundBufferSize },
-	{ "pref_input_keyboard_extra_keys", _optionSetVKBExtraKeys, 0 },
+	//{ "pref_input_keyboard_extra_keys", _optionSetVKBExtraKeys, 0 },
 	{ "pref_input_keyboard_obsession_keys", _optionSetVKBObsessionKeys, 0 },
 	{ "pref_input_onscreen_hide_all", _optionSetVKBHideAll, 0 },
 	{ "pref_input_onscreen_only_joy", _optionSetVKBJoystickOnly, 0 },
 	{ "pref_input_onscreen_hide_extra_joy_keys", _optionSetVKBHideExtraJoyKeys, 0 },
 	{ "pref_input_onscreen_hide_shortcut_keys", _optionSetVKBHideShortcutKeys, 0 },
-	{ "pref_input_onscreen_hide_turbo_key", _optionSetVKBHideTurboKey, 0 },
+	//{ "pref_input_onscreen_hide_turbo_key", _optionSetVKBHideTurboKey, 0 },
 	{ "pref_storage_savestate_folder", _optionSetSaveStateFolder, 0 },
 	{ "pref_savestate_quicksaveslot", _optionSetQuickSaveSlot, 0 },
-
+	{ "_pref_dyn_shortcut_map", _optionVKBSetShortcutKeys, 0 },
 };
 static const int s_NumOptionMaps = sizeof(s_OptionsMap)/sizeof(OptionSetting);
 

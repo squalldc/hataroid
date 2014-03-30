@@ -37,13 +37,13 @@ extern void VirtKB_SetControlAlpha(float alpha);
 extern void VirtKB_SetJoystickSize(float size);
 extern void VirtKB_setScreenZoomMode(bool set);
 extern void VirtKB_setDefaultScreenZoomPreset();
-extern void VirtKB_setExtraKeys(bool set);
+//extern void VirtKB_setExtraKeys(bool set);
 extern void VirtKB_setObsessionKeys(bool set);
 extern void VirtKB_setHideAll(bool set);
 extern void VirtKB_setJoystickOnly(bool set);
 extern void VirtKB_setHideExtraJoyKeys(bool hide);
 extern void VirtKB_setHideShortcutKeys(bool hide);
-extern void VirtKB_setHideTurboKeys(bool hide);
+//extern void VirtKB_setHideTurboKeys(bool hide);
 extern void VirtKB_ResetAllInputPresses();
 
 extern float VirtKB_getVKBZoom();
@@ -53,5 +53,7 @@ extern void VirtKB_SetVKBPanZoom(float kbdZoom, float kbdPanX, float kbdPanY);
 
 extern bool VirtKB_getMouseActive();
 extern void VirtKB_SetMouseActive(bool mouseActive);
+
+extern void VirtKB_setShortcutKeysFromPrefs(const char *pref);
 
 #endif /* VIRTKB_H_ */

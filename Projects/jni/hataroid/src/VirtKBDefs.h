@@ -12,6 +12,7 @@ typedef struct
 	char *		name;
 	short		androidKeycode;
 	short		config;
+	short		scut;
 	short		sort;
 	unsigned char		scancode;
 	short		v[8];

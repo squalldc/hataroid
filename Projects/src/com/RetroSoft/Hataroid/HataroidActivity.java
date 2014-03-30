@@ -34,6 +34,8 @@ import com.RetroSoft.Hataroid.FileBrowser.FileBrowser;
 import com.RetroSoft.Hataroid.Help.HelpActivity;
 import com.RetroSoft.Hataroid.Input.Input;
 import com.RetroSoft.Hataroid.Input.InputMapConfigureView;
+import com.RetroSoft.Hataroid.Input.Shortcut.ShortcutMap;
+import com.RetroSoft.Hataroid.Input.Shortcut.ShortcutMapConfigureView;
 import com.RetroSoft.Hataroid.Preferences.Settings;
 import com.RetroSoft.Hataroid.SaveState.SaveStateBrowser;
 
@@ -321,7 +323,7 @@ public class HataroidActivity extends Activity
 
 	public void startEmulationThread()
 	{
-		Map<String, Object> options = getEmulatorOptions(true);
+		Map<String, Object> options = getFullEmulatorOptions(true);
 		final String [] optionKeys = (String [])options.get("keys");
 		final String [] valKeys = (String [])options.get("vals");
 
@@ -609,6 +611,43 @@ public class HataroidActivity extends Activity
     		}
     	}
     }
+    
+    private Map<String, Object> getFullEmulatorOptions(boolean stripJavaOptions)
+    {
+		Map<String, Object> baseOptions = getEmulatorOptions(stripJavaOptions);
+
+		String [] optionKeysNormal = (String [])baseOptions.get("keys");
+		String [] valKeysNormal = (String [])baseOptions.get("vals");
+		
+		String [] optionKeys = optionKeysNormal;
+		String [] valKeys = valKeysNormal;
+
+		Map<String, String> dynOptions = getDynamicEmulatorOptions();
+		int numDynOptions = dynOptions.size();
+		if (dynOptions != null && numDynOptions > 0)
+		{
+			optionKeys = new String [optionKeysNormal.length + numDynOptions];
+			valKeys = new String [optionKeysNormal.length + numDynOptions];
+
+			int i = 0;
+			for (; i < optionKeysNormal.length; ++i)
+			{
+				optionKeys[i] = optionKeysNormal[i];
+				valKeys[i] = valKeysNormal[i];
+			}
+			
+			for (Map.Entry<String, String> entry : dynOptions.entrySet()) {
+				optionKeys[i] = entry.getKey();
+				valKeys[i] = entry.getValue();
+				++i;
+			}
+		}
+
+		Map<String, Object> options = new HashMap<String, Object>();
+		options.put("keys", optionKeys);
+		options.put("vals", valKeys);
+		return options;
+    }
 
     private Map<String, Object> getEmulatorOptions(boolean stripJavaOptions)
     {
@@ -623,7 +662,8 @@ public class HataroidActivity extends Activity
 			numKeys = 0;
 			for (String key : keys.keySet())
 			{
-				if (!key.startsWith(InputMapConfigureView.kPrefPrefix))
+				if (!key.startsWith(InputMapConfigureView.kPrefPrefix)
+				 && !key.startsWith(ShortcutMapConfigureView.kPrefPrefix))
 				{
 					++numKeys;
 				}
@@ -639,7 +679,8 @@ public class HataroidActivity extends Activity
 			String key = entry.getKey();
 			if (stripJavaOptions)
 			{
-				if (key.startsWith(InputMapConfigureView.kPrefPrefix))
+				if (key.startsWith(InputMapConfigureView.kPrefPrefix)
+				 || key.startsWith(ShortcutMapConfigureView.kPrefPrefix))
 				{
 					continue;
 				}
@@ -889,10 +930,23 @@ public class HataroidActivity extends Activity
 	
 	void _updateOptions()
 	{
-		Map<String, Object> options = getEmulatorOptions(true);
+		Map<String, Object> options = getFullEmulatorOptions(true);
 		String [] optionKeys = (String [])options.get("keys");
 		String [] valKeys = (String [])options.get("vals");
+
 		HataroidNativeLib.emulatorSetOptions(optionKeys, valKeys);
+	}
+
+	Map<String, String> getDynamicEmulatorOptions()
+	{
+		Map<String, String> dynOptions = new HashMap<String, String>();
+		
+    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+    	Map<String,?> allPrefs = prefs.getAll();
+    	
+    	ShortcutMap.getSelectedOptionFromPrefs(prefs, allPrefs, dynOptions);
+    	
+    	return dynOptions;
 	}
 	
 	@Override public boolean onKeyDown(int keyCode, KeyEvent event)

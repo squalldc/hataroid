@@ -204,4 +204,9 @@
     <string name="input_onscreen_hide_shortcut_keys_summary">Hides the shortcut keys on the top right of the screen</string>
     <string name="input_onscreen_hide_turbo_key">Hide turbo key</string>
     <string name="input_onscreen_hide_turbo_key_summary">Hides the turbo key on the top right of the screen</string>
+    <string name="title_activity_shortcut_configure">Configure Shortcut Keys</string>
+    <string name="shortcutselect_info">Select Shortcut Key:</string>
+    <string name="input_onscreen_configureshortcutmap">Configure Shortcut Keys</string>
+    <string name="input_onscreen_configureshortcutmap_summary">Configure on-screen keys mapping</string>
+    
 </resources>
