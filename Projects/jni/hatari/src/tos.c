@@ -572,7 +572,8 @@ int TOS_LoadImage(void)
 
 	if (!pTosFile || nFileSize <= 0)
 	{
-		Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'\n\nPlease configure one in System -> TOS image", ConfigureParams.Rom.szTosImageFileName);
+		//Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'\n\nPlease configure one in System -> TOS image", ConfigureParams.Rom.szTosImageFileName);
+		Log_AlertDlg(LOG_FATAL, "Atari ST emulators require a valid TOS rom image.\n\nPlease copy one to your device and configure it in Settings -> System -> TOS image");
 		return -1;
 	}
 

@@ -35,6 +35,7 @@ extern void VirtKB_SetMouseEmuButtons();
 extern void VirtKB_SetMouseEmuSpeed(float speed);
 extern void VirtKB_SetControlAlpha(float alpha);
 extern void VirtKB_SetJoystickSize(float size);
+extern void VirtKB_SetJoystickFireSize(float size);
 extern void VirtKB_setScreenZoomMode(bool set);
 extern void VirtKB_setDefaultScreenZoomPreset();
 //extern void VirtKB_setExtraKeys(bool set);
@@ -55,5 +56,12 @@ extern bool VirtKB_getMouseActive();
 extern void VirtKB_SetMouseActive(bool mouseActive);
 
 extern void VirtKB_setShortcutKeysFromPrefs(const char *pref);
+
+extern void VirtKB_setHideJoystick(bool set);
+
+extern void VirtKB_SetKeySizeVX(float size);
+extern void VirtKB_SetKeySizeVY(float size);
+extern void VirtKB_SetKeySizeHX(float size);
+extern void VirtKB_SetKeySizeHY(float size);
 
 #endif /* VIRTKB_H_ */

@@ -573,6 +573,17 @@ struct OptionSetting
 
 bool _getBoolVal(const char *val) { return !((strcasecmp(val, "false") == 0) || (strcmp(val, "0") == 0)); }
 
+float _getOptionFloatPercent(const char *val, float fmin, float fmax)
+{
+	float f = atof(val);
+	f *= (1.0f/100.0f);
+
+	if (f < fmin) { f = fmin; }
+	else if (f > fmax) { f = fmax; }
+
+	return f;
+}
+
 bool _optionValMachineType(const OptionSetting *setting, char *dstBuf, int dstBufLen)
 {
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)		{ strncpy(dstBuf, "Falcon", dstBufLen); return true; }
@@ -981,13 +992,14 @@ void _optionSetOnScreenAlpha(const OptionSetting *setting, const char *val, EmuC
 
 void _optionSetJoystickSize(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
-	float size = atof(val);
-	size *= (1.0f/100.0f);
-
-	if (size < 0.1f) { size = 0.1f; }
-	else if (size > 3.0f) { size = 3.0f; }
-
+	float size = _getOptionFloatPercent(val, 0.1f, 3.0f);
 	VirtKB_SetJoystickSize(size);
+}
+
+void _optionSetJoystickFireSize(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	float size = _getOptionFloatPercent(val, 0.1f, 3.0f);
+	VirtKB_SetJoystickFireSize(size);
 }
 
 bool _optionValBootFromHD(const OptionSetting *setting, char *dstBuf, int dstBufLen)
@@ -1139,6 +1151,36 @@ void _optionSetVKBJoystickOnly(const OptionSetting *setting, const char *val, Em
 	VirtKB_setJoystickOnly(valSet);
 }
 
+void _optionVKBHideJoy(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	bool valSet = _getBoolVal(val);
+	VirtKB_setHideJoystick(valSet);
+}
+
+void _optionVKBKeySizeVX(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	float size = _getOptionFloatPercent(val, 0.1f, 3.0f);
+	VirtKB_SetKeySizeVX(size);
+}
+
+void _optionVKBKeySizeVY(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	float size = _getOptionFloatPercent(val, 0.1f, 3.0f);
+	VirtKB_SetKeySizeVY(size);
+}
+
+void _optionVKBKeySizeHX(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	float size = _getOptionFloatPercent(val, 0.1f, 3.0f);
+	VirtKB_SetKeySizeHX(size);
+}
+
+void _optionVKBKeySizeHY(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	float size = _getOptionFloatPercent(val, 0.1f, 3.0f);
+	VirtKB_SetKeySizeHY(size);
+}
+
 void _optionSetVKBHideExtraJoyKeys(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	bool valSet = _getBoolVal(val);
@@ -1180,6 +1222,7 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_input_joysticks_autofire", _optionSetJoystickAutoFire, _optionValAutoFire },
 	{ "pref_input_joysticks_maparrowkeys", _optionSetJoystickMapArrowKeys, 0 },
 	{ "pref_input_joysticks_size", _optionSetJoystickSize, 0 },
+	{ "pref_input_joysticks_fire_size", _optionSetJoystickFireSize, 0 },
 	{ "pref_input_mouse_emutype", _optionSetMouseEmuType, 0 },
 	{ "pref_input_mouse_speed", _optionSetMouseSpeed, 0 },
 	{ "pref_input_onscreen_alpha", _optionSetOnScreenAlpha, 0 },
@@ -1236,6 +1279,11 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_storage_savestate_folder", _optionSetSaveStateFolder, 0 },
 	{ "pref_savestate_quicksaveslot", _optionSetQuickSaveSlot, 0 },
 	{ "_pref_dyn_shortcut_map", _optionVKBSetShortcutKeys, 0 },
+	{ "pref_input_onscreen_hide_joy", _optionVKBHideJoy, 0 },
+	{ "pref_input_keyboard_sizeVX", _optionVKBKeySizeVX, 0 },
+	{ "pref_input_keyboard_sizeVY", _optionVKBKeySizeVY, 0 },
+	{ "pref_input_keyboard_sizeHX", _optionVKBKeySizeHX, 0 },
+	{ "pref_input_keyboard_sizeHY", _optionVKBKeySizeHY, 0 },
 };
 static const int s_NumOptionMaps = sizeof(s_OptionsMap)/sizeof(OptionSetting);
 

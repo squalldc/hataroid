@@ -70,6 +70,18 @@
 				robobunny:unitsLeft=""
 				robobunny:unitsRight=" %"
 			/>
+			<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
+				android:persistent="true"
+				android:key="pref_input_joysticks_fire_size"
+				android:title="@string/input_joysticks_fire_size"
+				android:summary="@string/input_joysticks_fire_size_summary"
+				android:defaultValue="100"
+				android:max="200"
+				robobunny:min="10"
+				robobunny:unitsLeft=""
+				robobunny:unitsRight=" %"
+			/>
+						
 		</PreferenceCategory>
 	    <PreferenceCategory 
 	        android:title="@string/pref_input_mouse_category"
@@ -117,6 +129,13 @@
 				android:defaultValue="false" />
 			<CheckBoxPreference
 				android:persistent="true"
+				android:key="pref_input_onscreen_hide_joy"
+				android:title="@string/input_onscreen_hide_joy"
+				android:summaryOn="@string/input_onscreen_hide_joy_summary"
+				android:summaryOff="@string/input_onscreen_hide_joy_summary"
+				android:defaultValue="false" />
+			<CheckBoxPreference
+				android:persistent="true"
 				android:key="pref_input_onscreen_only_joy"
 				android:title="@string/input_onscreen_only_joy"
 				android:summaryOn="@string/input_onscreen_only_joy_summary"
@@ -142,7 +161,7 @@
 				android:title="@string/input_onscreen_configureshortcutmap"
 				android:summary="@string/input_onscreen_configureshortcutmap_summary"
 				android:defaultValue="none" />
-												
+
 		</PreferenceCategory>
 	    <PreferenceCategory 
 	        android:title="@string/pref_input_keyboard_category"
@@ -154,6 +173,51 @@
 				android:summaryOn="@string/input_keyboard_obsession_keys_summary"
 				android:summaryOff="@string/input_keyboard_obsession_keys_summary"
 				android:defaultValue="false" />
+			<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
+				android:persistent="true"
+				android:key="pref_input_keyboard_sizeVX"
+				android:title="@string/input_keyboard_sizeVX"
+				android:summary="@string/input_keyboard_sizeVX_summary"
+				android:defaultValue="100"
+				android:max="200"
+				robobunny:min="10"
+				robobunny:unitsLeft=""
+				robobunny:unitsRight=" %"
+			/>
+			<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
+				android:persistent="true"
+				android:key="pref_input_keyboard_sizeVY"
+				android:title="@string/input_keyboard_sizeVY"
+				android:summary="@string/input_keyboard_sizeVY_summary"
+				android:defaultValue="100"
+				android:max="200"
+				robobunny:min="10"
+				robobunny:unitsLeft=""
+				robobunny:unitsRight=" %"
+			/>
+			<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
+				android:persistent="true"
+				android:key="pref_input_keyboard_sizeHX"
+				android:title="@string/input_keyboard_sizeHX"
+				android:summary="@string/input_keyboard_sizeHX_summary"
+				android:defaultValue="100"
+				android:max="200"
+				robobunny:min="10"
+				robobunny:unitsLeft=""
+				robobunny:unitsRight=" %"
+			/>
+			<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
+				android:persistent="true"
+				android:key="pref_input_keyboard_sizeHY"
+				android:title="@string/input_keyboard_sizeHY"
+				android:summary="@string/input_keyboard_sizeHY_summary"
+				android:defaultValue="100"
+				android:max="200"
+				robobunny:min="10"
+				robobunny:unitsLeft=""
+				robobunny:unitsRight=" %"
+			/>
+												
 		</PreferenceCategory>
 	</PreferenceScreen>
 	<PreferenceScreen

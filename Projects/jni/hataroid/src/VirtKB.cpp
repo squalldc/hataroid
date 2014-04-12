@@ -91,6 +91,7 @@ static bool			s_joyMapToArrowKeys = false;
 static int			s_prevZoomPanCount = 0;
 static bool			s_waitInputCleared = false;
 static float		s_joystickSize = 1;
+static float		s_joystickFireSize = 1;
 static bool			s_vkbObsessionKeys = false;
 //static bool			s_vkbExtraKeys = false;
 
@@ -154,6 +155,12 @@ static bool			s_showJoystickOnly = false;
 static bool			s_hideExtraJoyKeys = false;
 static bool			s_hideShortcutKeys = false;
 //static bool			s_hideTurboKey = false;
+
+static bool			s_hideJoystick = false;
+static float		s_keySizeVX = 1;
+static float		s_keySizeVY = 1;
+static float		s_keySizeHX = 1;
+static float		s_keySizeHY = 1;
 
 static KeyCallback*	s_keyCallbacks = 0;
 
@@ -691,7 +698,8 @@ void VirtKB_CreateQuickKeys()
 	{
 		int keyOffsetX = (int)ceilf(10*sscale);
 		int keyOffsetY = (int)ceilf(10*sscale);
-		int keyBtnSize = (int)ceilf(60*sscale);
+		int keyBtnSizeX = (int)ceilf(60*sscale*s_keySizeVX);
+		int keyBtnSizeY = (int)ceilf(60*sscale*s_keySizeVY);
 		int keyMarginY = (int)ceilf(2*sscale);
 
 		//bool isFullScreen = Renderer_isFullScreenStretch();
@@ -708,8 +716,8 @@ void VirtKB_CreateQuickKeys()
 			if (s_keyboardZoomMode && vkbKeys[i]==VKB_KEY_KEYBOARDZOOM)	{ vkbKeys[i] = VKB_KEY_KEYBOARDZOOM_SEL; }
 			if (s_screenZoomMode && vkbKeys[i]==VKB_KEY_SCREENZOOM) 	{ vkbKeys[i] = VKB_KEY_SCREENZOOM_SEL; }
 
-			if (!addQuickKey(0, curKeyY, keyOffsetX+keyBtnSize, curKeyY+keyBtnSize,
-						keyOffsetX, curKeyY, keyOffsetX+keyBtnSize, curKeyY+keyBtnSize,
+			if (!addQuickKey(0, curKeyY, keyOffsetX+keyBtnSizeX, curKeyY+keyBtnSizeY,
+						keyOffsetX, curKeyY, keyOffsetX+keyBtnSizeX, curKeyY+keyBtnSizeY,
 						2, 2, -2, -2, &g_vkbKeyDefs[vkbKeys[i]])) { continue; }
 
 			curKeyY = s_QuickKeys[s_numQuickKeys-1].y2 + keyMarginY;
@@ -724,7 +732,8 @@ void VirtKB_CreateQuickKeys()
 	{
 		int keyOffsetX = (int)ceilf(10*sscale);
 		int keyOffsetY = (int)ceilf(10*sscale);
-		int keyBtnSize = (int)ceilf(60*sscale);
+		int keyBtnSizeX = (int)ceilf(60*sscale*s_keySizeVX);
+		int keyBtnSizeY = (int)ceilf(60*sscale*s_keySizeVY);
 		int keyMarginY = (int)ceilf(2*sscale);
 
 		const int kMaxTRKeys = 16; // TODO: FIXME
@@ -772,13 +781,15 @@ void VirtKB_CreateQuickKeys()
 				vkbKeys[i] = turbo ? VKB_KEY_TURBOSPEED : VKB_KEY_NORMALSPEED;
 			}
 
-			if (!addQuickKey(scrwidth - keyOffsetX-keyBtnSize, curKeyY, scrwidth, curKeyY+keyBtnSize,
-						scrwidth-keyOffsetX-keyBtnSize, curKeyY, scrwidth-keyOffsetX, curKeyY+keyBtnSize,
+			if (!addQuickKey(scrwidth - keyOffsetX-keyBtnSizeX, curKeyY, scrwidth, curKeyY+keyBtnSizeY,
+						scrwidth-keyOffsetX-keyBtnSizeX, curKeyY, scrwidth-keyOffsetX, curKeyY+keyBtnSizeY,
 						2, 2, -2, -2, &g_vkbKeyDefs[vkbKeys[i]])) { continue; }
 
 			curKeyY = s_QuickKeys[s_numQuickKeys-1].y2 + keyMarginY;
 		}
 	}
+
+	const int kFireDefaultSize = 100;
 
 	// mouse keys (bottom left)
 	s_mouseButtonIgnoreQuickKeyIdx[0] = -1;
@@ -786,9 +797,10 @@ void VirtKB_CreateQuickKeys()
 	{
 		int keyOffsetX = (int)ceilf(30*sscale);
 		int keyOffsetY = (int)ceilf(30*sscale);
-		int keyBtnSize = (int)ceilf(60*sscale);
+		int keyBtnSizeX = (int)ceilf(60*sscale*s_keySizeHX);
+		int keyBtnSizeY = (int)ceilf(60*sscale*s_keySizeHY);
 		int keyMarginX = (int)ceilf(64*sscale);
-		int fireBtnSize = (int)ceilf(100*sscale);
+		int fireBtnSize = (int)ceilf(kFireDefaultSize*sscale*s_joystickFireSize);
 
 		int vkbKeys[] = {VKB_KEY_MOUSELB, VKB_KEY_MOUSERB};
 		int x1Overlap[] = {0, (int)(keyMarginX*0.8f)};
@@ -800,9 +812,10 @@ void VirtKB_CreateQuickKeys()
 		for (int i = 0; i < numKeys; ++i)
 		{
 			bool isFire = (vkbKeys[i] == VKB_KEY_JOYFIRE);
-			int btnSize = isFire ? fireBtnSize : keyBtnSize;	// the fire button is a special case (bigger hit area)
-			if (!addQuickKey(curKeyX-x1Overlap[i], scrheight-keyOffsetY-btnSize, curKeyX+btnSize+x2Overlap[i], scrheight,
-						curKeyX, scrheight-keyOffsetY-btnSize, curKeyX+btnSize, scrheight-keyOffsetY,
+			int btnSizeX = isFire ? fireBtnSize : keyBtnSizeX;	// the fire button is a special case (bigger hit area)
+			int btnSizeY = isFire ? fireBtnSize : keyBtnSizeY;	// the fire button is a special case (bigger hit area)
+			if (!addQuickKey(curKeyX-x1Overlap[i], scrheight-keyOffsetY-btnSizeY, curKeyX+btnSizeX+x2Overlap[i], scrheight,
+						curKeyX, scrheight-keyOffsetY-btnSizeY, curKeyX+btnSizeX, scrheight-keyOffsetY,
 						2, 2, -2, -2, &g_vkbKeyDefs[vkbKeys[i]])) { continue; }
 
 			curKeyX = s_QuickKeys[s_numQuickKeys-1].x2 - x2Overlap[i] + keyMarginX;
@@ -818,15 +831,19 @@ void VirtKB_CreateQuickKeys()
 	{
 		int keyOffsetX = (int)ceilf(30*sscale);
 		int keyOffsetY = (int)ceilf(30*sscale);
-		int keyBtnSize = (int)ceilf(60*sscale);
+		int keyBtnSizeX = (int)ceilf(60*sscale*s_keySizeHX);
+		int keyBtnSizeY = (int)ceilf(60*sscale*s_keySizeHY);
 		int keyMarginX = (int)ceilf(2*sscale);
-		int fireBtnSize = (int)ceilf((s_vkbObsessionKeys?obsessionButtonSize:100)*sscale);
+		int fireBtnSize = (int)ceilf((s_vkbObsessionKeys?obsessionButtonSize:kFireDefaultSize)*sscale*s_joystickFireSize);
 
 		const int kMaxBRKeys = 16; // TODO: FIXME
 		int vkbKeysNormal[kMaxBRKeys];
 		int numNormalKeys = 0;
 		const int *shortcutKeys = s_shortcutMap->getCurAnchorList(ShortcutMap::kAnchorBR);
-		vkbKeysNormal[numNormalKeys++] = VKB_KEY_JOYFIRE;
+		if (!s_hideJoystick)
+		{
+			vkbKeysNormal[numNormalKeys++] = VKB_KEY_JOYFIRE;
+		}
 		for (int k = 0; k < ShortcutMap::kMaxKeys[ShortcutMap::kAnchorBR]; ++k)
 		{
 			int vkId = shortcutKeys[k];
@@ -850,6 +867,11 @@ void VirtKB_CreateQuickKeys()
 		int* vkbKeys = (joyMode&&s_vkbObsessionKeys) ? vkbKeysObsession : (s_hideExtraJoyKeys ? vkbKeysHidden : vkbKeysNormal);
 		int numKeys = (joyMode&&s_vkbObsessionKeys) ? numObsessionKeys : (s_hideExtraJoyKeys ? numHiddenKeys : numNormalKeys);
 
+		if (!s_vkbObsessionKeys && joyMode && s_hideJoystick && s_hideExtraJoyKeys)
+		{
+			numKeys = 0;
+		}
+
 		int curKeyX = scrwidth - keyOffsetX;
 
 		for (int i = 0; i < numKeys; ++i)
@@ -862,12 +884,13 @@ void VirtKB_CreateQuickKeys()
 
 			bool isFire = (vkbKeys[i] == VKB_KEY_JOYFIRE);
 			bool isBigButton = isFire || (vkbKeys[i] == VKB_KEY_LEFTSHIFT_BUTTON) || (vkbKeys[i] == VKB_KEY_RIGHTSHIFT_BUTTON);
-			int btnSize = isBigButton ? fireBtnSize : keyBtnSize;	// the fire button is a special case (bigger hit area)
-			if (!addQuickKey(curKeyX-btnSize, scrheight-keyOffsetY-btnSize, curKeyX, scrheight,
-						curKeyX-btnSize, scrheight-keyOffsetY-btnSize, curKeyX, scrheight-keyOffsetY,
+			int btnSizeX = isBigButton ? fireBtnSize : keyBtnSizeX;	// the fire button is a special case (bigger hit area)
+			int btnSizeY = isBigButton ? fireBtnSize : keyBtnSizeY;	// the fire button is a special case (bigger hit area)
+			if (!addQuickKey(curKeyX-btnSizeX, scrheight-keyOffsetY-btnSizeY, curKeyX, scrheight,
+						curKeyX-btnSizeX, scrheight-keyOffsetY-btnSizeY, curKeyX, scrheight-keyOffsetY,
 						2, 2, -2, -2, &g_vkbKeyDefs[vkbKeys[i]])) { continue; }
 
-			curKeyX = s_QuickKeys[s_numQuickKeys-1].x1 - keyMarginX - ((i==0)? keyOffsetX : 0);
+			curKeyX = s_QuickKeys[s_numQuickKeys-1].x1 - keyMarginX - ((i==0 && !s_hideJoystick)? keyOffsetX : 0);
 		}
 
 		joyAreaMaxX = curKeyX;
@@ -880,9 +903,10 @@ void VirtKB_CreateQuickKeys()
 		{
 			int keyOffsetX = (int)ceilf(30*sscale);
 			int keyOffsetY = (int)ceilf(30*sscale);
-			int keyBtnSize = (int)ceilf(60*sscale);
+			int keyBtnSizeX = (int)ceilf(60*sscale*s_keySizeHX);
+			int keyBtnSizeY = (int)ceilf(60*sscale*s_keySizeHY);
 			int keyMarginX = (int)ceilf(2*sscale);
-			int fireBtnSize = (int)ceilf(obsessionButtonSize*sscale);
+			int fireBtnSize = (int)ceilf(obsessionButtonSize*sscale*s_joystickFireSize);
 
 			int vkbKeys[] = {VKB_KEY_LEFTSHIFT_BUTTON, VKB_KEY_SPACE};
 			int numKeys = sizeof(vkbKeys)/sizeof(int);
@@ -893,9 +917,10 @@ void VirtKB_CreateQuickKeys()
 			{
 				bool isFire = (vkbKeys[i] == VKB_KEY_JOYFIRE);
 				bool isBigButton = isFire || (vkbKeys[i] == VKB_KEY_LEFTSHIFT_BUTTON) || (vkbKeys[i] == VKB_KEY_RIGHTSHIFT_BUTTON);
-				int btnSize = isBigButton ? fireBtnSize : keyBtnSize;	// the fire button is a special case (bigger hit area)
-				if (!addQuickKey(curKeyX, scrheight-keyOffsetY-btnSize, curKeyX+btnSize, scrheight,
-							curKeyX, scrheight-keyOffsetY-btnSize, curKeyX+btnSize, scrheight-keyOffsetY,
+				int btnSizeX = isBigButton ? fireBtnSize : keyBtnSizeX;	// the fire button is a special case (bigger hit area)
+				int btnSizeY = isBigButton ? fireBtnSize : keyBtnSizeY;	// the fire button is a special case (bigger hit area)
+				if (!addQuickKey(curKeyX, scrheight-keyOffsetY-btnSizeY, curKeyX+btnSizeX, scrheight,
+							curKeyX, scrheight-keyOffsetY-btnSizeY, curKeyX+btnSizeX, scrheight-keyOffsetY,
 							2, 2, -2, -2, &g_vkbKeyDefs[vkbKeys[i]])) { continue; }
 
 				curKeyX = s_QuickKeys[s_numQuickKeys-1].x2 + keyMarginX + ((i==0)? keyOffsetX : 0);
@@ -903,7 +928,7 @@ void VirtKB_CreateQuickKeys()
 
 			joyAreaMaxX = curKeyX;
 		}
-		else
+		else if (!s_hideJoystick)
 		{
 			// joystick dir - from bottom left
 			{
@@ -2060,6 +2085,12 @@ void VirtKB_SetJoystickSize(float size)
 	s_recreateQuickKeys = true;
 }
 
+void VirtKB_SetJoystickFireSize(float size)
+{
+	s_joystickFireSize = size;
+	s_recreateQuickKeys = true;
+}
+
 //void VirtKB_setExtraKeys(bool set)
 //{
 //	s_vkbExtraKeys = set;
@@ -2206,5 +2237,35 @@ void VirtKB_SetMouseActive(bool mouseActive)
 void VirtKB_setShortcutKeysFromPrefs(const char *pref)
 {
 	s_shortcutMap->setFromPrefString(pref);
+	s_recreateQuickKeys = true;
+}
+
+void VirtKB_setHideJoystick(bool set)
+{
+	s_hideJoystick = set;
+	s_recreateQuickKeys = true;
+}
+
+void VirtKB_SetKeySizeVX(float size)
+{
+	s_keySizeVX = size;
+	s_recreateQuickKeys = true;
+}
+
+void VirtKB_SetKeySizeVY(float size)
+{
+	s_keySizeVY = size;
+	s_recreateQuickKeys = true;
+}
+
+void VirtKB_SetKeySizeHX(float size)
+{
+	s_keySizeHX = size;
+	s_recreateQuickKeys = true;
+}
+
+void VirtKB_SetKeySizeHY(float size)
+{
+	s_keySizeHY = size;
 	s_recreateQuickKeys = true;
 }

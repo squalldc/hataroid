@@ -54,7 +54,7 @@ public class HataroidActivity extends Activity
 
 	public static HataroidActivity	instance = null;
 	private boolean				_lostFocus = false;
-	
+
 	private HataroidViewGL2		_viewGL2;
 	private Thread				_emuThread;
 
@@ -1054,7 +1054,7 @@ public class HataroidActivity extends Activity
 			public void run()
 			{
     			AlertDialog alertDialog = new AlertDialog.Builder(HataroidActivity.this).create();
-    			alertDialog.setTitle("Hataroid Alert");
+    			alertDialog.setTitle("Hataroid Info");
     			alertDialog.setMessage(message);
 				alertDialog.setCancelable(false);
 				alertDialog.setCanceledOnTouchOutside(false);
