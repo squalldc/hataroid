@@ -1,6 +1,8 @@
 package com.RetroSoft.Hataroid.Input;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import android.annotation.SuppressLint;
@@ -9,7 +11,7 @@ import android.annotation.SuppressLint;
 public class InputMap
 {
 	public int [] srcToDestMap = null;
-	public Map<Integer, Integer> destToSrcMap = null;
+	public Map<Integer, List<Integer>> destToSrcMap = null;
 	public int numDestInputs = 0;
 
 	public InputMap() { }
@@ -35,7 +37,7 @@ public class InputMap
 	public void init(int numSrcInputs_)
 	{
 		srcToDestMap = new int [numSrcInputs_];
-		destToSrcMap = new HashMap<Integer, Integer>();
+		destToSrcMap = new HashMap<Integer, List<Integer>>();
 		numDestInputs = VirtKeyDef.VKB_KEY_NumOf;
 
 		// reset
@@ -79,11 +81,36 @@ public class InputMap
 			int removeKey = srcToDestMap[srcKey];
 			if (destToSrcMap.containsKey(removeKey))
 			{
-				destToSrcMap.remove(removeKey);
+				List<Integer> sysKeys = destToSrcMap.get(removeKey);
+				int sysKeyIdx = sysKeys.indexOf(srcKey);
+				if (sysKeyIdx >= 0)
+				{
+					sysKeys.remove(sysKeyIdx);
+				}
 			}
 		}
 
 		srcToDestMap[srcKey] = -1;
+
+		return true;
+	}
+
+	public boolean removeDestKeyMapEntry(int destKey)
+	{
+		List<Integer> sysKeys = destToSrcMap.get(destKey);
+		if (sysKeys != null)
+		{
+			for (int i = 0; i < sysKeys.size(); ++i)
+			{
+				int srcKey = sysKeys.get(i);
+				if (srcKey >= 0 && srcKey < srcToDestMap.length)
+				{
+					srcToDestMap[srcKey] = -1;
+				}
+			}
+
+			sysKeys.clear();
+		}
 
 		return true;
 	}
@@ -94,25 +121,22 @@ public class InputMap
 		{
 			return false;
 		}
-
-		if (destToSrcMap.containsKey(destKey))
-		{
-			int androidKeyCode = destToSrcMap.get(destKey);
-			srcToDestMap[androidKeyCode] = -1;
-		}
 		
-		if (srcToDestMap[srcKey] >= 0)
-		{
-			int removeKey = srcToDestMap[srcKey];
-			if (destToSrcMap.containsKey(removeKey))
-			{
-				destToSrcMap.remove(removeKey);
-			}
-		}
+		removeKeyMapEntry(srcKey);
 
 		srcToDestMap[srcKey] = destKey;
-		destToSrcMap.put(destKey, srcKey);
 		
+		List<Integer> sysKeysList = destToSrcMap.get(destKey);
+		if (sysKeysList == null)
+		{
+			sysKeysList = new LinkedList<Integer>();
+			destToSrcMap.put(destKey, sysKeysList);
+		}
+		if (sysKeysList.indexOf(srcKey) == -1)
+		{
+			sysKeysList.add(srcKey);
+		}
+
 		return true;
 	}
 

@@ -14,19 +14,19 @@ import com.RetroSoft.Hataroid.R;
 public class InputCaptureView extends Activity
 {
 	public static final String CONFIG_EMUKEY	= "Config_EmuKey";
-	public static final String CONFIG_SYSTEMKEY	= "Config_SystemKey";
+	//public static final String CONFIG_SYSTEMKEY	= "Config_SystemKey";
 	public static final String CONFIG_MAPID		= "Config_MapID";
 	
 	public static final String RESULT_KEYCODE		= "ResultKeyCode";
 	public static final String RESULT_UNMAP			= "ResultUnmap";
 	public static final String RESULT_PREVEMUKEY	= "ResultPrevEmuKey";
-	public static final String RESULT_PREVSYSTEMKEY = "ResultPrevSystemKey";
+	//public static final String RESULT_PREVSYSTEMKEY = "ResultPrevSystemKey";
 	public static final String RESULT_PREVMAPID		= "ResultPrevMapID";
 
 	//int []	_groupJoystickKeys = {VirtKeyDef.VKB_KEY_JOYUP, VirtKeyDef.VKB_KEY_JOYDOWN, VirtKeyDef.VKB_KEY_JOYLEFT, VirtKeyDef.VKB_KEY_JOYRIGHT, VirtKeyDef.VKB_KEY_JOYFIRE, VirtKeyDef.VKB_KEY_SPACE};
 	//boolean	_groupCapture = false;
 	
-	int		_prevSystemKey = -1;
+	//int		_prevSystemKey = -1;
 	String	_prevMapID = null;
 	
 	int		_emuKey = -1;
@@ -78,7 +78,7 @@ public class InputCaptureView extends Activity
 		try
 		{
 			outState.putInt(CONFIG_EMUKEY, _emuKey);
-			outState.putInt(CONFIG_SYSTEMKEY, _prevSystemKey);
+			//outState.putInt(CONFIG_SYSTEMKEY, _prevSystemKey);
 			outState.putString(CONFIG_MAPID, _prevMapID);
 		}
 		catch (Exception e)
@@ -91,7 +91,7 @@ public class InputCaptureView extends Activity
 	{
 		_emuKey = -1;
 
-		_prevSystemKey = -1;
+		//_prevSystemKey = -1;
 		_prevMapID = null;
 
 		Bundle b = (savedInstanceState == null) ? getIntent().getExtras() : savedInstanceState;
@@ -99,7 +99,7 @@ public class InputCaptureView extends Activity
 		{
 			_emuKey = b.getInt(CONFIG_EMUKEY, -1);
 
-			_prevSystemKey = b.getInt(CONFIG_SYSTEMKEY, -1);
+			//_prevSystemKey = b.getInt(CONFIG_SYSTEMKEY, -1);
 			_prevMapID = b.getString(CONFIG_MAPID);
 		}
 	}
@@ -162,7 +162,7 @@ public class InputCaptureView extends Activity
 	private void sendFinish(int resultCode)
 	{
 		_retIntent.putExtra(RESULT_PREVEMUKEY, _emuKey);
-		_retIntent.putExtra(RESULT_PREVSYSTEMKEY, _prevSystemKey);
+		//_retIntent.putExtra(RESULT_PREVSYSTEMKEY, _prevSystemKey);
 		_retIntent.putExtra(RESULT_PREVMAPID, _prevMapID);
 		
 		setResult(resultCode, _retIntent);

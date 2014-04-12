@@ -6,11 +6,11 @@ public class InputMapListItem implements Comparable<InputMapListItem>
 	final int [] kFlagPriorities = {VirtKeyDef.FLAG_JOY, VirtKeyDef.FLAG_MOUSEBUTTON, VirtKeyDef.FLAG_CUSTOMKEY, VirtKeyDef.FLAG_STFNKEY, VirtKeyDef.FLAG_STKEY, -1};
 
 	VirtKeyDef	_vkDef = null;
-	int			_systemKey = -1;
+	int[]		_systemKeys = null;
 	
-	public InputMapListItem(VirtKeyDef def, int systemKey)
+	public InputMapListItem(VirtKeyDef def, int[] systemKeys)
 	{
-		_systemKey = systemKey;
+		_systemKeys = systemKeys;
 		_vkDef = def;
 	}
 	
@@ -21,17 +21,29 @@ public class InputMapListItem implements Comparable<InputMapListItem>
 	
 	public String getSystemKeyName()
 	{
-		if (_systemKey < 0)
+		if (_systemKeys == null || _systemKeys.length == 0)
 		{
 			return null;
 		}
 
-		if (_systemKey < AndroidKeyNames.kKeyCodeNames.length)
+		String sname = "";
+		for (int i = 0; i <_systemKeys.length; ++i)
 		{
-			return AndroidKeyNames.kKeyCodeNames[_systemKey] + " (" + String.valueOf(_systemKey) + ")";
-		}
+			if (i != 0)
+			{
+				sname += ", ";
+			}
 
-		return "(" + String.valueOf(_systemKey) + ")";
+			int skey = _systemKeys[i];
+			if (skey < AndroidKeyNames.kKeyCodeNames.length)
+			{
+				sname += AndroidKeyNames.kKeyCodeNames[skey] + " ";
+			}
+
+			sname += "(" + String.valueOf(skey) + ")";
+		}
+		
+		return sname;
 	}
 	
 	public int compareTo(InputMapListItem o)

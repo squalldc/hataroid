@@ -339,7 +339,7 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 
 		if (_curInputMap != null)
 		{
-			Map<Integer, Integer> emuToSystemMap = _curInputMap.destToSrcMap;
+			Map<Integer, List<Integer>> emuToSystemMap = _curInputMap.destToSrcMap;
 	
 			List<InputMapListItem> items = new ArrayList<InputMapListItem>();
 			for (int i = 0; i < VirtKeyDef.VKB_KEY_NumOf; ++i)
@@ -347,8 +347,17 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 				VirtKeyDef vkDef = VirtKeyDef.kDefs[i];
 				if (vkDef.config > 0)
 				{
-					int systemKey = emuToSystemMap.containsKey(vkDef.id) ? emuToSystemMap.get(vkDef.id): -1;
-					items.add(new InputMapListItem(vkDef, systemKey));
+					List<Integer> systemKeysList = emuToSystemMap.get(vkDef.id);
+					int [] systemKeys = null;
+					if (systemKeysList != null && systemKeysList.size() > 0)
+					{
+						systemKeys = new int [systemKeysList.size()];
+						for (int s = 0; s < systemKeysList.size(); ++s)
+						{
+							systemKeys[s] = systemKeysList.get(s);
+						}
+					}
+					items.add(new InputMapListItem(vkDef, systemKeys));
 				}
 			}
 			Collections.sort(items);
@@ -400,7 +409,7 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 
         Intent view = new Intent(ctx, InputCaptureView.class);
         view.putExtra(InputCaptureView.CONFIG_EMUKEY, scanItem._vkDef.id);
-        view.putExtra(InputCaptureView.CONFIG_SYSTEMKEY, scanItem._systemKey);
+        //view.putExtra(InputCaptureView.CONFIG_SYSTEMKEY, scanItem._systemKey);
         view.putExtra(InputCaptureView.CONFIG_MAPID, _curPresetID);
         ctx.startActivityForResult(view, resultID);
 	}
@@ -439,7 +448,7 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 					}
 					
 					int prevEmuKey = data.getIntExtra(InputCaptureView.RESULT_PREVEMUKEY, -1);
-					int prevSystemKey = data.getIntExtra(InputCaptureView.RESULT_PREVSYSTEMKEY, -1);
+					//int prevSystemKey = data.getIntExtra(InputCaptureView.RESULT_PREVSYSTEMKEY, -1);
 					String prevMapId= data.getStringExtra(InputCaptureView.RESULT_PREVMAPID);
 					
 					if (prevEmuKey < 0  || prevMapId == null || prevMapId.compareTo(_curPresetID) != 0)
@@ -451,7 +460,8 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 					int systemKey = data.getIntExtra(InputCaptureView.RESULT_KEYCODE, -1);
 					if (unMap)
 					{
-						_curInputMap.removeKeyMapEntry(prevSystemKey);
+						//_curInputMap.removeKeyMapEntry(prevSystemKey);
+						_curInputMap.removeDestKeyMapEntry(prevEmuKey);
 					}
 					else if (systemKey >= 0)
 					{
@@ -461,19 +471,25 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 					// update list items
 					{
 						int numItems = _adapter.getCount();
-						Map<Integer, Integer> destToSrcMap = _curInputMap.destToSrcMap;
-						if (destToSrcMap != null)
+						Map<Integer, List<Integer>> emuToSystemMap = _curInputMap.destToSrcMap;
+						if (emuToSystemMap != null)
 						{
 							for (int i = 0; i < numItems; ++i)
 							{
 								InputMapListItem li = _adapter.getItem(i);
-								if (li != null && destToSrcMap.containsKey(li._vkDef.id))
+								if (li != null)
 								{
-									li._systemKey = _curInputMap.destToSrcMap.get(li._vkDef.id);
-								}
-								else
-								{
-									li._systemKey = -1;
+									int [] systemKeys = null;
+									List<Integer> systemKeysList = emuToSystemMap.get(li._vkDef.id);
+									if (systemKeysList != null && systemKeysList.size() > 0)
+									{
+										systemKeys = new int [systemKeysList.size()];
+										for (int s = 0; s < systemKeysList.size(); ++s)
+										{
+											systemKeys[s] = systemKeysList.get(s);
+										}
+									}
+									li._systemKeys = systemKeys;
 								}
 							}
 						}
