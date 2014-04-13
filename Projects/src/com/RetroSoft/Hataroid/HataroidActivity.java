@@ -333,6 +333,8 @@ public class HataroidActivity extends Activity
 			{
 				public void run()
 				{
+					Thread.currentThread().setPriority(Thread.NORM_PRIORITY+1);
+					
 					HataroidNativeLib.emulationInit(HataroidActivity.instance, optionKeys, valKeys);
 					emuThreadMain();
 				}

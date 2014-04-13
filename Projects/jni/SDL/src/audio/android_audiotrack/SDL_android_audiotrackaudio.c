@@ -115,13 +115,18 @@ static void ANDROIDAUDIOTRACK_WaitAudio(_THIS)
 	/* Don't block on first calls to simulate initial fragment filling. */
 	if (this->hidden->initial_calls)
 		this->hidden->initial_calls--;
-	else
-		SDL_Delay(this->hidden->write_delay);
+//	else
+//		SDL_Delay(this->hidden->write_delay);
 }
 
 static void ANDROIDAUDIOTRACK_PlayAudio(_THIS)
 {
 	struct SDL_PrivateAudioData *hidden = this->hidden;
+
+	if (hidden->numjShorts == 0)
+	{
+		return;
+	}
 
 	JNIEnv *j_env = hidden->playThreadjenv; //g_jniAudioInterface.android_env;
 	if (j_env)

@@ -1,3 +1,24 @@
+v1.532
+- reduce audio stuttering on some devices
+- save/load dialog now works better on high-res devices
+
+v1.530
+- Support for customizing size of on-screen keys
+- Input mapping now supports mapping multiple buttons to the same key
+- Option to hide the on-screen joystick
+
+v1.520
+- Shortcut keys are now configurable:
+         - Settings -> Input -> Configure Shortcut Keys
+         - Click "New" to create a new mapping (The default one is read only)
+
+- Removed "Show extra keys" and "Hide Turbo Button" options as these are now configurable from the Shortcut keys configuration
+
+v1.510
+- fix write protect off not storing changes on quit
+- add option to hide top right keys
+- save states now save screen pos & zoom, keyboard pos & zoom and mouse/joystick selection
+
 version 1.50
 - upgrade from android sdk 8 (froyo) to 19 (kit kat)
 - save states support

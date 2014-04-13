@@ -2099,7 +2099,7 @@ void VirtKB_SetJoystickFireSize(float size)
 
 void VirtKB_setObsessionKeys(bool set)
 {
-	g_doubleBuffer = set ? 0 : 1;
+	//g_doubleBuffer = set ? 0 : 1;
 
 	s_vkbObsessionKeys = set;
 	s_recreateQuickKeys = true;

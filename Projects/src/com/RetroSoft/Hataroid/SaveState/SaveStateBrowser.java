@@ -7,13 +7,16 @@ import java.util.List;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.view.Display;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
@@ -56,6 +59,8 @@ public class SaveStateBrowser extends ListActivity
 	private BitFlags			_usedSlots = new BitFlags(kMaxSlots);
 
 	private Intent				_retIntent;
+	
+	public static int			dispWidth = 1024;
 
 	@Override public void onCreate(Bundle savedInstanceState)
 	{
@@ -64,13 +69,21 @@ public class SaveStateBrowser extends ListActivity
 		try
 		{
 			requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+			Display display = getWindowManager().getDefaultDisplay();
+			dispWidth = display.getWidth();
+
+			// inflate and adjust layout
+			LayoutInflater inflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+			View layout = inflater.inflate(R.layout.savestate_view, null);
+			layout.setMinimumWidth((int)(dispWidth * 0.65f));
+
+			setContentView(layout);
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
-
-		setContentView(R.layout.savestate_view);
 
     	parseOptions(savedInstanceState);
 		setupButtonListeners();

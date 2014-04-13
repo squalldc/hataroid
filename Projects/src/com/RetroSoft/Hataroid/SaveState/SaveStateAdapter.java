@@ -13,8 +13,10 @@ import java.util.List;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Bitmap.Config;
 import android.graphics.Color;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -136,8 +138,46 @@ public class SaveStateAdapter extends ArrayAdapter<SaveStateListItem>
 					SaveMetaData metaData = new SaveMetaData();
 					if (_readSaveMetaFile(item.getPath(), metaData))
 					{
-						i1.setImageBitmap(metaData.bmp);
+						Bitmap newBmp = null;;
+					    try
+					    {
+						    int dw = SaveStateBrowser.dispWidth/9;
+						    int dh = dw;
+
+						    Bitmap src = metaData.bmp;
+						    int sw = src.getWidth();
+						    int sh = src.getHeight();
+						    
+						    if (dw > (sw*1.5f))
+						    {
+							    float saspect = (float)sw/(float)sh;
+							    float daspect = (float)dw/(float)dh;
+							    
+							    int nw = sw;
+							    int nh = sh;
+							    
+							    if (daspect > saspect)
+							    {
+							    	nh = dh;
+							    	nw = (int)(dh * saspect);
+							    }
+							    else
+							    {
+							    	nw = dw;
+							    	nh = (int)(nw / saspect);
+							    }
+	
+							    newBmp = Bitmap.createScaledBitmap(src, nw, nh, true);
+						    }
+					    }
+						catch (Exception e) { }
+					    
+					    if (newBmp == null)
+					    {
+					    	newBmp = metaData.bmp;
+					    }
 						i1.setScaleType(ScaleType.FIT_CENTER);
+					    i1.setImageBitmap(newBmp);
 						clearImage = false;
 					}
 				}
