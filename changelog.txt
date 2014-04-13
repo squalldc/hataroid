@@ -1,3 +1,6 @@
+v1.533
+- fix slowdown in menus introduced in last update
+
 v1.532
 - reduce audio stuttering on some devices
 - save/load dialog now works better on high-res devices

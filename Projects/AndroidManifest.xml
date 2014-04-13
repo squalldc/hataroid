@@ -20,8 +20,8 @@
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.RetroSoft.Hataroid"
-    android:versionCode="1532"
-    android:versionName="1.532" >
+    android:versionCode="1533"
+    android:versionName="1.533" >
 
     <uses-sdk
         android:minSdkVersion="9"
