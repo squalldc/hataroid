@@ -31,12 +31,45 @@ int SdlAudioBufferSize = 0;			/* in ms (0 = use default) */
 int pulse_swallowing_count = 0;			/* Sound disciplined emulation rate controlled by  */
 						/*  window comparator and pulse swallowing counter */
 
+volatile int _validLenBytes = 0;
+
+extern int g_vsync;
+extern volatile int g_emuReady;
+extern volatile int _doubleBusError;
+
+static Sint64 s_lastValidTime = 0;
+
 /*-----------------------------------------------------------------------*/
 /**
  * SDL audio callback function - copy emulation sound to audio system.
  */
+extern volatile int _runTillQuit;
+
 static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 {
+	Sint64 curTicks = 1000L * (SDL_GetTicks());
+
+	_validLenBytes = 0;
+
+	if (nGeneratedSamples == 0 || _runTillQuit != 0 || _doubleBusError)// && g_emuReady != 0)
+	{
+		if ((curTicks - s_lastValidTime) < ((nScreenRefreshRate==50) ? (1000000/50) : (1000000/60)))
+		{
+			return;
+		}
+		else
+		{
+			//Debug_Printf("ticks: %u", (unsigned int)(curTicks - s_lastValidTime));
+
+			memset(stream, 0, (len));
+			_validLenBytes = len;
+			s_lastValidTime = curTicks;
+			return;
+		}
+	}
+
+	s_lastValidTime = curTicks;
+
 	Sint16 *pBuffer;
 	int i, window, nSamplesPerFrame;
 
@@ -84,29 +117,56 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][0];
 			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][1];
 		}
+
 		CompleteSndBufIdx += len;
 		nGeneratedSamples -= len;
+
+		_validLenBytes = len<<2;
+
+		CompleteSndBufIdx = CompleteSndBufIdx % MIXBUFFER_SIZE;
 	}
 	else  /* Not enough samples available: */
 	{
+#if 0
 		for (i = 0; i < nGeneratedSamples; i++)
 		{
 			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][0];
 			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][1];
 		}
+		_validLenBytes = nGeneratedSamples<<2;
+#endif
+
+		_validLenBytes = nGeneratedSamples<<2;
+		memset(stream, 0, _validLenBytes);
+
+#if 0
+
 		/* If the buffer is filled more than 50%, mirror sample buffer to fake the
 		 * missing samples */
+		/*
 		if (nGeneratedSamples >= len/2)
 		{
 			int remaining = len - nGeneratedSamples;
-			memcpy(pBuffer, stream+(nGeneratedSamples-remaining)*4, remaining*4);
+			int startOffset = nGeneratedSamples - remaining;
+			memcpy(pBuffer, stream+(startOffset*4), remaining*4);
+			_validLenBytes += remaining<<2;
 		}
+		//*/
+
 		CompleteSndBufIdx += nGeneratedSamples;
 		nGeneratedSamples = 0;
-		
+#endif
+
+		CompleteSndBufIdx = CompleteSndBufIdx % MIXBUFFER_SIZE;
 	}
 
-	CompleteSndBufIdx = CompleteSndBufIdx % MIXBUFFER_SIZE;
+	// zero out the rest
+	int zeroCount = (len<<2) - _validLenBytes;
+	if (zeroCount > 0)
+	{
+		memset(stream+_validLenBytes, 0, zeroCount);
+	}
+	//_validLenBytes = len<<2;
 }
 
 

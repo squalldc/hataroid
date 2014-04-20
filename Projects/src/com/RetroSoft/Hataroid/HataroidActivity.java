@@ -464,7 +464,20 @@ public class HataroidActivity extends Activity
 		_viewGL2.onResume();
 		
 		resumeEmulation();
-		playAudio();
+		_checkPlayAudio();
+	}
+	
+	private void _checkPlayAudio()
+	{
+		boolean paused = HataroidNativeLib.emulatorGetUserPaused();
+		if (paused)
+		{
+			pauseAudio();
+		}
+		else
+		{
+			playAudio();
+		}
 	}
 	
 	private void pauseEmulation()
@@ -503,8 +516,8 @@ public class HataroidActivity extends Activity
 	    				bufSizeBytes,
 	    				AudioTrack.MODE_STREAM);
 	
-	    		_audioTrack.play();
 	    		_audioPaused = false;
+	    		_checkPlayAudio();
     		}
     		catch (Exception e)
     		{
@@ -588,6 +601,7 @@ public class HataroidActivity extends Activity
     	{
     		Log.i(LOG_TAG, "Pausing Audio");
     		_audioTrack.pause();
+        	_addSilence();
     	}
     	_audioPaused = true;
     }
@@ -598,19 +612,41 @@ public class HataroidActivity extends Activity
     	{
     		Log.i(LOG_TAG, "Playing Audio");
     		_audioTrack.play();
+        	_addSilence();
     	}
     	_audioPaused = false;
     }
+
+	void _addSilence()
+	{
+    	if (_audioTrack != null)
+    	{
+//    		_audioTrack.flush();
+			
+/*
+			short[] silence = new short [2048];
+    		for (int i = 0; i < 5; ++i)
+    		{
+    			_audioTrack.write(silence, 0, silence.length);
+    		}
+ */
+    	}
+	}
     
-    public void sendAudio(short data [])
+    public void sendAudio(short data [], int len, int flush)
     {
     	if (_audioTrack != null && !_audioPaused)
     	{
-    		_audioTrack.write(data, 0, data.length);
+    		if (flush != 0)// || flushNow)
+    		{
+    			_audioTrack.flush();
+    		}
     		if (_audioTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING)
     		{
+    			//_audioTrack.flush();
     			_audioTrack.play();
     		}
+    		_audioTrack.write(data, 0, len);//data.length);
     	}
     }
     

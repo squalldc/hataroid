@@ -45,7 +45,7 @@ struct JNIMainMethodCache
 {
 	JNIEnv *android_env;
 	jobject android_mainActivity;
-	int mainActivityGlobalRefObtained;
+	volatile int mainActivityGlobalRefObtained;
 
 	JNIEnv *android_mainEmuThreadEnv;
 	jmethodID showGenericDialog;

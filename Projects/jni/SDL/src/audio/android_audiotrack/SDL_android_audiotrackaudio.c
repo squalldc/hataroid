@@ -53,6 +53,8 @@ static void deinitAndroidAudio(_THIS);
 
 int SdlDeviceBufferSizeScale = 18;
 
+extern volatile int g_validMainActivity;
+
 /* Audio driver bootstrap functions */
 static int ANDROIDAUDIOTRACK_Available(void)
 {
@@ -114,29 +116,93 @@ static void ANDROIDAUDIOTRACK_WaitAudio(_THIS)
 {
 	/* Don't block on first calls to simulate initial fragment filling. */
 	if (this->hidden->initial_calls)
-		this->hidden->initial_calls--;
+	{
+		//this->hidden->initial_calls--;
+	}
+	else if (g_validMainActivity == 0)
+	{
+		SDL_Delay(this->hidden->write_delay);
+	}
 	else
+	{
 		SDL_Delay(1);//this->hidden->write_delay);
+	}
 }
+
+extern volatile int _validLenBytes;
+extern volatile int g_emuReady;
+
+extern int kMaxAudioMuteFrames;
+extern volatile int g_audioMute;
+extern volatile int g_audioMuteFrames;
 
 static void ANDROIDAUDIOTRACK_PlayAudio(_THIS)
 {
 	struct SDL_PrivateAudioData *hidden = this->hidden;
 
-	if (hidden->numjShorts == 0)
+	int validShorts = _validLenBytes >> 1;
+
+	if (hidden->numjShorts == 0 || this->paused || validShorts <= 0)// || _doubleBusError)// || g_emuReady == 0)
 	{
 		return;
+	}
+
+	if (this->hidden->initial_calls)
+	{
+		this->hidden->initial_calls--;
 	}
 
 	JNIEnv *j_env = hidden->playThreadjenv; //g_jniAudioInterface.android_env;
 	if (j_env)
 	{
-		(*j_env)->SetShortArrayRegion(j_env,
-				hidden->playThreadjavaSendBuf, 0, hidden->numjShorts, (int16_t*)this->hidden->mixbuf);
+		validShorts = validShorts > hidden->numjShorts ? hidden->numjShorts : validShorts;
 
-		(*j_env)->CallVoidMethod(j_env,
-				g_jniAudioInterface.android_mainActivity, g_jniAudioInterface.sendAudio, this->hidden->playThreadjavaSendBuf);
+		if (g_validMainActivity)
+		{
+			if (g_audioMute)
+			{
+				memset(this->hidden->mixbuf, 0, hidden->numjShorts<<1);
+				(*j_env)->SetShortArrayRegion(j_env, hidden->playThreadjavaSendBuf, 0, hidden->numjShorts, (int16_t*)this->hidden->mixbuf);
+				(*j_env)->CallVoidMethod(j_env, g_jniAudioInterface.android_mainActivity, g_jniAudioInterface.sendAudio, this->hidden->playThreadjavaSendBuf, hidden->numjShorts, 0);
+			}
+			else if (g_audioMuteFrames > 0)
+			{
+				int i;
+
+				memset(this->hidden->mixbuf, 0, hidden->numjShorts<<1);
+
+				(*j_env)->SetShortArrayRegion(j_env, hidden->playThreadjavaSendBuf, 0, hidden->numjShorts, (int16_t*)this->hidden->mixbuf);
+
+				int offsetCount = (int)(SdlDeviceBufferSizeScale / 20);
+				int flush = g_audioMuteFrames == 1 || g_audioMuteFrames == kMaxAudioMuteFrames;
+				if (g_audioMuteFrames > 1)
+				{
+					offsetCount = 1;
+				}
+				if (offsetCount < 1)
+				{
+					offsetCount = 1;
+				}
+				for (i = 0; i < offsetCount; ++i)
+				{
+					(*j_env)->CallVoidMethod(j_env, g_jniAudioInterface.android_mainActivity, g_jniAudioInterface.sendAudio, this->hidden->playThreadjavaSendBuf, hidden->numjShorts, flush);
+					flush = 0;
+				}
+
+				--g_audioMuteFrames;
+			}
+			else
+			{
+				(*j_env)->SetShortArrayRegion(j_env,
+						hidden->playThreadjavaSendBuf, 0, validShorts, (int16_t*)this->hidden->mixbuf);
+
+				(*j_env)->CallVoidMethod(j_env,
+						g_jniAudioInterface.android_mainActivity, g_jniAudioInterface.sendAudio, this->hidden->playThreadjavaSendBuf, validShorts, 0);
+			}
+		}
 	}
+
+	_validLenBytes = 0;
 }
 
 static Uint8 *ANDROIDAUDIOTRACK_GetAudioBuf(_THIS)
