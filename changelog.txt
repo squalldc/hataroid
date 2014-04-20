@@ -1,3 +1,9 @@
+v1.535
+- more audio tweaks and fixes
+
+v1.534
+- fix possible crash
+
 v1.533
 - fix slowdown in menus introduced in last update
 
