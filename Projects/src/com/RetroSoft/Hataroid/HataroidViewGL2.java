@@ -555,7 +555,11 @@ class HataroidViewGL2 extends GLSurfaceView
 					mouseX, mouseY, mouseBtns,
 					keyPresses);
 
-			HataroidNativeLib.onDrawFrame();
+			boolean forceQuit = HataroidNativeLib.onDrawFrame();
+			if (forceQuit)
+			{
+				ha.quitHataroid();
+			}
 		}
 
 		public void onSurfaceChanged(GL10 gl, int width, int height)

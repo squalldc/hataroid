@@ -13,7 +13,7 @@ public class HataroidNativeLib
 	
 	public static native void onSurfaceCreated();
 	public static native void onSurfaceChanged(int width, int height);
-	public static native void onDrawFrame();
+	public static native boolean onDrawFrame();
 
     public static native void updateInput(	boolean t0, float tx0, float ty0,
     										boolean t1, float tx1, float ty1,

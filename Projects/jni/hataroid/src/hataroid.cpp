@@ -41,7 +41,7 @@ extern "C"
 
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_onSurfaceCreated(JNIEnv * env, jobject obj);
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_onSurfaceChanged(JNIEnv * env, jobject obj, jint width, jint height);
-	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_onDrawFrame(JNIEnv * env, jobject obj);
+	JNIEXPORT jboolean JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_onDrawFrame(JNIEnv * env, jobject obj);
 
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSetOptions(JNIEnv * env, jobject obj, jobjectArray keyarray, jobjectArray valarray);
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorResetCold(JNIEnv * env, jobject obj);
@@ -73,6 +73,7 @@ extern "C"
 	extern int hatari_main_init(int argc, const char *argv[]);
 	extern int hatari_main_doframe();
 	extern void hatari_main_exit();
+	extern void hatari_setCPUBrk();
 	extern void SDL_CloseAudio();
 	extern bool Main_PauseEmulation(bool visualize);
 	extern bool Main_UnPauseEmulation(void);
@@ -116,6 +117,8 @@ static volatile bool envInited = false;
 static volatile bool emuQuit = false;
 static volatile bool _saveAndQuit = false;
 static volatile bool _pendingQuit = false;
+
+static volatile int _drawCountSinceLastUpdate = 0;
 
 volatile int _doubleBusError = 0;
 
@@ -297,6 +300,7 @@ static void _initEmulator()
 		hatari_main_init(1, argv);
 
 		emuInited = true;
+		_drawCountSinceLastUpdate = 0;
 	}
 }
 
@@ -374,6 +378,8 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationMa
 	{
 		if (g_emuReady && !emuQuit)
 		{
+			_drawCountSinceLastUpdate = 0;
+
 			if (!_saveAndQuit && g_audioMute && s_loadingCommand == 0)
 			{
 				g_audioMuteFrames = kMaxAudioMuteFrames;
@@ -523,7 +529,25 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_onSurfaceCh
 	_checkEmuReady();
 }
 
-JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_onDrawFrame(JNIEnv * env, jobject obj)
+bool _crashQuit = false;
+bool _checkCrash()
+{
+	if (g_emuReady && _saveAndQuit && !_pendingQuit && !_doubleBusError && !_crashQuit)
+	{
+		++_drawCountSinceLastUpdate;
+		if (_drawCountSinceLastUpdate > 120)
+		{
+			Debug_Printf("*** CRASH FORCE QUITTING...");
+			_crashQuit = true;
+			//hatari_setCPUBrk();
+			//requestQuitHataroid();
+			return true;
+		}
+	}
+	return false;
+}
+
+JNIEXPORT jboolean JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_onDrawFrame(JNIEnv * env, jobject obj)
 {
 	if (g_emuReady)
 	{
@@ -548,7 +572,14 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_onDrawFrame
 //*/
 		renderFrame();
 		_frameReady = true;
+
+		if (_checkCrash())
+		{
+			return true;
+		}
 	}
+
+	return false;
 }
 
 int getTurboSpeed() { return s_turboSpeed; }
@@ -1514,7 +1545,11 @@ void EmuCommandResetCold_Run(EmuCommand *command)
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorResetCold(JNIEnv * env, jobject obj)
 {
 	Debug_Printf("----> Cold Reset Command");
-	if (emuInited) { addEmuCommand(EmuCommandResetCold_Run, NULL, NULL); }
+	if (emuInited)
+	{
+		//hatari_setCPUBrk();
+		addEmuCommand(EmuCommandResetCold_Run, NULL, NULL);
+	}
 }
 
 void EmuCommandResetWarm_Run(EmuCommand *command)
@@ -1657,6 +1692,9 @@ void EmuCommandSaveState_Run(EmuCommand *command)
 			Debug_Printf("----> Auto Save saved...");
 
 			_pendingQuit = true;
+
+			hatari_setCPUBrk();
+
 			//RequestAndWaitQuit();
 			break;
 		}
@@ -1856,6 +1894,7 @@ void _hataroidRetrieveSaveExtraData()
 
 void _loadSaveState()
 {
+	Debug_Printf("Loading save state...");
 	int restoreResult = MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, false);
 	if (restoreResult == 0)
 	{
@@ -1954,10 +1993,16 @@ void _loadSaveState()
 	{
 		s_loadingCommand = 0;
 	}
+
+	//hatari_setCPUBrk();
+
+	Debug_Printf("Loading done.");
 }
 
 void _storeSaveState(const char *saveMetaFilePath)
 {
+	Debug_Printf("Storing save state...");
+
 	// save state
 	{
 		MemorySnapShot_setConfirmOnOverwriteSave(false);
@@ -2244,6 +2289,8 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSav
 		_createNewSaveStateCommand(env, obj, path, filepath, saveSlot, EmuCommandSaveState_Data::OpLoad);
 		g_audioMute = 1;
 		++s_loadingCommand;
+
+		//hatari_setCPUBrk();
 	}
 }
 
@@ -2279,6 +2326,7 @@ void hataroid_setDoubleBusError()
 		_clearHataroidSaveCommands();
 
 		Debug_Printf("----> DBError, Request and wait quit");
+		hatari_setCPUBrk();
 		RequestAndWaitQuit();
 	}
 }

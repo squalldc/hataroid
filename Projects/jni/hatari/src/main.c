@@ -251,6 +251,11 @@ void Main_RequestQuit(void)
 	}
 }
 
+void hatari_setCPUBrk()
+{
+	M68000_SetSpecial(SPCFLAG_BRK);
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * Set how many VBLs Hatari should run, from the moment this function
