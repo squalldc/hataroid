@@ -53,8 +53,8 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "statusbar.h"
 
 
-#define VERSION_STRING        "1.7.2"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
-#define VERSION_INT			   1702
+#define VERSION_STRING        "1.7.3"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_INT			   1703
 
 #define COMPRESS_MEMORYSNAPSHOT       /* Compress snapshots to reduce disk space used */
 
@@ -189,8 +189,10 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 		/* Restore version string */
 		MemorySnapShot_Store(VersionString, sizeof(VersionString));
 
+		// HACK: store this properly
 		gSaveVersion = 0;
 		if (strcasecmp(VersionString, VERSION_STRING)==0)	{ gSaveVersion = VERSION_INT; }
+		else if (strcasecmp(VersionString, "1.7.2")==0)		{ gSaveVersion = 1702; }
 		else if (strcasecmp(VersionString, "1.7.1")==0)		{ gSaveVersion = 1701; }
 		else if (strcasecmp(VersionString, "1.7.0")==0)		{ gSaveVersion = 1700; }
 

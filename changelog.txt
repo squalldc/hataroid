@@ -1,3 +1,7 @@
+v1.540
+- support for game database
+- fix hang on quit in a rare case
+
 v1.535
 - more audio tweaks and fixes
 

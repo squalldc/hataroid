@@ -31,6 +31,8 @@ import android.view.View;
 import android.view.WindowManager;
 
 import com.RetroSoft.Hataroid.FileBrowser.FileBrowser;
+import com.RetroSoft.Hataroid.GameDB.GameDBHelper;
+import com.RetroSoft.Hataroid.GameDB.IGameDBScanner;
 import com.RetroSoft.Hataroid.Help.HelpActivity;
 import com.RetroSoft.Hataroid.Input.Input;
 import com.RetroSoft.Hataroid.Input.InputMapConfigureView;
@@ -40,7 +42,7 @@ import com.RetroSoft.Hataroid.Preferences.Settings;
 import com.RetroSoft.Hataroid.SaveState.SaveStateBrowser;
 
 
-public class HataroidActivity extends Activity
+public class HataroidActivity extends Activity implements IGameDBScanner
 {
 	public static final String LOG_TAG = "hataroid";
 
@@ -69,6 +71,8 @@ public class HataroidActivity extends Activity
 	
 	boolean						_tryUseImmersiveMode = false;
 	boolean						_wantImmersiveMode = false;
+
+	private GameDBHelper		_gameDB = null;
 
 	@Override protected void onCreate(Bundle icicle)
 	{
@@ -100,7 +104,16 @@ public class HataroidActivity extends Activity
 			e.printStackTrace();
 		}
 
-        System.loadLibrary("hataroid");
+		try
+		{
+			_gameDB = new GameDBHelper(getApplicationContext());
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
+		System.loadLibrary("hataroid");
         
         _viewGL2 = new HataroidViewGL2(getApplication(), false, 0, 0);
 		setContentView(_viewGL2);
@@ -292,6 +305,21 @@ public class HataroidActivity extends Activity
 	
 	@Override protected void onDestroy()
 	{
+		try
+		{
+			clearGameDBScannerInterface();
+
+			if (_gameDB != null)
+			{
+				_gameDB.closeDB();
+				_gameDB = null;
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
 		instance = null;
 
 		Log.i(LOG_TAG, "stoppping emulation thread");
@@ -386,6 +414,8 @@ public class HataroidActivity extends Activity
 		{
 			_resume();
 		}
+
+		setGameDBScannerInterface(this);
 	}
 
 	@Override public void onWindowFocusChanged(boolean hasFocus)
@@ -803,6 +833,7 @@ public class HataroidActivity extends Activity
 			case R.id.floppyb:
 			{
 		        Intent fileBrowser = new Intent(this, FileBrowser.class);
+		        fileBrowser.putExtra(FileBrowser.CONFIG_REFRESHDB, true);
 		        startActivityForResult(fileBrowser, (id==R.id.floppya)?ACTIVITYRESULT_FLOPPYA:ACTIVITYRESULT_FLOPPYB);
 		        return true;
 			}
@@ -896,7 +927,8 @@ public class HataroidActivity extends Activity
 				{
 					String filePath = data.getStringExtra(FileBrowser.RESULT_PATH);
 					String zipPath = data.getStringExtra(FileBrowser.RESULT_ZIPPATH);
-					HataroidNativeLib.emulatorInsertFloppy((requestCode==ACTIVITYRESULT_FLOPPYA) ? 0 : 1, filePath, zipPath);
+					String dispName = data.getStringExtra(FileBrowser.RESULT_DISPLAYNAME);
+					HataroidNativeLib.emulatorInsertFloppy((requestCode==ACTIVITYRESULT_FLOPPYA) ? 0 : 1, filePath, zipPath, dispName);
 					
 					if (data.hasExtra(FileBrowser.RESULT_RESETCOLD))
 					{
@@ -1305,4 +1337,43 @@ public class HataroidActivity extends Activity
 		}
 	}
 
+	public void onGameDBScanComplete() { }
+	public Activity getGameDBScanActivity() { return this; }
+
+	public GameDBHelper getGameDB()
+	{
+		return _gameDB;
+	}
+
+	public void refreshGameDB(String path, String [] exts, boolean recurse, IGameDBScanner scanInterface)
+	{
+		if (_gameDB != null && path != null)
+		{
+			_gameDB.scanFolder(getAssets(), path, exts, recurse, scanInterface);
+		}
+	}
+
+	public void clearGameDB(String path, boolean recurse, IGameDBScanner scanInterface)
+	{
+		if (_gameDB != null && path != null)
+		{
+			_gameDB.clearFolder(path, recurse, scanInterface);
+		}
+	}
+
+	public void clearGameDBScannerInterface()
+	{
+		if (_gameDB != null)
+		{
+			_gameDB.clearScanInterface();
+		}
+	}
+
+	public void setGameDBScannerInterface(IGameDBScanner scanInterface)
+	{
+		if (_gameDB != null)
+		{
+			_gameDB.setScanInterface(scanInterface);
+		}
+	}
 }

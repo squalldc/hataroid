@@ -10,6 +10,7 @@ public class SaveStateListItem implements Comparable<SaveStateListItem>
 	
 	private int			_slotID;
 	private String		_saveName;
+	private String		_dispName = "";
 	
 	private boolean		_sortFirstItem = false;
 	private boolean		_isQuickSaveSlot = false;
@@ -61,6 +62,9 @@ public class SaveStateListItem implements Comparable<SaveStateListItem>
 	
 	public int getSlotID()					{ return _slotID; }
 	public String getSaveName()				{ return _saveName; }
+
+	public String getDispName()				{ return _dispName; }
+	public void setDispName(String s)		{ _dispName = s; }
 
 	public int compareTo(SaveStateListItem o)
 	{

@@ -55,8 +55,16 @@ public class FileArrayAdapter extends ArrayAdapter<FileListItem>
 
 			if (t1 != null)
 			{
-				t1.setText(item.getName());
-				t1.setTextColor(Color.WHITE);
+				if (item.isDBEntry())
+				{
+					t1.setText(item.getDisplayName() + " (" + item.getName() + ")");
+					t1.setTextColor(Color.YELLOW);
+				}
+				else
+				{
+					t1.setText(item.getDisplayName());
+					t1.setTextColor(Color.WHITE);
+				}
 			}
 			if (i1 != null)
 			{

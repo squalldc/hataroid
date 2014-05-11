@@ -47,7 +47,7 @@ extern "C"
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorResetCold(JNIEnv * env, jobject obj);
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorResetWarm(JNIEnv * env, jobject obj);
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorEjectFloppy(JNIEnv * env, jobject obj, jint floppy);
-	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorInsertFloppy(JNIEnv * env, jobject obj, jint floppy, jstring filename, jstring zippath);
+	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorInsertFloppy(JNIEnv * env, jobject obj, jint floppy, jstring filename, jstring zippath, jstring dispName);
 
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSaveStateSave(JNIEnv * env, jobject obj, jstring path, jstring filepath, jint saveSlot);
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSaveStateLoad(JNIEnv * env, jobject obj, jstring path, jstring filepath, jint saveSlot);
@@ -117,6 +117,8 @@ static volatile bool envInited = false;
 static volatile bool emuQuit = false;
 static volatile bool _saveAndQuit = false;
 static volatile bool _pendingQuit = false;
+static volatile bool _saving = false;
+static bool _crashQuit = false;
 
 static volatile int _drawCountSinceLastUpdate = 0;
 
@@ -132,6 +134,8 @@ static int _shortcutAutoFire = -1;
 
 static int _quickSaveSlot = -1;
 static char _quickSavePath[FILENAME_MAX] = {0};
+static char _saveDispName[FILENAME_MAX] = {0};
+
 
 static void SetEmulatorOptions(JNIEnv * env, jobjectArray keyarray, jobjectArray valarray, bool apply, bool init, bool queueCommand);
 void _storeSaveState(const char *saveMetaFilePath);
@@ -410,6 +414,7 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationMa
 					_pendingQuit = false;
 					g_emuReady = false;
 					requestQuitHataroid();
+					//RequestAndWaitQuit();
 				}
 			}
 		}
@@ -529,13 +534,12 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_onSurfaceCh
 	_checkEmuReady();
 }
 
-bool _crashQuit = false;
 bool _checkCrash()
 {
-	if (g_emuReady && _saveAndQuit && !_pendingQuit && !_doubleBusError && !_crashQuit)
+	if (g_emuReady && _saveAndQuit && !_pendingQuit && !_doubleBusError && !_crashQuit && !_saving)
 	{
 		++_drawCountSinceLastUpdate;
-		if (_drawCountSinceLastUpdate > 120)
+		if (_drawCountSinceLastUpdate > 180)
 		{
 			Debug_Printf("*** CRASH FORCE QUITTING...");
 			_crashQuit = true;
@@ -1596,6 +1600,7 @@ struct EmuCommandInsertFloppy_Data
 	int floppyID;
 	char *floppyFileName;
 	char *floppyZipPath;
+	char *dispName;
 };
 
 void EmuCommandInsertFloppy_Run(EmuCommand *command)
@@ -1607,6 +1612,12 @@ void EmuCommandInsertFloppy_Run(EmuCommand *command)
 
 	Floppy_SetDiskFileName(data->floppyID, data->floppyFileName, data->floppyZipPath);
 	Floppy_InsertDiskIntoDrive(data->floppyID);
+
+	_saveDispName[0] = 0;
+	if (data->dispName != 0)
+	{
+		strcpy(_saveDispName, data->dispName);
+	}
 
 	Debug_Printf("----> Inserted Floppy: (%s)(%s) into drive (%c)", data->floppyFileName, data->floppyZipPath ? data->floppyZipPath : "direct", data->floppyID?'B':'A');
 
@@ -1648,6 +1659,7 @@ void EmuCommandSaveState_Run(EmuCommand *command)
 	{
 		case EmuCommandSaveState_Data::OpSave:
 		{
+			_saving = true;
 			Debug_Printf("Deleting: %s\n", data->saveStateFilePath);
 			remove(data->saveStateFilePath); // TODO: check error codes
 
@@ -1657,6 +1669,7 @@ void EmuCommandSaveState_Run(EmuCommand *command)
 			_storeSaveState(saveMetaFilePath);
 
 			delete [] saveMetaFilePath;
+			_saving = false;
 			break;
 		}
 		case EmuCommandSaveState_Data::OpLoad:
@@ -1676,6 +1689,7 @@ void EmuCommandSaveState_Run(EmuCommand *command)
 		}
 		case EmuCommandSaveState_Data::OpSaveAutoSave:
 		{
+			_saving = true;
 			Debug_Printf("----> Saving auto save...");
 
 			char* saveMetaFilePath = new char [FILENAME_MAX];
@@ -1696,6 +1710,7 @@ void EmuCommandSaveState_Run(EmuCommand *command)
 			hatari_setCPUBrk();
 
 			//RequestAndWaitQuit();
+			_saving = false;
 			break;
 		}
 		case EmuCommandSaveState_Data::OpLoadAutoSave:
@@ -1710,6 +1725,7 @@ void EmuCommandSaveState_Run(EmuCommand *command)
 		}
 		case EmuCommandSaveState_Data::OpSaveQuickSave:
 		{
+			_saving = true;
 			Debug_Printf("----> Saving quick save...");
 
 			if (_quickSaveSlot == -1 || _quickSavePath[0] == 0)
@@ -1733,6 +1749,7 @@ void EmuCommandSaveState_Run(EmuCommand *command)
 
 			delete [] saveMetaFilePath;
 			delete [] metaBaseName;
+			_saving = false;
 			break;
 		}
 		case EmuCommandSaveState_Data::OpLoadQuickSave:
@@ -1890,6 +1907,8 @@ void _hataroidRetrieveSaveExtraData()
 	ConfigureParams.Hataroid.kbdPanY = VirtKB_getVKBPanY();
 
 	ConfigureParams.Hataroid.mouseActive = VirtKB_getMouseActive();
+
+	strcpy(ConfigureParams.Hataroid.saveDispName, _saveDispName);
 }
 
 void _loadSaveState()
@@ -1903,6 +1922,7 @@ void _loadSaveState()
 		int numSaveExtraOptions = 0;
 		bool hataroidExtraFullScreen = false;
 
+		_saveDispName[0] = 0;
 		if (gHasHataroidSaveExtra != 0)
 		{
 			// restore hataroid settings
@@ -1923,6 +1943,8 @@ void _loadSaveState()
 
 			bool mouseActive = ConfigureParams.Hataroid.mouseActive;
 			VirtKB_SetMouseActive(mouseActive);
+
+			strcpy(_saveDispName, ConfigureParams.Hataroid.saveDispName);
 		}
 
 		// back propagate settings back to java activity settings
@@ -2014,12 +2036,28 @@ void _storeSaveState(const char *saveMetaFilePath)
 		FILE *metaFile = fopen(saveMetaFilePath, "w");
 		if (metaFile != 0)
 		{
-			const int kVersion = 1;
-			const int kHeaderSize = 3 * 4;
+			const int kVersion = 2;
+			const int kThumbWidth = 80;
+			const int kThumbHeight = 60;
+
+			const int kHeaderSize = 4 * 4; // version, width, height, dispNameLen
 
 			fwrite("hsst", 4, 1, metaFile);
 			fwrite(&kHeaderSize, 4, 1, metaFile);
+
+			int dispNameLen = strlen(_saveDispName);
+			if (dispNameLen > 0) { ++dispNameLen; }
+
 			fwrite(&kVersion, 4, 1, metaFile);
+			fwrite(&kThumbWidth, 4, 1, metaFile);
+			fwrite(&kThumbHeight, 4, 1, metaFile);
+			fwrite(&dispNameLen, 4, 1, metaFile);
+
+			// disp name
+			if (dispNameLen > 0)
+			{
+				fwrite(_saveDispName, 1, dispNameLen, metaFile);
+			}
 
 			// generate thumbnail
 			{
@@ -2030,15 +2068,10 @@ void _storeSaveState(const char *saveMetaFilePath)
 					int emuScrW = g_surface_width;
 					int emuScrH = g_surface_height;
 
-					const int kThumbWidth = 80;
-					const int kThumbHeight = 60;
 					float skipX = emuScrW / (float)kThumbWidth;
 					float skipY = emuScrH / (float)kThumbHeight;
 					int iSkipX = (int)skipX;
 					int iSkipY = (int)skipY;
-
-					fwrite(&kThumbWidth, 4, 1, metaFile);
-					fwrite(&kThumbHeight, 4, 1, metaFile);
 
 					int maxSrcW = emuScrW-1;
 					int maxSrcH = emuScrH-2; // not correct, but I don't have to deal with edge cases due to fp error for now
@@ -2130,7 +2163,7 @@ void EmuCommandSaveState_Cleanup(EmuCommand *command)
 	delete data;
 }
 
-JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorInsertFloppy(JNIEnv * env, jobject obj, jint floppy, jstring filename, jstring zippath)
+JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorInsertFloppy(JNIEnv * env, jobject obj, jint floppy, jstring filename, jstring zippath, jstring dispName)
 {
 	Debug_Printf("----> Insert Floppy Command");
 
@@ -2143,9 +2176,13 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorIns
 
 		const char *fnameptr = env->GetStringUTFChars(filename, NULL);
 		const char *zippathptr = zippath ? env->GetStringUTFChars(zippath, NULL) : NULL;
+		const char *dispNamePtr = env->GetStringUTFChars(dispName, NULL);
 
 		data->floppyFileName = new char [strlen(fnameptr)+1];
 		strcpy(data->floppyFileName, fnameptr);
+
+		data->dispName = new char [strlen(dispNamePtr)+1];
+		strcpy(data->dispName, dispNamePtr);
 
 		data->floppyZipPath = NULL;
 		if (zippathptr)
@@ -2160,6 +2197,7 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorIns
 		}
 
 		env->ReleaseStringUTFChars(filename, fnameptr);
+		env->ReleaseStringUTFChars(dispName, dispNamePtr);
 		if (zippath)
 		{
 			env->ReleaseStringUTFChars(zippath, zippathptr);

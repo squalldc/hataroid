@@ -862,6 +862,7 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.FastFloppy, sizeof(ConfigureParams.DiskImage.FastFloppy));
 
+	ConfigureParams.Hataroid.saveDispName[0] = 0;
 	if (gSaveVersion >= 1702)
 	{
 		// Hataroid settings
@@ -883,6 +884,11 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 		MemorySnapShot_Store(&ConfigureParams.Hataroid.kbdPanY, sizeof(ConfigureParams.Hataroid.kbdPanY));
 
 		MemorySnapShot_Store(&ConfigureParams.Hataroid.mouseActive, sizeof(ConfigureParams.Hataroid.mouseActive));
+
+		if (gSaveVersion >= 1703)
+		{
+			MemorySnapShot_Store(&ConfigureParams.Hataroid.saveDispName, sizeof(ConfigureParams.Hataroid.saveDispName));
+		}
 	}
 
 	if (!bSave)

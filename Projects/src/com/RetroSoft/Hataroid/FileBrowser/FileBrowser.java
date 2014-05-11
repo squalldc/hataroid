@@ -5,10 +5,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.DialogInterface;
@@ -26,14 +29,19 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.RetroSoft.Hataroid.HataroidActivity;
 import com.RetroSoft.Hataroid.R;
+import com.RetroSoft.Hataroid.GameDB.GameDBFile;
+import com.RetroSoft.Hataroid.GameDB.GameDBHelper;
+import com.RetroSoft.Hataroid.GameDB.IGameDBScanner;
 import com.RetroSoft.Hataroid.Input.RenameInputMapView;
 
-public class FileBrowser extends ListActivity
+public class FileBrowser extends ListActivity implements IGameDBScanner
 {
 	public static final String CONFIG_OPENZIPS = "Config_OpenZips";
 	public static final String CONFIG_EXT = "Config_Ext";
 	public static final String CONFIG_RESETST = "Config_ResetST";
+	public static final String CONFIG_REFRESHDB = "Config_RefreshDB";
 	public static final String CONFIG_SELECTFOLDER = "Config_SelectFolder";
 	public static final String CONFIG_NEWFOLDER = "Config_NewFolder";
 	public static final String CONFIG_PREFLASTITEMPATH = "Config_PrefLastItemPath";
@@ -41,6 +49,7 @@ public class FileBrowser extends ListActivity
 	
 	public static final String RESULT_PATH = "ResultPath";
 	public static final String RESULT_ZIPPATH = "ResultZipPath";
+	public static final String RESULT_DISPLAYNAME = "ResultDisplayName";
 	public static final String RESULT_RESETCOLD = "ResetCold";
 	public static final String RESULT_RESETWARM = "ResetWarm";
 
@@ -64,6 +73,7 @@ public class FileBrowser extends ListActivity
 
 	private boolean				_openZips = true;
 	private boolean				_resetST = true;
+	private boolean				_refreshDB = false;
 	private boolean				_selectFolder = false;
 	private boolean				_newFolder = false;
 	private String				_prefLastItemPathKey = LastFloppyDirItemPathKey;
@@ -75,6 +85,9 @@ public class FileBrowser extends ListActivity
 	private String				_root = "/";
 
 	private Intent				_retIntent;
+	
+	private View				_refreshDBBtnView = null;
+	private View				_clearDBBtnView = null;
 
 	@Override public void onCreate(Bundle savedInstanceState)
 	{
@@ -115,7 +128,7 @@ public class FileBrowser extends ListActivity
 		
 		if (_savedPath != null)
 		{
-			_curDir = new File(_savedPath);
+			_setCurDir(_savedPath);
 		}
 
 		if (_curDir != null && _curDir.isFile())
@@ -130,13 +143,13 @@ public class FileBrowser extends ListActivity
 				_savedPath = null;
 				_prevFirstVisibleItem = 0;
 			}
-			_curDir = null;
+			_setCurDir(null);
 		}
 		if (_curZipFile == null)
 		{
 			if (_curDir == null || !_curDir.exists())
 			{
-				_curDir = new File(_root);
+				_setCurDir(_root);
 				_savedPath = null;
 				_prevFirstVisibleItem = 0;
 			}
@@ -149,12 +162,18 @@ public class FileBrowser extends ListActivity
 			for (int i = 0; i < v.getCount(); ++i)
 			{
 				FileListItem item = (FileListItem)v.getItemAtPosition(i);
-				if (item.getName().compareTo(lastItemName)==0)
+				if (item.getDisplayName().compareTo(lastItemName)==0)
 				{
 					_prevFirstVisibleItem = i;
 					break;
 				}
 			}
+		}
+
+		HataroidActivity ha = HataroidActivity.instance;
+		if (ha != null)
+		{
+			ha.setGameDBScannerInterface(this);
 		}
 	}
 	
@@ -186,6 +205,7 @@ public class FileBrowser extends ListActivity
 			
 			outState.putBoolean(CONFIG_OPENZIPS, _openZips);
 			outState.putBoolean(CONFIG_RESETST, _resetST);
+			outState.putBoolean(CONFIG_REFRESHDB, _refreshDB);
 			outState.putBoolean(CONFIG_SELECTFOLDER, _selectFolder);
 			outState.putBoolean(CONFIG_NEWFOLDER, _newFolder);
 		}
@@ -212,6 +232,7 @@ public class FileBrowser extends ListActivity
 			
 			_openZips = b.getBoolean(CONFIG_OPENZIPS, true);
 			_resetST = b.getBoolean(CONFIG_RESETST, true);
+			_refreshDB = b.getBoolean(CONFIG_REFRESHDB, false);
 			_selectFolder = b.getBoolean(CONFIG_SELECTFOLDER, false);
 			_newFolder = b.getBoolean(CONFIG_NEWFOLDER, false);
 			
@@ -237,12 +258,20 @@ public class FileBrowser extends ListActivity
 	
 	@Override protected void onDestroy()
 	{
+		HataroidActivity ha = HataroidActivity.instance;
+		if (ha != null)
+		{
+			ha.clearGameDBScannerInterface();
+		}
+
 		if (_selectFolderListener != null)
 		{
 			_selectFolderListener.deinit();
 		}
 			
 		_closeZipFile(_curZipFile);
+		_curZipFile = null;
+
 		super.onDestroy();
 	}
 
@@ -254,7 +283,7 @@ public class FileBrowser extends ListActivity
 		FileListItem item = (FileListItem)v.getItemAtPosition(_prevFirstVisibleItem);
 		if (item != null && _prefLastItemPathKey != null && _prefLastItemNameKey != null)
 		{
-			String itemname = item.getName();
+			String itemname = item.getDisplayName();
 	    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 			Editor ed = prefs.edit();
 			ed.putString(_prefLastItemPathKey, (_savedPath == null) ? "" : _savedPath);
@@ -292,7 +321,7 @@ public class FileBrowser extends ListActivity
 					_curZipFile = null;
 
 					String parentPath = _getParentPathName(_savedPath);
-					_curDir = new File(parentPath);
+					_setCurDir(parentPath);
 				}
 				else if (_curDir != null)
 				{
@@ -304,7 +333,7 @@ public class FileBrowser extends ListActivity
 					}
 					else if (_curDir.getParent() != null)
 					{
-						_curDir = new File(_curDir.getParent());
+						_setCurDir(_curDir.getParent());
 					}
 				}
 
@@ -327,6 +356,8 @@ public class FileBrowser extends ListActivity
 
 		try
 		{
+			int enabledButtonCount = 0;
+			
 			View selectBtnView = findViewById(R.id.fb_selectBtn);
 			if (selectBtnView != null)
 			{
@@ -337,12 +368,12 @@ public class FileBrowser extends ListActivity
 						_selectFolderListener = new SelectFolderClickListener(this);
 						selectBtnView.setOnClickListener(_selectFolderListener);
 					}
+					++enabledButtonCount;
 				}
 				else
 				{
 					selectBtnView.setEnabled(false);
 					selectBtnView.setVisibility(View.INVISIBLE);
-					
 					((ViewGroup)selectBtnView.getParent()).removeView(selectBtnView);
 				}
 			}
@@ -352,22 +383,52 @@ public class FileBrowser extends ListActivity
 			{
 				if (_newFolder)
 				{
-					newFolderBtnView.setOnClickListener(new OnClickListener() {
-						public void onClick(View v) {
-							_onNewFolderBtnClicked();
-						}
-					});
+					newFolderBtnView.setOnClickListener(new OnClickListener() { public void onClick(View v) { _onNewFolderBtnClicked(); }});
+					++enabledButtonCount;
 				}
 				else
 				{
 					newFolderBtnView.setEnabled(false);
 					newFolderBtnView.setVisibility(View.INVISIBLE);
-					
 					((ViewGroup)newFolderBtnView.getParent()).removeView(newFolderBtnView);
 				}
 			}
 			
-			if (!_newFolder && !_selectFolder)
+			_refreshDBBtnView = null;
+			_clearDBBtnView = null;
+			View refreshDBBtnView = findViewById(R.id.fb_refreshDBBtn);
+			View clearDBBtnView = findViewById(R.id.fb_clearDBBtn);
+			if (refreshDBBtnView != null)
+			{
+				if (_refreshDB)
+				{
+					refreshDBBtnView.setOnClickListener(new OnClickListener() { public void onClick(View v) { _onRefreshDBClicked(); }});
+					_refreshDBBtnView = refreshDBBtnView;
+
+					if (clearDBBtnView != null)
+					{
+						clearDBBtnView.setOnClickListener(new OnClickListener() { public void onClick(View v) { _onClearDBClicked(); }});
+						_clearDBBtnView = clearDBBtnView;
+					}
+
+					++enabledButtonCount;
+				}
+				else
+				{
+					refreshDBBtnView.setEnabled(false);
+					refreshDBBtnView.setVisibility(View.INVISIBLE);
+					((ViewGroup)refreshDBBtnView.getParent()).removeView(refreshDBBtnView);
+
+					if (clearDBBtnView != null)
+					{
+						clearDBBtnView.setEnabled(false);
+						clearDBBtnView.setVisibility(View.INVISIBLE);
+						((ViewGroup)clearDBBtnView.getParent()).removeView(clearDBBtnView);
+					}
+				}
+			}
+
+			if (enabledButtonCount == 0)
 			{
 				View buttonLayoutView = findViewById(R.id.bottomButtonsLayout);
 				if (buttonLayoutView != null)
@@ -421,7 +482,7 @@ public class FileBrowser extends ListActivity
 	}
 	*/
 	
-	private String _getParentPathName(String fullname)
+	public static String _getParentPathName(String fullname)
 	{
 		if (fullname.length() == 0)
 		{
@@ -510,7 +571,7 @@ public class FileBrowser extends ListActivity
 					}
 				}
 
-				_curDir = new File(item.getPath());
+				_setCurDir(item.getPath());
 				retrieveFileList(_curDir, _exts);
 
 				_scrollToItemName(scrollItemName);
@@ -525,7 +586,7 @@ public class FileBrowser extends ListActivity
 				if (pathLower.endsWith(".zip"))
 				{
 					// don't support recursive zip files for now
-					if (_curZipFile == null)
+					if (!item.isDBEntry() && _curZipFile == null)
 					{
 						ZipFile zf = _openZipFileList(item.getPath());
 						if (zf != null)
@@ -535,7 +596,7 @@ public class FileBrowser extends ListActivity
 							{
 								_curZipFile = zf;
 								retrieveZipFileList(_curZipFile, _exts);
-								_curDir = null;
+								_setCurDir(null);
 								return;
 							}
 							else
@@ -582,7 +643,7 @@ public class FileBrowser extends ListActivity
 		alertDialog.show();
 	}
 	
-	private Boolean _isSingleDiscZip(ZipFile zipFile, String [] validExts, boolean [] isPasti)
+	private boolean _isSingleDiscZip(ZipFile zipFile, String [] validExts, boolean [] isPasti)
 	{
 		int validDiscCount = 0;
 
@@ -648,7 +709,7 @@ public class FileBrowser extends ListActivity
 		return zf;
 	}
 	
-	private void _closeZipFile(ZipFile zf)
+	public static void _closeZipFile(ZipFile zf)
 	{
 		if (zf == null) return;
 		
@@ -698,6 +759,7 @@ public class FileBrowser extends ListActivity
 			String zipPath = item.getName();
 			_retIntent.putExtra(RESULT_ZIPPATH, zipPath);
 		}
+		_retIntent.putExtra(RESULT_DISPLAYNAME, item.getDisplayName());
 		
 		if (!_resetST)
 		{
@@ -755,6 +817,15 @@ public class FileBrowser extends ListActivity
 	{
 //		setTitle("Current path: " + dir.getAbsolutePath());
 		setCurPathText("Current path: " + dir.getAbsolutePath());
+		
+		GameDBHelper gameDB = null;
+		Map<String,GameDBFile> dbFiles = null;
+		HataroidActivity ha = HataroidActivity.instance;
+		if (ha != null)
+		{
+			gameDB = ha.getGameDB();
+			dbFiles = gameDB.getFiles(dir.getAbsolutePath());
+		}
 
 		_savedPath = dir.getAbsolutePath();
 	
@@ -777,33 +848,70 @@ public class FileBrowser extends ListActivity
 			{
 				if (f.isDirectory())
 				{
-					items.add(new FileListItem(FileListItem.TYPE_DIR, false, f.getAbsolutePath(), f.getName()));
+					items.add(new FileListItem(FileListItem.TYPE_DIR, false, f.getAbsolutePath(), f.getName(), null, false));
 				}
 				else
 				{
-					boolean valid = true;
-					if (!_allowAllFiles() && validExtsLower != null)
+					boolean showNormal = true;
+					
+					GameDBFile dbf = dbFiles.get(f.getName());
+					if (dbf != null)
 					{
-						valid = false;
-						for (String ext : validExtsLower)
+						showNormal = false;
+						
+						if (!dbf.isMultiZip)
 						{
-							if (f.getName().toLowerCase().endsWith(ext))
+							for (int i = 0; i < dbf.gameNames.length; ++i)
 							{
-								valid = true;
-								break;
+								items.add(new FileListItem(FileListItem.TYPE_FILE, false, f.getAbsolutePath(), f.getName(), dbf.gameNames[i], true));
 							}
 						}
+						else if (dbf.zipComplete)
+						{
+							Map<String,GameDBFile> dbZipFiles = gameDB.getFiles(f.getAbsolutePath()); // gameDB is valid at this point
+							Iterator<Map.Entry<String, GameDBFile>> entries = dbZipFiles.entrySet().iterator();
+							while (entries.hasNext())
+							{
+							    Map.Entry<String, GameDBFile> entry = entries.next();
+							    GameDBFile zipEntry = entry.getValue();
+								for (int i = 0; i < zipEntry.gameNames.length; ++i)
+								{
+									items.add(new FileListItem(FileListItem.TYPE_FILE, true, f.getAbsolutePath(), zipEntry.fileName, zipEntry.gameNames[i], true));
+								}
+							}
+						}
+						else
+						{
+							showNormal = true;
+						}
 					}
-					if (valid)
+					
+					if (showNormal)
 					{
-						items.add(new FileListItem(FileListItem.TYPE_FILE, false, f.getAbsolutePath(), f.getName()));
+						boolean valid = true;
+						if (!_allowAllFiles() && validExtsLower != null)
+						{
+							valid = false;
+							for (String ext : validExtsLower)
+							{
+								if (f.getName().toLowerCase().endsWith(ext))
+								{
+									valid = true;
+									break;
+								}
+							}
+						}
+						if (valid)
+						{
+							items.add(new FileListItem(FileListItem.TYPE_FILE, false, f.getAbsolutePath(), f.getName(), null, false));
+						}
 					}
 				}
 			}
 			
 			if (dir.getParent() != null)
 			{
-				items.add(new FileListItem(FileListItem.TYPE_DIR, false, dir.getParent(), ".."));
+				items.add(new FileListItem(FileListItem.TYPE_DIR, false, dir.getParent(), "..", null, false));
 			}
 		}
 		catch (Exception e)
@@ -820,6 +928,15 @@ public class FileBrowser extends ListActivity
 	{
 //		setTitle("Current path: " + zipFile.getName());
 		setCurPathText("Current path: " + zipFile.getName());
+
+		GameDBHelper gameDB = null;
+		Map<String,GameDBFile> dbFiles = null;
+		HataroidActivity ha = HataroidActivity.instance;
+		if (ha != null)
+		{
+			gameDB = ha.getGameDB();
+			dbFiles = gameDB.getFiles(zipFile.getName());
+		}
 
 		_savedPath = zipFile.getName();
 	
@@ -847,22 +964,38 @@ public class FileBrowser extends ListActivity
 			}
 			else
 			{
-				boolean valid = true;
-				if (validExtsLower != null)
+				boolean showNormal = true;
+				
+				GameDBFile dbf = dbFiles.get(f.getName());
+				if (dbf != null)
 				{
-					valid = false;
-					for (String ext : validExtsLower)
+					showNormal = false;
+					
+					for (int i = 0; i < dbf.gameNames.length; ++i)
 					{
-						if (f.getName().toLowerCase().endsWith(ext))
-						{
-							valid = true;
-							break;
-						}
+						items.add(new FileListItem(FileListItem.TYPE_FILE, true, zipFile.getName(), f.getName(), dbf.gameNames[i], true));
 					}
 				}
-				if (valid)
+				
+				if (showNormal)
 				{
-					items.add(new FileListItem(FileListItem.TYPE_FILE, true, zipFile.getName(), f.getName()));
+					boolean valid = true;
+					if (validExtsLower != null)
+					{
+						valid = false;
+						for (String ext : validExtsLower)
+						{
+							if (f.getName().toLowerCase().endsWith(ext))
+							{
+								valid = true;
+								break;
+							}
+						}
+					}
+					if (valid)
+					{
+						items.add(new FileListItem(FileListItem.TYPE_FILE, true, zipFile.getName(), f.getName(), null, false));
+					}
 				}
 			}
 		}
@@ -870,7 +1003,7 @@ public class FileBrowser extends ListActivity
 		String parentDir = _getParentPathName(zipFile.getName());
 		if (parentDir != null)
 		{
-			items.add(new FileListItem(FileListItem.TYPE_DIR, false, parentDir, ".."));
+			items.add(new FileListItem(FileListItem.TYPE_DIR, false, parentDir, "..", null, false));
 		}
 		
 		Collections.sort(items);
@@ -894,6 +1027,67 @@ public class FileBrowser extends ListActivity
         Intent view = new Intent(this, RenameInputMapView.class);
         view.putExtra(RenameInputMapView.CONFIG_CURNAME, "saves");
         startActivityForResult(view, ACTIVITYRESULT_NEWFOLDERNAME);
+	}
+	
+	void _onRefreshDBClicked()
+	{
+		HataroidActivity ha = HataroidActivity.instance;
+		if (ha != null)
+		{
+			if (_curDir != null)
+			{
+				ha.refreshGameDB(_curDir.getAbsolutePath(), _exts, true, this);
+			}
+			else if (_curZipFile != null)
+			{
+				ha.refreshGameDB(_curZipFile.getName(), _exts, true, this);
+			}
+		}
+	}
+	
+	void _onClearDBClicked()
+	{
+		HataroidActivity ha = HataroidActivity.instance;
+		if (ha != null)
+		{
+			if (_curDir != null)
+			{
+				ha.clearGameDB(_curDir.getAbsolutePath(), true, this);
+			}
+			else if (_curZipFile != null)
+			{
+				ha.clearGameDB(_curZipFile.getName(), true, this);
+			}
+		}
+	}
+	
+	public Activity getGameDBScanActivity() { return this; }
+	public void onGameDBScanComplete()
+	{
+		if (_refreshDB && (_curDir != null || _curZipFile != null))
+		{
+			FileBrowser.this.runOnUiThread(new Runnable() {
+				public void run()
+				{
+					FileBrowser.this._refreshFileList();
+				}
+			});
+		}
+	}
+	
+	void _refreshFileList()
+	{
+		if (_refreshDB)
+		{
+			if (_curDir != null)
+			{
+				FileBrowser.this.retrieveFileList(_curDir, _exts);
+			}
+			else if (_curZipFile != null)
+			{
+				FileBrowser.this.retrieveZipFileList(_curZipFile, _exts);
+			}
+		}
 	}
 
 	protected void onActivityResult(int requestCode, int resultCode, Intent data)
@@ -926,6 +1120,22 @@ public class FileBrowser extends ListActivity
 				}
 				break;
 			}
+		}
+	}
+
+	void _setCurDir(String path)
+	{
+		_curDir = (path != null) ? new File(path) : null;
+		
+		if (_refreshDBBtnView != null)
+		{
+			boolean showDBRefresh = _refreshDB && ((_curDir != null && _curDir.isDirectory()) || (_curZipFile != null));
+			_refreshDBBtnView.setVisibility(showDBRefresh ? View.VISIBLE : View.INVISIBLE);
+		}
+		if (_clearDBBtnView != null)
+		{
+			boolean showDBRefresh = _refreshDB && ((_curDir != null && _curDir.isDirectory()) || (_curZipFile != null));
+			_clearDBBtnView.setVisibility(showDBRefresh ? View.VISIBLE : View.INVISIBLE);
 		}
 	}
 }

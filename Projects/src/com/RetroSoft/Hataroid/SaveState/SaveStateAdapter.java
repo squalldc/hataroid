@@ -13,10 +13,8 @@ import java.util.List;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Bitmap.Config;
 import android.graphics.Color;
-import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -71,6 +69,16 @@ public class SaveStateAdapter extends ArrayAdapter<SaveStateListItem>
 			
 			boolean isDummyItem = item.isDummyItem();
 
+			SaveMetaData metaData = null;
+			if (!isDummyItem)
+			{
+				metaData = new SaveMetaData();
+				if (!_readSaveMetaFile(item.getPath(), metaData))
+				{
+					metaData = null;
+				}
+			}
+
 			int color = Color.WHITE;
 			if (item.isFirstSlotItem())
 			{
@@ -119,13 +127,20 @@ public class SaveStateAdapter extends ArrayAdapter<SaveStateListItem>
 			}
 			if (tvName != null)
 			{
+				String name = item.getSaveName();
+				if (metaData != null && metaData.dispName.length() > 0)
+				{
+					name = metaData.dispName;
+					item.setDispName(name);
+				}
+
 				if (item.isQuickSaveSlotItem())
 				{
-					tvName.setText("[QuickSave] " + item.getSaveName());
+					tvName.setText("[QuickSave] " + name);
 				}
 				else
 				{
-					tvName.setText(item.getSaveName());
+					tvName.setText(name);
 				}
 				tvName.setTextColor(color);
 			}
@@ -133,53 +148,49 @@ public class SaveStateAdapter extends ArrayAdapter<SaveStateListItem>
 			if (i1 != null)
 			{
 				boolean clearImage = true;
-				if (!item.isDummyItem())
+				if (metaData != null)
 				{
-					SaveMetaData metaData = new SaveMetaData();
-					if (_readSaveMetaFile(item.getPath(), metaData))
-					{
-						Bitmap newBmp = null;;
-					    try
-					    {
-						    int dw = SaveStateBrowser.dispWidth/9;
-						    int dh = dw;
+					Bitmap newBmp = null;;
+				    try
+				    {
+					    int dw = SaveStateBrowser.dispWidth/9;
+					    int dh = dw;
 
-						    Bitmap src = metaData.bmp;
-						    int sw = src.getWidth();
-						    int sh = src.getHeight();
-						    
-						    if (dw > (sw*1.5f))
-						    {
-							    float saspect = (float)sw/(float)sh;
-							    float daspect = (float)dw/(float)dh;
-							    
-							    int nw = sw;
-							    int nh = sh;
-							    
-							    if (daspect > saspect)
-							    {
-							    	nh = dh;
-							    	nw = (int)(dh * saspect);
-							    }
-							    else
-							    {
-							    	nw = dw;
-							    	nh = (int)(nw / saspect);
-							    }
-	
-							    newBmp = Bitmap.createScaledBitmap(src, nw, nh, true);
-						    }
-					    }
-						catch (Exception e) { }
+					    Bitmap src = metaData.bmp;
+					    int sw = src.getWidth();
+					    int sh = src.getHeight();
 					    
-					    if (newBmp == null)
+					    if (dw > (sw*1.5f))
 					    {
-					    	newBmp = metaData.bmp;
+						    float saspect = (float)sw/(float)sh;
+						    float daspect = (float)dw/(float)dh;
+						    
+						    int nw = sw;
+						    int nh = sh;
+						    
+						    if (daspect > saspect)
+						    {
+						    	nh = dh;
+						    	nw = (int)(dh * saspect);
+						    }
+						    else
+						    {
+						    	nw = dw;
+						    	nh = (int)(nw / saspect);
+						    }
+
+						    newBmp = Bitmap.createScaledBitmap(src, nw, nh, true);
 					    }
-						i1.setScaleType(ScaleType.FIT_CENTER);
-					    i1.setImageBitmap(newBmp);
-						clearImage = false;
-					}
+				    }
+					catch (Exception e) { }
+				    
+				    if (newBmp == null)
+				    {
+				    	newBmp = metaData.bmp;
+				    }
+					i1.setScaleType(ScaleType.FIT_CENTER);
+				    i1.setImageBitmap(newBmp);
+					clearImage = false;
 				}
 
 				if (clearImage)
@@ -256,10 +267,31 @@ public class SaveStateAdapter extends ArrayAdapter<SaveStateListItem>
 					buf.order(ByteOrder.LITTLE_ENDIAN);
 					IntBuffer intBuf = buf.asIntBuffer();
 					
+					metaData.dispName = "";
+					int dispNameLen = 0;
+
 					metaData.version = intBuf.get();
 					metaData.width = intBuf.get();
 					metaData.height = intBuf.get();
-					
+					if (metaData.version > 1)
+					{
+						dispNameLen = intBuf.get();
+					}
+
+					// disp name
+					final int kMaxDispNameLen = 4096;
+					if (dispNameLen > 0 && dispNameLen < kMaxDispNameLen)
+					{
+						byte[] dispNameBuf = _readBytes(istream, dispNameLen);
+						bytesRemain -= dispNameLen;
+						if (dispNameBuf == null)
+						{
+							break;
+						}
+						metaData.dispName = new String(dispNameBuf);
+					}
+
+					// thumbnail
 					int pixCount = metaData.width * metaData.height;
 					int pixSize = pixCount << 1;
 					if (pixSize > bytesRemain)
@@ -284,9 +316,9 @@ public class SaveStateAdapter extends ArrayAdapter<SaveStateListItem>
 					metaData.bmp.copyPixelsFromBuffer(buf);
 
 					metaData.bmpData = null;	// no longer needed
-					
-					result = true;
 				}
+
+				result = true;
 			}
 		}
 		catch (Exception e)
@@ -360,12 +392,13 @@ public class SaveStateAdapter extends ArrayAdapter<SaveStateListItem>
 		public byte[]	header = null;
 		public byte[]	bmpData = null;
 		
-		@SuppressWarnings("unused")
 		public int		version = 0;
 		
 		public int		width = 0;
 		public int		height = 0;
 
 		public Bitmap	bmp = null;
+		
+		public String	dispName = "";
 	}
 }

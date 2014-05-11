@@ -1,0 +1,3951 @@
+#
+# Atari ST Games Database
+# -----------------------
+#
+# This little database exists to map ST Disk's to their contents; you can map
+# using either group+disk-number, or a varient of the CRC32 algorithym. Each
+# disk may have several CRC32's associated to it, due to variations in disk
+# formats, etc. (MSA, ST, fiddled with, differetn track counts, etc etc.)
+#
+# This list is directly descended from Bruno Padinha's list, merged with
+# other sources. Small portions of this data came from TOSEC database;
+#
+# Bruno Padinha's list:  http://stgameslist.atari.org
+# TOSEC database:        http://www.tosec.org
+#
+# Much much thanks to everyone from gp32x.com, gp32emu.com, IRC, et al
+# who contributed to this listing!
+#
+# Much of this is gleaned from a wide variety of sources across the internet,
+# and we've got a manual labour project whereby people enter new data into this
+# listing, in hopes of making it more complete.
+#
+# See the Revision list below to find sources of updates.
+#
+# License
+# -------
+#
+# This database may be used by anyone, anytime, free of charge, without
+# limits. It would be ideal if additions are submitted to support@codejedi.com
+# for addition to the canonicle list.
+#
+# Group Legend
+# ------------
+#
+# Group short-name must be consistent with the following legend, or I'll
+# reject submissions.
+#
+# OR Original works
+# AU Automation
+# CY Cynix
+# DB Dbug
+# FF Flame of Finland
+# MB Medway Boys
+# PK Pompey Pirates
+# PP Pompey Pirates
+# SO Spaced Out
+# SU Superior
+# SG SuperGAU
+# ZU Zuul
+# TU The Union
+# VT Vectronix
+# SD ??? (any clue?)
+# EX EXO-7
+# 42 42-CREW
+# EL Elite
+# RP The Replicants
+# FZ Fuzion
+#
+# Nomenclature
+# ------------
+#
+# Use a very short name for the games; the goal is to work equally well for
+# small handhelds and beefy desktops. If the game exists in multiple media
+# or you are unsure, include an abbreviation of the author.
+#
+# Ex:
+# OR:1:12345678:Dungeon Master (FTL)
+# AU:97:637121234:Dungeon Master (FTL); OIDs (FTL)
+#
+# Format of Entries
+# -----------------
+#
+# "#" denotes a comment; comments should only occur at the very top of the
+#   document, and should not include CRC numbers in them (so as to avoid
+#   accidental matches!)
+#
+# The layout is:
+# Group shortname, disk number, CRC-list, game-list
+#
+# Group shortname is two letter acronym from the list above. If you have a
+#   new groupname, let me know (support@codejedi.com), and you can make a
+#   quick suggestion.
+# Disk number is free form; "1" for orginal disks (2 for the second disk
+#   in multi disk original set, of course). No zero padding.
+#   You may include "A" or "B" as needed. "398A" is okay.
+#   An unnumbered crack should be "0".
+# CRC-list: May be empty if no-CRC is known, though this isn't really
+#   useful. Please include at least one CRC for each disk image.
+# Game-list: The name of the game on the disk. Optionally include the
+#   game author/distributor in parenthesis, if useful, and very short.
+#   Keep the name short. Separate multiple names with "; " (including
+#   both the semicolon and the space!)
+#
+# Rules for Submission of Updates:
+# --------------------------------
+# Make sure your group names match the legend.
+# Make sure you are not duplicating someone elses work.
+# Look for the existing entry first; this database is fairly complete in
+#   its compilation disk listing, though many CRC's are missing. If you
+#   can just add in a CRC, let me know!
+# It is correct to have different CRC's for the same disk -- the format
+#   may have changed.. from .ST to .MSA for example, or the track/sector
+#   count of the disk.. and still be the same content! So multiple
+#   CRC's are fine.
+# Email updates to support@codejedi.com -- include only the new material
+#   and not the existing material.
+# Ideally, notify support@codejedi.com that you'll be tackling some
+#   series of disks, so that we can avoid duplication of effort!
+# Disk number is not zero padded; "2" and not "02" or "00002" :)
+#
+# Revisions
+# ---------
+# First version, May 9th, 2003
+# 1.1 May 9th 2003 - htols@softhome.net submitted 54 FOF disks!
+# 1.2 May 9th 2003 - changed &amp; to & in about 35 cases
+# 1.3 May 10th 2003 - added credits to Bruno Padinha
+# 1.4 May 10th 2003 - added Cynix (All of Cynix is 8 disks); thanks loic!
+#                   - added SuperGAU 1 through 100 (out of 959); thanks loic!
+# 1.5 May 11th 2003 - removed SG 1-100; broken CRC tool, my bad :(
+#                   - added SuperGau comlete (.ST) 1-959.. thanks A600!
+#                   - added complete Medway Boys (.ST) 1-112.. thanks loic!
+#                   - added complete Pompey 1-112 .. thanks Matt!
+#                   - added original Deluxe Paint.. thanks Matt!
+#                   - added about 900 assorted original disks; many crc's
+#                     derived from TOSEC data; thanks tosec!
+# 1.6 May 11th 2003 - merged in CRC's for all SuperGAU (.MSA) -- thanks me :)
+#                   - verified Cynix disks to ensure no CRC corruption
+# 1.7 May 12th 2003 - Correction to SG:250 text, corrected CRC for CY:8
+#                   - Added originsls for Another World -- thanks Matt!
+#                   - Added Superior Soccer unnumbered SU crack -- Matt
+# 1.8 May 15th 2003 - Added Zuul .. thanks Matt!
+#                     1-58 inclusive (37 files from JOE'S FTP, MSA and ST crcs)
+#                   - Assorted singles .. thanks Matt! (VT, TU)
+# 1.9 May 16th 2003 - Assorted fixes/corrections, rest of Zuul .. Matt!
+# 2.0 May 20th 2003 - Matt finishing the Zuul disks :)
+# 2.1 June 9th 2003 - Added D-Bug CRC's .. thanks mccyril
+# 2.2 June 20th 2003 - Added complete Fuzion -- thanks Matt!
+# 2.3 July 17th 2003 - Added a giant list of unique's from loic; many are
+#                      cracked originals (no menu/attract), many are cracked
+#                      with splash screens/greets, etc.
+# 2.4 Apr 27th 2014 - fix ZU:98, remove lots of dupes;
+# 2.5 May 10th 2014 - split up all multi-disk AU,FF,PP,MB compilations properly,
+#                     add extra crc's for some of the multi disks from tosec
+#                     removed su and db lists until I get time to fix up multi-disc entries
+#
+#
+TE:2::Ultima VI
+TE:3::Bard's Tale 3; Wizardry Bane of Cosmic Force; Document Listing
+TE:5::Railroad Tycoon
+FF:10:43a17faf:Spitting Images; Lode Runner; Ninja Spirit
+FF:11:49d3028f:Crack Down; Piece
+FF:12:11d21f2b:Persian Gulf Inferno, The; Manchester United
+FF:13:b9f48129:Ghosts 'N' Goblins; Tennis Cup
+FF:14:a0355e1e:Escape From the Planet of the Robot Monsters; Chase HQ
+FF:15:a7b149e0:FF010; Cyberball; Dan Dare III
+FF:16:9aa47feb:Time Soldier; Cloud Kingdoms
+FF:17:7965584:Hammerfist; Charts of April 1990; Tie Break
+FF:18a:204d5e03:Chrono Quest II (A)
+FF:18b:cbeb51b7:Chrono Quest II (B)
+FF:19:fcbcb204:Espionage; Harricana
+FF:1:3b39b567:Eskimo Games; Scramble Spirits
+FF:20:d0b1da20:Renaissance 1; Rings of Medusa
+FF:21:5269c279:A.P.B.; Starblade
+FF:22:4be200ac:Italy 1990 (US Gold); Theme Park mystery
+FF:23:d74bc079:Fire and Brimstone; Hyperforce
+FF:24:b97b84eb:Eye of Horus, The; Dyter 07
+FF:25:7147544a:Astro Marine Corps; Defenders of the Earth
+FF:26:3ca755f1:High Steel; Heavy Metal; Resolution 101
+FF:27:b725f0ca:Emlyn Hughes; Colorado
+FF:28:beb7ecd6:Dominator; Block Out; Dynasty Wars
+FF:29:60624f71:Rorke's Drift; Pyramax; Last Ninja II, The
+FF:2:28350fe4:Lancaster; Mike Read's Computer Pop Quiz
+FF:30:f2208245:Rotox; Blue Angels; Domination
+FF:31:7f486958:Midnight Resistance; Satan
+FF:32:cf543e11:Venus the Flytrap; Qatbol
+FF:33:d5294e21:Shaolin Character Creator; Universal Pictures Demo; Harley Davidson
+FF:34:276a365c:F-19 Stealth Fighter
+FF:35:e1e70659:Oriental Games; Fire & Forget II
+FF:36a:5463e37a:Days of Thunder; Back to the Future II; Shadow of the Beast (A)
+FF:36b:753ad714:Shadow of the Beast (B)
+FF:37:3bb4eb45:Time Machine; Artificial Dreams; Mad Professor Mariarti
+FF:38:b07999a6:Hoyle Book of Games Vol. I; Magic Fly
+FF:39a:33a4a53b:Plotting; Gold of the Aztecs (A)
+FF:39b:729d6fdb:Hoyle Book of Games Vol. II; Gold of the Aztecs (B)
+FF:3:c3c8c0ff:Black Tiger; Space Harrier II
+FF:40:f4d9c709:Spy Who Loved Me; Sly Spy - Secret Agent
+FF:41:418e4b5e:Turrican; Turn It
+FF:42:66f514d5:Atomic Robo Kid; Subbuteo
+FF:43:5a016ec7:Gremlins II: the New Batch; Cabal
+FF:44:b8c9d14c:ATF Advanced Tactical Fighter II; Flimbo's Quest
+FF:45:692a3e8d:Nitro; Future Basketball
+FF:46:49beef0d:Dragon Breed; Spindizzy Worlds
+FF:47:1ce0165f:Rogue Trooper; Bundesliga Manager
+FF:48:38b93193:Pang; Badlands
+FF:49:ba966ef8:Teenage Mutant Hero Turtles; Rick Dangerous II
+FF:4:ab3cf8cc:Infestation; Kid Gloves; Castle Master
+FF:50:30bb3085:E-Swat
+FF:51:742cda11:Onslaught; Voodoo Nightmare
+FF:52:617752f5:Dick Tracy; Amazing Spiderman, The
+FF:53:7f438cad:S.T.U.N. Runner; Narco Police
+FF:54:c0eecb9:U.S.S. John Young; Robocop II
+FF:5:a18fa69c:Pinball Magic; Empire of the Mines; Toyottes
+FF:6:81495b13:Bubble Ghost; Leaving Teramis
+FF:7:cdf637f9:Rock Star Ate My Hamster; Warhead
+FF:8:d3cbbdc7:Fred; Atomix
+FF:9a:79b78357:Operation: Thunderbolt (A)
+FF:9b:fbd01de9:Midwinter; Operation: Thunderbolt (B)
+SO:0::Red Storm Tech Notes
+AU:210:09a01b34 99d825b4:Auto-Route
+AU:211:60ed5b64 59ea55b3:Crazy Shot; Day of the Viper
+AU:212:746a12ba 768017b1:Enterprise; Police Quest
+AU:140:e8236562 727a09d5 bc3babf7:Grand Monster Slam; Night Hunter
+AU:213:550df59d c1eaf8ed:Eye of Horus, The; Footballer of the Year II; Who Framed Roger Rabbit
+AU:214:a96c38a6 632ff3db ad92f17d 422a64f7:Super Wonder Boy; Seven Gates of Jambala, The
+AU:141:ed2f8b1d fd8ae477:TV Sports Football; Temple of Apshai Trillogy, The; Chessmaster 2000
+AU:142:1bd3a67b ea4b81d6 d559745d:Night Dawn; Moebius; Sub Battle Simulator
+AU:215:eca44ff7 e0d3dd22:Under the Ice; Full Metal Planete
+AU:143:a6d43d84 769b7664:Future Sports; Steel; Grand Prix Master; Dark Century; Megaformat 2.1
+AU:216:28a916d1 1b080bec 3b28d720:Treasure Island Dizzy; Quartet; Daily Double; Triton III
+AU:217:334fc8fb e13288cf:Gone Fishin'; Formula 1 GP; Who Maimed Roger Rabbit
+AU:144:6deb8148 96b32c0e 283ef750:Forgotten Worlds; Hard'n'Heavy
+AU:145:a7ab2b71 9192317e:Spitfire '40; Mad; Buzzword; Time Runner
+AU:218:8ef32194 4d8e83b6:Wizard's Crown; Corruption; Brian Cloughs Football
+AU:146:b5b65e67 63fa41fb:Invaders; Zero Gravity; Recoil; H.A.T.E.; Bridge-It
+AU:219:b9bdd09a d7888c1f:Double Dragon II; ALF
+AU:147:a22d41a6 ecf7cf2e:RazRats; Altered Beast; Gold of the Realm
+AU:149:0d4fc2f8 a96de735 d12b1d5f:Albedo; Trip-a-Tron; Mind Fighter
+AU:220:3e16415f ba14e292 d4ed076e:Dogs of War; Tempest; Galaxy Force III
+AU:221:e4cba0ff 1293e19b 6de808a7:Star Breaker; Ultima V
+AU:222:d54690a6 a860b9c2:Dizzy Wizard; Breach II; Deep Space
+AU:223:1838a940 0ce66dc0:Untouchables, The; World Trophy Soccer
+AU:0:f397dfd5 536e8220:Sinbad and the Throne of the Falcon
+AU:150:81d9b353 51988704:Spherical; Star Wars; Paper Boy
+AU:151:921ed059 dbff92f8 4ff83723:Sargon III; King's Quest; Leisure Suit Larry
+AU:1:9fdae971 0f0d783d 9b6c3263:Trailblazer II; Sentinel, The; Empire Strikes Back, The; Robotron; Crystal Castles; Northstar; World Championship Football Manager; Star Raiders
+AU:224:406276d2 fdf604ed:Batman - the Movie; Spy vs. Spy II; Bloodwych II
+AU:2:bdc854d6 fa19cddb 9d8fb007 729c8aed:Plutos; Triffide II; Virus; Joe Blade; Trantor; Knightmare; Extensor; Into the Eagle's Nest
+AU:152:cd08130d 800b0a51:Circus Games; Silent Service
+AU:225:8985ebc0 eddd5c4e 6925647b:Gambler, The; Bad Company; Stormlord
+AU:226:3cd3dedd b00d7c9d:Wizzo; Wind Walker; Wargame Construction Set
+AU:153:acc3ca8c 9814f5d3:Zombie; Pirates of the Barbary Coast; Battleships (Elite)
+AU:3:b914e77e 3fc3549c 85578f8e d6207b28:Arcade Classics; Super Huey; Football Manager; Mercenary; Delta Patrol; Rolling Thunder; Arkanoid II: Revenge of DoH
+AU:154:1d495160 a0bb80b4:Fastcopy; Multi; Onslaught; Crash Garrett; Superstar Ice Hockey
+AU:227:3d62c0d1 7369e0fb:Highway Patrol; Checkmate / Solitaire / Blackjack; Companion
+AU:4:a1e13081 06623f1d 08640da3 3e74b63c:Moon Patrol; Eden Blues; Mission Genocide; Missile Command; Xevious; Airball; Star Quake; Scrabble Deluxe
+AU:5:8e57361c 2d2a1c13 60959f86 74485546:Streeg Gang; Deathstrike; Typhoon Thompson
+AU:155:7d54041c 6bd94333 88792b4e:Phantasie III: the Wrath of Nikademus; Bangkok Knights
+AU:228:64db0c30 e076bc56:Crossbow; Spitting Images; Archipelagos
+AU:229:b2afc2d0 5f40d9a8:Wayne Gretsky's Ice Hockey; Super Cars
+AU:6:4cf978bb b556ec4a b5a7f220 4a6cb525:Rockford; Pinball Factory; Missile Command (v2); Thundercats; Better Dead Than Alien; Army Moves; Joust!
+AU:156:89b1fa87 3e35b3ce:Action Service; Battle Tech
+AU:157:351b2c81 d30902e2 d2f86f66:Strider; Tanglewood
+AU:7:abd9b4b6 7bbfc79e 24be56a3:Diablo; Battleship; Vampire's Empire; Karate Kid II; Overlander; Asteroids Deluxe
+AU:158:2e7fa0d6 80199f10 901678ec:Starglider II; Nightwalker
+AU:8:38380d3b 40d5a25f c547db16 e70955f6 6987e795:Super Breakout; Backlash; QBall; Revenge of the Mutant Camels; Ninja Mission; Spook; Goldrunner; Major Motion
+AU:159:4ec5c99b 8f54a0cc:Indy 500; Bob Morane: Operation Neptune
+AU:9:09cf1933 39a68eb8 6766e1ce f668a55b 3b13f08c:Enduro Racer; Chubby Gristle; Nebulus; Eliminator; Blue Angels
+AU:300:eb0bd8a7 5eb09593 a8be3ce8:Dragon's Breath
+AU:301:df789960 12450400:Toxic Formatter 2.00; Fighting Soccer; Emlyn Hughes; Treble Champions; Bank It
+AU:302:620397ff a3bcfd2d:Eliminate; Zog; Warlock; Onyx; Test Drive
+AU:230:77c51a0e 87a5f888:Turbo Outrun; Iznogoud
+AU:231:d9ba3787 3d3a06f2:Rainbow Islands; Hillsfar
+AU:304:90ae1d89 bbff8645:Next Generation, The; Final Frontier, The; Space Harrier II
+AU:305:18ca3305 873077da:Uninvited, The; Rorke's Drift; Space Blob; Nova
+AU:232:d1f11987 46d143ba:Aaargh!; X-Out
+AU:233:0c271a0d 666d4320:Wildlife; Man from the Council, The
+AU:160:2033f155 93784456:Last Shoot'em Up, The; Guild of Thieves; Fish
+AU:306:0078b7fd 56161916:Ace Invaders; Dynasty Wars; To Be On Top
+AU:234:d2655867 b221df62:West and Zkull; Sporting Triangles; Mike Read's Computer Pop Quiz
+AU:307:f438e80e 426b7b07:Iron Lord
+AU:161:8919aa89 a455d855:Falcon Mission Disk I; Hardball
+AU:308:0ae41ef5 6ecd4d8f:Tower of Babel, The; Run the Gauntlet
+AU:162:24fac4f6 5c6b3440 0d37fa63:Super Scramble Simulator; Ultima IV; Postman Pat
+AU:235:e60fe6c8 c1243051:Hunter Killer; Dr. Doom's Revenge
+AU:236:ca178ce3 6d34d36b:Kid Gloves; Gladiators; SAS Combat; Photon Storm
+AU:309:56a5e8d1 52207807:Power Strugle; Deja Vu; Momber Jacky; Pub Trivia; Fia
+AU:163:0b52c1c2 b1b8e157:Chicago 90; Lancaster
+AU:164:f15b2a49 2185b232:Cybermind; Tin Tin on the Moon (Demo); Shuffleboard
+AU:237:74697280 f1d4bbb5 22a76840:Blue Angel 69; F-16 Combat Pilot
+AU:238:b527ee7b e9e40963:Questron II; Legend
+AU:165:62ce15c1 4181a7ad:Professor Craps; Pick Pocket; Indian Mission; Bomber Command; Space Pilot
+AU:239:293a24dc 8f5d0e56:Soccer King; Jumping Jackson
+AU:166:e7f7e9fe 382799c6:Darius; Rock'n'Roll
+AU:167:f3076e95 75e0748b:Elemental; Laser Squad
+AU:168:ec50c28e b7beaad1 074388b3:Operation Clean Streets (Manhattan Dealers); Platoon
+AU:169:ec4e3597 95ef0115:Fusion; Space Invaders; Quartz
+AU:310:d50e2654 592cd9cd 559a970b:Hoyle Book of Games Vol. I; Animal Kingdom
+AU:312:d08b0fcd d2a931a9:Phoenix; Pyramax; Logo
+AU:313:e610f410 0cd3112e:Thunderstrike; Flood
+AU:241:5f97270a 4d605162:Centrefold Squares; Rush
+AU:242:9edf0195 cb99feb5 d7caf990:Rock Star Ate My Hamster; Xenophobe; Shoot'em Up Construction Kit
+AU:170:a020ed86 3c545d86:Passengers on the Wind (A); Battlehawks 1942; Ranarama
+AU:316:f6112064:Parabellum; Lift, The; 20,000 Leagues Under the Sea
+AU:244:02378385 33bcc6b3 a2e81f52:Jack Niclaus Golf
+AU:171:e7d86f39:Passengers on the Wind (B); Ferrari Formula One; Make a Break
+AU:317:434dd11f:Total Anarchy; Exodus
+AU:172:8ce6c6d7 ac830fe7:Motorbike Madness; Hollywood Poker Pro
+AU:318:e6733990:Robotz; Match It; Fire and Brimstone
+AU:245:eddc0c0b 93869808 6d641b7e:Kick Off: Extra Time; Austerlitz; Oliver and Co
+AU:173:c44a454e 5f961ab9:Jitterbugs; Toobin'; Shutdown; Indoor Sports; Snoopy
+AU:246:0762c79a c993e30d 7acdc6f6:Dominator; EMS Hermes
+AU:174:5980bf75 85bae063:Space Quest II; World Darts; Rookie
+AU:247:a4b7d8fd cd2d0e8a 11c3c205:Stryx; Castle Master
+AU:175:5103d4f6 4145c8d4:Overlord; Turbo GT II; Bob Winner; Kosmic Krieg; Crazy Cars
+AU:248:ce6d1a31 72225cf0 e568c79a:Midi Maze; Azarian; Sorcerer of Claymorgue Castle; Secrets of Steel; Human Torch and the Thing; Spiderman
+AU:249:2ae1f2df 20672515 15ded362:Rally Cross; Pinball Magic; Space Harrier (Extra)
+AU:176:0d5c485e 1ff89782:Anco Strip Poker; Freddy Hardest; Red Lightning
+AU:177:70599782 267d5f30 75adf591:Western Games; Phantasie II
+AU:178:d43783b3 fed82de8 7562a0c0:ST Hack; Artificial Dreams; Starfleet; Forbidden Quest; Strike
+AU:179:1e0d2d41 146b4d1e:Speadboat Assasin; Superbike Challenge; Maniac Mansion
+AU:320:79e0a15a f2275efc 6b61d097:Block Out; Italy 1990 (US Gold) (Winners Edition); Domination; Defenders of the Earth
+AU:321:026a59a0:Warlock the Avenger; James Pond; International Ice Hockey
+AU:322:70266841:Strip Poker II (Extra Data); Le Margoulin; Sim City (Extra Levels)
+AU:250:ba4a9461 aa1857cc b50a5666:Necron
+AU:251:e3a3d079 79b46a46 dcff4d13:Paris Dakar 1990; Mean 18; Spy vs. Spy III
+AU:324:e6a1772d:Cascade Disk 15; Journey to the Centre of the Earth
+AU:252:b949f09d de7009e9 14e98c6a:Tom and Jerry II; Warhead
+AU:325:2446c015:Football Crazy; Tass Times in Tone Town
+AU:180:4e9bb723 3f2762a3:Fast Lane; Navy Moves
+AU:326:279f24a2 402df2f9:Punisher, The; Combo Racer
+AU:253:5b1c04b6 9aa21c0f 85b01da5:World Championship Boxing Manager; Bridge Player 2000
+AU:254:05fa9a49 4b612d8b c976bc1a:Peter Pan; Impossible Mission II
+AU:181:0cbc9b5d e8e0d780 3b5e136d:Verminator; Switchblade; Commando
+AU:327:83164eb6:Bureaucracy; Never Mind
+AU:255:4214aa90 057478f8 1a667952:Risk; Jigsaw Puzzle Mania; Mouth Trap
+AU:182:89eadc22 20f2717f:Sun and Times Crosswords, The; Wheels of Fortune; Gateway; Top Secret
+AU:328:980b9a9c:Driving Force; Colorado
+AU:329:cca2feae:Sync Soundtracker; Noise Tracker; TCB Soundtracker; Module Convertion Utility
+AU:256:46e9acc3 c462ff24 32c21db0:Shufflepuck Cafe; League Challenge
+AU:183:a155661f 0277c5db:Dive Bomber; Demon's Winter
+AU:184:0666a981 fbe606e1:Rocket Ranger; Flight Simulator II
+AU:257:780b6862 ba5bcbc2 2693879f:Terrorpods; Shinobi; Clown'O Mania
+AU:185:d67eb534 a435a5b7:Pharoah; Miami Mice
+AU:258:82b14ef0 678a5065 789f9027:Dungeons, Amethysts, Alchemists 'n' Everythin'; Rush; Amethysts; Skate Tribe; Explode; Skystrike; Virus; Fruit Machine
+AU:186:994f4153 18479ce8:Atari Planetarium; Universal Military Simulator; Pothole Pete; Pictionary; Little Computer People
+AU:259:5d2a499f dce83325 5a9088ca 63767506:Rainbow Warrior
+AU:187:8268cdd1 463ad1a9:School Yard Slaughter; Kill Dozers; Gun Ship
+AU:188:ec861d6c 299e5a45:Spectrum 512; Trivia Trove; Mind Forever Voyaging, A; Breach; Hard Drivin'
+AU:189:0c435715 ea12daed:Red Storm Rising; Auto-Duel
+AU:400:adb0a4b8 564e51c2:Spindizzy Worlds; Boggle and Doker; Speedball II
+AU:401:0b809dc4 c13b5bd2:Battlemaster
+AU:402:b17e839a:Twixt; Manix 1990; Flip It & Magnose
+AU:330:dcc0f2c1 abda4fd1:Cobra II; Magic Lines
+AU:403:220adea1:Web of Terror; Time Race; 3 Card Brag
+AU:331:d8f9fc48 45ef7b71:S.I.D; Starblade; Player Manager
+AU:404:3dbfd436:Gazza II; International Soccer Challenge; Striker
+AU:332:351b64f5:Venus the Flytrap; Pukadu
+AU:405:bd98bbea:Battle Command; Fantasy World Dizzy
+AU:10:a5dc8f61 5afc6b9a 417bfeea 10f7eeb2 9425a4a3:Black Lamp; Tournament Leaderboard; Leaderboard; Veteran; Whirligig; Pengy
+AU:260:bc9345e4 3b06d6c9 2414d763:Legend of the Sword; Toyettes
+AU:406:afeb0e8d 5cfb63f3:Future Basketball; UN Squadron
+AU:333:2d9e4a21 4000a2a5:Victory; Deja Vu II
+AU:11:9f9ee491 56279426 04d8d5ca 97fc56e8:Hotshot; Thrust; Super Tennis; Supremo Soccer; Mudpies; 8 Ball; Championship Cricket; Lands of Havoc; Quadralien
+AU:334:a7be7af6:Psion Chess; Colossus Chess X; Chessmaster 2000
+AU:407:84e63333:Builderland; Heatwave; Sword and the Rose, The
+AU:261:0145ffa6 237f5853 e6410481:Impossamole; 3D Wanderer; Ninja Spirit
+AU:12:443192f8 d45bcb48 38477ab7 fb3ce4c3:Sky Chase; Space Killer; Shackled; Beyond the Ice Palace; Deflektor; Time Bandits
+AU:262:97906077 7e3b5a4c:P-47; Leaving Teramis
+AU:13:968ae0c8 72b53933 ccf2b08f e9702ff0:Super Sprint; ST Karate; Electronic Pool; Super Hang On
+AU:408:5ec3c351:Magician, The; Botics
+AU:263:8f18a9ff 28d39783 e704a216:Ultimate Golf; Midwinter
+AU:336:a4384fce 8422bd45:Midnight Resistance; Everton FC; Lin-Wu
+AU:14:f8ee8020 30d35869 5f3abbb5:Elite; Vixen; Helter Skelter; Star Goose; World Series Baseball
+AU:190:6d24469b e51e00ae:Axel's Magic Hammer; Bad Company; Interphase; First Person Pinball
+AU:409:fa04190e 69a03f91:Badlands Pete
+AU:264:a0a94b11 5c9899a7 dfdddf22:War in Middle Earth
+AU:15:91533848 27668cc9 62cb771f b60dca9f:Star Ray; Return to Genesis
+AU:191:f2d3bd6b 3b034641 f5c25253:Fist of Fury; Hell Raisers; Cubemaze; Hole in One
+AU:338:fd7af011:Pack-Ice 1.13; Solo; Mad Show; K-Seka 2.3
+AU:192:6c77e01f 67d5080e 5a5a884f be90e124:Chaos Strikes Back
+AU:16:dcffe6e2 f9eff3a1 ccb8daa2:Mouse Trap; Screaming Wings; Football Manager II; Federation of Free Traders; Bombjack
+AU:265:85a31cbf 5ae224e3 6ce2ba0d:Astate; STOS Yahtzee; Winnie the Pooh
+AU:193:f22a4c34 71b4d628:Zak McKracken and the Alien Mindbenders
+AU:266:ff878409 2067d118 c0fad63e:Pirates!
+AU:17:44ae78b0 ee93c8c8 568ae7f2 7e2c24e2:Cybernoid; TetraQuest; Indiana Jones & the Temple of Doom; Spy vs. Spy; Magnetic Tank; Tetris
+AU:339:8926a7f7:Card Addict; Yogi's Great Escape; Where Is It?; Satan; Do! Run! Run!; Atoms
+AU:267:8912ce9f b8df952d f5067119:Twylights Randsom
+AU:194:453bc3d1 243b10d5:Kenny Dalglish Soccer Match; Shoot the Moon; Safari Guns
+AU:18:43f47de8 361ec267 bc6e6f1a 166f0fc6 739b93fe d3904505:Buggy Boy; Phantasm; Dragon Lord; Eco; Wizball; Floyd the Droid
+AU:19:96b4f5a2 7cdfbb74 51cb0ec9:Sorcery; Battle Probe; Where Time Stood Still; XOR
+AU:195:6bb6b9a7 83ddee78:Space Flight; Power Play; Bellum
+AU:268:c54167cd 12a6697a 4cb9af95:Fire Brigade; Grail, The
+AU:269:5fc7ef3a 069b56c9 bd08364f dae57956:Infestation; E-Motion; Cloud Kingdoms; Zener
+AU:196:14359483 68c268d2 687425db b4cc1717:Balance of Power (1990 Edition); Monkeys and Balloons; Chase HQ
+AU:197:4575a188 c733abf3:Roller Coaster Rumbler; Sherman M4 Tank Patrol
+AU:198:9bbffef6 c2f9b6c6:Starblaze; Mindbender; Gilbert: Escape from Drill; Ayatolla Invaders; Terry's Big Adventure
+AU:199:77c7c5de 3d7dce3a:M.O.T; Ghouls 'N' Ghosts; Colourspace
+AU:410:7655fb04 7507a99f:S.T.U.N. Runner; Advanced Ski Simulator
+AU:411:ea6eab40:Voodoo Nightmare; Spellfire the Sorceror
+AU:412:2c7fb10b a0be0a67:Defender II; Fast Food; Chronicles of Omega, The
+AU:340:f376758c 46837f95:New Zealand Story, The; Dragon Ninja
+AU:413:08239e43:Just Another War in Space; Hackman II; Advanced Ski Simulator
+AU:414:c1eec79a:Ranx
+AU:341:ebb0aeee:Oriental Games; Blinky's Scary School
+AU:20:6cc674df d11068f5 6caea481:Moonbase; Garfield; Galax 3D; Artura
+AU:342:f1bb7262:World Soccer; Hyperforce; Back to the Future II
+AU:343:87be2ebf:Turtle Tennis Simulator; Orison, The; Mad Professor Mariarti
+AU:270:03256ee4 370c435a 352e7d3e:King of Chicago; Micro League Baseball
+AU:416:0a327a46:E-Swat
+AU:21:be2ede25 9875da60 7800f5c4:Battlezone; Fernandez Must Die; Altair; Uridium; Enforcer, The; Nigel Mansell's Grand Prix
+AU:417:16b362ec:Xiphos; Get Dexter II
+AU:271:ba472a6e 45a5b902 63a77853:Demon's Tomb; Star Flight
+AU:344:c2a7dba9 d449e98e 4b1fd8bb:Sly Spy; Days of Thunder; Turtle Grooves; Fourfit; Mill, The
+AU:22:e8ada7fa 0652acd8 162db107:Rampage; 1943; Slap Fight; Captain America; Leathernecks
+AU:23:7f02d5f9 db6a3fab 0181f21d 9f79f00f 4fe85db3:Snafux; Flying Shark; Turbo Cup; Strip Poker III
+AU:345:3f8e8db0:Fred; Harris Goes SkIIng; Flight Simulator II Data Disk (Japan)
+AU:272:4e196e24 d96b643e 21bfce02:221B Baker Street; Mother Goose; ST Wars; Tunnel Vision
+AU:346:c06a4e1a 1c7eca4f:Spacewolf; Miami Mice; Power Boat; Perry Mason; Striker
+AU:273:db3357a0 d09d87ab 675b67e5:Score Four; Eskimo Games; Conqueror; Santa Paravia
+AU:419:5fe7004f:Toyota Celica GT Rally; Car-Vup
+AU:24:ca1b333a 0a0689eb 9036b28f:Return of the Jedi; Offshore Warrior; Two Game; Bank Busters
+AU:25:517d9a03 82f5b81c f731c351:Pepsi Challenge; PacMania; Hellfire; Harrier Strike Mission; Metrocross; Solomon's Keys; International Karate +
+AU:274:0958b1d4 15d08606 17f2b862:Protector; Arena; Beach Volley
+AU:347:f5cb27ca 7fb3e440 e68eedad:Beverly Hills Cop; Dark Sat
+AU:348:943d17fc 4cc01675:S.T.A.G; Rings of Medusa
+AU:26:67c74a1d ee0e8770 136297f8:Mach III; Driller; Truck; Millipede
+AU:275:11d4e16b 7b42e76c c10aaa6f:Crack Down
+AU:27:45219fa8 e3e3c4a6 06de08f3:Foundations Waste; Live and Let Die; Pandora; ST Protector
+AU:276:c18135e5 a6f4390b 6631c5c5:Espionage; Soldier 2000; Sewernaut; Atomix; Castle Master II
+AU:349:3b8c9615 7747a9a6:Fools Errand, The; GATO
+AU:28:d5e7f12b e1a8e5fd f645ffe4:Xenon; Frostbyte; Storm Bringer; Netherworld; Fire Blaster
+AU:277:9a3493ff bbf01ba9 52f1d76c:Election Game; World Games; Deathstar; Course Winner
+AU:29:67d9ede6 1967a729 1781fc67:Barbarian (Palace); Fuzzball; Space Station; Alien Syndrome
+AU:278:2b27f3d4 8b617b37 91cf458a:Deluxe Strip Poker II; Battle Chess
+AU:279:579cc10a 5c83ab44 2f95f998:Macadam Bumper; Corsario; Milegame; Livingstone III
+AU:421:ad85e8fb:Proflight Simulator; MiG-29 Fulcrum
+AU:422:7293a96c:Ultimate Ride, The
+AU:423:58ce882e:Iron Man Ivan Stewart; Jupiter Masterdrive
+AU:350:a8dabcb5 909ce69a:Video Poker; Future Bike; Escape From the Planet of the Robot Monsters
+AU:424:9f7cc7cf:F-19 Stealth Fighter; Kamikaze
+AU:351:c2154675:Rotox; Dragon Spirit
+AU:352:9f6040de:Fantasia; Shadowgate; Safe as Houses; Plotting (Demo)
+AU:30:0b097de3 426ca1e4 fe920128:Crack'ed; Timeblast; Speedball; A.T.A.X.; Haunted House; Exolon
+AU:353:f1323540:Roy of the Rovers; ZX-81 Emulator; Volleyball Simulator
+AU:426:5fbff40e:Mortville Manor; Gettysburg
+AU:31:e8a4d7c5 abba4960 762dd923:Growth; Daley Thompson's olympic Challenge
+AU:281:65b0978c 2174e242 2fc6e2bc:Manchester United; Hotrod
+AU:354:0ad643e2:Rotatus; Bounty Hunter; Ballance of Power; Space Rogue
+AU:32:1c83b232 1956e799 86420504:Bionic Commandos; S.D.I (Cinemaware); Star Battle
+AU:282:a1f5ae93 7f4eb85a 2d27d395:Time!
+AU:355:9453ee3f 955d199b:Subbuteo; Stock Market; Spy Who Loved Me, The
+AU:428:c898b389:Curse of the Azure Bonds
+AU:33:4b24daa4 43dfd0b0 7cb7c26f:Predator; Bounceout; Soldier of Light; Chuckie Egg; Perils of Penfold
+AU:356:e4b37603:Shadow of the Beast
+AU:283:f80df2b7 0d77c7a2 9d8c054b:File Copier (Cheetah); King's Quest III
+AU:34:e73e89d2 c25286f7 cff4120f:Hyperdrome; Money; Bubble Bobble; GL Soccer; Hellbent
+AU:429:ecbadb38 060c7ca6:Ivanhoe; Atomino
+AU:357:9f1aaabb 1728f9c9 90f1fdc5:Plotting; Theme Park mystery; Falcon Mission Disk II
+AU:35:ba51838e b34ee2fa ae5b46b5:Falcon; Bombuzal
+AU:285:e5748b93 b0e760cb c4349d55:Italy 1990 (US Gold); Warp
+AU:36:91adc50e cf5323e1 a2ebcef2:Joe Blade II; Pool; Wanted; Flipside
+AU:37:3ee42f2a a5389cf4 5717580c:Operation Wolf; Top Gun
+AU:358:67a21fe5 db528081:Khalaan; Tark
+AU:359:5f29b855 9cbb1d2b:Pro Powerboat Simulator; Sonic Boom; Invasion Typing Tutor
+AU:38:cc4f155d 11d416b5 05625c08:Checkers; Ikari Warriors; Munsters, The; Flintstones; Mission Elevator
+AU:286:7b356425 25d40792:Puzzle; Heavy Metal; Cyberball
+AU:287:6a6770ac 0fa95c86:Xenomorph
+AU:39:40da37d8 5a4678e9 f6f8d5ba:Terramex; Super Ski; Metropolis; Poker Royale
+AU:288:2f8d11d6 6a9ae045 c63354c2:Continental Circus; Twylyte; Bubble Ghost
+AU:289:a0bfa872 898034ac 65622a30:Count Duckula; Cartoon Capers
+AU:501:cc16dd81 ffa927f6 633a9c58:Big Game Fishing; Elephant Antics; Burgerman
+AU:502:68705fcd cc2f166f:3D Soccer; Missile Alert; Hero
+AU:503:f44c5628 fe881b4a:Mega Traveller
+AU:430:5716fa4c:Emmanuelle; Recovery
+AU:431:6190ff67 4623b291:Narc; Hard Drivin' II
+AU:504:1e57e104 9233072b:Monster Business; Crystals of Arborea
+AU:432:d63daff7 145bcfcf:Mickey Mouse; Super Grand Prix
+AU:505:0e89bdf2 93d9c28f:System 4; Blues Brothers, The; Fallen Angel
+AU:506:16691f23 a16a9ed3:Scooby & Scrappy; Rodland
+AU:433:3f059569:Poker Dice; Tournament Golf
+AU:360:447b08a4:Fireball; Cricket Captain
+AU:434:a9d5e174:Fruit Machine Simulator; Pop Up
+AU:361:f4d1ae50 3ee4f14c:Freedom; Xalarack; Blitzkrieg (May 1940)
+AU:507:37fd8d35 4593e9b0:Chuck Rock
+AU:508:2d0c18b3 42fa9c6f:Monty Python's Flying Circus
+AU:362:480d3381 c4c5c113 9a7222cf:Yolanda; Rick Dangerous II; Magic Fly
+AU:40:27361b1d 8c30b039 83e2dc33:Victory Road; Iron Tracker; Megaroids
+AU:435:325df944:Hunt for the Red October II, The; Fire & Forget II; Solitaire Game Pack
+AU:509:f3fcc815 6beac52f:Time Soldier; Titanic Blinky
+AU:436:6084bf45 378c36c6:Universal Military Simulator II; Strabble
+AU:41:b4c57ef4 32651acf b93153cf:Street Fighter; Ripcord; Space Racer
+AU:363:a1e59bc6 5fbf892d:Deadzone; Last Ninja II, The; Light Corridor, The
+AU:290:b1ae39f6 141e73a3 2f6e6dec:Donald Duck's Playground; Oil Imperium; Hollywood Poker Deluxe
+AU:364:34965011:Steigar; Astro Marine Corps; Ruff and Reddy
+AU:42:15e8a5a0 d78b5c83 6c6c0bd5:Chopper X; Galactic Conquerer; Trauma; Monkey Buisiness
+AU:437:3ee44f79:Revelation; Crime Does Not Pay
+AU:291:d7757e34 a38a2a55 80a2a044:Tin Tin on the Moon; Dr. Zock; Strikey; Klax
+AU:292:9292eb64 e0d63bd9 81d1da85:Skidz; Sim City
+AU:438:32ca44ba:Sorry!; Metal Masters
+AU:365:bee50d71:Gremlins II: the New Batch; Extase
+AU:43:264b119f fc53eb33 5dc6686b:Boulderdash; Spidertronic; Thunderblade
+AU:366:758f5512 30711b58:Sophelie; Team Yankee
+AU:293:ed784d6a 095e076f d7774c4d:Resolution 101; Planet of Lust
+AU:44:1117b6b9 a0318bfa ca676a4d:S.D.I (Saga); Desolator
+AU:439:92e69631:Tee-Up!; Snoball; Masterblazer
+AU:46:e687fead 4d8d81e4:R-Type; Menace
+AU:367:c3da50b6 3c9da5a2 7615f1ff:Bard's Tale; Perplexia
+AU:47:c4573117 ddb19f61 68a204ca:Yahtzee; ZXYM; Rambo III; Transputer; Free Climbing
+AU:368:dd4c4e5e:Atari Tennis; Jinxter; Hoyle Book of Games Vol. II; Lazer Ball
+AU:296:16b9f97c 94e1c289 7781da8a:Graffiti Man; Hammerfist
+AU:48:c2200b78 19cf3f0a ddbc027f:Captain Fizz; Pyramino; Tracksuit Manager; Elf; Advanced Rugby Simulator
+AU:369:8cc8325f 8d845ded:Battle of Britain - Their Finest Hour; Galaxia
+AU:49:f3f3caed 35731c06 d1efa6d4:Baal; Crazy Cars II
+AU:298:ee4505bf 6baf4e00 11749f97:In 80 Days Around the World
+AU:299:e2f4011f aa5532d7 ebe0f6e6:Persian Gulf Inferno, The; Third Courier, The
+AU:510:6c30a51a 817db680:Harley Davidson; Head Over Heels
+AU:511:1ab5c486 8cacfc31:Mercs; Chuck Rock Extra Levels
+AU:512:ced533fa:England Championship Soccer; Challenge Golf
+AU:440:1be71a44:Insects in Space; Line of Fire
+AU:441:3bbbe46f:Aquanaut; Helter Skelter (1990 Edition)
+AU:443:8d8ca64d:Ascot; Dizzy Lizzy; Boxing Champ
+AU:370:d6587c02:Darklands; Coltris
+AU:444:89ee5d46:Pawn, The; Froggy Day in London Town, A; Red Wars
+AU:50:06e24456 dee83bf8 d84ab44e:Batman; Addictaball; War Hawk; Brickyard; Breakanoid
+AU:445:80aa4663:Front Line; Block'ed
+AU:446:328b6ccc d29750f4:Total Recall; Team Suzuki
+AU:51:7c382f19 ed2941ea 4bf07f19:Tau-Ceti; Peter Beardsley Football; I Ball; ST Krak; Prohibition; Impact
+AU:373:24764289:Dragon Breed; 3D International Tennis
+AU:447:f1b30053 0fd3c867:Pole 500; Operation Harrier
+AU:52:dc06ff12 520b1e3b 07a65c0b:Zany Golf; Karateka
+AU:53:261a18c1 5cfc6360 081b086f:Question of Sport, A; Erebus; Skyrider; Space Baller; Turbo GT
+AU:375:0800fb94 e7b5d7f0:Grimblood; Chess Simulator; Teller
+AU:54:001e825e e45aa78e 1240ce05:Chase; Thunder Wing; L.E.D. Storm; Mafdet; Hades Nebula
+AU:448:c6ad076f:Turrican; Chips Challenge
+AU:449:f2e5ce75:Turrican II
+AU:55:61d88dc4 c4a74605 bfc5d59a:Custodian; Brattacus; Andes Attack; Side Arms
+AU:376:1f553233 2b224dfe 3fb958ce:9 Lives; No Exit; Dweaby's Quest
+AU:377:9ae8d66a af870588:Nitro; Murder; F-29 Retaliator
+AU:56:5b5b899b 391c4b04:Vectorball; Trap; Double Dragon; Bermuda Project
+AU:57:2d744faa 74f8a1a7 71aa4f17:Luxor; I, Ludicrous; Hustler
+AU:378:cfd8d9e6 05803a23:Moon Blaster; Final Conflict, The; Hong Kong Phooey
+AU:379:9ffe974b:Atomic Robo Kid
+AU:58:c954b4a3 e1ff4018 eac0cddb:Wizard's Royale; Cards; Dame
+AU:59:b5cf22ec b25ae8f2:Road Wars; Golden Path, The
+AU:450:4a09f431 8050ad0e:Chambers of Shaolin; Yogi Bear & Friends
+AU:451:a88fe630:Merchant Colony; Super League Soccer; Operation Neptune
+AU:452:7d1775b3:Locomotion; Billy Bounce; Sol Negro; Feudal Lords
+AU:380:62f92070:Tusker; Skate Wars
+AU:453:3db1257d 763b6e83:Douglas Rockmore; Viz!; T-Bird
+AU:454:5a1c646d:Night Shift; Matrix Marauders
+AU:381:f307fa67 e554318f:Dragon Lord; Fire Rescue
+AU:382:d9e9f9d4 5a7951ae:Windsurf Willy; Legend of the Lost
+AU:60:008ee5ba 39419358 4d274873:Livingstone, I Presume; Starglider; Mission; Labyrinth; Blast
+AU:61:6d784201 762259f8 ea2bbd52:Catch 23; Road Runner; 10th Frame
+AU:62:15671c66 80b510ec:Technocop; Powerdrome
+AU:384:bd8cfefb 0ae5f6de 9ed65484:Torvak the Warrior; Gran'n'Prix
+AU:63:311139a4 1227be31 e58c34f0:Arkanoid; Hacker II; Strip Breakout; BMX Simulator; Stonebreaker
+AU:457:2924b1d1:Spectrum 512; Fighter Bomber; Damocles Mission Disk 1
+AU:385:78294237 a950dc1f:Vaxine; M-1 Tank Platoon; TOS Version 2
+AU:458:f5d7a51e 06b3fdc4:Purple Saturn Day; Lords of Conquest, The
+AU:64:413a341d 089e6403 aee718c7:Barbarian (Psygnosis); Outrun
+AU:65:389a21fd dccc0a07 59d0750c:Galkdragon's Domain
+AU:386:c86ee0b9:Body Shop, The; Turn It; Simulcra
+AU:66:cb4c13ac 321cb9b4 64480f20:Bomb Fusion; Terranova; Mad Flunky; Incredible Shrinking Sphere
+AU:387:12b0d0da e0321385:Curse of Ra, The; Pop Quiz Challenge; MiG-29
+AU:67:3c3bdb9e 0e7ebe8f bc3a805b:Grafton and Xunk; Eye, The; Hunt for the Red October, The; Fire & Forget
+AU:68:ba91339f e6d484c5:Raffles; Ringside; Terrestrial Encounter
+AU:389:2dae76bc 55b8364a 389728fc:Prince of Persia
+AU:460:1b558fe5 e85ab29b:Go Player; Bert the Squirt; Emlyn Hughes Arcade Quiz; Cohort
+AU:461:b668e820:Omnicron Conspiracy; Guided Missile; Backgammon Royal
+AU:462:714edd0f 84750ece:Great Courts II; Autorama
+AU:390:607d6421:ATF Advanced Tactical Fighter II; Paradroid 90
+AU:391:332f2fa0:Saint Dragon; Championship Run; Dragon's Tower
+AU:465:7e608252:Hill Street Blues; Penguin; Football Games
+AU:70:c60b236f aa45c915 087dff7f:Real Ghostbusters, The; Warlock's Quest; Ballistix
+AU:392:80bf2d45 5f06b425:Teenage Mutant Hero Turtles; Badlands
+AU:71:0bf964bc 39a342e3 5ae079ee:KickerBockers; Karting Grand Prix; Sam and Ed; Teenage Queen
+AU:72:178c9e0d 327e0906:Football Director; Seconds Out; Prohibition II; Scruples
+AU:394:7783f175:Mystical; Weller
+AU:73:91923c55 ee51eb07 6f8f3a30:Battle for the Throne; Artic Fox; Wizard Warz; Gauntlet
+AU:468:3b628c4b:Tripple Yahtzee; NAM
+AU:74:dd76cf52 f09d6731 7758ef75 1f9a9fc7:Hangman; Mini-Golf (A); Borodino; Billiards Simulator
+AU:395:1b72b9cc:Location: Crissle Fridge; Sliders; Amazing Spiderman, The
+AU:75:2b96d04b 77ac4492 b4c86e4a:Mini-Golf (B); Maria's Christmas Box; Pac Man; Game Over II
+AU:396:851aeb0a 8c2db5f6:Robocop II; Cabal
+AU:76:dcfb97f4 86de8c5a 5d0aee3f:Great Battles; No Excuses; Kick Off; Rubgy League Boss
+AU:397:59dbfc27:Narco Cop; Forest Fire; Puzznic; Loopz
+AU:100:0c656cdc 89ccee71 78a68938:Chicago '30; Puffy's Saga; Savage
+AU:77:07d6538d 6d493e75 a0c03b68:TNT; Hex; Arkanoid III; Captain Blood
+AU:398:97af08af 90ec57fb:Corporation
+AU:101:f560f235 cfa79a07:Startrash; Prime Time; Jungle Book; Dominoes
+AU:78:f569ed0e 5d9fe958 003d3c5a:Roadwar Europa; Trivial Pursuit; Trivial Pursuit: A New Beginning
+AU:102:76e4ac67 bbf56b52:Total Eclipse; Roadwar 2000; Red Alert; Video Vegas; Skateball; Empire
+AU:399:f2be459a 3edb0b09 c7cfcfb3:Golden Axe; Edd the Duck
+AU:79:47e573b0 c4c17d80 32d90a2e:Pac Land; Rogue; Zynaps; Sapiens
+AU:103:6ea9f201 7d3c18af b41bd7fb:Jug; Silkworm; Skrull
+AU:104:7b06efe1 ec8bfaa5:Space Harrier; Butcher Hill
+AU:105:07fc6afe 07872972 59054496:Xybots; Super Stuntman; Two on Two; Hyperbowl
+AU:106:5e8750f3 d5f12838 7411262b:RVF Honda Simulator; Tom and Jerry
+AU:107:eaa158c9 1c6bc714:Wicked; Airborne Ranger; Numero 10
+AU:108:2e8fe167 fd901b79:Tetris II; Sex Vixens From Space
+AU:109:a0ee430b 92277e86 a6290eac:Vulcan; Circus Attractions; Face Off
+AU:470:825045fe 1ae6c554:Flight Simulator II Data Disk (Lake Huron & Detroit); Z-Out
+AU:471:8568cb43:Ooze!; Tangram
+AU:472:4321cafb 015396bc:Kick Off II: the Final Whistle; I-Play 3D Soccer
+AU:473:a3178388 98789447:Italy 1990 (Codemasters); Chase HQ II
+AU:474:622099c1 98b44e9d:Back to the Future III; Empire Builder
+AU:80:98889c4e 2ae4dad2 febdebc7:Wrangler; Gridrunner; Blasteroids; Skweek; Computer Maniac's Diary
+AU:81:ad1170f3 8f0de78a 0cb5a460:Wall Street; Populous
+AU:475:6a1c07fe 64d90cf4:California Games; Skull and Crossbones
+AU:82:0ce5ef87 37192e95 3e913076:Pink Panther, The; Defender of the Crown; Super League Soccer
+AU:83:f0afdffb 95dd88d2 309efd45:Illusions; Chuckie Egg II; SkullDiggery; Krypton Egg
+AU:84:f7dcb216 266934f6 8830beef:Last Trooper, The; Human Killing Machine; Dragonscape; Road Blasters
+AU:479:d4b11a6e 17ab5a44:Heroes of the Lance
+AU:85:ee41592b 898928a8 50cd00a9:Games: Winter Edition, The; Cybernoid 2; Academy: Tau Ceti II
+AU:110:1b60b317 c524b894 029f18f7:Zork I; Deadline; Seastalker; Zork II; Ballyhoo; Zork III; Plundered Hearts; Lurking Horror, The
+AU:86:30ab077f 47153f3d ce5ac7bc:Bobo in Stir Crazy; Steve Davis Snooker
+AU:87:a3dfae94 b2fdd487 2aaf8101:Tiger Road; Motor Masacre
+AU:111:c735c05f 2bd4eb04 d2217926:Suspended; Witness; Enchanter; Moonmist; Wishbringer; Infidel; Sorcerer; Spellbreaker
+AU:88:d8ae37c7 fabb51cf 9cfe27d3:Trivia Challenge; Skyfox; Action Fighter; Voyager; Warzone
+AU:112:297c8a0f 0c1a2961 7572a35b:Leather Goddesses of Phobos; Hollywood Hijinx; Suspect; Stationfall; Hitch Hiker's Guide to the Galaxy; Planetfall; Starcross; Cutthroats
+AU:113:eddf188b 4c9ccb4e:Jinks; ST Soccer; Leviathan
+AU:89:1a23846b 239c2578 c5264b45:Alpine Games; Star Trek; Sorceror Lord; Liberator
+AU:114:bf74e387 7c20be6b:Jaws; Phobia
+AU:115:0546d36b 85ba7415 e36267ea:Chariots of Wrath; License to Kill
+AU:116:46b45b86 627a6033 ff518581 80932160:X-Tron; Bubble Ghost; Sundog
+AU:117:aeebd186 7761db41:Stunt Car Racer; Hawkeye; Blood Money (Demo); Super Cycle
+AU:118:d725c108:Championship Wrestling; Garfield: A Winter's Tail; Bob Morane: Chevalerie
+AU:119:2e9fda44 4b54833f 648a1be6:Weird Dreams; Bootiful Babe; Grand Prix 500cc
+AU:480:5a7f2bf0 ddc7ad01:Toki; Kick Off II: the Final Whistle Winning Tactics
+AU:481:378aa304:Colony; Gem Stone Legend
+AU:482:7cfb888b ed421057:Gold of the Americas; Space Weller
+AU:90:b8b6fad8 228f04a1 892a3d24:Final Legacy; International Karate; He-Man and the Masters of the Universe
+AU:485:688f6742 82362b9c 9d05cdd4:Frenetic; Logical
+AU:91:a0c0377a af7df219 270cc438:Vindicators; Clever and Smart
+AU:486:9e6b73d7:Fatal Error; Hypnotic Lands
+AU:92:30d81cac aaa2f3de c25ac78b:Dugger; Superman; Dragon Force
+AU:487:47e85fa9:Nautilus; Hockey Pista
+AU:93:51f8db92 157c0ff2 52b2ef6b:Space Baller; A-320 Airbus
+AU:488:6b97cddc a16f789b:Various Packers + Source; Lode Runner; Storm Ball
+AU:94:5d9e887d 1caa15d0:Carrier Command; Operation Hormuz; Matahari
+AU:489:b3cda5c4 8434911b:Hydra; Ball Game; Automation Boot Sector Maker
+AU:95:06f041f4 b348ca3e e9693c23:Cosmic Pirates; Hostages
+AU:96:5889545f fc610306 4b132d11:Robocop; Shanghai; Renegade
+AU:120:c31d6ded 40f3d11d 4071d88d:Beam; Rick Dangerous; Thunderbirds
+AU:97:76bff62d 81622b3c 8c2dc1c1:Dungeon Master; 3D Pool; Oids
+AU:121:5271bd84 b0caba33 0565a69c:Asteroth (Angel of Death); Stormtrooper
+AU:122:919f7473 bb624dfa 45c6664c 6232380d:Winter Olympiad; Bloodwych
+AU:98:9137650d 4a12d659 0a545ae5:Alpha Max; Millenium 2.2; Warship; F-15 Strike Eagle; Space Shuttle (microdeal)
+AU:123:242f0746 37435239:Renegade; Strike Force Harrier; Time Scanner; Roll Out
+AU:99:4dc726c8 6944c95e 0a1c6943:Marble Madness; Joan of Ark
+AU:124:546f2789 f5bfdcda:Castle Warrior; Indiana Jones & the Last Crusade
+AU:125:8321dfd2 02cdc92c:Lombard RAC Rally; Bubble Trouble
+AU:126:98f3ee54 ddde0857 e09d53b0:Sidewinder; War Machine
+AU:127:50c18ddb eb75dbac a80f168b:Space Port; Murders in Venice; 8 Ball
+AU:128:29596e40 0999977e 94a2ee79:Overlord; Times of Lore; Darkside
+AU:129:f0baf798 0d2d27ba 6656c02f:Blood Fever; Red Heat; Gemini Wing
+AU:490:c2fb0821 443eecb8:Prehistoric Tale, A; HeroQuest
+AU:491:6b33f8c8 b4607eb7:Train Set; Super Soccer Challenge; England Champs
+AU:492:b727c4a7:Soko; Metal Mutant
+AU:493:8bb1ef8e 3b7cb420:Fire Mission; 3D Construction Kit; Pac Man ST
+AU:494:f5d4c49a 20ccea8e:Ninja Turtle Colouring Book; Goofy's Railway Express; Pools 3.02; Mickey's Runaway Zoo
+AU:495:27502efa a2213ff5:Power Monger
+AU:496:adc947bc cb7de229:Super Monaco GP; Violator
+AU:497:53145f6a f14bfe7b:RSI Baseball II; Interchange
+AU:200:e207bd69 a8a7f5e4 2d7cefd3:Pipe Dream; Great Courts; Skido
+AU:498:29cee25b 39ed64d8:Sharkey's Moll; Radio Controlled Racers; Manchester United in Europe
+AU:201:51f204df 2d42e1c0 a3ad8313:Dragons of Flame; African Raiders
+AU:202:f8eaf3a0 7340ce3c 62f3a6a3:Hacker; ST Pool 1.3; Magic Bille; Techmate Chess; Ogre; Magic Alpha; Roulette; Trump Castle; Magic Cases; Pegamon
+AU:130:59849007 669c34ff 14dc45c5:Pursuit to Earth; Skyfighter; Jupiter Probe
+AU:203:89c6fc0b a2c69220:Brain Box; Werner ST
+AU:131:5ca0d042 b1b597a3 b624994c:Passing Shot; Summer Olympiad
+AU:204:34d23ec0 c05a336b 5c7d2be9:Armada; Conflict Europe
+AU:205:85c113af b5c1df85:Patrice Martin; Legend of Djel, The
+AU:132:b322ea69 01fc2565 90a8fc84:Dark Fusion; Rosemary Racoon; Armageddon Man, The; Jet
+AU:133:ce097378 ffb5a909:Xenon II - Megablast; Hi-Lo; Bumpy
+AU:206:3dcb913a f05e5438:Target Range; Colonial Conquest; Cluedo; Kayden Garth
+AU:207:763a856d 106b5abd:North and South; Leonardo
+AU:134:6c689394 72f02fe2:Dynamite Dux; Psycho
+AU:135:6d22023b ba79f302:Waterloo; Makin' Whoopie
+AU:208:f5fea225 d2715fa7:Crosswords; Bob Morane: Jungle; Trivia Master; Kelly X; Tonic Tiles; Tolteka; Backgammon
+AU:209:83928124 767aee70 6d48417d:Monopoly; Final Assault; Ultima II; Phantasie; Jumpster
+AU:136:67e4341b e6e5cfd1 2faa3362:Great Giana Sisters, The; A.P.B.; Blaster; Kennedy Approach; Mission En Rafaele
+AU:137:50dfe6db 35ab1340 5ba38123:Blue War III; Dream Zone; Ammotrack
+AU:138:8b9310e2 50cf042f:Saint & Greavsie; Tracker; Slayer; Fifth Gear
+AU:139:ecf2e1c0 cb9686f8:High Steel; Maniax; Mr. Heli; Ship Combat
+AU:69a:fc64890c b819795b eb814d88 d7467df9 ecf09e0c 8396de0e d64c14fa:President Elect; Stellar Crusade; Exodus: Ultima III
+AU:69b:b0c2ef34 738045c1 3df925c7 ac67b8a2:Barbarian II (Palace); Last Duel, The
+AU:69c:a911afc9 dac5937a 28060a71 fbde6b33:Afterburner; Microprose Soccer
+AU:69d:0bd33b4a a7e0c93d c12f4be7 733a2103:Tech; Rodeo Games
+AU:69e:544d2edd 93b9a03a fdc878e6:Kick Off II; Pro Tennis; Ghosts 'N' Goblins; Slippery Sid
+AU:148a:6eefd418 4cecb312 e2061c3a c4a091cd:Games: Summer Edition (A)
+AU:148b:be10b910 70d93759 355838e2 67e947fd:The; Jump Jet; Games: Summer Edition (B), The; Bio Challenge
+AU:240a:31c4e7b6 bee950ef bd31f45e:Rotor; Operation: Thunderbolt (A); Operation: Thunderbolt (B); Black Tiger
+AU:240b:4f622d1f e681ae46 89ac18f4:Brick Busta; Operation: Thunderbolt (Docs)
+AU:243a:8a5f4e33 47a196be:President is Missing, The; Indiana Jones: the Adventure (A & B)
+AU:243b:7a464f37 005a7ed1:Indiana Jones: the Adventure (C, D, E & F)
+AU:280a:ff86c1cf 1f29ebe2 35654516:After the War (A); After the War (B); Crystal Caverns
+AU:280b:5079159e e401e4c8 6dd99ad2:Dan Dare III
+AU:284a:3efcf430 36636152 945ce989:Man Hunter: New York City (A)
+AU:284b:aaf45acb dc1b1631 7e249eea:Man Hunter: San Francisco (A)
+AU:284c:5b2a3ec6 0e12c659 cc70c2ce:Man Hunter: New York City (B);Man Hunter: San Francisco (B)
+AU:294a:740cb327 bbe04b27 433b6a8d:Leisure Suit Larry II (A)
+AU:294b:077a6628 164a3f3d 09aa9283:Leisure Suit Larry II (B); Damocles
+AU:295a:a498a0af d8e1fb63 0e079cd1:Goldrush (A); Goldrush (B); Goldrush (C)
+AU:295b:5ccb2450 8509aebf fb692172:Time Wanderer; Goldrush Datadisk 3+4
+AU:297a:af425081 e11f9e77 56e2121b:Viking Child (A), The; Tennis Cup
+AU:297b:292cb674 98dcb553 0ecce58b:Viking Child (B), The
+AU:314a:4c8f1342 75af4dd9 44d26b59:Imperium; Police Quest II (A)
+AU:314b:8727d6ac 720f3d65 9fe15deb:Police Quest II (B)
+AU:315a:018e8907 469a492d 93306789:Space Quest III (A); Light Cycles; Tank Battle
+AU:315b:f03c7c69 a485e585 21f00ec1:Space Quest III (B)
+AU:319a:5bb59866 c8d3a052:Ninja Warriors (A)
+AU:319b:9a5930ae a140d026:Ninja Warriors (B)
+AU:319c:03197974 c649af6e:Ninja Warriors (C)
+AU:323a:e6d51be1 2b5ee073:Chrono Quest (A); Rocket Racer; Zenith
+AU:323b:e41ebd37 1c4d1ef7:Bolo; Techmate Chess; Chrono Quest (B)
+AU:335a:569cfd52 312e32b2:Shadow Warrior (A); Scramble Spirits
+AU:335b:61fa1f81 364271df:Shadow Warrior (B)
+AU:337a:2221173d bcaeabba 65f6d55e:Leisure Suit Larry III (A)
+AU:337b:3d95d9f4:Leisure Suit Larry III (B)
+AU:371a:c75d70e3 22fd3af6:Snow Strike; Final Battle (A), The; Jockey Wilson's Darts
+AU:371b:0e227859 9ae9efea 14d9055c:Final Battle (B), The; BSS Jane Seymour (A)
+AU:371c:7024956a f6cbd709 8979b6d5:BSS Jane Seymour (B)
+AU:372a:b1edc0be 2fe65d25 0e13e79f:Night Breed (A); Time Machine; Rogue II
+AU:372b:5f6e57ca 0bb550a8 cfd17992:Night Breed (B)
+AU:374a:a2579629 44c4632a 03afaf82:Gold of the Aztecs (A); Mike Read's Computer Pop Quiz; Renaissance
+AU:374b:018d91e6 3ac7d8a9 60b80986 5aae27d2:Gold of the Aztecs (B)
+AU:383a:4972522e d19935a5:Murders in Space (A); Caves of Rigel (A), The; Caves of Rigel (B), The; Turbo Lotus Esprit Challenge
+AU:383b:00e5c1df 099dbb5c:Murders in Space (B)
+AU:388a:07eb00ef 4c3b24b0:Panza Kick Boxing (A); Llamatron
+AU:388b:f97fe6b4:Panza Kick Boxing (B)
+AU:393a:6e941bf7 3f15dd91 f957e45a:Mean Streets (A); Strider II
+AU:393b:4b2d5038 deb81501 c1aa14ab:Mean Streets (B)
+AU:415a:53194ad2 36728fce:Horror Zombies From the Crypt; Cadaver (A); European Soccer Challenge
+AU:415b:fc9d90a5 14c9c68f:Cadaver (B)
+AU:418a:33e065d5 c1f7d92 508d57a6:Test Drive II (A); Test Drive II (B); World Championship Soccer
+AU:418b:630eb0e8 a59f3c0d:Test Drive II: Expansion Disk (Super Cars and California); Tie Break
+AU:420a:d1d9b9ae 3ca351a6:Fiendish Freddie's Big Top 'o Fun (A, B & C); Mix'n'Match
+AU:420b:fe2c31c5 38cfca65:Fiendish Freddie's Big Top 'o Fun (D & E)
+AU:425a:2064bd5b 9d676f7a:Supremacy (A); Judge Dredd
+AU:425b:779bf9d6 911473dd:Supremacy (B);
+AU:427a:ad8fc570 97944df5:Wings of Death (A); Mighty Bombjack
+AU:427b:639b3050 8217d52d:Wings of Death (B); Pang
+AU:442a:efaa8477 09bd60b9 975bb464:Ghostbusters II (A)
+AU:442b:58bf2346 db143eda 81691829:Ghostbusters II (B)
+AU:455a:e3883e95 38be23f4:Elvira: Mistress of the Dark (A)
+AU:455b:f8c21571 956acfc5:Elvira: Mistress of the Dark (B)
+AU:455c:6dea7741 e0732c55:Elvira: Mistress of the Dark (C)
+AU:455d:187e22f7 ebae2ac2:Elvira: Mistress of the Dark (D)
+AU:455e:e754f245 eb160b44:Elvira: Mistress of the Dark (E)
+AU:456a:e913924e 0de990e6:Ice and Fire (B); Ice and Fire (Main)
+AU:456b:b2f3a216 58da5134:Lost Dutchman, The; Ice and Fire (A)
+AU:459a:1cd5498f 58e15f0c 35484fb7:Blazing Thunder; Killing Game Show, The (A)
+AU:459b:25f1e9e9 e6025906 b9ac6e5f:Killing Game Show, The (B)
+AU:463a:23df8b33 67c293c8:Loom (A); Loom (B)
+AU:463b:2ed18e19 d998a35b:Loom (B+C); Flight Simulator II Data Disk (Wash., Charl., Jacks. & Miami)
+AU:464a:174a88ea 3aecd3f5:Personal Nightmare (A); Targhan
+AU:464b:25f6fbed 66db665f:Personal Nightmare (B); Compendium
+AU:464c:e2bb42b1 9fbec1cc:Personal Nightmare (C); Sidewalk
+AU:466a:51b8dc68 f09159de 6df566e8:Legend of Faerghail (A), The; Top Cat
+AU:466b:9bbe9c1b 33bd9d66 44da43ab:Legend of Faerghail (B), The; Paladin;
+AU:467a:24e69ec1 350c2848 759b21d4:Brat (A); Super Game; Africa Corps; Ninja Rabbits
+AU:467b:f5e9ae7a 520afe9a 3ce84628:Brat (B)
+AU:469a:85c819df 4dd1290b:Moonshine Racers (A); Super Cars II
+AU:469b:b04a8c75 1618c824:Moonshine Racers (B)
+AU:476a:60df18ce 212e9fa4:Gods (A); Navy Seals; Creepy
+AU:476b:c13cd688 39d35269:Gods (B)
+AU:477a:44af48e6 71a5cb1b:Predator II (A)
+AU:477b:f7a25e3c f99d7a18:Shadow Dancer; Predator II (B)
+AU:478a:b2d2c68f b44a34f6:Awesome (A); Car-Vup The Final Frontier (One 6 Extra Levels); Blockbuster
+AU:478b:8e70bd23 c7c0dfa9:Awesome (B)
+AU:483a:877d76b1 745ebf88:Final Day, The; Secret of Monkey Island (A), The
+AU:483b:6c3dfc78 5187e6d5:Secret of Monkey Island (B), The; Lords of Chaos
+AU:483c:9fec0a2b bcd6b859:Secret of Monkey Island (C), The; Oil Mania
+AU:483d:115e7a77 a6afb5d1:Secret of Monkey Island (D), The; Soccer Glory
+AU:484a:34b46bb0 8f6be589:Hero's Quest (A); Search, The
+AU:484b:411686f4 9666a34c:Hero's Quest (B)
+AU:484c:18f904c6 1162a660:Hero's Quest (C)
+AU:499a:5042a929 b9af3695:Geisha (A+B); Derek the Droid
+AU:499b:73a58388 42a9c053:Puzzmania; Oil Imperium (v2); Avina Blue; Geisha (C)
+AU:500b:7d852277 729c8aed:Booly; F-15 Strike Eagle II
+AU:500c:ec212556 d6207b28:Cadaver: Extra Levels; Gravity
+AU:500d:f3887bdf 3e74b63c:Apprentice; Arcade Trivia Quiz
+AU:500e:5c763478 74485546 b04b1805:Level 9 Adventures; Chuck Yeager's Advanced Flight Trainer 2.0
+AU:500f:4a6cb525 033c8e47 e1240195:Traders; Kubysimus
+AU:500g:e70955f6 09778a0c 6987e795:Baby Joe
+AU:500h:f668a55b 703c9045 760f4206 3b13f08c:Dr. Fox's Football Annual; Pop-Eyed
+AU:500i:10f7eeb2 de899629 9425a4a3:International Championship Athletics; Exterminator
+AU:500j:97fc56e8 8d09e0c0:Talespin; Space Ace; Exorcist II
+AU:500k:fb3ce4c3 :Cold Revenge; Daze-aster
+AU:500la:e9702ff0:Prehistorik (A); Swiftar
+AU:500lb:5f3abbb5:Sky Strike Plus; The Power; Prehistorik (B)
+AU:500m:b60dca9f:Full Count Baseball; Erica Jigsaw Puzzles; Slowtrek; STOS Startrek; Xebec
+SD:29::R-Type
+SD:1::Super Huey; Star Wars
+SD:10::Document Directory
+SD:11::Blitz Copier Pictures; DBman; Elite Novella; F-16 Combat; Federation of Free Traders
+SD:5::Document Directory
+SD:20::Police Quest II; Document Listing
+SD:12::Federation of Free Traders
+SD:13::NeoDesk
+SD:30::Top 100 Games of 1991; Document Lisying
+SD:32::Eye of the Beyholder
+SD:17::Chaos
+SD:25::Bloodwych Character Editor; Simulation City; Document Listing
+SD:18::Grand Monster Slam
+SD:19::Certificate Maker
+SD:27::Dungeon Master
+SD:36::Secret of the Silver Blades; Harpoon
+CY:1:6721c7e:Charge Light Brigade; Fighter Command; Hunter
+CY:2:fce9c494:Moonfall; Super Nova; World Cup Rugby
+CY:3:399b79cb:Gem'X; Kid Gloves 2; Sky Strike Plus
+CY:4:5cd95c3:John Barne's Football; Seymour Goes To Hollywood
+CY:5:30d8bb6f:CJ Elephant Antics; Slightly magic; Spikey in Transilvania
+CY:6:10960c07:CJ In The USA; Erik
+CY:7:74fd4ee5:Droid; Striker; Summer Games 1; Summer Games 2
+CY:8:4e5bbd40:Captain Dynamo; G-Loc
+SG:1:ecc116ab 8f825536:Crystall Castle; Flipside; Megaroids; Mudpies; St Karate
+SG:2:adaa10c3 f65d9115:Crimson Crown; Hades Nebula; A Mind Forever Voyaging
+SG:3:d4ee8ef2 4d0a332e:Crafton & Xunk; Pmn - Case of the Mandarin Murder
+SG:4:f9edbd6e 22efcd56:Fahrenheit 451; Plutos
+SG:5:be3df3bd d3d48728:Mindshadow
+SG:6:1264a187 4257c03:Borrowed Time; Tenmonus
+SG:7:28739b32 29958c41:Sundog - Frozen Legazy V. 3.00
+SG:8:c0690b74 49dcda9d:X - Trom V2.0
+SG:9:5bd25a3e 4bf7baca:Knight Orc
+SG:10:5cf2ade3 c93c2cac:Blackjack/Solitaire; Deltapatrol; Joust - New Good Version !; Time Lords - Timebandits V2.0; Major Motion II
+SG:11:c59ee39d 996219c7:The Pawn V2.0
+SG:12:72e434d4 297d0b6e:Psion Chess V2.0; Milliped; Thrust
+SG:13:e95a2e87 faf20799:Starglider; Snds Tex; Bubble Bobble Construction Set
+SG:14:53f60ba3 1a30291f:Jagd Auf Roter Oktober; Missile Command; Beam
+SG:15:c75de9ae 3d36206c:Deep Space
+SG:16:21d6179c cc05cb7:Intro Construction Set; Metro-Cross; Midimaze V1.0
+SG:17:26dea1f6 630cb8bd:Brataccas
+SG:18:8587a909 6935767e:Backgammon; Hacker II; Bureaucrazy; Tencolus
+SG:19:501784c3 de83ed1a:Ice and Fire - The Wizards (A)
+SG:20:9dd7f989 9a80ea7c:Ice and Fire - The Wizards (B)
+SG:21:0949f3af 89e2fc66:Ice and Fire - The Wizards (C)
+SG:22:cfa846a0 :Typhoon
+SG:23:1eb31525 d71278a6:Arkanoid; Demo 3; Goldrunner
+SG:24:b8bb0322 4faabc7f:Pro Sprite Designer; Silent Service
+SG:25:4a0e59af 8119b46b:Flugsimulator II; Q - Ball; Tv Sports
+SG:26:071c68d0 59c2af9f:Winter Olympiad' 88
+SG:27:e56e909c 4f953e12:Chessmaster 2000; Extensor
+SG:28:19b8c819 922edc7b:International Karate; Starraider 2
+SG:29:e5e9760f D4047ef4 c7e7cf6f:Worldgames
+SG:30:71e6fb6c 5b4d7eab:Amiga Pictures
+SG:31:214e91b3 a1feb77:Sdi
+SG:32:61c6fa02 b5c5a20:Winter Games
+SG:33:9da95f3d 9c3661e1:Gauntlet
+SG:34:05ba9faa 10c9d75e:Tass Times in Tone Town
+SG:35:353541b9 ce3c63d4:Dizzy Wizard
+SG:36:6aaeb518 8ea0e9e9:Mercenary - Escape From Targ; Mercenary - The Second City; The Guild of Thieves
+SG:37:1d65d365 69aaba3d:Krabat Schach; Hollywood Poker; Transylvania; Checkers
+SG:38:e7d660e7 609eec2d:Tonic Tile
+SG:39:516cd841 d08efe0a:Strip Poker; Red Alert; 8 - Ball; Pengy
+SG:40:de2b2a5d 7b7b63b0:Gba Championship Basketball
+SG:41:adc673e5 a0fa4cd0:Road Runner; Mission Elevator
+SG:42:5f1c898c 79d59b2:Police Quest 2 (A)
+SG:43:e8957349 1bd10422:Police Quest 2 (B)
+SG:44:44a106c4 a9f553c:Police Quest 2 (C)
+SG:45:b7cb6c1a de0a7947:'Shiny Bubbles' Demo; Shanghai; Super Huey
+SG:46:8a1ca16e cd1ff911:Arkanoid Construction Set
+SG:47:abcc9687 2391e0e7:Airball + Docs; Strip Poker II+
+SG:48:239fb171 cb97db88:Vixen; Tracker; Fullscreen Intro
+SG:49:558de387 831765bb:Out Run; Leader Board II; Snakefight
+SG:50:23992976 4cb6f9e5:Space Racer; Trifide
+SG:51:448d602e 123a351:Football Manager 2; Demo Construction Set; Blood Money Demo
+SG:52:2045afc9 479dc56c:Chronoquest (A)
+SG:53:80ec53fd 113b4ddb:Chronoquest (B)
+SG:54:23a79fb3 c6cb628c:Barbarian
+SG:55:074f4428 f4aafd73:Terrorpods
+SG:56:ca85784b 7ed30847:Magnetik Tank; Time - Bandit; Joust
+SG:57:0ca32180 dc105bf:Terrorpods
+SG:58:d2eddfaf 40e1d0a2:Nebulus; Where Time Stood Still
+SG:59:7cf917fe 2381de24:Obliterator
+SG:60:4904601c b56e6b12:Obliterator
+SG:61:877c0563 1afe2e99:Golden Girls Show
+SG:62:9db84ff2 836686d9:Championship Wrestling; Macadam Bumper
+SG:63:803854c4 6fbb29dd:Altair; Into The Eagles' Nest
+SG:64:0f6f3eff 9101242f:Kick-Off; Robocop
+SG:65:8e0e66a7 3f6bb94a:Phantasie III - The Wrath of Nikademus; Deathstrike
+SG:66:7173a81b 1af02772:The Bard's Tale
+SG:67:3883eefd 46d87ec5:Marble Madness; F15 Strike Eagle
+SG:68:b4ad581d e68c5fc4:Leisure Suit Larry
+SG:69:ea6cf63b 7ec163a7:Ingrid's Back; Passing Shot
+SG:70:752b610b 682e535f:Corruption
+SG:71:5dd374d6 f10636ed:Bad Cat
+SG:72:c1f79ca5 213e9f0:Runners Revenge + Leveleditor; Boulderdash Construction Kit; Minos
+SG:73:25ccc9a0 e14556e3:Das Landhaus Von Mortville
+SG:74:8f72792f 31a7bd98:Savage Game 1, 2 & 3; Bomber Command
+SG:75:afd9533f ead0f56f:10th Frame; Ninja Mission
+SG:76:c51734ce 9910e6db:Addicta Ball; Impact
+SG:77:823da019 de46f1ba:Galaxien; Gnome Ranger
+SG:78:ad529554 3a8769c1:Police Quest 1
+SG:79:8fe829d1 c2f41aeb:Blue War III
+SG:80:43b2fd4a 17acf930:Defender of the Crown
+SG:81:eff6f0ff 619856a9:Test Drive
+SG:82:cfc1c33a 19106a36:Jinxter; Leather Goddesses of Phobos
+SG:83:091dfaa0 de5a46a3:Tanglewood + Docs; Sentinel
+SG:84:3c676539 ea7e3a9f:Cardiac Arrest; Star Wars; Spektrum 512 Slide Show
+SG:85:787148f6 510a2651:Dungeon Master
+SG:86:b3ac282a fb5d652b:Wizball; Bubble Bobble
+SG:87:949c9bc8 8352aa63:Backlash; Roadwar 2000
+SG:88:1514732a 3adbe8b7:Eco; Sentinel + Docs; Solomon's Key
+SG:89:27e69793 34519b80:Enduro Racer; Ballerburg; Strip Breakout
+SG:90:d59c0d60 62a8c6e1:Xenon; Super Sprint
+SG:91:475e265d d1e12d:Rampage; Mach 3
+SG:92:9c07bcf1 b411bdb6:Oids; Karate Kid II
+SG:93:1ddd3ca7 7ee6edfc:Sapiens; Beyond The Ice Palace; Slaygon B
+SG:94:e1f20e4e 9d4bfb42:'B.I.G.' Demo
+SG:95:26e1895d 120f1c16:'Amiga' Demo
+SG:96:09f9822a abca3ca0:'Fnil' Demo
+SG:97:e0f07d8d dff5be78:Tnt Demo Nr. 5
+SG:98:531087f9 a49c0398:'Imagic Lampen' Demo
+SG:99:5a63d0b3 3d7d0597:Time Runner
+SG:100:30e164ca a37a894e:Lt. Blueberry
+SG:101:ecf4ee99 ef4a99e2:Slaygon A
+SG:102:96423f33 2a23168b:'Whattaheck' Demo
+SG:103:9d99591b 107bd050:'Cuddly' Demo
+SG:104:35d6fa99 fca3c4cd:Terramex
+SG:105:0f1d9dd0 7340cd5d:Airball Construction Set
+SG:106:fd51f3b6 7cc732fe:Gunship + Docs
+SG:107:e8f7db7d 272e6b24:Ikari Warriors; St Soccer; Kill Tom
+SG:108:8b6edd8e 2f4be860:Spitfire 40; Deflector
+SG:109:035fb6a9 956cf097:The Great Giana Sisters
+SG:110:0d6ff01c cead2165:Carrier Command
+SG:111:918fdb01 cef1d962:Return To Genesis; Spidertronic
+SG:112:242678cc 4c1ffb09:Impossible Mission II; Road Wars
+SG:113:96a34f08 e6018d16:Captain Blood; Star Wars II
+SG:114:8f0d4341 e5852636:Rogue II; Indiana Jones
+SG:115:011b95bb 3b6380c5:Bob Morane - Ocean
+SG:116:a866a52e 6cf9ecf6:Sidewinder
+SG:117:222e4f5c 890e54e3:Questron II
+SG:118:2a61e800 e6dc75f6:Hellowoon
+SG:119:bee65245 2860964f:Ooze
+SG:120:bb556e0e a454f032:Shadowgate
+SG:121:d97d69d8 7049b3d:Demons Winter; Sentinel
+SG:122:623be687 4e4cad70:Legend of the Sword
+SG:123:a99a7203 700cf4d:Corruption
+SG:124:812a128f 9cdec0cc:Battle Chess
+SG:125:793b8877 79060b28:Overlander; Bomb Jack; Panic
+SG:126:6b87203f 3717b9a7:Skrull
+SG:127:8e3df160 99ca7eb1:Masters of the Universe
+SG:128:9d855d08 8ff163:Ranarama; Balance of Power
+SG:129:fe74dc66 1b9d33d9:Zynaps; Virus
+SG:130:e85c0776 2b71d906:Hacker
+SG:131:471c7213 53dfdef8:Heroes of the Lance (A)
+SG:132:397c4761 c8662d27:Heroes of the Lance (B) & (C)
+SG:133:c2e516b4 d0090890:Netherworld; Typhoon Thompson
+SG:134:ba753d57 8dabf3a8:Alien Syndrome
+SG:135:449f5e6e cccc2bb8:Eliminator; Tetris
+SG:136:9c57a5f7 c40cac29:Summer Olympiad' 88
+SG:137:203fba0e 650e991e:Sunrise Mix No. 2
+SG:138:3661f7a0 99affa50:Arkanoid II; Nebulus
+SG:139:d9036675 761a856c:Better Dead Than Alien; Bolo
+SG:140:1e6fa002 a4a54db3:Starglider II
+SG:141:46d2bad4 d30d54e8:Super Hang On
+SG:142:73efb9e5 9c446707:Cybernoid; Stargoose
+SG:143:5a472024 393bc9ea:Starray
+SG:144:d0deb55c 45d3f595:Menace
+SG:145: 45d3f595:Menace
+SG:146:04a9575e 8dcf66e:Elite-Maker; Sargon III; Return of the Jedi
+SG:147:d95460d6 5ce3fb76:1943; International Karate Plus
+SG:148:29ae6d2e bdba7fd9:Driller; Powerdrome
+SG:149:7312ceeb f11825a8:Archipelagos
+SG:150:97552b1b 6b0fcbcd:Stellar Crusade
+SG:151:432b7c99 c0a882af:Operation Wolf (A)
+SG:152:e08078ed e5199c29:Operation Wolf (B)
+SG:153:6177962c bc8058f8:Targhan
+SG:154:eded19a9 c5a22033:Motorbike Madness; Pacmania
+SG:155:1c8b3b67 3605fce:Fish! 42-Crew; Speedball
+SG:156:362a3782 b71d197d:Volleyball Simulator
+SG:157:2c607a46 a79f9448:Infestation
+SG:158:561ba300 ff54ce96:Rugby Simulator; R-Type
+SG:159:fc1d0b3c 534f37df:Interphase
+SG:160:964c0d12 878fc63:Starflight
+SG:161:3a98ba81 c2e208b5:F-16 Falcon
+SG:162: c2e208b5:F-16 Falcon
+SG:163:a56ecd0e 91cc0440:Technocop
+SG:164:0c600044 c8a90a67:Bio Challenge
+SG:165:fd9f5711 27b27f57:Afterburner
+SG:166:ea0c3121 ad8c7e29:Hostages
+SG:167:924891b7 1576f2af:Baal; The Munsters
+SG:168:739a18e0 bbe4b37f:Purple Saturn Day
+SG:169:ee372e72 9ae61a8:Speedball; Western Europe Scenery Disk; Hellfire Attack
+SG:170:30b6acca 7783a4ed:Mad Show
+SG:171:c4022ac1 f2f263d5:'XXX International' Demo; 'Atg' Demo
+SG:172:7f61e55a d04a8c0f:Larry 2 (A)
+SG:173:e52ac722 675fbc15:Larry 2 (B)
+SG:174:9b605248 e11ccfba 74948641:LARRY 2 (C)
+SG:175:b8144a40 98e33387:'42 Crew' Demo; Baal Trainer
+SG:176:cffbd7e9 8d06cccb:Menace
+SG:177:d8b1d40f 5ca78fe0:The Last Ninja (A)
+SG:178:04294557 cc35e57f:The Last Ninja (B)
+SG:179:b2ad60bc a3cca7e:The Last Ninja (C)
+SG:180:50f4e608 4233fce4:The Last Ninja (D)
+SG:181:af706261 8f77aaae:Zak Mc Kracken (A)
+SG:182:5236c1ad 6c62853d:Zak Mc Kracken (B)
+SG:183:ab323efe 6b566a80:Zak Mc Kracken (C)
+SG:184:2c107388 81634593:Zany Golf
+SG:185:e08fbe47 374da7e5:Led Storm (A)
+SG:186:63c52298 b2263c78:Led Storm (B)
+SG:187:b7ddf72e cedda4d6:Desolator (A)
+SG:188:f7878ac3 2b861cd3:Desolator (B)
+SG:189:5965b93f 821297f3:Tracksuit Manager; Fire Zone
+SG:190:cba6102b 2e954747:Pirates;
+SG:191:46bcb03a 46f3ce00:Kings Quest IV (A)
+SG:192:d15f53d2 242e7924:Kings Quest IV (B)
+SG:193:3eb7f339 70d3d730:Kings Quest IV (C)
+SG:194:cc16f5a7 f1c2b066:Kings Quest IV (D)
+SG:195:32e9ace3 43329d12:Galdregons' Domain (A)
+SG:196:bb43a9b5 3bdf096a:Galdregons' Domain (B)
+SG:197:09591166 df21f57b:'Swedish New Year' Demo
+SG:198:af1b3671 4fe66d1d:Midwinter
+SG:199: 4fe66d1d:Midwinter
+SG:200:ebfeeb4b 79d93939:Bombuzal; Custodian;
+SG:201:2b0065f0 1df5a1bc:Barbarian II (A)
+SG:202:a5ecbafe ba172436:Barbarian II (B)
+SG:203:1c582e32 58c2d71f:Foft (A); Custodian; Ludricus; Skull Diggerypool
+SG:204:fec91486 67ecd922:Foft (B)
+SG:205:dc8eb880 76f53a68:Manhunter New York (A)
+SG:206:4aa944db b5c6661a:Manhunter New York (B)
+SG:207:d24f52b9 fec69210:Gauntlett II (A)
+SG:208:79e73e87 3f4889fc:Gauntlett II (B)
+SG:209:40cff007 74787a3e:Hollywood Poker Pro
+SG:210:41bd9632 c4e952e0:Fusion
+SG:211:632466e4 745ba0e8:California Games
+SG:212:a6ea8048 faf2ee04:Ballistix
+SG:213:cdd75130 4563577f:Bombuzal; Times of Lore
+SG:214:e562e51c 5c352347:Populous Data Disk
+SG:215:900701ae 6f716a80:F16 Combat Pilot
+SG:216:791b1182 95791cf8:'S-Express' Demo
+SG:217:e4f920cf 97a61645:Dungeon Master
+SG:218:22eb4223 3760c3b8:Populous
+SG:219:7975d38b 4cd7b4d0:Times of Lore; Bismarck
+SG:220:7933b0d4 607430e0:F16 Falcon
+SG:221:cbe5999c 27b06ff1:Space Quest 3 (A)
+SG:222:fd921381 927620c8:Space Quest 3 (B)
+SG:223:7cd96bce 518fff67:Space Quest 3 (C)
+SG:224:62871707 a0de2699:The Newzealand Story
+SG:225: :The Newzealand Story
+SG:226:03e29ca1 6847500d:Kult
+SG:227:9d3ffefb 853c6801:Castle Warrior
+SG:228:78834302 8614ddf1:Spherical
+SG:229: :Weird Dreams
+SG:230: :Archipielagos; Millennium 2.2
+SG:231:70783ee6 3652945a:Suspicious Cargo (A)
+SG:232:3746aaba ed102500:Suspicious Cargo (B)
+SG:233:d80d4b72 ffb5542a:Xybots (A)
+SG:234:7ebd6248 fd066164:Xybots (B)
+SG:235:2df3fae3 61cffd22:California Games
+SG:236: 61cffd22:California Games
+SG:237:bbec52a8 ac1c622d:Helter Skelter; Bloodwych
+SG:238:c62d9e12 fd6a99bd:F16 Mission Disk Vol. 1
+SG:239:77fd0951 30d0901e:Nil
+SG:240:7c8a6138 aa540fc:Murders in Venice
+SG:241:8bfc69c4 b747ab1d:Xenon II
+SG:242:4e6b89b1 9801f35c:Micropose Soccer
+SG:243:c1db2eea 9cbb1a80:Giga Pirates !
+SG:244:68d787b3 A5e472cd f5483f84:Blood Money
+SG:245:9e131864 7d9cbc13:Indiana Jones III (A)
+SG:246:61a8fc35 746d4b79:Indiana Jones III (B)
+SG:247:56a6a40a d038cb51:Indiana Jones III (C)
+SG:248:5213f174 81aa6e5a:Red Storm Rising
+SG:249:7a4595ad 31b3679b:Oil Imperium
+SG:250:ebde2cf9 4a810c7e:Stunt Car Racer; Fast Lane; Saint & Greaves; Annals of Rome
+SG:251:e9896a86 92e7198c:'Aenigmatica' Demo
+SG:252:1e70be8b a83e8a96:Hillsfar
+SG:253:b84269e0 a2b15588:Manhunter
+SG:254:f68fc46c f9d9910a:Manhunter
+SG:255:90df123b 4d605c5b:The Games Summer Edition (A)
+SG:256:9b254fcc 5e9e24ad:The Games Summer Edition (B)
+SG:257:da7e7946 dc0b8faa:Demos & Degas-Bilder
+SG:258:aaf3cfe4 5590ceff:Micro Mix 1
+SG:259:cfa3e82e c9380f01:Micro Mix 2
+SG:260:904d571c 6f9c9a81:Hard'N'Heavy
+SG:261:ddad2780 6fa37321:North & South
+SG:262:4ee9f8ce 6e39eae8:Deja Vu II
+SG:263:dd7c24a4 ab056ad9:Super Wonderboy ++
+SG:264:22e15a47 2f7626af:Mr. Heli
+SG:265:320df2d8 719d9c57:Strider
+SG:266:1b79db33 92333c57:Dragon Spirit
+SG:267:319c53c4 714a1242:Chambers of Shaolin
+SG:268: 714a1242:Chambers of Shaolin
+SG:269:e2e723d6 bf32793a:Talespin Adventure Creator
+SG:270:ad06e941 ba8c4d4d:Cybernoid II; Hard Drivin
+SG:271:40b821ee b9e46050:Circus Attractions
+SG:272:a044a603 7bd08a6:Ferrari Formula One
+SG:273:e9a95f79 b92d7e4c:Populous Final Frontier Data Disk II
+SG:274:db02b0cd 3324b869:Streethawk Sound Demo
+SG:275:73ab166b 207bf098:V8 Music System
+SG:276:cd0e4c09 2bac4d1c:Tex - Demos 1-3 & Intros
+SG:277:cd4220b0 631b394e:Omega - Demo
+SG:278:671995ed ed9b3bed:Powerdrift (A)
+SG:279:000d7058 f66aa536:Powerdrift (B)
+SG:280:26d64006 821a476a:Powerdrift (C)
+SG:281:674a370c a2fbc1c6:Ironlord (A)
+SG:282:68b0f707 c7892c46:Ironlord (B)
+SG:283:ec60cfbf 9ff28c1:Ironlord (C)
+SG:284:20f2183e 781d9762:Drakkhen (A)
+SG:285:6999999c d35b490e:Drakkhen (B)
+SG:286:401c8867 a19920d7:Drakkhen (C)
+SG:287:eff757a5 140b6eb2:Ninja Warriors (A)
+SG:288:9b8a95b5 3b37d0f5:Ninja Warriors (B)
+SG:289:ee60a72a 195a1efc:Ninja Warriors (C)
+SG:290:c8f8bcab 39489b72:Rock'N'Roll; Triton III
+SG:291:3224aca5 c1d8980:Future Wars (A)
+SG:292:f45711fc aaa48414:Future Wars (B)
+SG:293:8ca1f90e 55a82fce:Wayne Gretzky Hockey
+SG:294:6e6763a3 66c5d7ae:Great Courts
+SG:295:fea98eae ea25148a:Chaos Strikes Back (A)
+SG:296:591fd818 affd8565:Chaos Strikes Back (B)
+SG:297:157354e9 47db2ba4:Teenage Queen; Level 16 Demo
+SG:298:420459f9 3db70c20:Lombard Ralley
+SG:299:1ece57d4 3297bf01:X-Out Trainer
+SG:300:f98a66da 2cca6e7d:Boxing Manager
+SG:301:7f981281 b3c4899f:Tower of Babel
+SG:302:1ac9e286 63ad12a9:Leavin' Terramis
+SG:303:32544577 356c50fa:Kick Off Extra Time; Clown O Mania
+SG:304:96a96ed1 3648e789:Warp; Italy 1990; Chaos - The Maps
+SG:305: 3648e789:Warp; Italy 1990; Chaos - The Maps
+SG:306:f08f5b59 241db904:'So Watt' Demo
+SG:307:3ca830e6 10e9d2c1:Ultima V (A)
+SG:308:4550b0a0 5ee2ea4c:Ultima V (B)
+SG:309:5359cf95 b1abab38:Tigerroad
+SG:310:443b4e02 b6b4c97e:Minos
+SG:311:d3c795dd f00a9a4a:Bloodwych Data Disk V.1
+SG:312:26eaf73e 55838581:Rainbow Islands;
+SG:313:6bf0fe50 d9d08f51:'Alliance' Demo
+SG:314:0c0710bf 207be072:'Ulm New Year' Demo
+SG:315:18de1647 2668d914:Turbo Outrun
+SG:316:60ccc68b 559d4d7:Fred
+SG:317:a341a71c fc6e042b:Wind Walker
+SG:318:5dd75cb7 b6301991:Rings of Medusa
+SG:319:95bedc50 640d8aaa:Fighter Bomber + Docs
+SG:320:ef7826d2 1c085ab1:Sherman M4; Chronoquest
+SG:321:7a3cb3c1 934a51b3:Squeek
+SG:322:4b669432 ad4aab51:Full Metal Planete
+SG:323:7d23a368 4c0c0488:Switchblade; Stormlord
+SG:324:5d76c104 fe247860:1st Intro Compilation
+SG:325:1675c7fc f98352e8:Jumpin' Jack Son
+SG:326:03b4c7db 6e252d23:Iss; Rick Dangerous
+SG:327:2f9baee0 d4f634e:'Swedish New Year Demo 89 - 90' - Part Two
+SG:328:66bae06f fc8782a8:Castle Master
+SG:329:2242bc1d aaff6ea2:Seven Gates of Jambala; Super Wonderboy
+SG:330:c6b1ea43 f3d92992:The Teller; Duckula Trainer
+SG:331:7f3f6be2 14874ab2:Dark Sat; Italy Soccer 1990; Klax
+SG:332:853b2f59 29caaa2:Supercars; Kick Off Playermanager
+SG:333:0c490047 10281f4d:Paradroid 90
+SG:334:52c7348b b1deda98:Esprit
+SG:335:81a8d905 60fde1f0:E-Motion; 'Mindbomb Sprite' Demo
+SG:336:d7672016 74f9fe4b:Toobin; Blockout; Dm-Editor
+SG:337:709eacf5 69e745e0:The Kristal (A)
+SG:338:e99f9960 632813f9:The Kristal (B)
+SG:339:aecce7a8 4e560e0b:The Kristal (C)
+SG:340:8d955f89 ddd8a4ec:The Kristal (D)
+SG:341:722a372c 37e4ad6f:Resolution 101
+SG:342:0649537d d358ac5c:Satan
+SG:343:dbbd2a54 18126bf0:Kickoff 2 + Doc; Dynasty Wars
+SG:344:393de069 bd7563db:Hoyle
+SG:345:3ebfc5b1 41ee7fa6:Khalaan
+SG:346:b08c77c6 7a3559bf:Flood
+SG:347:c7657aba cbc674d3:Imperium; Pyramax; Crypt
+SG:348:ea1ddf0f 2cba902:Nethack V3.0
+SG:349:f3d5fab5 3663186:Loom (A)
+SG:350:a2b28adb c9962aa2:Loom (B) & (C); Magic Lines
+SG:351:651cd29c f629a991:Moria; Sokoban; Atj Poker
+SG:352:cdcccbac 80bcbb27:'Life's a Bitch' Demo
+SG:353:00a88cc6 fa7f26cf:Wings of Death (A)
+SG:354:75d0ca1d b9f24576:Wings of Death (B)
+SG:355:e53e6183 5c26250a:Oxyd
+SG:356:6fabad25 a67b34ff:Maniac Mansion
+SG:357:fd98e6b1 24cfe4ad:Leavin' Terramis; P-47
+SG:358:8b86c5c5 57493512:East Vs. West Berlin 1948
+SG:359:4f9e7289 f5e318d7:Fire & Brimstone
+SG:360:6e869a5c b78941c8:Tcb Tracker V1.0
+SG:361:4d19a58b e14b2684:'Overdrive' Demo
+SG:362:bdf6a9f4 1b0e36f0:'The Inner Circle Decade' Demo
+SG:363:94ebed22 2ffd4b29:Astro Marine Corporation
+SG:364:cc525812 f0e129b9:Projectyle
+SG:365:c5599dfd b77bd550:Terry's Adventure; Back To The Future 2; Combo Racer
+SG:366:5f96c883 3ac688e:Advanced Ski Simulator; Treasure Island
+SG:367:032507bd 39fe4b6d:Cartoon Capers; F29 Doc
+SG:368:8f8c2f37 72b612c4:'Skid Row' Demo (A)
+SG:369:1786e039 7afda2da:'Skid Row' Demo (B)
+SG:370:92b7d4fd 2c519dd7:'Xtc' Demo
+SG:371:e37119f4 efd9fa9d:Paradroid '90
+SG:372:b4f25ae9 6c4f0a7b:Crystals of Arborea
+SG:373:ae3dbbdc 258d939d:Hacman 2; Solitair
+SG:374:edbe9ab3 11ae41d8:Speedball 2
+SG:375:b36af09f 11fdef89:Falcon Mission Disk 2; Atomix
+SG:376:431a1ab7 b13bc54a:Enchanted Lands
+SG:377:a7c7a6e6 2bcea715:Spindizzy World
+SG:378:a366832a 3da10d31:Rick Dangerous 2
+SG:379:46033da7 3d217e16:Strider 2
+SG:380:0c37469c 2d1e9721:Powermonger
+SG:381:f4696bf4 c917e664:Tournament Golf (A)
+SG:382:0f03e597 d88aa2a:Tournament Golf (B)
+SG:383:e6afd7d1 a282b284:Shadow of the Beast (A)
+SG:384:568f9c18 82a3f04b 666892c0:Shadow of the Beast (B)
+SG:385:d06d7e81 f83da962:Dizzy 2; Car Vup; Imperium
+SG:386:3263652d 3246481a:Elite
+SG:387:e644acc5 49b88140:Battle Tech
+SG:388:397d05eb 9fe1bf42:Midimaze II; Pipe Dream
+SG:389:71c1ab91 4682a9c9:Battle of Britain (A)
+SG:390:2af01892 3e56a750:Battle of Britain (B)
+SG:391:371c2b79 d0f72156:Emlyn Hughes International Soccer
+SG:392:fd4af34e ac9da01a:The Secret of Monkey Island (A)
+SG:393:bc73f16e 6499b6c4:The Secret of Monkey Island (B)
+SG:394:9d9fafaf 73f0dae1:The Secret of Monkey Island (C)
+SG:395:56b31af6 c946a0cf:The Secret of Monkey Island (D)
+SG:396:81dfd9b9 a9c12af1:Wonderland (A)
+SG:397:e03ba525 27ad5095:Wonderland (B)
+SG:398:7aa82f1e cb2b3d41:Wonderland (C)
+SG:399:47cb72b2 52adcabe:Wonderland (D)
+SG:400:03ca3a8b b1d2944:Ultima IV; Vectorball
+SG:401:80fbbb7a 196564fa:Magic Pockets
+SG:402:8a75d048 9f3ddc0:Golden Axe
+SG:403:432d8a5f afaaa394:Turrican II
+SG:404:e10a8b49 b79b453f:Mig 29 Fulcrum
+SG:405:4955973b 77f8a1ae:Lemmings Tr.
+SG:406:c8040101 465b021c:Warp;
+SG:407:9829a4c7 9f610fd:Curse of the Azure Bonds (A); Jocky Wilsons Darts
+SG:408:3512a79c 6a7605b9:Curse of the Azure Bonds (B)
+SG:409:ce6348ae 9f6d2df:Betrayal
+SG:410:ba78a6c5 fc7397a1:Great Courts 2
+SG:411:b723891c 3e7cf085:Gods (A)
+SG:412:aa520807 5d070f66:Gods (B)
+SG:413:b190f9a9 719bd7ed:Awesome (A)
+SG:414:7e62df08 a96ffb04:Awesome (B)
+SG:415:d9b8f9e3 b7e74a01:Awesome (C)
+SG:416:bc81aacb aac7f579:Disc
+SG:417:3af5dc99 2413caf9:Spirit Ofadventure
+SG:418:dbb6e3e3 72b7c456:Super Off Road
+SG:419:8f04add9 7d86bdc8:Final Battle
+SG:420:74f503c6 f2eb0877:Swiv+
+SG:421:f01240f0 2dfb64f4:Revelation +
+SG:422:6e78b1f4 df2484b1:Toki
+SG:423:942968e8 8b243396:Simulcra
+SG:424:a52afc1d e019e148:Captive
+SG:425:2b634f78 5ed93f7b:'The Year After' Demo
+SG:426:6444eca1 7c5b27a4:'Punish Your Machine' Demo (A)
+SG:427:a3181ebc efdbf18b:'Punish Your Machine' Demo (B)
+SG:428:f10b5c7a 3e06ba19:'Syntax Terror' Demo
+SG:429:beec5397 358e5a67:'Electra' Demo
+SG:430:15fd0949 a0c3dae2:'Ooh Crikey Wot a Scorcher' Demo
+SG:431:dea6c66e 8be42758:Lethal Excess - Wings of Death 2 (A)
+SG:432:f56d55d4 4cdb1b16:Lethal Excess - Wings of Death 2 (B)
+SG:433:cea12631 1791685c:Thunderhawk; J. White's Whirlw. Snooker; Thunderhawk Docs
+SG:434:12c0e1e5 d1d9504d:Cruise for a Corpse (A)
+SG:435:712f2833 322e7152:Cruise for a Corpse (B)
+SG:436: de6e981b:Cruise for a Corpse (C)
+SG:437:9dd8e713 2c2a64aa:Cruise for a Corpse (D)
+SG:438:d17f50d3 9465c51d:Cruise for a Corpse (E)
+SG:439:43662728 fa13e5a1:Mega-Lo-Mania (A)
+SG:440:85c6f909 ef0c0961:Mega-Lo-Mania (B)
+SG:441:92798a29 edbf6342:Populous II
+SG:442:cb7e79a3 4bcc7d46:Under Pressure
+SG:443:507773d2 9ebdf587:'The Iron Horse' Demo
+SG:444:29634991 e1b2fa14:M 1 Tank Platoon
+SG:445:e17ef80d 42f4af5c:Jahangir Khan's Squash; Stormball
+SG:446:93fd9648 df35716d:'Poltergeist' Demo
+SG:447:19633279 c8af4a56:'European' Demo (A)
+SG:448:6c2b9dfa 1f3b6967:'European' Demo (B)
+SG:449:7eec0052 952af157:Ads
+SG:450:2ea4587c 851b246d:Fire and Ice (A)
+SG:451:9781de92 7613f9ab:Fire and Ice (B)
+SG:452:b916191e 9b9f3392:King Arthur (A)
+SG:453:3e4b79af 9c601be:King Arthur (B)
+SG:454:ab2552d8 22abca21:King Arthur (C)
+SG:455:1814e1ed 5a342fca:King Arthur (D)
+SG:456:02720d0a cdf47019:Tangram; Z-Out
+SG:457:33c5db14 fb2ba769:Sim City
+SG:458:a60bdfb5 8a3a55fb:Crazy Cars 2
+SG:459:fd1911e8 6d7a2af4:Loopz
+SG:460:c08b9f99 6f383cd8:Adv. Tactical Fighter II
+SG:461:db210063 28d02db8:Amberstar (A)
+SG:462:8f580b63 635a8c51:Amberstar (B)
+SG:463:f234a126 1191365:Amberstar (C)
+SG:464:0f6f13b7 56e0b7a:Spirits of Excalibur (A)
+SG:465:1146cfd1 5fd775f0:Spirits of Excalibur (B)
+SG:466:2098ea88 25b0a438:Spirits of Excalibur (C)
+SG:467:b6c32111 111d6709:R.B.I. Two Baseball; Klax
+SG:468:4804a6b1 383fca1c:Metal Mutant
+SG:469:d4f28782 d88cf57f:Turrican II
+SG:470:18a46271 df9eefe9:Railroad Tycoon
+SG:471:31813af0 e3102bcc:Sensible Soccer (A)
+SG:472:06264d41 a8299e92:Sensible Soccer (B)
+SG:473:cb57d3b0 a1379230:Pang; Puznic; Rockstar Ate My Hamster
+SG:474:204af30d c50fd933:Bumerang; Ums II - Nations At War; Hitchiker's Guide To The Galaxy
+SG:475:c680c65f 69d7c580:Exolon; Typhoon Thompson
+SG:476:6668d8cd 4e18ac2b:Nitro
+SG:477:28a80afc 6b245f74:Gobliins 2 (A)
+SG:478:05c91426 a126825d:Gobliins 2 (B)
+SG:479:c2205c3b 1691142d:Gobliins 2 (C)
+SG:480:4e47ee44 f46a77bc:Manix
+SG:481:ef8ada3f 52ad0da6:Builderland
+SG:482:bdd5812c 15854457:Another World (A)
+SG:483:bede7305 1b5951c:Another World (B)
+SG:484:5bd21ce5 3af6c135:Crime Wave (A)
+SG:485:40dc9780 a85957d5:Crime Wave (B)
+SG:486:32e8b8f9 2f8894a9:The Final Conflict
+SG:487:1b83e0f9 b5d6de43:Midimaze; Exterminator
+SG:488:19086284 f67fbc36:Damocles; Spaceport
+SG:489:79e73d75 d9029d5d:Fu Ball St Plus V1.90; Larn
+SG:490:e7e7ee55 5a3a3378:The Curse of Ra
+SG:491:cc74ef3a ef76ad1c:Mean Street (A)
+SG:492:ed10917a d61579c7:Mean Street (B)
+SG:493:fd40dccd ba27147e:Archer Maclean's Pool
+SG:494:b69aca8a e8362646:Battleships; Prohibition; Warlock
+SG:495: f0e129b9:Projectyle
+SG:496:09694c76 55fa8989:Dungeon Master - Save File; Indy IV
+SG:497:fabd368e 616e1659:Alternate Reality - The City
+SG:498:11196b5e 57e2592:Goal!
+SG:499:0e362ce8 da5cc596:Vaxine
+SG:500: 1c4b3dbf:Leander (A); Trex Warrior; Brides of Dracula
+SG:501:16511c3a 7779e26f:Leander (B)
+SG:502:c9b69b0b 9e0ea4f2:The Chaos Engine (A)
+SG:503:90f4ca35 6aea62bf:The Chaos Engine (B)
+SG:504:e5ffa048 a97e2856:Lemmings 2 - The Tribes
+SG:505:a7307f36 b50ab3bb:One Step Beyond
+SG:506:73e38a29 3cbf0e19:Brataccas
+SG:507:14e0b61a fa44715d:Gods (A)
+SG:508:c6da9dc8 af62a151:Gods (B)
+SG:509:3b11f756 4da799d7:Deja Vu II
+SG:510:30e77153 2acc2274:Baal; Chip's Challenge
+SG:511:dce4ae0b 73584878:Elf (A)
+SG:512:51dc4b08 ee540704:Elf (B)
+SG:513:d372c3ce b991bba9:Stonage
+SG:514:66a5a94b 4b9fb85f:Ultima VI (A)
+SG:515:b1f9407c e7ae783f:Ultima VI (B)
+SG:516:23e551c6 754c317e:Ultima VI (C)
+SG:517:8cddf1d0 eeac06c9:Frontier - Elite II + Doc
+SG:518: 9e9a13b:Insect in Space
+SG:519: ca6e2e5d:Elvira; The Brilliant Buffin Brothers
+SG:520:bae8cd8e d1133fd1:Barbarian; Arkanoid; Deathstrike
+SG:521:d97523fe :Fire and Ice (A)
+SG:522:59bab818 13e5fcf:Fire and Ice (B)
+SG:523:2533171a 37359fc7:The Neighbours; The Jetsons; Cybercop
+SG:524:df99af88 a7f4b156:Little Computer People; 'Two-On-Two' Gba Championship Basketball
+SG:525:f6db2df7 6beede49:Mercenary III
+SG:526:b192b2ac 25e01ba2:Popeye 2
+SG:527:010f0578 b498ed76:Potsworth and Co. (A)
+SG:528:85f7a517 24618bb3:Potsworth and Co. (B)
+SG:529: 75d8b3a:Race Drivin (A)
+SG:530:4bcdbf92 d61b8907:Race Drivin (B)
+SG:531:88277ea0 c9c4e61d:Realms (A)
+SG:532:bf9919ea 7bbe95dd:Realms (B)
+SG:533:e9805d86 9fca8b0a:Robin Hood
+SG:534:20357a0b 290aa1c0:Round The Bend!; Crush; Hot Wheels; Siegemaster; Secession + Docs
+SG:535:446c9774 30750e77:Simulcra
+SG:536:56e9b926 d6ca3020:Space Crusade
+SG:537:99d2838a 8322c41d:Jimmy White's Whirl. Snooker
+SG:538:66b8af5d c4ad7d9f:Son Shu Shi (A)
+SG:539:e9a70c33 5f8481ab:Son Shu Shi (B)
+SG:540:084431b0 db226862:Sooty & Sweep
+SG:541:10041138 286b99c0:Speedball 2; Exterminator
+SG:542: :Video Kid (A)
+SG:543:a5cb259c 72a58009:Video Kid (B)
+SG:544:fcebb725 a0ab368a:Warriors of Releyne
+SG:545:e8a47e98 de3d63f5:Final Blow; Strong Lines
+SG:546:29b66600 1f8ec1ee:Summer Games 1 + 2
+SG:547:62e9c5d1 4f3f2ce9:Espana - The Games '92 (A)
+SG:548:f8f9dd9a 2619d29d:Espana - The Games '92 (B)
+SG:549:4b40a8df db2c5956:Espana - The Games '92 (C)
+SG:550:f4fe50a2 86378b73:Espana - The Games '92 (D)
+SG:551:de91849f 5fa4244e:Tennis Cup II (A)
+SG:552:d919fcee da093982:Tennis Cup II (B)
+SG:553:e27604b5 fbc7809:Under Pressure
+SG:554:2068af1c f25f6936:Ishar III - The Seven Gates of Infinity (A)
+SG:555:6373e437 d5c9f84b:Ishar III - The Seven Gates of Infinity (B)
+SG:556:06d9fe84 8ab08bf8:Ishar III - The Seven Gates of Infinity (C)
+SG:557:34a81240 5f32b313:Ishar III - The Seven Gates of Infinity (D)
+SG:558:26ee3476 52cf2fe2:Ishar III - The Seven Gates of Infinity (E)
+SG:559:c883526b 2b2fa7f0:Verminator
+SG:560:e0e66dab 7abd8889:A320 Airbus + Docs
+SG:561:b6e3ba3a 6841372c:Galaxy; Spaceport
+SG:562:ab981a13 81325cb7:The Addams Family
+SG:563:e4c49d0e 4d0029cb:Advantage Tennis
+SG:564:0f7f5ff6 bf29720c:Age (A)
+SG:565:a091b6e5 5bed0468:Age (B)
+SG:566:e4bc5576 d53be18f:Baal; Baller Burg
+SG:567:b463aae5 2a8beee1:B17 Flying Fortress (A)
+SG:568:865cba86 4cfd5219:B17 Flying Fortress (B)
+SG:569:56303255 f75c9470:Barbarian II (A)
+SG:570:5c25f186 4b6398e3:Barbarian II (B)
+SG:571:63a446f8 a590e9c4:Bomb' X
+SG:572:2817aa79 5f27e812:Backlash; Goldrunner
+SG:573:a5edc540 892df580:The Colonel's Bequest (A)
+SG:574:d611799d f9ef4cdd:The Colonel's Bequest (B)
+SG:575:05d79328 5b9ff916:The Colonel's Bequest (C)
+SG:576:87b59c09 9a9bd6a0:The Colonel's Bequest (D)
+SG:577:2488fe3d 3c1def6c:Bloodwych
+SG:578:86119031 e9d2b9e0:Bundesliga Manager Professional (A)
+SG:579:00caa3d2 c091f609:Bundesliga Manager Professional (B)
+SG:580:7949203f bc8c5bb0:Bmx Simulator; Bubble Bobble
+SG:581:62f47539 f59c7c17:Bonanza Brothers
+SG:582:f67c77cd c03183a7:Civilisation (A)
+SG:583:de15d431 cb76c678:Civilisation (B)
+SG:584:3fe47691 98cd866:Civilisation (C)
+SG:585:bdcd822b 87b3d596:Civilisation (D)
+SG:586:04b64760 c674c13:Champonship Manager 1994 (A); Conquest + Doc File
+SG:587:66b7e547 c87d5fd3:Championship Manager 1994 (B) & (C)
+SG:588:b56b1807 a67cf65b:Oxyd Magnum; Masters of Chaos; Mine Sweeper St + Doc File
+SG:589:1b615769 d75a573f:Dynabusters + Doc; Battletris + Doc; Winx V2.3
+SG:590:6f703cfe 6639dd0e:Campaign
+SG:591:7997d339 27b0d0f7:Cadaver
+SG:592:c6198480 83bf2db:Cadaver Datadisk 1
+SG:593:10a8c051 f3c4cbe7:Cadaver Datadisk 2
+SG:594:4212d170 9f6ae96:California Games 2 (A)
+SG:595: 312f87f4:California Games 2 (B)
+SG:596: 4dda8c45:Cannon Fodder (A)
+SG:597: 7447605b:Cannon Fodder (B)
+SG:598: e82be6f2:Cannon Fodder (C)
+SG:599: 48ff60d8:The Chaos Engine (A)
+SG:600:4365784d 957e940b:The Chaos Engine (B)
+SG:601:3ebbdbca 513867da:The Chessmaster 2000 V1.0
+SG:602:492d7376 adf08d70:Insect in Space; Chip's Challenge
+SG:603:68f8671e 8111b33f:Cisco Heat
+SG:604:3f2d6371 224a2041:Cohort II + Doc
+SG:605:0926bed6 8ac7c54:F16 Falcon
+SG:606:da8e81e8 55faee9a:F16 Combat Pilot
+SG:607:f56ce608 8c4eba35:F16 Mission Disk Volume 1
+SG:608:9fcbe6a2 c0ea7204:F16 Mission Disk Volume 2
+SG:609:a4394bd1 37a0d509:Cool Croc Twins
+SG:610:e368e13d a191c4b2:Deathbringer (A)
+SG:611:7394f349 bd623d6f:Deathbringer (B)
+SG:612:c04a2323 12c37a60:Deja Vu II - Lost in Las Vegas
+SG:613:becb3dad 60580f35:Discovery
+SG:614:6a792dec defc5254:Duckula II
+SG:615:fadda4ac 4d226691:Defender of the Crown
+SG:616:db03a214 56466035:Magnetic Tank; Mission Elevator
+SG:617:6b5153b8 3a546843:F15 Strike Eagle II (A)
+SG:618:c5c7db5b c0f5b6a2:F15 Strike Eagle II (B)
+SG:619:ac6cc981 ba712796:Firehawk
+SG:620:aa5802a3 df36e8bf:The Great Giana Sisters
+SG:621:53fbbd50 1a2029f8:Fire Force (A) + Doc
+SG:622:4e002cab ff6e38cd:Fire Force (B)
+SG:623:3a9c73c3 d97e4042:Gods (A)
+SG:624:6128bd31 1cf0b613:Gods (B)
+SG:625:a9e5882f dba06e9:Frontier - Elite II + Docs; 'Worm Hole Calculator' Fuer Elite II
+SG:626:e555233f 8ea68baf:Gunship
+SG:627:b293f022 58aa4fae:John Barne's European Football; Seymour Goes To Hollywood; Spikey in Transylvania
+SG:628: :Exolon; Heroes of the Lance (A)
+SG:629:de06efe8 8a782f74:Heroes of the Lance (B); Heroes of the Lance (C)
+SG:630:13aee72f c00cbd29:Bug Bash; Jungle Boy; Hot Wheels
+SG:631:f26051bb c8deda86:Hudson Hawk
+SG:632:2923366e 75f80bd4:Hollywood Poker; The Guild of Thieves
+SG:633:818bc255 100f5f16:Flight of the Intruder
+SG:634:11a621ce 382362ec:Dyna Blaster
+SG:635:1ad23589 ee23a439:Alternate Reality - The City
+SG:636:00d17ebb 20571db6:Gold Rush (A)
+SG:637:b89c1d8a a546f25:Gold Rush (B)
+SG:638:82ceb3b5 412f38a:Hero's Quest (A)
+SG:639:733e54e0 5f4ada1c:Hero's Quest (B)
+SG:640:38ed41da ec5fdfe7:Hero's Quest (C)
+SG:641:824389f1 405de674:Hero's Quest (D)
+SG:642:0812220c 148e58bb:King's Quest III; Squixx
+SG:643:361e3f8e 6a3e655f:King's Quest IV (A)
+SG:644:415351a1 abc49885:King's Quest IV (B)
+SG:645:f6d15135 7a9a68e8:King's Quest IV (C)
+SG:646:8ee7355f f5329e0c:King's Quest IV (D)
+SG:647:425a586e 5301ec95:Leisure Suit Larry
+SG:648:24293e6a fd2967ff:Leisure Suit Larry II (A)
+SG:649:179b790d a70e7c9:Leisure Suit Larry II (B)
+SG:650:13ccb208 5ddb598d:Leisure Suit Larry II (C)
+SG:651:284288de c3eced7a:Leisure Suit Larry II (A)
+SG:652:b9e25ff0 27741f3a:Leisure Suit Larry II (B)
+SG:653:d7a069e8 :Leisure Suit Larry II (C)
+SG:654:c5b33cdc d7faeca1:Leisure Suit Larry III (A)
+SG:655:64ce5630 79a0c4e9:Leisure Suit Larry III (B)
+SG:656:6049f8e2 6a49593:Leisure Suit Larry III (C)
+SG:657:5b49c92a e3546d82:Leisure Suit Larry III (D)
+SG:658:ef5f1c9b 6016bc36:Dungeon Master V1.1; Dungeon Master Editor V2.2
+SG:659:1cba70ad 60715e1b:Ishar (A)
+SG:660:ad3bc448 517b8281:Ishar (B)
+SG:661: f98352e8:Jumpin' Jack Son
+SG:662:f3365aa0 db88eb09:Kelly X; Solomon's Key
+SG:663:7420d941 f0749d6b:Nicky II
+SG:664:813b4d13 daec7715:Knights of the Sky (A)
+SG:665:89ebd3b4 3eaa274c:Knights of the Sky (B)
+SG:666:4189b64f 1da23c20:Deathbringer (A)
+SG:667:ece76a84 a7cfe91c:Deathbringer (B)
+SG:668:7bc68ffe 77a1bafd:Led Storm
+SG:669:f2131c5a 79275ee7:Lemmings 2 - The Tribes
+SG:670:640ad80d b931e0ac:Lode Runner; Ninja Spirit; Spitting Images
+SG:671:a0e83b89 9422e7c7:Lotus Turbo Challenge II
+SG:672:f17dca97 fb72cf5f:Lure of the Temptress, Boot
+SG:673:90cdfba3 e43f813e:Lure of the Temptress (A)
+SG:674:8876b0a4 90267192:Lure of the Temptress (B)
+SG:675:7fc0d0d6 1867447f:Lure of the Temptress (C)
+SG:676:d33292d1 7b1c3e81:Lure of the Temptress (D)
+SG:677:3cececf0 d039aeff:M1 Tank Platoon
+SG:678:f0e0c9fd cf859f11:Mercenary - Flucht Von Targ; Mercenary - Die Zweite Stadt; Mercenary I & II
+SG:679:f4bd7c00 cf841f38:Metal Masters
+SG:680:ed4b70f4 a0db9c9a:Mig-29 Fulcrum
+SG:681:fc897b61 171b99c2:Microprose Soccer
+SG:682:28ea944c 9965a43c:Microprose F1 Grand Prix (A)
+SG:683:e57d6b20 :Microprose F1 Grand Prix (B)
+SG:684:35c8501c 80eeb864:No Buddies Land
+SG:685:bd76862d bb4b07fd:Oh No ! More Lemmings
+SG:686:5422bc3c f5e85a9e:No Second Price
+SG:687:50a26017 7d710d93:Oekolopoly
+SG:688:4ed7681b 404d3639:Oids; Road Wars
+SG:689:5b7e12c8 abe5e0d:Pacific Islands + Full Docs
+SG:690:5fa16fb7 88b7dbb1:Parasol Stars;
+SG:691:6517d847 d47db16f:Operation Stealth + Doc (A)
+SG:692:5e7220bc 8625fd07:Operation Stealth (B)
+SG:693:d4bb02e8 176472e8:Operation Stealth (C)
+SG:694:f0198adb e2ebc4f5:Archipelagos; Millennium 2.2
+SG:695:db2eb648 fc257c92:Space Quest 1
+SG:696:1978f8e3 505d8598:Space Quest 2
+SG:697:1eca1942 aacc81a6:Space Quest 2
+SG:698:d528e38d 8bd2ef6c:Space Quest 3 (A)
+SG:699:d70d05b1 44690b82:Space Quest 3 (B)
+SG:700:795bb442 83fe24e8:Space Quest 3 (C)
+SG:701:101c7040 829c1f0a:Space Quest 3 (D)
+SG:702:f880a874 649b22c6:The Secret of Monkey Island (A)
+SG:703:b193f8c2 fcc828e:The Secret of Monkey Island (B)
+SG:704:43611087 d7bfb5ff:The Secret of Monkey Island (C)
+SG:705:c5910262 bafb5b11:The Secret of Monkey Island (D)
+SG:706:55f40574 cb4cd025:Powermonger
+SG:707:b6ca36da c2076957:Manhunter New York (A)
+SG:708:b29e059b 54c416df:Manhunter New York (B)
+SG:709:fd68e0e7 29501f6b:Manhunter San Francisco (A)
+SG:710:42f4ef62 b64e86a2:Manhunter San Francisco (B)
+SG:711:51f896f6 29634444:Manhunter San Francisco (C)
+SG:712:776bf182 399c0c64:Stormtrooper
+SG:713:a60596f8 e0914a4c:Air Support (A)
+SG:714:50bf7c1c c3d0a5e2:Air Support (B)
+SG:715:d69dfcb6 3cd5d0ed:Chrono Quest II (A)
+SG:716:c39cc834 4182e994:Chrono Quest II (B)
+SG:717:11342ec8 4e466a29:Chrono Quest II (C)
+SG:718:1d75c51f :Barbarian;
+SG:719:1dc5c3d2 9bd81fc6:Live and Let Die; International Karate +
+SG:720:6b6bcd60 cded5bec:Masterblazer
+SG:721:d59bfa70 3e4f4a39:Magic Pockets
+SG:722:8cdf5de5 5f0e1c7f:Populous II
+SG:723:2df2b32b 18f4272d:Powerdrome
+SG:724:f938ebf6 375fc751:Predator
+SG:725:9253b2ca a18bc0d8:Prehistorik Tale
+SG:726:cdd7edf6 b20fdab9:Pushover (A)
+SG:727:f6ea2d03 756b544d:Pushover (B)
+SG:728:16cdeedb 1b9a9dcd:The Adventures of Quik & Silva;
+SG:729:b3d8ac73 25155d6a:Red Storm Rising; Indiana Jones 100% Loader
+SG:730:5a074a3b aa728f4d:Balance of Power - The 1990 Edition; Super Sprint
+SG:731:d221de83 f6e92c34:Space Harrier; Chubby Gristle
+SG:732: 91758a11:Nigell Mansell's World Championship
+SG:733:86d5cf6c 52f34772:Rampart
+SG:734: ee23a439:Alternate Reality - The City
+SG:735: 7f264f7d:Road Runner
+SG:736: ecc19788:ShadowLands (A)
+SG:737: 6aea8ca4:ShadowLands (B)
+SG:738: c21edd07:Silent Service II
+SG:739: ec3363cc:J. White's Whirlwind Snooker
+SG:740:c78ef161 5ece8263:Super Off Road
+SG:741:18799254 b58d07c4:Space Crusade (A)
+SG:742:8cae8ce0 fb2209c0:Space Crusade (B)
+SG:743:6079f14d fa526c17:Spherical
+SG:744:44a146e6 be6de6b2:Spindizzy Worlds
+SG:745:5f3110e4 16dbae02:Star Trek - The Rebel Universe; Goldrunner; Tencolus
+SG:746:34784550 dd8702d2:One Step Beyond
+SG:747:1deb1dc8 5d8e9032:Get Dexter 2; Tetris
+SG:748:3c377c9c d6de02a2:International Karate; Bolo
+SG:749:55af7aa3 90c3198a:International Karate; Karate Kid Part II
+SG:750:a47b5ffd 9635526:Spherical
+SG:751:cdb97105 46f4f557:Stunt Car Racer
+SG:752:f8daa064 a56b3108:Swiv
+SG:753: df192b8:Street Fighter 2 (A)
+SG:754: e45ce520:Street Fighter 2 (B)
+SG:755: 351d9f2b:Street Fighter 2 (C)
+SG:756: 5b55ce5a:Street Fighter 2 (D)
+SG:757: 795a0e77:Tip Off (A)
+SG:758: :Tip Off (B)
+SG:759: ec0ba11a:Titus The Fox
+SG:760:dbf755a2 2f9a9c76:Tracker; Airball; Spook - Mighty Munchers
+SG:761:c64b11a4 de4c4720:Vaxine
+SG:762:e589a0b5 e0344420:Goal ! - Kick Off 3
+SG:763:9efa132f 4b556265:Virus; Star Raiders; Arkanoid II - Revenge of Doh;
+SG:764:f981ff44 8c8ac014:Graeme Sorness Vector Soccer
+SG:765:77ea6e66 efdf7f70:War Hawk; Black Lamp
+SG:766:dc7b3d0e 5e5901a0:War in the Gulf
+SG:767:ff4b3d7f 7e34c2e8:World Cricket
+SG:768:a405d57d ec0ea877:World Cricket; Disk Filer V2.4
+SG:769:7b78edd5 5253fb48:Turrican II
+SG:770:a98cd3eb 6621fb31:Xenon II
+SG:771:da3527a8 87abb9ce:Zool (A)
+SG:772:7b4a9744 f41ae8c9:Zool (B)
+SG:773:adc736ca fb55ea53:Ums II - Nations At War
+SG:774:28c91102 ac5526d4:Thrust
+SG:775:18164842 49463f80:Wonderland V1.27c (A)
+SG:776:3b079541 2e2beac:Wonderland V1.27c (B)
+SG:777:a935c0b9 e60d83b0:Wonderland V1.27c (C)
+SG:778:b8efe4ff 599c36a3:Wonderland V1.27c (D)
+SG:779:1f5c9152 80c11d5d:Onslaught; Universal Military Simulator;
+SG:780:e6ea1f0c aad72a9f:Sim City
+SG:781:cf4dd707 663e1100:Disc
+SG:782:b5c05b51 806cf1b6:Final Battle
+SG:783:f7ee3e0d a1b0f4f2:Midwinter II (A)
+SG:784:11b5edf5 5e08d752:Midwinter II (B)
+SG:785:68b494a4 77b5b0cf:Shadow of the Beast (A)
+SG:786: ec568047:Shadow of the Beast (B)
+SG:787:91988721 8c3a0cce:California Games
+SG:788: 2381de24:Obliterator
+SG:789:d213d2b2 9ebb4873:Utopos V1.50; Universal Military Simulator II
+SG:790:7f6dc5ae 1b431441:Universal Military Simulator; 'Runequest' - Charaktergenerator V0.99
+SG:791:ca5d58d1 b3f36943:Turrican
+SG:792:242a5fc3 a9e8c85e:Blasta Ball; Federation of Free Traders
+SG:793:5aa92f93 1946e4d9:Day of the Viper
+SG:794:06482c99 2c51d97d:Leavin' Terramis
+SG:795:3b649f5e 86450da7:Rock' N' Roll
+SG:796:e73a1f3e 2f23b0d:Interphase; Stormlord
+SG:797:66d564c5 cbb3436d:Chaos Strikes Back (A)
+SG:798:c774052e fad5a7a6:Chaos Strikes Back (B)
+SG:799:625310be ac576e08:Conqueror
+SG:800:849983b6 60b98fc0:Atomino; Quadrel; Backgammon Royale
+SG:801:1026d3be 4122ee64:Impossamole; E-Motion
+SG:802:fcb0a1b9 9dd140f6:Rick Dangerous; Custodian; Dugger
+SG:803:02c59fe5 b7c981fd:Back To The Future III
+SG:804:f711dd15 c57c6ccb:Advanced Destroyer Simulator
+SG:805:ff002eaf 5307b7d5:Pang
+SG:806:49737f3a 40773490:Tanglewood + Doc; Top Gun
+SG:807:9e71e081 42eb347b:Midnight Resistance
+SG:808:f11e6f73 59e63174:Turrican II
+SG:809:b558d949 c3aac908:Nitro
+SG:810:77e363b5 6dd86960:Mean Street (A)
+SG:811:3a12be00 29d08638:Mean Street (B)
+SG:812:de1bc71b 5f53c932:Atf II - Lost Patrol
+SG:813:170089f9 fbd60fc4:Oil Imperium
+SG:814:e21b6669 ddb5286c:Manix
+SG:815:43130235 ce2f9a1e:U.S.S. John Young
+SG:816: 8b243396:Simulcra
+SG:817:ebf4babc 21f3e04:The Final Conflict
+SG:818:3d15e593 e5248f28:The Killing Cloud (A)
+SG:819:32c6aea4 3c2e3a0f:The Killing Cloud (B)
+SG:820:bbb398a4 575c94e3:Swiv
+SG:821:70972781 197204af:Loom (A)
+SG:822:49f7edb2 13a82bb9:Loom (B); Magic Lines
+SG:823:7e3f805c 3ce63cd1:Betrayal
+SG:824:c28d6e74 6841124f:Jack Nicklaus Golf Datadisk 3
+SG:825:188910f3 84f06eb4:Railroad Tycoon
+SG:826:f940f76b 2338e0c:Esprit
+SG:827:4d6807a8 93ad7e57:The Curse of Ra
+SG:828:5aaeb364 4d0fa4fa:Bloodwych
+SG:829:0fc7bf83 df03d2c9:Loopz
+SG:830:ec10e8b3 48a98cae:Crime Wave (A)
+SG:831:509f5e49 c25b8269:Crime Wave (B)
+SG:832:8dced587 816172b5:Crazy Cars 2
+SG:833:f4f9b8a6 bd291fc8:Builderland
+SG:834: b13bc54a:Enchanted Land
+SG:835:4670ed17 612e0839:Curse of the Azure Bonds (A); Jocky Wilsons Darts
+SG:836:32b02000 e7a09297:Curse of the Azure Bonds (B)
+SG:837:503f051e 9f35d594:Captive
+SG:838:fcc39d2d 4b68ca0a:Wayne Gretzky Hockey (A)
+SG:839:03fac413 41701689:Wayne Gretzky Hockey (B)
+SG:840:f69e2bbd 8df1c4d3:Lemmings
+SG:841:513453c1 485027ff:Chessmaster 2000; Starraider II
+SG:842:4c8d272e 8fa18d11:Toki
+SG:843:f78b3e9e f8e970d8:Block Out; Klax; Sim City
+SG:844:dc7ee0d2 a0641bec:Turrican II
+SG:845:4c8021e7 f84b993b:Navy Seals
+SG:846:b63fe1af a6a9e8ef:Starflight
+SG:847:c9da9647 c46ec194:Shaolin Music Source
+SG:848:f1bf0196 419e6ddf:Blue Angel; Emlyn Hughes International Soccer; Back To The Future II
+SG:849:ea29a7f1 c41c307e:Dungeon Master
+SG:850:041640fc a5ae8cd:Hudson Hawk
+SG:851:6212410c c272aff6:Chuck Rock (A)
+SG:852:727d6a0c 82917c02:Chuck Rock (B)
+SG:853:97a32a2f cbdd8dca:Alien Syndrom
+SG:854:aa0c2181 6efd2c00:Shufflepuck Cafe
+SG:855:ed3affe9 8cfbdce:Genesis V1.1 - The Fractal Landscape Generator; Quartz; Snoopy
+SG:856:5bff2184 d9d1996f:Winter Olympiad' 1988
+SG:857:32d58c41 f3fd89df:Prohibition; Xevious; Battleships; I, Ball
+SG:858:1cbc82ba 6a09e5fd:Back To The Future II; Days of Thunder; Shadow of the Beast (A)
+SG:859:f6ad69d2 72f15e8:Backlash; Bubble Ghost
+SG:860:ef9a8cc4 63e70daa:Summer Olympiad
+SG:861:9cff56c9 4137b3f9:Legend of the Sword
+SG:862:f91c751c be39052f:Helter Skelter
+SG:863:2a0435a9 ffabd108:Technocop
+SG:864:03a4a4ad 15575de2:Robocop; Custodian; Iron Lord (A)
+SG:865:840e5b7e dd7e8f03:License To Kill; Iron Lord (B)
+SG:866:d4bf81c4 581c0a17:Dugger; Iron Lord (C)
+SG:867:347525a5 16892d65:Rainbow Islands; Galaxy Force II
+SG:868:ae98bde9 69608340:Xenon 2
+SG:869:8da4880e a39099f0:Xenon
+SG:870:2a02ab39 fb069556:Tv Sports
+SG:871:82ad9c54 42143c06:Garfield - Winter's Tail
+SG:872:11cc92e7 4f188d65:Purple Saturn Day;
+SG:873:08707068 6ddc1db3:Rvf Honda; Dark Side; Skull Diggery; Savage Game 1, 2 & 3; 3D Pool
+SG:874:0797c680 f12b5ba:Weird Dreams
+SG:875:3fb601e1 62cabeca:Joan of Arc
+SG:876:d7722fc5 daa619f2:Pirates
+SG:877:e82c9c1d ef9401aa:Kult
+SG:878:16cb87cc be4f96ff:Passing Shot; Beat Box
+SG:879:c13a50b3 b2997ab9:Kick Off; Chuckie Egg II
+SG:880:b1067bae a281562c:Operation Jupiter
+SG:881:2e44332b 244bb289:Indiana Jones 3; Rick Dangerous
+SG:882:72a50b3c 21e9dc88:O.I.D.S.; Enduro Racer
+SG:883:17c890c4 6e735e20:Wanted
+SG:884:1c5ac991 3cbe4124:Fish!; Skull Diggery
+SG:885:82c7e712 79e22b8e:The Rock Man; L'Arche Du Captain Blood
+SG:886:6f031097 e48a934:Albedo; Fernandez Must Die
+SG:887:f30b9644 6a07abfd:Sidewinder
+SG:888:b60ac713 fee76653:Super Hang-On
+SG:889:6d74249e e88194c5:Empire V2.00 - Wargame of the Century; Rogue
+SG:890:a330a8fd 1b9bada2:Questron II
+SG:891:d8ab2fec ae70b49e:Metro-Cross; Deflektor; Stargoose
+SG:892:2e43e3ad 8a9baedf:Bad Cat
+SG:893:ea45d69a 7a550b0c:Winter Games
+SG:894:13061087 9d77e769:Gauntlet
+SG:895:9209172d 59db60c4:Defender of the Crown
+SG:896:2695edc0 66770c64:Pirates of the Barbary Coast
+SG:897:164d41c6 fe422929:Airball; Sentinel; Sentinel
+SG:898:a133b271 70c01ce5:Wizball; Uridium
+SG:899:9e391dcb 532c82c7:Leader Board Golf; Tennis
+SG:900:9213d337 2c775bb4:Z-Out; Tangram
+SG:901:d931b463 d26da714:Nam 1965 - 1975
+SG:902:538bf8fc 4b7bba4f:Mach 3; Spy Versus Spy
+SG:903:30436d5a be36ea9b:Volfied
+SG:904:4d22211c 36901085:Flight Simulator II; Renegade
+SG:905:57278edb 55441bd0:Into The Eagle's Nest; Metropolis
+SG:906:02879c05 8594e578:Bubble Bobble; Leviathan
+SG:907:770a32df 63857622:Microprose Golf (A)
+SG:908:b22b73f9 5bdfa21e:Microprose Golf (B)
+SG:909:9a18c07a d1370aec:Microprose Golf (C)
+SG:910:8218b0a0 223b718a:Blue Max (A)
+SG:911:644b3982 331dd0d7:Blue Max (B)
+SG:912:5befb3ca ccf1530d:Deuteros
+SG:913:cee594cd dba3e8f3:Powerplay
+SG:914:4319a1d6 e07078af:Ultima IV - Quest of the Avatar; Vectorball
+SG:915:2a1c1011 bbad26d7:Shadowgate
+SG:916:8c663413 98949192:R.B.I. Two Baseball
+SG:917:533bc65f c7036e9f:Thunderhawk + Docsjimmy White's Whirlwind Snooker
+SG:918:f670ae68 1de1c63d:Kick Off 2 - Return To Europe
+SG:919:2e6ea5fc e0afdf2c:Nautilus
+SG:920:f2f6d5dc 390cbea8:Stabloid Preview Issue
+SG:921:29c6a101 c6b48ef0:Hunter
+SG:922:ac5da9fc 3dbac022:Rings of Medusa 2 - The Return of Medusa
+SG:923:37c05cc2 a5d27325:Spacola
+SG:924:8134fef3 1a597c64:Western Games
+SG:925:d601fc7b f25e5ffa:Carrier Command
+SG:926:3a17488d c6c41836:Dizzy Wizard
+SG:927:facfebbf 9ad7ef6c:Return To Genesis; Pink Panther
+SG:928:ab6e6804 7f21442b:Enduro Racer; O.I.D.S.; Space Baller
+SG:929:c440e4b3 3f5b3f7f:Virus; Overlander; Starwars II; Starray Demo
+SG:930:e6efce84 f803da2f:Colossus X Chess
+SG:931:e7dfb6a0 bbfa6ed2:Xenon 2 Megablast
+SG:932:1a5ce1a5 4ff7debd:Sapiens; Mercenary - Escape From Targ; Mercenary - The Second City
+SG:933:2989b93f 7ed0f44b:Ninja Mission; Hollywood Poker; Fuffy
+SG:934:01d332b1 876efd4:Leatherneck
+SG:935:0a93199e e2fca99c:Crystals of Arborea
+SG:936:32a2a483 256e5b3a:Crystals of Arborea
+SG:937:9dad1a40 43f1ebee:The Bard's Tale
+SG:938:4245fe18 1997ab25:Typhoon Thompson; Exolon
+SG:939:466fc1e0 ec769114:Gunship; Gfa Basic V3.04d
+SG:940:64358e76 59faba09:Starglider 2
+SG:941:163d5bcf fcf4bb5f:Netherworld; Eliminator
+SG:942:001bea94 c6696cf2:Cybernoid; Elite
+SG:943:64c80e77 21a773ed:Corruption; Puznic; Microdeal's Pool Billard
+SG:944:55187b75 bbe78feb:Dungeon Master V1.1; Dungeon Master Editor V2.20
+SG:945:c8ce3015 ee566188:Ice & Fire (A)
+SG:946:9271a804 b97e23f:Ice & Fire (B)
+SG:947:7530d1c0 35253377:Ice & Fire (C)
+SG:948:ff094bf2 f655a059:Stormball
+SG:949:8c2917ea 786f202:Blood Splatter Part 2; Sherlock
+SG:950:5fc9ff58 be0a84af:Black Sect (A)
+SG:951:c4d4d47b 81ddd8a4:Black Sect (B)
+SG:952:99e8f80d fbd6e01b:Black Sect (C)
+SG:953:952ca76c 50159a1f:Bubble Bobble 2 - Extended Levels
+SG:954:15801b8d cb317418:Silkworm; Ammotrack; Myth; Elite
+SG:955:d25320f0 66c436e3:Damocles - Mercenary II; Dynasty Wars
+SG:956:a38f5ca9 d8fdff28:The Last Ninja II; Nova; Damocles Mission Disc 1
+SG:957:be079633 e5e005b6:Z-Out
+SG:958:1589fe39 3ce07dd9:Armour Geddon; Armour Geddon Cockpit Guide; Falcon V1.2
+SG:959:9c994555 a7374775:Mercs
+MB:1:4aa28343:Fire Zone; Munster; Tracksuit Manager
+MB:2:5409ebee:Sorcerer Lord; Teenage Queen
+MB:3:563a7b4f:Ultima III; Ultima IV
+MB:4:8018c31d:Advanced Rugby Simulator; Billiard Simulator; Captain Fizz; Computer Diary; Game Cracker; Virus Demon II
+MB:5:350399a4:Andes Attack; Batman Pt 1; Batman Pt 2; Thunder Wing
+MB:6:293e2298:Custodian; FOFT; I Ludicrus; Pool; Skull Diggery
+MB:7:7910e78d:Chuckie Egg II; Raffles; Roadblasters; Titan
+MB:8:e65c73b6:Action Fighter; Strike; Ultimate Arkanoid
+MB:9:27fa1e9d:Cybernoid II; Gridrunner; Operation Hormuz; Robocop; Total Eclipse
+MB:10:75feec45:3D Pool; Darkside; RVF Honda; Savage; Skull Diggery +
+MB:11:930586b:Pool; Red Heat; Stunt Team
+MB:12:28af6ff7:Last Trooper; Navy Moves; Star Trek
+MB:13a:680637f5:Dugger; Hell Raisers
+MB:13b:15fc756:Hawkeye; License To Kill; Wicked
+MB:14:775bc822:Jaws; Phobia
+MB:15:906bd042:Better Dead Than Alien; Murders In Venice
+MB:16:bc8032ab:Megaroids; Myth; Plutos; Time Scanner
+MB:17:cb984bf:Chessmaster 2000; Thundercats; Vulcan
+MB:18:f2d0707d:Castle Warrior; Driller; Mandelbrot (Demo)
+MB:19:c439ee59:Dungeon Master (Help); Hawkeye; Wicked
+MB:20:c166814b:Battle For The Throne; Weird Dreams
+MB:21:45d0687:Football Director; Kenny Daglishe's Football Manager; License To Kill; Ripcord
+MB:22:4f39f292:Leviathon; Spherical
+MB:23:22649555:20000 Leagues Under The Sea; Gilbert Escape From Drill; Pantominoes
+MB:24:a53e8c8a:Money Spinner; Paladin; Qest
+MB:25:c61db431:Falcon Extra Missions Vol 1
+MB:26:7d64d577:Empire; Red Lightening
+MB:27:4f60de8f:Astaroth; Space Invadors
+MB:28:cd430c5e:Rick Dangerous; Rodeo Games 1 & 2
+MB:29:9bdd6d9e:Gilbert Escape From Drill; Rodeo Games 3
+MB:30:3ece3f99:Balance Of Power 1990; Indiana Jones; Rick Dangerous
+MB:31:e208c1ec:Legend Of Djell
+MB:32:50d3947f:Monopoly; Populous; Tank Attack
+MB:33:c93b6f87:Arrgh !
+MB:34:1738407c:Armageddon man; Xenon
+MB:35:7b4333:Battletech; Waterloo
+MB:36:d9bdfddb:F16 Combat Pilot
+MB:37:1dc6bf88:Pirates !
+MB:38:c767ffcb:Bloodwych; Game Cracker III; Indiana Jones (US Gold); Macadam Bumper; Postman Pat
+MB:39:645f46a:Conflict Europe
+MB:40:84e92d3c:Xenon 2
+MB:41a:27e3c322:Oil Imperium
+MB:41b:460c6f3:Dynamite Dux; Fast Lane
+MB:42:2191ad4c:Altered Beast
+MB:43:3c10896e:Annals Of Rome; Fast Lane; Saint & Grevsie; Stuntcar Racer
+MB:44:5023c01e:Knife ST; Verminator
+MB:45:fe0fd8ca:Chess Game 2150;Game Cracker III; Genesis; Grandprix Master; Super League Soccer
+MB:46:3f2a22d1:Ferrari Formula I
+MB:47:ab5da4e1:Super Wonderboy
+MB:48:467f6a7e:Grid iron; Quartz; Rookie
+MB:49:7fa94fa6:Kellie X; King's Quest IV (Hints); Pictionnary; Tooblin +
+MB:50:2c578458:Dmon; Hard Drivin; Kenny Daglish Soccer Player; Pipe Dream; Terry's big Adventure
+MB:51:a0e8038f:Fighting Soccer; Interphase; Prince
+MB:52:b29de7c3:Onslaught; Rock & Roll
+MB:53:d6da3df9:Asterix; Mindbender
+MB:54:556efb32:Austerlitz; Gladiators
+MB:55:34392603:Bloodwych (Data Disk 1); Footballer Of The Year II; Outrun USA; Treasure Island
+MB:56:f70aba2f:Bellum; Day of The Viper; F16 Editor; Sol Negro; Tempest
+MB:57:73a9c6b2:Chase HQ; Sidewinder II; Slumlord
+MB:58:54efc34f:Archipelagos; Fast Copy (V3); Mouth Trap; Trophy Soccer
+MB:59:fe1abf58:Hellraiser; Spy Vs Spy II; X-out
+MB:60:179c066d:Clown O Mania; Conquerer; Shanghai; Triton III
+MB:61:deca4337:Run The Gauntlet
+MB:62:9af4f84:New Zealand Story; Italy 1990
+MB:63:bef4f5fd:Wayne Gretzky's Hockey; Ten Pin Bowling; Virus Protector
+MB:64:63f16444:Midwinter
+MB:65:ed68f6b3:Rockstar Ate My Hamster; Crossbow; SAS Combat
+MB:66:bdccd1e:Spy Vs Spy III; Warhead
+MB:67:b7c31299:Gravity
+MB:68:20e22526:Soldier 2000; A Protec (Demo); C64 Emulator; Space Invadors
+MB:69:f9974f2c:Ultimate Golf; Impossamole; Animal Kingdom
+MB:70:647ef4be:Cyberball; Castle Master II The Crypt
+MB:71:568d36b9:Italy 90; Count Duckula; Atomix
+MB:72:d59c206c:Blockout; Football Manager World Cup Ed; Klax; Piece; Pub Trivia Quiz; Sim City
+MB:73:c698716:Damocles; Emlyn Hughes; Treble Champions
+MB:74:dca5e21d:Resolution 101; Grimblood (+ Docs); Pro Tennis; Locksmith III; Sample Converter
+MB:75:50d0cd28:Dynasty Wars; Kick Off II
+MB:76:c849b00d:Flood; Gazza's Soccer; Music Files
+MB:77:f10b4919:Rorke's Drift; Tusker
+MB:78:8a8b3bb6:Starblade; Thunderstrike
+MB:79:9426dfa2:Combo Racer; The Punisher
+MB:80:91c8d827:Iron Lord
+MB:81:efac09a:Magic Lines; Pyramix; Web Of Terror
+MB:82:904b1052:Pro Powerboat Simulator; Prison; Monst 2.05
+MB:83:c3494865:Do! Run Run; Nitro Boost Challenge; Yogi Bear; Get Dexter II; Rogot II; Ultimate Game Cracker
+MB:84:9ba37821:Back To The Future II; Mad Professor Moriarti; Game Cracker IV
+MB:85:be74ae38:World Soccer; Scary School; Guardian Angel; Neochrome 2.00
+MB:86:956572ac:Rope & Ready; Subbuteo; Plotting; Turn It
+MB:87:f2ea4229:Shadow Of The Beast
+MB:88a:625c2c80:Cadaver (Boot); Magic Fly; Helter Skelter
+MB:88b:691645ef:Cadaver (Data)
+MB:89:20f401f7:Blinky; Flip It & Magnose; Game Cracker (V4.2)
+MB:90:80200015:Turrican; Blitzkrieg
+MB:91:cde4f702: Fruit Machine Simulator; Paradroid 90
+MB:92:bc71d18a: Falcon Mission Disk II; May 1940; Take Two
+MB:93:6f4a730:Microprose Soccer II; Rick Dangerous II; Virus Protector III
+MB:94:3fa515aa:Monty Python; Conflict; Snow Strike; Noise Tracker; Game Cracker (V4.2); Virus Killer III
+MB:95:3ae88582:Towak The warrior
+MB:96:c7c8d670:Team Yankee; Curse Of Ra
+MB:97:d8e50f4b:Captive
+MB:98:f282ecb1:Lotus Turbo Esprit; James Pond
+MB:99a:704b97d5:Mean Streets (Boot + Docs); Murder
+MB:99b:63698268:Mean Streets (Data)
+MB:100:e924a2f:Super Off Road Racer; Cabal; Pro Soccer 2000
+MB:101:d417a00a:ATF II; Final Conflict; Vaxine
+MB:102:4807aa3a:Badlands; Strider II
+MB:103:8c819911:Puzznic; Tournament Golf (Elite)
+MB:104:3548e45c:Battle Command; Fast Food
+MB:105:ce1767d6:Multiplayer Football Manager; Xiphos
+MB:106a:c809ef3f:Crime Wave (Boot); European Soccer Challenge
+MB:106b:ec0831f5:Crime Wave (Data)
+MB:107:e4eb53bd:Chips Challenge; Kamikaze; Turn & Burn
+MB:108:889d3f5c:International Ice Hockey; Little Puff; Revelation; Warlock The Avenger
+MB:109:824bd2c6:Kick Off Final Whistle; The Famous Five; Yogi Bear
+MB:110:1542c8e0:Emlyn Hughes Arcade Quiz; Super Monaco GP
+MB:111:c707f837:Navy Seals; Skulls & Crossbones
+MB:112:aa4feadb:Armalyte; CJ Elephant Antics
+PP:1:69d31a4a ad3cd603:New Zealand Story
+PP:1V2:e33d86be 74411327:Gridrunner; Head Over Heels; New Zealand Story, The; Rick Dangerous; Stack Up
+PP:2:5aff248b 3c8a9b7f:Ammotrack; Elite; Myth; Silkworm
+PP:3:c19a641e ac6275fc:African Raiders; Maniax
+PP:4:1fd542f4 9e1656a8:Sleeping Gods Lie
+PP:5:0920b64f e27c7721:Lombard RAC Rally; TV Sports Football
+PP:6:74228ef6 8fcb7199:F-16 Combat Pilot; Midi Maze
+PP:7:14ae4ac2 21a33ab8:Xenon II - Megablast
+PP:8:fa764944 0bb06529:Dream Zone; Passing Shot
+PP:9:28f7ea36 f269b1f6:5th Gear; Mr. Heli; Slayer
+PP:10:93cdb336 a3e2248f:Fusion; Populous - the Promised Lands
+PP:11:16a70870 8845e78e:Dynamite Dux; Paperboy
+PP:12:b73fda78 87056067:Oil Imperium
+PP:13:58fce2d7 157c5333:Bangkok Knights; Fast Lane
+PP:13P2:baa9f235 a188c2b0:Batman; Laser Squad
+PP:13P3:8a9325f7 d5f5ce61:Kid Gloves; S.E.U.C.K.
+PP:13P4A:28afe799 825fb771:Awesome (A); Pompey Collection File Checker; PP53 (STE fix)
+PP:13P4B:65d7ac56 fca69316:Awesome (B)
+PP:13P5A:4eb4636a 2338129f:3D Construction Kit; Moonshine Racers (A); Super Cars II
+PP:13P5B:ce20d7d7 9a866dde:Moonshine Racers (B)
+PP:14:d5eae1d0 0b43c6ec:Ooze!; Recoil
+PP:15:2c5bc166 9d20594b:H.A.T.E.; R-Type
+PP:16:f5999978 e29353e0:Altered Beast; Terry's Big Adventure
+PP:17:2ba24aa0 5489c369:Strider; Stunt Car Racer
+PP:18:477fa9c9 529390c1:Batman - the Movie; Snoopy; Toobin'
+PP:18V2:0c210f23 1fa6d866:Batman - the Movie; Classic Invaders; Snoopy
+PP:19:cb293ae2 7d9fe36d:Commando; D.A.S.H.; Lancaster
+PP:20:84501459 ef73bdc1:Hard Drivin'; Interphase; Super Scramble Simulator
+PP:21:b79ae931 58a5ac1e:Disktool; Ghouls 'N' Ghosts; Kick Off: Extra Time
+PP:22:11c6ce2e c77a9847:Fighter Bomber
+PP:23:8cc5093f 0cd65995:Bellum; Falcon; Falcon Editor; Falcon Mission Disk I
+PP:23V2:833024d2 b2cd13ef:Bellum; Falcon; Falcon Mission Disk I
+PP:24:5001f6a2 06df543a:Automation Packer 2.31; Axel's Magic Hammer; Skate Tribe; Switchblade
+PP:25:978df76b 0e2aa7ff:Conqueror; Fast Copy III; Player Manager; Spy vs. Spy II; Ultimate Darts; Universal Item Selector III
+PP:26:4d53de55 9597f8cb:Bubble Bobble; Rainbow Islands; Extra - Desktop Muzaks
+PP:26V2:24bdc743 6d2c6d10:Bubble Bobble; Rainbow Islands
+PP:27:6e8a179c e952a9e0:Super Cars; X-Out
+PP:28:8d29bfb5 cc6f06f5:Midwinter
+PP:29:ca95a92c 194dae93:Infestation; Lode Runner; TurboST 1.8
+PP:30:4b720479 9d6239a4:Art ST; Canvas; E-Motion
+PP:31:5724dd0a 36ae3d30:Automation Packer 2.4; Crossbow; Hotrod (1MB)
+PP:31V2:928e5198 9c2a89ad:Automation Packer 2.4; Crossbow; Hotrod; PP12 (TOS 1.4 fix)
+PP:32:9dc4771e 09e3d958:Cloud Kingdoms; Cartographer, The (1MB); Warhead
+PP:33:76a46067 9e20e3d9:Dan Dare III; Impossamole
+PP:34:a61fe4f5 410cd71b:Aquanaut; Atomix; Escape From the Planet of the Robot Monsters
+PP:35:81865b61 8e123a4c:Castle Master; Castle Master II; Defsel; Italy 1990 (US Gold)
+PP:36:4dfeb240 ce630bd8:Dragon's Breath
+PP:37:7f170077 6b1b5ff6:Block Out; Rings of Medusa
+PP:37v2:b991bfe1 08db9096:Block Out; Rings of Medusa
+PP:38:53445d39 6383a543:F-29 Retaliator
+PP:39:cb47848a ce51cead:A-Debug; Klax; Pack-Ice 1.13; Resolution 101
+PP:40:f3477eb8 3a817be6:Colorado; PP38 (fix)
+PP:41:38a75e2b 7857d957:Damocles; Devpac 2.20; Dynasty Wars; Fast LZH
+PP:42:03ca8e93 116e1fc4:Last Ninja II, The; Nova
+PP:42V2:4664f0d1 74e4b393:Damocles Mission Disk 1; Nova; Last Ninja II, The; TurboST 1.84
+PP:43:00449359 c330e5d5:Blue Angels; Flood; Pack-Ice 2.11; Pompey Packer 1.5
+PP:44:5d70bbf8 8ac0bd02:Rotox
+PP:45:1a8ee5d2 101a7e5b:F-19 Stealth Fighter
+PP:46:64ae6b01 7a205d2c:Venus the Flytrap; Yolanda
+PP:47:d7bd7af5 ad20cc36:Midnight Resistance; Robotz; Pinhead 1.7
+PP:48:253c0c3e 4ad577ce:Power Boat; Sherman M4
+PP:49:1a4a4563 a8d7340a:Gold Runner II; Turn It
+PP:50:1b56581e 23207b09:Fighter Bomber - Advanced Mission Disk
+PP:51:907a4d39 aeea0667:Falcon Cockpit Guide; Falcon Maps; Falcon Mission Disk II; Sly Spy - Secret Agent
+PP:52:175d62a8 e7b85f41:F-19 Stealth Fighter (Trainer & Fix); Fighter Bomber (Fix); Their Finest Hour: The Battle of Britain; Mission Builder
+PP:53:923c7feb 300a4c80:Turrican
+PP:54:51dc946a 2c34bca6:Time Machine
+PP:55:04dee75d fafeaa00:Championship Baseball; Championship Football; Championship Wrestling
+PP:56:308046ea 6e69d269:Flimbo's Quest; Monty Python's Flying Circus
+PP:57:cd913bb6 fda2f58c:Hardball; Rick Dangerous II; TV Sports Football
+PP:58:0241944f 7dd03e98:Murder; Proflight Simulator; Spy Who Loved Me, The
+PP:59:f756b902 461d693c:Chuck Yeager's Advanced Flight Trainer 2.0
+PP:60:3d0bee96 d794a444:Lotus Esprit Turbo Challenge; M-1 Tank Platoon
+PP:61:1bd60152 a7755131:ATF Advanced Tactical Fighter II; Nitro; Pinhead 1.8
+PP:62:ffd6afeb 0326f2b5:Robocop II; Strider II
+PP:63:99f5b0db 8433056b:Operation Harrier; Simulcra
+PP:64:428dee3b 4519b15b:Fighter Bomber Editor; Golden Axe
+PP:65:69f5906e 0a4ad5bf:Pang; Puzznic; Welltris
+PP:66:097f8fc3 03485e6e:Chase HQ II; Loopz; Edd the Duck
+PP:67:8da88a99 540caded:Battle Command; Botics
+PP:68:c310a27b 9af11847:Defender II; Total Recall
+PP:69:cf34cec5 783cc8d4:Badlands; F-16 (Trainer); F-29 (Trainer); Gazza's Soccer II; World Championship Soccer
+PP:70:6c7aa13c 04673a51:Carvup; Judge Dredd; PP66 (Fix)
+PP:71:787f2584 ce7bf420:Hacman II; Mighty Bombjack
+PP:72:d2b95f8e 68d7d3bd:MiG-29 Fulcrum; Proflight Simulator 1.2
+PP:73:0ee059b2 39ab2933:Hard Drivin' II; Narc (1MB)
+PP:74:414efdc5 707eab49:Horror Zombies From the Crypt; Insects in Space; Team Suzuki
+PP:75:87d8a7b6 442856c3:Turrican II
+PP:76:d99f53e8 33c328a9:Chips Challenge; Final Battle, The
+PP:77:61ca8539 ab4b3c74:Advanced Destroyer Simulator; Quick ST 2.21; Warlock the Avenger
+PP:78:738267b4 ec5953e5:Killing Game Show, The; PP77 (Fix)
+PP:79:d145e17d b23da414:Lemmings
+PP:80:39eaba15 47d57ff0:Navy Seals; Super Grand Prix
+PP:81:72e49115 d47237bd:Kick Off II: the Final Whistle; Multiplayer Manager
+PP:82:6eb7b7ba f0b56005:Jam Packer 3.01; Pompey Packer 1.9A; PP13P5 (STE fix); Z-Out
+PP:83:9401405a c17c05db:Shadow Dancer
+PP:84:82bf0311 29a663a7:HeroQuest; Llamatron (1MB)
+PP:85:55ece42a 639181f4:Pro Tennis Tour II; Llamatron (512KB)
+PP:86:1d8a997b dd649bba:Armourgeddon; Falcon 1.2; FVK 2.0
+PP:87:aa4cc016 bb699e1a:Metal Masters; Quik & Silva
+PP:88:9b93020a 938eb2eb:Devpac 2.25; Fast Copy Pro; Mercs
+PP:89:6079129b 20daf43b:F-15 Strike Eagle II; F-15 Cockpit Guide; Maxifile III
+PP:90:46c04d90 96f8c7f3 cec32e73:Flight of the Intruder, The
+PP:90b:c186144d:Flight of the Intruder, The (B?)
+PP:91:3f11c186 34c59204:Audio Sculpture (Colour); Jimmy White's Whirlwind Snooker; Power Monger; System 4
+PP:92:50e43a7a 574d32eb:Audio Sculpture (Mono); CJ's Elephant Antics; FVK 3.0; Grav; Rodland
+PP:93:524530e1 c46347cd:Rolling Ronny; Wacky Races
+PP:94:1a8375e6 5a6bf660:Fast Copy Pro; Mega-Lo-Mania
+PP:95:04784ed8 2b6cefe5:Head Over Heels; Hunter; Lotus Turbo Challenge 2
+PP:96:65e9062e 386f0366:Cisco Heat; MiG-29M Super Fulcrum; MiG-29M Cockpit Guide
+PP:97:ebd1c5b0 cb8cfacf:Hudson Hawk; Oh No! More Lemmings
+PP:98:b1f2851a 98be2d67:Thunderhawk; Spectrum Emulator
+PP:99:739b0352 4a97d98f:Wolfchild (A); Blues Brothers, The
+PP:100:e644c313 6627ad0b:Deuteros
+PP:101:09196ce2 0e8e7654:Knights of the Sky
+PP:102:0eb44528 e871f8c6:Populous II (512KB)
+PP:103:dc4807a1 077664d9:Kid Gloves II; Populous II (1MB); Spectrum Games
+PP:104:0dd69842 5d705997:Pacific Islands
+PP:105:9256525c d63c86b7:Bubble Dizzy; Dizzy Panic; Parasol Stars
+PP:106:0339dfb0 8873dbd9:PP061 & PP091 (Fixes); Power Monger - World War I Edition; Team Yankee; Toxic MonST 2.13
+PP:107A:5fa61d21 d07b0af0:Epic (A)
+PP:107B:a8761383 e5ab5b3e:Epic (B)
+PP:108A:a24309e9 d450f2d9:Robo Cop III (A)
+PP:108B:003c2e7d 95870489:Robo Cop III (B)
+PP:109:b536387d d22ff422:Audio Sculpture Player + Source; MonST 2.24C; Potsworth & Co.
+PP:110:34bb200a c7ded039:Pushover
+PP:111:650ae090 3c0cbdad:CJ in the USA; Erik; Popimenu 1.1; Steg The Slug
+PP:112A:afada0c2 3c8b6e04:File Compare; International Sports Challenge (A); LZH 2.01K (English); Pick File 1.0
+PP:112B:0409d5a8 be6ef328:International Sports Challenge (B)
+PP:113:a5c23d3c dc8dace5:HeroQuest Expansion: Court of the Witchlord; Space Crusade
+PP:114:7a71d531 fa29fde6:Devpac 3.00; Lotus III: the Ultimate Challenge; Pick File 1.1; PP113 (Fix)
+ZU:1:39350999 31abac0e:Garfield; Battleships; Hostages (Operation Jupiter)
+ZU:2:87458d07 d5170a37:Grid Runner; Sorcery +; Dragonlord
+ZU:4:88d9ca09 1c310de3:Sherman-M4; Terry's Big Adventure; Damocles
+ZU:5:e829b71c c2b7726b:Teenage Queen; BMX Simulator
+ZU:6:263961d6 f904a81d:Super Ski; Bob Winner; Road Runner
+ZU:7:9abceb24 2630ae2f:Atomix; E-Motion; Pipe Dream; Ikari Warriors
+ZU:7bis:5bad5c83 377ed733:Atomix; E-Motion; Pipe Dream; Pub Trivia; Sim City
+ZU:8:cec0f81b 67d24741:Space Racer; Fourmi Story; Chopper-X
+ZU:9:760b646d 49936438:Beverly Hills Cop; 10th Frame
+ZU:11:9bf23ff9 1b9b7dc:Leatherneck; Prohibition; Rock'n Roll
+ZU:15:d09ebcec 5af7e693:Truck; Warhead
+ZU:16:530a57fd 30aa7170:Arkanoid II; Custodian; Tom & Jerry; Rorke's Drift
+ZU:17:a7b50a8d ca8acf90:Off Shore Warrior; Leviathan; Sidewinder II
+ZU:18:b5a2f1b b0071e39:Combo Racer; Empire Strikes Back; S.A.S. Combat Simulator
+ZU:19:f4849b5f fb309698:Gazza's Super Soccer; Star Goose; The Curse Of Ra
+ZU:19bis:e4aa8ee6 1710d782:Prophecy The Viking Child
+ZU:21:6e6878a4 f454d151:Indiana Jones; Astate La Malediction Des Templiers
+ZU:23:e763cac 7467caa8:Kid Gloves; Rick Dangerous; Switchblade; Stunt Car Racer; Robotz
+ZU:25:578fc503 b37cbf5f:Bloodwych; PowerBoat; ST Karate
+ZU:27:4b2dcdea 640cca29:Indoor Sports; World Darts; Overlander
+ZU:27bis:9e9e10d7 ae4ceb78:Leatherneck; Backlash; Total Eclipse; Quartz
+ZU:28:44987968 fd16c9ad:Krypton Egg; Krypton Egg Construction Set; Incredible Shrinking Sphere
+ZU:31:dc9e46bb 8cf5e4e2:Future Sport; Vixen; Fernandez Must Die
+ZU:32A:62fa3dda f5b9d8c1:Eagle's Rider; Liberators; Mission Elevator; Road Blasters
+ZU:33:88538f00 7272e69c:Onslaught; Alien Syndrome; Thundercats
+ZU:37:66149926 61f76ef4:Flying Shark; Darius+; The Last Trooper
+ZU:42:d59412cb 212989cf:Castle Master II; Leader Board Tournament Disk #1; Live And Let Die; Turn It
+ZU:43:f9596cbb b2a7d230:Antago; Titan; Ghouls'n Ghosts
+ZU:44:54a1fef7 a954c1a3:H.A.T.E; Turbo Cup; Action Fighter
+ZU:45:f637c31d 445ae212:Arena; Carrier Command; Crystal Castles; Deep Space; Trantor; Star Raiders
+ZU:46:4ef38398 64951091:Le Manoir De Mortevielle; Starquake; Buggy boy
+ZU:47:12979240 bc25a80e:Garfield Winter's Tail; Skidoo
+ZU:51:b455f562 3bfc153b:Great Courts; Mission; The Sentinel; Rosemary Raccoon's Strip Game
+ZU:52:60569981 dd6f3c8f:Eliminator; Nebulus; The Enforcer; Impact
+ZU:53:65f9b87b fc934d5f:The Light Corridor; International Soccer Challenge
+ZU:54:21dee3a6 d1813e10:Fire & Forget; Zynaps; Super Cars
+ZU:58:a8961412 8a660efe:Warlock's Quest; Marble Madness; Macadam Bumper
+OR:1:a54b223c 62f2961:Llamatron (1MB)
+OR:1:35ffdea0:Andes Attack; Defender I/II/Stargate; Grid Runner; Photon Storm
+OR:1:29f06681:Llamatron 512KB; Llamatron 1MB; Trip-a-Tron; Anim Player
+VT:1:e0344420:Goal! (Dino Dini)
+TU:1:07a029be:Virus
+CY:1:e196ae5e:Archer Maclean's Pool
+EX:1:43cee0f5:Disc
+42:1:54b73485:Dungeon Master
+EL:1:34d2a97f:Jimmy White's Whirlwind Snooker
+EL:1:3fb5d285:The Spy Who Loved Me
+RP:1:5905296b:Jupiter's Masterdrive
+ZU:60:2164b2e6 eedcc054:Freddy Hardest In South Manhattan; Dizzy Wizard; Addicta Ball; 8 Ball; Pool
+ZU:61:b3be5ade e2dc1b26:Human Killing Machine; Zombi
+ZU:68:3692784b b6164610:Off Road Racer; Strider II
+ZU:69:96cbebdb d0185d4e:Lotus Esprit Turbo; Vaxine; Boulder Dash
+ZU:70:e17d364 905b3df:ATF II; Gremlins II
+ZU:71:a09e719a 5b83389d:Mot; Xevious; Puzznic; Plutos; Sol Negro (female player); Sol Negro (male player)
+ZU:72:f597820e 765d76d6:Prince Of Persia
+ZU:77:2429e625 2c10d045:Narco Police; Welltris
+ZU:79:573b2e9e 49b88955:Spindizzy Worlds; Pang
+ZU:80:72bb760b bab05ef4:M1 Tank Platoon; International Karate +; Quadralien
+ZU:82:5232304b c9cfb274:Solomon's Key; Sir Fred
+ZU:83:7be3903c 917be633:Space Harrier; Advanced Destroyer Simulator; Cybernoid
+ZU:84:c09fb8dc ea3a4b19:Spidertronic; Team-yankee; Beyond The Ice Palace; Metrocross
+ZU:85:c169604d 41926cb2:Super Sprint; Hard Drivin'; Rally Cross
+ZU:87:1fa3181a 9e4e8968:Exterminator; Carvup; Final Conflict
+ZU:88:c446e716 44893834:Pick N Pile; Speedball II
+ZU:89:3d612ba5 4bbdd563:Toyota Celica GT Rally; Hard Drivin' II; Hard Drivin' II (editor)
+ZU:90:ede447b5 bdee409d:Loopz; Metal Masters
+ZU:91:c5b85a9f 65cf23f7:Stun Runner; Gazza II
+ZU:93:4a249f57 9bc89a20:Judge Dredd; Swap
+ZU:95:e353b646 df0fccb8:Tournament Golf; Hong Kong Phooey
+ZU:96:c50259c9 157a93c7:Builderland; Horror Zombies From The Crypt
+ZU:97:cbc81192 7cf94758:Thunderstrike; Crystals Of Arborea
+ZU:98:7ed74476 21efd0f:The Chronicles Of Omega (STF); The Chronicles Of Omega (STE); Punisher
+ZU:99:315ee2b4 ea5d44ba:Targhan; Populous
+ZU:100:abbf58da 565b5563:Trailblazer; Trailblazer (editor); Renegade; Skrull
+ZU:101:d4b663ce 213354a0:Gunship; Summer Olympiad
+ZU:102:420658d6 8019bb93:Super Grand Prix; Rockford; Artura
+ZU:103:5b7843c5 9a6cd925:Crime Does Not Pay; Return Of The Jedi
+ZU:104:a8460353 a99f8d3:Insects In Space; Chip's Challenge; Revelation
+ZU:105:d49379f7 c080d979:Disc; A Prehistoric Tale
+ZU:110:16f0b4e1 635167a1:Narc; Team Suzuki; Jahanghir Khan's World Championship Squash
+ZU:112:67e99a13 461d5f6c:Metal Mutant; Billy Bounce
+ZU:115:b9cb8132 f6ce0dac:Skull & Crossbones; Navy Seals
+ZU:116:82c4906d 1118b97a:Chuck Rock; Cohort
+ZU:117:a9d4dcb8 220dd77c:'Nam 1965-1975; Atomino
+ZU:118:ab128890 fb2deb4a:Hill Streets Blues; Cadaver Data Disk; Go Player; Backgammon Royale
+ZU:119:87868b93 95ccd04d:Grand Prix 500 II; Tetris The Soviet Game
+ZU:120:5b239de2 e24262c3:Penguin; Super Cars II
+ZU:121:a206c106 e02d13a:Alpha Waves; Jupiter's Masterdrive
+ZU:123:ff6156e4 77fb9085:Wings Of Death
+ZU:125:807f276b 743be82e:Prehistorik
+ZU:127:90c50693 140232dd:Gettysburg; Mig-29; MIG-29 Fulcrum
+ZU:128:d212c37a 24241ad9:Monopoly; Typhoon Thompson; Jump Jet; African Raiders-OI
+ZU:136:a4521413 9d8bdf51:Voyage Au Centre De La Terre; Block Out
+ZU:140:e974e75b 1858ea01:Violator; Creepy; Poker Dice
+ZU:144:852d0992 344b6869:Apprentice; Spellfire The Sorceror
+ZU:145:e78af6d5 d9baa7b0:Betrayal; Cybercon III
+ZU:146:de40b33d e493b61d:Mercs; Lords Of Chaos
+ZU:149:f4efd861 3149e23e:Bomb Jack; Fast Lane!; Last Duel; Quasar; Veteran
+ZU:150:976a863a 5925480e:Frenetic; Windsurf Willy
+ZU:151:f13054c5 a881b298:Battlehawks 1942; Star Wars; Galatic Conqueror
+ZU:152:97a8b5b7 cafb54cc:Hades Nebula; Joust; Eco; Fusion; Ranarama; Tech; Moon Patrol; Cybernoid II
+ZU:153:8089de97 7794666d:F-15 Strike Eagle; Monster Business; Interchange
+ZU:157:65f5f96d 84d5e306:Trauma; Artificial Dreams; Fireblaster; TNT
+ZU:159:6cd13a54 3eadfeeb:Liberator; Netherworld; Exolon; Space Station Part 1; Wrangler; Soko Ban; Match-It
+ZU:162:7a114276 ade5c856:Golden Path; Led Storm
+ZU:164:e37a6d67 23d35f2e:Super Skweek; Joe Blade II; Zuul Bootboom v1.1; Zuul Bootzuul v1.2
+ZU:169:673ded2d 27343e41:Rings Of Medusa; Silent Service
+ZU:170:52ec8080 e00693c2:Chariots Of Wrath; Frost Byte
+ZU:172:8293427e 46c9f9f5:Dan Dare III; Challenge Golf
+ZU:173a:4dec4287:Beastbusters (A)
+ZU:173b:a6d699d0:Beastbusters (B)
+ZU:174:a0630673 e7df6bd0:Ninja Rabbits; Robocop
+ZU:175A:2b98a941 48289693:Super Space Invaders
+ZU:175B:90f163b3 b8d85639:Super Space Invaders (data)
+ZU:176:b56330e 334fe892:Mean Machine; Robozone
+ZU:177:2d0b52fd f1473bad:Mystical; Karate Kid II
+ZU:178:941f4906 74222fb2:Titanic Blinky; Wacky Races; Fire!
+ZU:179:77a5a5f7 9042841e:Wolfpack; Strikefleet; Eden Blues
+ZU:181:99e2712b 685e3913:Mig-29M Super Fulcrum; The Simpsons - Bart vs. Space Mutants
+ZU:189:f2e289d3 c31bd780:Pit-Fighter; Gato
+ZU:192:558d011f e3a72ef2:Road Wars; Action Service; Super Cycle
+ZU:195:e17cdcbf 884b9b31:Millenium 2.2; Kult
+ZU:200:a72b8ccb a03b4dc7:Deathbringer
+ZU:204A:667868c3 1e31acbb:Loom
+ZU:204B:b6d698c7 5fdaa218:Loom (data); Another World (data)
+ZU:204C:e27a6ea3 baf11bd8:Another World
+ZU:206:c698b80a e1ad5b00:Boston Bomb Club; Oh-No! More Lemmings
+ZU:207:f074ec3b cba7b5b8:Paragliding; Othello 2000
+ZU:209:aaca86c8 7ee8d32d:Starglider; Skull Diggery; Overlander
+ZU:211:83779a42 913e2382:Crime City; Mercenary III
+ZU:212:7d4aa458 fc2f4fb5:Bumpy; Le Fetiche Maya
+ZU:213:7c8e17e3 32fae874:Mercenary III; Under Pressure
+ZU:214:7eb46ebf d2d182e0:Technocop; International Karate
+ZU:216A:9607bda2 9e95d966:Obitus; ST Checkers v1.0
+ZU:216B:e47b20ec 23b3bd23:Cyber Cop; Obitus (data)
+ZU:217:cc8ff61a 6b67cf2a:Bob Morane Ocean; Indy 500
+ZU:219:699e781f bc510d71:Castles (fr); Metropolis
+ZU:220:8529ddf9 5e470059:Zak McKracken (fr)
+ZU:221:c839207b f342b7ba:Tintin Sur La Lune; Elite
+ZU:222:d8555dff 85b3f7fb:F16 Combatpilot; 1943; Ninja Mission
+ZU:223:17a2fbae 27f591d1:Deflektor; Day Of The Viper; Luxor
+ZU:225:15332748 c94647d2:Heroes Of The Lance; Skychase
+ZU:226:a3707432 c4e42b48:Bad Cat; Trivial Pursuit (fr)
+ZU:227:fdc5c7a3 54e980e4:Bio Challenge; S.D.I
+ZU:228:bac93808 481da685:Arkanoid; Crack'Ed; Road Raider
+ZU:229:9dac4899 76cadf50:Spherical; Bob Morane; Roadwar 2000
+ZU:230:767645db bded7885:Lost Dutchman Mine; Phantasie III; Dames Simulator
+ZU:231:7f94f730 9181c4ab:Ultima V; Paperboy
+ZU:232:786a30a3 e974e8e0:Pirates Of The Barbary Coast; Police Quest - In Pursuit Of The Death Angel
+ZU:233:d41767da 7ef9739a:Starflight; Mousetrap; Night Walk; Pink Panther
+FZ:1:e1c3ecf:Star Wars; The Empire Strikes Back; Return Of The Jedi
+FZ:2:d28d598e:Beyond The Ice Palace; Thundercats; Skweek; Rick; Kick Off
+FZ:3:8efaf80e:Flying Shark; Passing Shot; Pinball Magic
+FZ:4:8d60cf34:Driller; Darkside; Total Eclipse; Castle Master
+FZ:5:36390117:Virus; Cloud Kingdoms; Renaissance; Tetris; Bubble Bobble
+FZ:6:57cfe595:E-Motion; Lode Runner; Pipe Dreams
+FZ:7:8fedc01f:Stunt Car Racer; Highway Patrol 2
+FZ:8:57952d3a:Atomix; Blockout; Klax; 3D Pool; Sim City
+FZ:9:22352183:Flood; Pyramax; SAS Combat
+FZ:10:3b5e35de:Rorkes Drift; Switchblade; Space Racer; Where Time Stood Still
+FZ:11:b4acb0c8:Speed Ball; Cybernoid 2; Arkanoid 2; Italy 90
+FZ:12:5b13c3a3:Chase HQ; Rick Dangerous; Super Sprint; Quartz
+FZ:13:1cb9d59:Thunderstrike; Damocles; Voyager; Terrys Big Adventure
+FZ:14:b1e21e9:Beverly Hills Cop; Magic Lines
+FZ:16:b3bec067:Sly Spy; The Light Corridor; Soluces
+FZ:17:d7542740:Rampage; Toobin; Dynamite Dux
+FZ:18:1fa0f76e:Super Cars; Hot Rod; Hard Drivin; Fuzion Player
+FZ:19:12579cb4:Action Fighter; Hard N Heavy; Scramble Spirits
+FZ:20:38e3bd2:Lotus Esprit Turbo Challenge; The Spy Who Loved Me
+FZ:21:5c85d0d2:Off Road; Shinobi; Clown-O-Mania
+FZ:22:25be2dac:ATF 2; Helter Skelter; Vaxine; Ruff & Ready
+FZ:23:58c83ac2:Golden Axe; Puzznic
+FZ:24:474163ea:Time Machine; Team Yankee; Final Conflict
+FZ:25:53da18d8:James Pond; Starblaze; Domination; Beyond The Ice Palace
+FZ:26:c876acc:Robocop; Robocop 2
+FZ:27:ce0714a7:Strider 2; Sliders
+FZ:28:368025d1:Narco Police; Exterminator
+FZ:29:9f56509b:The Curse Of Ra; Turnit; The Amazing Spiderman
+FZ:30:4483fd2:Speedball 2; Matrix Marauders
+FZ:31:37100a49:Ranx Xerox; Loopz
+FZ:32:2b167340:Pang; Take Two; The Sword & The Rose
+FZ:33:db1ec750:The Ancient Art of War; Spindizzy Worlds
+FZ:34:b72000af:Builderland; Edd The Duck; Botics
+FZ:35:67b23a68:The Teller; Space Harrier
+FZ:36:2deeea5f:Judge Dred; Docs
+FZ:37:75799050:Narc; Team Suzuki
+FZ:38:352cf618:Hard Drivin 2; Editor; Carvup; Advanced Destroyer Simulator
+FZ:39:8ca3bec0:Toyota Celica GT Rally; Gazza 2
+FZ:40:b381c2e9:Super Grand Prix; Scrabble; European Soccer Challenge
+FZ:41:53eac330:The Hunt For Red October; Insects In Space
+FZ:42:5b0b0e33:Grand Prix 500 2 [1 Disk]
+FZ:43:3ef01f46:Panza Kick Boxing [1 Disk]
+FZ:44:a3d0928a:Mig 29 Fulcrum; Revelation
+FZ:45:85d4c917:Jupiters MasterDrive; Mighty Bombjack
+FZ:46:47772682:Masterblazer; Warlock The Avenger
+FZ:47:384a6d4b:Super Monaco Grand Prix; Chip's Challenge; Docs
+FZ:48:1869187:Metal Mutant; Spellfire The Sorcerer
+FZ:49:5e700bc:Back To The Future 3; Sim City Terrain Editor
+FZ:50:8fe62b56:Lemmings [1 Disk]
+FZ:51:ba3a3dfb:Navy Seals; Carrier Command; Cadaver Extension Disk
+FZ:52:985c7b36:Betrayal; Hill Street Blues
+FZ:53:4207dce9:Chuck Rock [1/2]; Merchant Colony
+FZ:54:8906bf38:Chuck Rock [2/2]; The Killing Game Show Intro
+FZ:55:c518fb76:The Killing Game Show; Topcat the Cat
+FZ:56:387c7c7d:Skull & Crossbones; Predator 2 Intro
+FZ:57:f465ebfd:Great Courts 2; 9 Lives; Fuzion Megaripper
+FZ:58:51c32129:Super Cars 2; Mig 29; Tee Off
+FZ:59:f355a0a9:Disc; Heroquest
+FZ:60:99dc9d89:Z-Out; Outzone
+FZ:61:5d01f844:Gods [A]; Creepy; Squash
+FZ:62:81379481:Gods [B]; Fuzion Antivirus; Docs
+FZ:63:3a3901b9:Ninja Rabbit; Warzone
+FZ:64:842be87e:Stormball; European Challenge; Muscle Cars
+FZ:65:388ae393:Hydra; Swap
+FZ:68:c4e3c6a9:Blazing Thunder; Cybercon 3
+FZ:69:b87a0b52:3D Construction Kit; Lord Of Chaos
+FZ:70:9fa28528:Life And Death; Tangram
+FZ:71:54d1ce6b:Armour Geddon [1 Disk]
+FZ:72:bd56ede8:Apprentice; Booly
+FZ:73:22bfebec:Frenetic; Billard Simulator 2; Docs
+FZ:74:c0921ea6:Switchblade 2; F15 Strike Eagle 2
+FZ:75:4af94c99:Derrick The Droid; Shadow Dancer; Docs
+FZ:76:881be3bc:Monster Business; Mercs
+FZ:77:1df1792:Darkman; International Championship Athletics; Puzzmania
+FZ:79:b3960c5e:Stack Up; Blues Brothers; Quick & Silva; Elephant Antics
+FZ:80:d56c5281:Zone Warriors; Deeplair; Mr Gorain Takes His Bike; Docs
+FZ:81:8c5a7118:Armalyte; Logical; 3d Soccer; Docs
+FZ:82:fea316d3:Flight Of The Intruder; Burger man
+FZ:83:4758f85a:RBI Baseball 2; Cadaver Extra Level; Fruit Machine
+FZ:84:87b1dd5:ThunderHawk; Jimmy Whites Whirlwind Snooker
+FZ:85:44cc25d9:Railroad Tycoon; Boing
+FZ:86:832d51fc:Terminator 2 [1 Disk]
+FZ:87:71331f53:Magic Pockets; Rodland
+FZ:88:ed19dfda:Wacky Races; Rolling Ronny
+FZ:89:6a4421e2:Hard Nova [1/2]
+FZ:90:b889081a:Hard Nova [2/2]; Maze
+FZ:91:e16213f4:Scooby & Scrappy Doo; Germ Crazy
+FZ:92:5bb2528d:Utopia; Grav
+FZ:93:1e51deb8:Vroom; Hunter
+FZ:94:c048dc2f:Titanic Blinky; Guardians
+FZ:95:7b6d45c2:Bride Of The Robot; Africa Korps; Llamatron
+FZ:96:5058a556:Boston Bomb Club; Wild Wheels
+FZ:97:575079f9:Mig 29 M Superfulcrum; Mean Machine; Wolfpack
+FZ:99:74bc5177:Beast Buster [2/2]; Sky High StuntMan
+FZ:100:8ecf16d2:Silent Service 2; Head Over Heels; Docs
+FZ:101:87f0bcbe:Thunderburner; Alien Storm
+FZ:102:fc0786d8:Robin Hood; Exile
+FZ:103:325a509c:Robin Hood; Exile
+FZ:104:119b4610:Super Space Invaders; Crash 2000
+FZ:105:9e054c1f:Lotus Turbo Callenge 2; Rugby The World Cup
+FZ:106:39091b70:Hudson Hawk; Fighter Command
+FZ:107:bb26552a:Shadow Of The Beast 2 [1 Disk]
+FZ:108:a3ddc713:The Simpsons; Strike Fleet
+FZ:109:3887d93b:Charge Of The Light Brigade; Pit Fighter; Africa Korps (English)
+FZ:110:55448a47:Cisco Heat [A]; L'Aigle D'Or Le Retour
+FZ:111:edd38cc6:Cisco Heat [B]; Microprose Golf [A]
+FZ:112:783a06ab:Baby Jo; Microprose Golf [B]
+FZ:113:1548479a:Smash TV; Traders
+FZ:114:1c47eb61:Advantage Tennis; Karting Grand Prix
+FZ:115:b88e5d48:Another World [A]; Rugby Coach
+FZ:116:f0ad056a:Another World [B]; Galaxia
+FZ:117:91d5f480:Double Dragon 3 [A]
+FZ:118:ae980164:Wrestle Mania [A]; Oh No ! More Lemmings
+FZ:119:211d3857:Wrestle Mania [B]; Double Dragon 3 [B]
+FZ:120:2e4f902a:Mega Twins [A]; Black Hornet [B]
+FZ:121:a77c6cab:Mega Twins [B]; Black Hornet [A]; Adrenalyn
+FZ:123:227866ed:James Pond 2 : Robocod; Heavy Metal Heroes
+FZ:124:d3fede0f:First Samurai; World Cricket
+FZ:125:ed6dddd:Siege Master; Teenage Mutant Heroes Turtles 2
+FZ:126:86a300b8:Killerball; Spot
+FZ:127:2ed3ca5c:Final Blow; Strong Lines
+FZ:128:6a6c0a3e:Lethal X-Cess [1 Disk]; Multi Depacker
+FZ:129:ad7a34ba:Wolfchild; Hot Wheels; Jungle Boy
+FZ:130:bc01b6cf:Face Off; Sorcerer Of Doom; 1st Division Manager; Docs
+FZ:131:a122bcd8:Paragliding; Vector Soccer
+FZ:132:7558b190:Obitus [A]
+FZ:133:d61d1000:Obitus [B]; Bug Bash; Black Jack Plus 3
+FZ:134:70966f0a:Barbarian 2 [A]; Docs
+FZ:135:fdadc883:Barbarian 2 [B]; International Ninja Rabbit
+FZ:136:dbd8889c:Crime City; Kwik Snax; Football Director 2; Docs
+FZ:137:f2b9f45c:Tip Off; Mercenary 3; Docs
+FZ:138:6d6301be:Populous 2; Kid Glove 2; Trotsky Crazy
+FZ:139:6d4060b9:Super Ski 2 [A]; A 320; Pro Boxing; GemX; Docs
+FZ:141:23ced1bc:Devious Designs [A]; Ancient Games; Under Pressure
+FZ:142:20f36dec:Devious Designs [B]; Multi Loader
+FZ:143:7c81d4fe:The Neightbours; The Jetsons; Cybercop
+FZ:144:f006417e:Rubicon [1 Disk]
+FZ:145:a9b9453a:Elvira Arcade; Boffin Brothers
+FZ:146:8820685a:Strike Apache; Big Run; Docs
+FZ:147:6dac1b86:The Godfather [A]; Mystic Well
+FZ:148:e87e703e:The Godfather [B]
+FZ:149:8e04ca06:The Godfather [C]; Entombed; Docs
+FZ:150:de84c332:Steeve Mc Queen [A]
+FZ:151:b3928b07:Steeve Mc Queen [B]; Top Banana; Ishido
+FZ:152:659aad1d:Special Forces [A]; No Buddies Land
+FZ:153:1b5bf8ff:Special Forces [B]
+FZ:154:a7dc7f2b:Video Kid [1 Disk]
+FZ:155:d85d1575:HoverSprint [1 Disk]
+FZ:156:3bc8c59c:Shadow Lands; Powermonger World War 1; Docs
+FZ:157:ea5a4290:Leander [A]; Trex Warrior; Brides Of Dracula
+FZ:158:3716c497:Leander [B]
+FZ:159:82c89d66:Pacific Islands; Indy Heat
+FZ:160:2a4401e5:Deliverance [A]; Bubble Dizzy
+FZ:161:a4ed9801:Deliverance [B]
+FZ:162:d30a5ffd:Dizzy Prince Of Yorlfolk; Warriors Of Releyne; Docs
+FZ:163:4f3de873:Ghost Battle; F1 Tornado; Docs
+FZ:164:8112183f:Addams Familly; Graeme Souness Soccer Manager; Docs
+FZ:165:c7dd303b:Eurochamp 92; Bonanza Bros
+FZ:166:2ebb3bb1:John Barnes Foot; Yogi Big Cleanup; Seymour Go To Hollywood
+FZ:167:311b8df7:Space Crusade; SootynSweep; CJ In The USA
+FZ:168:78e63b37:Last Ninja 3; Dizzy Panic; Docs
+FZ:169:52f3a3dd:Sensible Soccer; European Football Champ; Spikey
+FZ:170:76d663ae:Alien World; World Class Rugby 5 Nations Edition; Docs
+FZ:171:deccb36f:Postworth And Co [1 Disk]
+FZ:172:d9e45e4d:Die Hard 2; Spellbound Dizzy; Docs
+FZ:173:d54ccd57:Push Over [1 Disk]; Megaripper 2
+FZ:174:3a33ba86:Summer Games; Football Champ; Football Manager; Docs
+FZ:175:5c4c87f9:Slighty Magic; Poker Dice; Striker
+FZ:176:cef5f768:Discovery; Think Cross
+FZ:177:d67d59e4:Cool Croc Twins; Touring Car Racer; Plax Atax
+FZ:178:968dce5e:Air Bucks; Erik
+FZ:179:ca60761b:Unreal [A]; Demon Blue; Oxxonian; Docs
+FZ:180:c0cc1c38:Unreal [B]; Blox
+FZ:181:848fcc12:Carl Lewis Challenger [1 Disk]; Klatrix
+FZ:182:9b51d5bd:Match Of The Day; Columns 2; Nova; Docs
+FZ:183:905c3f3:Crazy Cars 3 [1 Disk]; Rockfall
+FZ:184:4c5487d1:Vroom Data Disk; Teserae
+FZ:185:e0e238c0:Ork [1 Disk]
+FZ:186:908d411a:Wizkid; Captain Dynamo; Smash Hit; Docs
+FZ:187:a57a26f9:Samurai : Way Of The Warrior; G-Loc
+FZ:188:7c7fbaae:Lotus Turbo Challenge 3; Challenge Foot Junior
+FZ:189:96d8981c:Caesar; Paladin 2; Docs
+FZ:190:c5d43306:D-Day [A]; Docs
+FZ:191:4874a7ba:D-Day [B]
+FZ:192:386cbf05:Nicky Boom; Escapade
+FZ:193:39014541:Motorhead; Super Seymour; Cybernetix; Docs
+FZ:194:7de25869:Rampart; American Billard; Their Finest Hour Missions
+FZ:195:31544efc:Lethal Weapon; Premier Manager; Count Duckula 2
+FZ:196:f5dcd68d:No Second Prize; Sensible Soccer 1.1
+FZ:197:f4a6c018:Bignose The Caveman; Space Crusade 2
+FZ:198:eea9e17f:Shadow Worlds; Fruit Machine
+OR:1:25e62918:Deluxe Paint ST
+OR:1:48d00935:10th Frame
+OR:1:6b867268:1943
+OR:1:b4d26c67:1943
+OR:1:cc8ff2ad:1st Division Manager
+OR:1:439e3918:20000 Leagues Under The Sea
+OR:1:3ad52952:20000 Mellen Unter Dem Meer
+OR:1:66ec15a8:221B Baker Street
+OR:1:5b0c0317:A La Poursuite de Carmen Sandiego dans le Monde
+OR:1:cac7c929:A320 Airbus
+OR:1:4a642f61:Addams Family
+OR:1:0b049bd2:Advanced Destroyer Simulator
+OR:1:33b16e1e:Advanced Destroyer Simulator
+OR:1:da3116eb:Adventures of Robin Hood, The
+OR:1:af357944:Adventures of Robin Hood, The
+OR:1:e4991634:African Raiders-01
+OR:1:5e9d31e9:After The War
+OR:1:cc80e718:After The War
+OR:1:2ed0f4ca:Afterburner
+OR:1:1a57787e:Age
+OR:1:7972fb88:Age
+OR:1:9d42003a:Air Bucks v1.00
+OR:1:b18636db:Air Support
+OR:1:6341ca28:Airball
+OR:1:aae9f00c:Alien Storm
+OR:1::Alien Storm
+OR:1::Alien Storm
+OR:1:396e1925:Alien Syndrome
+OR:1:22d3ad7e:Alien World
+OR:1:5db664d8:Alternate Reality - The City v2.0
+OR:1:3a4bbbc3:Alternate Reality v1.2
+OR:1:1c8d553e:Amberstar
+OR:1:c947f5f1:Amberstar
+OR:1:a22e2562:Amberstar
+OR:1:33ebf594:Amberstar
+OR:1:4dabc849:Amberstar
+OR:1:ae704929:Amberstar
+OR:1:db75920b:Another World
+OR:1:523373ce:Another World
+OR:1:e2bf614c:Another World
+OR:1:31a3eb5a:Another World
+OR:1:8a1b5f41:Another World
+OR:1:8bbddd04:Another World
+OR:1:1ddd7a74:Antago
+OR:1:958cf649:APB
+OR:1:03e1bc8d:Arabesque Professional
+OR:1:f1b7cca6:Arche Du Capitaine Blood, L'
+OR:1:368b1045:Arena Earth
+OR:1:05ff6a55:Arkanoid
+OR:1:0ae97e74:Arkanoid II - Revenge of Doh
+OR:1:3c66c34c:Armalyte
+OR:1:c3005082:Asterix
+OR:1:5b027fe0:Autoduel
+OR:1:f5ec090a:Av-8B Harrier Assault
+OR:1:9609a139:Av-8B Harrier Assault
+OR:1:a853a288:Awesome
+OR:1:56224e1b:Awesome
+OR:1:2e532443:Awesome
+OR:1:e3dcabae:B.A.T.
+OR:1:87141403:B.A.T.
+OR:1:e75d8e2f:B.A.T.
+OR:1:06183552:Baal
+OR:1:7d607b5a:Baby Jo
+OR:1:afd94b64:Back To The Future II
+OR:1:ec9bb65a:Back To The Future II
+OR:1:59b6e9b9:Back To The Future III
+OR:1:dabcbeef:Backlash
+OR:1:8b95e83e:Bad Company
+OR:1:07ea6265:Badlands
+OR:1:12274b40:Barbarian
+OR:1:a782edd4:Barbarian
+OR:1:39350364:Bard's Tale, The
+OR:1:8fb5eb26:Bargon Attack
+OR:1:7e1510ff:Bargon Attack
+OR:1:44e7e1f2:Bargon Attack
+OR:1:844d7d10:Bargon Attack
+OR:1:f1c8bcbd:Bargon Attack
+OR:1:fa48dcd4:Bargon Attack
+OR:1:da4034f1:Bargon Attack
+OR:1:caccc9e8:Batman - The Movie
+OR:1:97a7a298:Battle Chess
+OR:1:b344d327:Battle Chess
+OR:1:35c864be:Battle Hawks 1942
+OR:1:0f9d092f:Berlin 1948
+OR:1:5bb9549a:Better Dead Than Alien!
+OR:1:f5853a15:Beyond Zork
+OR:1:22d63326:Big Business
+OR:1:74c0595a:Bionic Commando
+OR:1:0e1e430f:Black Gold
+OR:1:0619a7dc:Black Gold
+OR:1:5b8459a1:Black Hornet
+OR:1:89d3e48d:Black Sect
+OR:1:11712a3a:Black Sect
+OR:1:96c232b2:Blood Money
+OR:1:3495d6e3:Bloodwych
+OR:1:13588cab:Bobo
+OR:1:385deb38:Bolo
+OR:1:5f1b975f:Bolo
+OR:1:e4cb0070:Bolo Werkstatt
+OR:1:3aaa5c11:Borrowed Time
+OR:1:867b23d9:Brat
+OR:1:6927fb79:Bubble Bobble
+OR:1:ad3da624:Bubble Bobble
+OR:1:7b504ffd:Bubble Bobble
+OR:1:bbdd8b55:Bubble Bobble
+OR:1:1f6f315c:Buggy Boy
+OR:1:7767c624:Builderland - The Story of Melba
+OR:1:3d819358:Bundesliga Manager
+OR:1:1f67d520:Cadaver
+OR:1:81b899cc:Cadaver
+OR:1:8727b4f8:Cadaver
+OR:1:373495a7:Caesar
+OR:1:440d34e6:Caesar
+OR:1:e64fad69:Cannon Fodder
+OR:1:791ea11e:Captain Dynamo
+OR:1:9c30b17c:Carl Lewis Challenge, The
+OR:1:fdd3c95d:Carl Lewis Challenge, The
+OR:1:8bc8af00:Castles
+OR:1:53221a4a:Celica GT Rally
+OR:1:17d380ad:Chambers of Shaolin
+OR:1:39f313d7:Championship Manager End of Season 1994
+OR:1:b74fe7a0:Championship Manager End of Season 1994
+OR:1:98e058f6:Championship Manager End of Season 1994
+OR:1:5c9060a9:Chaos Engine
+OR:1:ce38f0c6:Chaos Engine
+OR:1:ec93ad5e:Chaos Strikes Back
+OR:1:636f4417:Chaos Strikes Back
+OR:1:90b35dde:Chess Player 2150
+OR:1:0ab2929d:Chicago 90
+OR:1:362cfcf5:Chicago 90
+OR:1:8da18fb5:Chuck Rock
+OR:1:1bce50a5:Chuck Rock
+OR:1:7bf36524:Circus Games
+OR:1:99754681:Colonel's Bequest, The
+OR:1:3bab084b:Colonel's Bequest, The
+OR:1:cdbe7f63:Colonel's Bequest, The
+OR:1:3209b459:Colonel's Bequest, The
+OR:1:79418373:Colonial Conquest
+OR:1:31119631:Colonial Conquest
+OR:1:80b83848:Colorado
+OR:1:62192ccb:Combo Racer
+OR:1:795ae71e:Conquests of Camelot
+OR:1:c2855316:Conquests of Camelot
+OR:1:18308359:Conquests of Camelot
+OR:1:d93b54ba:Cool World
+OR:1:5c6bba52:Cool World
+OR:1:de3deaf4:Crack'ed
+OR:1:75f17ed9:Crack'ed
+OR:1:ccefac23:Crackdown
+OR:1:13908d43:Crime City
+OR:1:42ce7eed:Crystal Castles
+OR:1:a38e02c1:Crystal of Arborea
+OR:1:6707645c:Cyber Cop
+OR:1:8ce50703:Cyber Snake
+OR:1:ad1be0b8:Cybernoid
+OR:1:196b55b7:D-Generation
+OR:1:3af2964f:D-Generation
+OR:1:bb6d2605:Dal'X
+OR:1:39e7bf13:Damocles - Mercenary II
+OR:1:0596ee0c:Dark Castle
+OR:1:60957582:Dark Castle
+OR:1:95caccca:Dark Castle
+OR:1:7fff2ea2:Darkland
+OR:1:d76b805c:Darkland
+OR:1:9cd5805e:Darkman
+OR:1:d55deb23:Day of the Viper
+OR:1:0b348877:Day of the Viper
+OR:1:0a3e12f4:Days of Thunder
+OR:1:103fe558:Defender of the Crown
+OR:1:a8c45cb4:Defender of the Crown
+OR:1:6e6b9b3e:Degas Elite v1.0
+OR:1:07eba8a6:Deuteros
+OR:1:a13acd14:Deuteros
+OR:1:9ced988d:Die Hard 2
+OR:1:86943126:Disc
+OR:1:095ed7cb:Disciples of Steel
+OR:1:2b9cc923:Disciples of Steel
+OR:1:e2eb1d38:Disciples of Steel
+OR:1:010494f1:Discovery
+OR:1:f906cef5:Dive Bomber
+OR:1:58882de1:Dogfight
+OR:1:f4fc722a:Dogfight
+OR:1:e9ace20e:Donald Ducks Playground
+OR:1:bcfda601:Double Dragon
+OR:1:ae1b553b:Double Dragon
+OR:1:876f1b6e:Double Dragon 3 - The Rosetta Stone
+OR:1:9a1f5653:Double Dragon 3 - The Rosetta Stone
+OR:1:5c18f578:Double Dragon II - The Revenge
+OR:1:3e708776:Dragon Spirit
+OR:1:c5975eaf:Dragon Spirit
+OR:1:d43e7670:Dragons Breath
+OR:1:d9deb342:Dragons Breath
+OR:1:03e3d3de:Drakkhen
+OR:1:b4440148:Drakkhen
+OR:1:f54e3832:Drakkhen
+OR:1:e378c246:Drakkhen
+OR:1:d0645d75:Duckula II
+OR:1:884a9a68:Dugger
+OR:1:39de0404:Dugger
+OR:1:0524d1af:Dungeon Adventure
+OR:1:67f09a05:Dungeon Master
+OR:1:5f7de3c3:Dynablaster
+OR:1:0eedc156:Dynamite Dux
+OR:1:6e5f30ef:E-Motion
+OR:1:38f4471f:E-Motion
+OR:1:f3a0fe80:Elevator Mission
+OR:1:9c8a4ea5:Elf
+OR:1:8e989add:Elf
+OR:1:ff46e679:Elite
+OR:1:3bdb2aa7:Elvira - The Arcade Game
+OR:1:14c5857e:Elvira - The Arcade Game
+OR:1:d70a8639:Enchanted Land
+OR:1:e37aa929:Epic
+OR:1:cd7d42c7:Epic
+OR:1:af34aade:Eskimo Games
+OR:1:5742e362:Eskimo Games
+OR:1:e5106f5e:Explora
+OR:1:f89dba24:Explora
+OR:1:8e6f8096:Explora II
+OR:1:576a1f35:Explora II
+OR:1:5e2202c4:Explora II
+OR:1:f37be2f6:Eye of Horus, The
+OR:1:3043e1aa:F-15 Strike Eagle 2
+OR:1:67878fd3:F-15 Strike Eagle 2
+OR:1:b7e8e764:Face Off
+OR:1:6452e9c1:Fate - Gates of Dawn
+OR:1:b8581ae7:Fate - Gates of Dawn
+OR:1:448ae8e1:Feudal Lords
+OR:1:06aaf6a5:Final Blow
+OR:1:433c6689:Finest Hour, The
+OR:1:09f21201:Finest Hour, The
+OR:1:33e4065b:Fire and Forget
+OR:1:c71da389:Fire and Forget II
+OR:1:f975338c:Fire and Ice
+OR:1:34279f4d:Fire and Ice
+OR:1:afb890be:Fire Brigade v1.11
+OR:1:8baabc8a:First Samurai, The
+OR:1:14ab25dd:Flight of the Intruder
+OR:1:74c1d944:Flimbo's Quest
+OR:1:79b68052:Flood
+OR:1:a4847d5d:Flying Shark
+OR:1:ceedd9f4:Flying Shark
+OR:1:d049ec8a:Flying Shark
+OR:1:9c99460a:Football Director II v2
+OR:1:9e491075:Forgotten Worlds
+OR:1:361c0ca8:Formula One Grand Prix
+OR:1:11840b37:Formula One Grand Prix
+OR:1:6daa8333:Foundation's Waste
+OR:1:6d636553:Fred
+OR:1:397e734c:Fred
+OR:1:57951300:Frenetic
+OR:1:bb48a051:Frontier - Elite II
+OR:1:e36453a5:Frontier - Elite II
+OR:1:928ae002:Full Metal Planete
+OR:1:0d6a693c:Full Metal Planete
+OR:1:53a3c35f:Funface v1.1f
+OR:1:b6c16582:Funface v1.1f
+OR:1:4b871862:Game Over II
+OR:1:1c771e07:Games - Winter Edition, The
+OR:1:1a38fac1:Garfield - Big, Fat, Hairy Deal
+OR:1:1aea0adb:Garfield - Big, Fat, Hairy Deal
+OR:1:ba2a153b:Gauntlet II
+OR:1:8ffc9197:Gem'X
+OR:1:42792e1e:Ghost Battle
+OR:1:e97ba4c5:Ghouls 'n' Ghost
+OR:1:628c7a62:Ghouls 'n' Ghost
+OR:1:fa3a54e6:Ghouls 'n' Ghost
+OR:1:969535b5:Ghouls 'n' Ghost
+OR:1:5972b285:Gladiators
+OR:1:62e615d6:Gobliiins
+OR:1:fc158442:Gobliiins
+OR:1:3e6ce6ba:Gobliiins
+OR:1:e7573ef8:Gobliiins
+OR:1:8569099d:Gobliiins
+OR:1:e7ca16ea:Gobliiins
+OR:1:a4ac417c:Godfather, The
+OR:1:e8838c39:Godfather, The
+OR:1:5d96e995:Godfather, The
+OR:1:3d6c2601:Godfather, The
+OR:1:60a05de6:Gods
+OR:1:1d633d7f:Gods
+OR:1:dc2e0009:Gold of the Realm
+OR:1:37a68bd9:Golden Axe
+OR:1:1e42bbe6:Goldrunner
+OR:1:c1c67aa7:Goldrunner
+OR:1:1c98e2dd:Graham Taylor Soccer Challenge
+OR:1:d0df02fb:Grand Prix 500cc
+OR:1:f3698ccf:Gravity
+OR:1:49a591db:Great Court 2
+OR:1:06cfdb96:Great Court 2
+OR:1:8fdf911c:Great Giana-Sisters, The
+OR:1:6ebb28f5:Great Giana-Sisters, The
+OR:1:10864de6:Gremlims 2
+OR:1:64d44ac5:Guild of Thieves, The v1.00
+OR:1:47a8538a:Hacker
+OR:1:37769563:Hacker 2
+OR:1:fe1b5c8b:Hades Nebula
+OR:1:52d8e1c1:Hammerfist
+OR:1:c9d7dd87:Hard Drivin'
+OR:1:4c35274a:Hard Drivin' II
+OR:1:e29a8882:Harlequin
+OR:1:e7b9e81d:Harley Davidson
+OR:1:64ca500c:Harricana
+OR:1:54c1e674:Harrier Strike Mission
+OR:1:78f96858:Hero Quest
+OR:1:5d2b8c79:Hero's Quest
+OR:1:49e88bed:Hero's Quest
+OR:1:9c0e4826:Hero's Quest
+OR:1:7ea4b036:Hero's Quest
+OR:1:7f80f7d7:Heroes of the Lance v1.0
+OR:1:81f03ca0:Heroes of the Lance v1.0
+OR:1:bf3abcef:Heroes of the Lance v1.0
+OR:1:1901ecba:Hollywood Hijinx
+OR:1:6e49f9ee:Hollywood Hijinx
+OR:1:f5680ed5:Hollywood Poker Pro
+OR:1:e960241f:Hong Kong Phooey
+OR:1:5a37c2e2:Horse Racing Simulator
+OR:1:e88ee94a:Hot Rubber
+OR:1:52282422:Hot Rubber
+OR:1:4ba95b7f:Hot-Dog
+OR:1:967dbf68:Hound Of Shadow, The
+OR:1:957a8978:House-On-A-Disk
+OR:1:85d26f6c:Hover Sprint
+OR:1:d46325fc:Hover Sprint
+OR:1:c7385f4a:Hoyle Book of Games - Volume 2 - Solitaire v1.001.017
+OR:1:6da11458:Hoyle's Volume 1 ver 1.000.104
+OR:1:8024f98c:Hunt For Red October, The
+OR:1:f96bbcf5:Hunter
+OR:1:dc4a98da:Hunter Killer
+OR:1:6c2c298e:Hyper Force
+OR:1:2bf75f42:Immortal, The
+OR:1:08ca7f9d:Immortal, The
+OR:1:db692bd5:Immortal, The
+OR:1:ac0fa1b4:Impact!
+OR:1:5aa993bc:Imperium
+OR:1:a12707e3:Impossible Mission II
+OR:1:124630b9:Impossible Mission II
+OR:1:5f63ab5a:Indiana Jones and the Last Crusade - Arcade Game
+OR:1:6f129cb4:Indiana Jones et la Derniere Croisade
+OR:1:e2c688a5:Indiana Jones et la Derniere Croisade
+OR:1:5f2348fa:Indiana Jones et la Derniere Croisade
+OR:1:2d486300:Indiana Jones et la Derniere Croisade
+OR:1:611eacc0:Indiana Jones et la Derniere Croisade
+OR:1:5426b82f:Indiana Jones et la Derniere Croisade
+OR:1:051baa5b:Indy 500
+OR:1:b4282021:Indy 500
+OR:1:e06d5118:Insect In Space
+OR:1:ab8f0940:International Karate
+OR:1:cb8886be:International Karate +
+OR:1:0c3a18ee:International Ninja Rabbits
+OR:1:64e9e78e:International Ninja Rabbits
+OR:1:8fc68d1c:International Truck Racing
+OR:1:52cab5d7:Into the Eagle's Nest
+OR:1:c61ff7bd:Ishar - Legend of the Fortress
+OR:1:e2ffe711:Ishar - Legend of the Fortress
+OR:1:6e5de325:Italie '90
+OR:1:ff7d238e:Italy 90
+OR:1:05841e0f:Ivanhoe
+OR:1:f65b028e:Ivanhoe
+OR:1:4f7d471d:Iznogoud
+OR:1:bdbc81aa:Jagd Auf Der Red October
+OR:1:6276f6a3:Jagd Auf Der Red October
+OR:1:4d4f7eb6:Jet v1.01
+OR:1:800b91e1:Jetsons
+OR:1:e26ef3a7:Jim Power - Mutant Planet
+OR:1:52cfa67d:Jim Power - Mutant Planet
+OR:1:86cf960b:Joan of Arc
+OR:1:792ce543:John Barnes European Football
+OR:1:a4e2d2b9:Joker Poker
+OR:1:e9098d68:Joust
+OR:1:f4bb5173:Joust
+OR:1:fd76490c:Karate Kid - Part II, The
+OR:1:5c850429:Kayden Garth
+OR:1:cd76ffea:Kick Off
+OR:1:8a00b0d8:Kick Off - Extra Time
+OR:1:9b2f974f:Kick Off 2
+OR:1:a427b920:Kick Off 2
+OR:1:a236a522:Kid Gloves II
+OR:1:1b871165:Killerball
+OR:1:587a5dbc:Killerball
+OR:1:fdcf5a71:Killerball
+OR:1:4c4ef480:King's Quest
+OR:1:54c5fdbf:King's Quest
+OR:1:6d2a324e:King's Quest 4 - The Perils of Rosella
+OR:1:8386a8dc:King's Quest 4 - The Perils of Rosella
+OR:1:e2ff6547:King's Quest 4 - The Perils of Rosella
+OR:1:7b94d588:King's Quest 4 - The Perils of Rosella
+OR:1:c90f3bb6:Knight Force
+OR:1:8522a3e4:Krull
+OR:1:ae86ecd4:Krypton Egg
+OR:1:61b158bf:Krypton Egg
+OR:1:a9b17e2b:Kubysimus
+OR:1:b7170ca9:Kult
+OR:1:e6c597fa:Last Ninja 2
+OR:1:a4dad0e5:Last Ninja, The
+OR:1:fd3487f5:Last Ninja, The
+OR:1:f1673a3f:Last Ninja, The
+OR:1:88b7e7a4:Last Ninja, The
+OR:1:d19aff27:Leader Board Pro Golf Simulator Tournament Disk 1
+OR:1:26091c5b:Leatherneck
+OR:1:f4ee1264:Leatherneck
+OR:1:f452e3a0:Leavin' Teramis
+OR:1:35f85318:Led Storm
+OR:1:aaf3a8e9:Legend of the Lost
+OR:1:43583bcc:Leisure Suit Larry 2
+OR:1:76fff958:Leisure Suit Larry 2
+OR:1:6f5e3ccb:Leisure Suit Larry 2
+OR:1:ed013643:Lemmings
+OR:1:367156ba:Lemmings 2 - The Tribe
+OR:1:78731233:Lethal Xcess
+OR:1:80164243:Lethal Xcess
+OR:1:dfde99a3:Life and Death
+OR:1:6e8e90aa:Life and Death
+OR:1:b8ee8cab:Live and Let Die
+OR:1:866b9ab7:Live and Let Die
+OR:1:1c603f9e:Lode Runner
+OR:1:172c7bab:Loom
+OR:1:dfa298eb:Loom
+OR:1:2883b2fe:Loom
+OR:1:b6785e78:Lord of Chaos
+OR:1:93c07426:Lords of Conquest
+OR:1:cb5c25cc:Lost Patrol, The
+OR:1:122fffee:Lost Patrol, The
+OR:1:f12fcabe:Lost Patrol, The
+OR:1:ba816e3a:Lotus Esprit Turbo Challenge
+OR:1:501fd2fb:Lotus Esprit Turbo Challenge
+OR:1:72f32ffc:Lotus Esprit Turbo Challenge 2
+OR:1:b1dfcda4:Lure of the Tempress
+OR:1:0c683fce:Lure of the Tempress
+OR:1:e416b36b:Lure of the Tempress
+OR:1:49a72127:Lure of the Tempress
+OR:1:caa6f812:Mach 3
+OR:1:9eacb1b2:Magic Boy
+OR:1:39d26cff:Magic Fly
+OR:1:7936038c:Magic Pocket
+OR:1:488bf113:Magnetic Scrolls Compilation, The v1.02
+OR:1:eba3ee62:Magnetic Scrolls Compilation, The v1.02
+OR:1:6daf5214:Magnetic Scrolls Compilation, The v1.02
+OR:1:a84f548f:Magnetic Scrolls Compilation, The v1.02
+OR:1:b94dd2db:Man Hunter - New York
+OR:1:a1487cf1:Man Hunter - New York
+OR:1:38626d36:Man Hunter 2 - San Francisco
+OR:1:d6100244:Man Hunter 2 - San Francisco
+OR:1:b6a4ab0d:Man Hunter 2 - San Francisco
+OR:1:d3bead88:Manhattan Dealers
+OR:1:9a62c560:Manhunter
+OR:1:cdca143f:Manhunter v1.0
+OR:1:92fddd72:Manhunter v1.0
+OR:1:994c7370:Manhunter v1.0
+OR:1:117bf2e8:Maniac Mansion
+OR:1:82fb7092:Maniac Mansion
+OR:1:d3049b51:Maniac Mansion
+OR:1:2555c647:Manoir de Mortevielle, Le
+OR:1:85ddc7c6:Manoir de Mortevielle, Le
+OR:1:191e6e65:Manoir de Mortevielle, Le
+OR:1:08abc661:Manoir de Mortevielle, Le
+OR:1:23016557:Manoir de Mortevielle, Le
+OR:1:00df2519:Marble Madness
+OR:1:76f85f42:Masterblazer
+OR:1:fe28d9c2:Mega lo Mania
+OR:1:54adc427:Mega lo Mania
+OR:1:6b7b7ed8:Mega Twins
+OR:1:07da1b33:Mega Twins
+OR:1:0ee016e1:Megatraveller
+OR:1::Megatraveller
+OR:1::Megatraveller
+OR:1:76704bf7:Mercenary 1 - Escape From Targ
+OR:1:84adf9ed:Metal Masters
+OR:1:37a8a9fb:Metal Masters
+OR:1:099c437b:Metal Mutant
+OR:1:342b1041:Metro-Cross
+OR:1:fdb99d60:Meurtre A Venise
+OR:1:1fd771a4:Mickey Mouse
+OR:1:24782a23:Mickey Mouse
+OR:1:581aba09:Midnight Resistance
+OR:1::Midnight Resistance
+OR:1::Midnight Resistance
+OR:1:7d9df447:MIG-29 - Fulcrum
+OR:1:3405225c:Millenium 2.2
+OR:1:2c2d10ea:Millenium v2.2
+OR:1:f2c0d93f:Millenium v2.2
+OR:1:070d1c25:Mini Golf
+OR:1:7f6dd4d5:Mission Elevator
+OR:1:ad95574e:Mission Elevator
+OR:1:5fd7fd59:Mission Elevator
+OR:1:8c2b7f58:Monster Business
+OR:1:209a8d6e:Monty Python's Flying Circus
+OR:1:a0959c39:Moonbase
+OR:1:db724bdd:Moonpatrol
+OR:1:dc9d27c4:Mouse Trap
+OR:1:662f2be8:Mouse Trap
+OR:1:0ff7e9fb:Mr. Heli
+OR:1:176dc5ad:Narc
+OR:1::Narc
+OR:1::Narc
+OR:1:6c5ddd41:Necromancien, Le
+OR:1:e4f988cc:Netherworld
+OR:1:f23f5912:New Zealand Story, The
+OR:1:3128d972:Night Shift
+OR:1:c2a70904:Nil Dieu Vivant
+OR:1:83693082:Nil Dieu Vivant
+OR:1:40f92287:Ninja Mission
+OR:1:b2710b7f:Ninja Mission
+OR:1:6184471e:Ninja Spirit
+OR:1:f1af3da1:Ninja Spirit
+OR:1:276d3caf:Nitro
+OR:1:3d16cc22:North & South
+OR:1:c4c44097:Obitus
+OR:1:572a280e:Obitus
+OR:1:8882ec71:Ocean Beach Volley
+OR:1:8fb620d7:Oh-no ! More Lemmings
+OR:1:c8094c49:Oilmania
+OR:1:f460f82e:Oliver and Company
+OR:1:5d0a28d7:On the Road
+OR:1:7d66ff5a:On the Road
+OR:1:884d4545:Onslaught
+OR:1:77642bd1:Ooze v1.2E
+OR:1:3b3b14fb:Operation Jupiter
+OR:1:bcde632f:Operation Jupiter
+OR:1:efa80af4:Operation Jupiter
+OR:1:970cb91a:Operation Jupiter
+OR:1:e0522f98:Operation Stealth
+OR:1:b2a9b23a:Operation Stealth
+OR:1:6ee0a62e:Operation Stealth
+OR:1:00a3805f:Operation Wolf
+OR:1:96992f03:Out Run
+OR:1:a2c81008:Out Run
+OR:1:3a0a8253:Outzone
+OR:1:71d67229:Outzone
+OR:1:5c01d731:Oxyd
+OR:1:2b2ec46b:Pacific Command - Team Yankee II; Pacific Islands
+OR:1:bdbcdc55:Pacmania
+OR:1:2c570696:Pang
+OR:1:21465aa6:Panza Kick Boxing
+OR:1:5cd1cc56:Panza Kick Boxing
+OR:1:84361115:Paperboy
+OR:1:711526b0:Parasol Stars
+OR:1:ea0ef30b:Parasol Stars
+OR:1:ac18ff4d:Paris Dakar 1990
+OR:1:8a004cae:Pawn, The
+OR:1:dd26f67a:Pawn, The
+OR:1:278edf86:Phantasie v2.0
+OR:1:d4c64443:Pharaoh
+OR:1:f1c1aa18:Pinball Wizard
+OR:1:98f8ddd2:Platoon
+OR:1:4e84129a:Police Quest v2.0g
+OR:1:af22f8b8:Police Quest v2.0g
+OR:1:35b5c183:Police Quest v2.0g
+OR:1:956d003e:Pop Up
+OR:1:0441a80b:Pop!
+OR:1:5f61acd3:Populous
+OR:1:198a6644:Populous II
+OR:1:7489724a:Portes du Temps, Les
+OR:1:3d148fe8:Portes du Temps, Les
+OR:1:01a36b97:Portes du Temps, Les
+OR:1:624a3029:Powerboat
+OR:1::Powerboat
+OR:1::Powerboat
+OR:1:e399c638:Powerdrome
+OR:1:edeabfbb:Powermonger
+OR:1:da815c47:Powermonger - WW1
+OR:1:0c929147:Powerplay - The Game of the Gods
+OR:1:c934c6ac:Predator
+OR:1:36df71bb:Prehistoric Tale, A
+OR:1:dd2539ed:Prehistorik
+OR:1:7490d82d:Prince of Persia
+OR:1:ca1e7689:Prince of Persia
+OR:1:3503b1f3:Prohibition
+OR:1:bb6c200e:Purple Saturn Day
+OR:1:4ad187f9:Race Drivin'
+OR:1:5d692e3f:Rainbow Islands
+OR:1:fdb0c034:Rainbow Islands
+OR:1:ee757430:Rambo III
+OR:1:a5d9418d:Rampage
+OR:1:71153a52:Rampage
+OR:1:aadb7b6e:Rampart
+OR:1:0aa8a780:Ranx
+OR:1:a5a251b9:RBI Baseball 2
+OR:1:f1c24c20:Real Ghostbusters, The
+OR:1:bd0cb90f:Realms
+OR:1:1a2a677e:Realms
+OR:1:2c46439f:Red Lightning
+OR:1:47a4881e:Resolution 101
+OR:1:b2a04648:Rick Dangerous
+OR:1:6ccd1b3b:Rick Dangerous
+OR:1:646bbe22:Ripoux, Les
+OR:1:49da31c1:Risk v1.9
+OR:1:be546ef5:Roadwar 2000
+OR:1:0c05c2a6:Roadwar Europa
+OR:1:e4313f7d:Robocop
+OR:1:e94f51b7:Robocop 2
+OR:1:3ace29e6:Robocop 3
+OR:1:c472b56d:Robocop 3
+OR:1:6dc986a7:Rock'n Roll
+OR:1:4538e9c2:Rock'n Roll
+OR:1:5582f653:Rodland
+OR:1:7d1be443:Rogue
+OR:1:b9295310:Roll'n'Nudge
+OR:1:bcacb833:Rosemary Raccoon's Strop Game
+OR:1:a5e77327:S.D.I.
+OR:1:4bf58a49:Samurai - The Way of The Warrior
+OR:1:5ab786d8:Satan
+OR:1:27ce6dd2:Savage World
+OR:1:10b66260:Scooby Doo & Scrappy
+OR:1:8c33ece9:Secret of Monkey Island, The
+OR:1:a1505d89:Secret of Monkey Island, The
+OR:1:6eb31519:Secret of Monkey Island, The
+OR:1:37d9dab1:Secret of Monkey Island, The
+OR:1:ee33fbbb:Secret of Monkey Island, The
+OR:1:fb71de12:Secret of Monkey Island, The
+OR:1:acbd9d85:Secret of Monkey Island, The
+OR:1:68fd49cf:Secret of Monkey Island, The
+OR:1:5630a016:Sensible Soccer
+OR:1:b5d6f517:Sensible Soccer International Edition v1.2
+OR:1:7fb25a0e:Sensible Soccer International Edition v1.2
+OR:1:0d20840d:Sensible Soccer International Edition v1.2
+OR:1:ce1c529b:Sensible Soccer International Edition v1.2
+OR:1:69cff32b:Seymour Goes To Hollywood
+OR:1:84af187c:Shadow Dancer
+OR:1:0e571e3c:Shanghai- Revenge of the Dragon
+OR:1:d4b4a091:Sheer Agony
+OR:1:0fe74aed:Sheer Agony
+OR:1:e3efef2b:Sherman M4
+OR:1:eca4ad30:Shinobi
+OR:1:689c1689:Shufflepuck Cafe
+OR:1:5d302576:Shufflepuck Cafe
+OR:1:03c715c7:Shufflepuck Cafe
+OR:1:690c982d:Shuttle - The Space Flight Simulator
+OR:1:82991262:Shuttle - The Space Flight Simulator
+OR:1:74d623c1:Side Arms
+OR:1:a03a34ba:Side Winder
+OR:1:0e95d87d:Side Winder
+OR:1:d2137656:Side Winder II
+OR:1:5a46bdc2:Silent Service II
+OR:1:25e891ec:Silicon Knights
+OR:1:512d45fe:Silicon Knights
+OR:1:a310a4ff:Silkworm
+OR:1:7c3901b2:Sim City
+OR:1:4be46ced:Simpsons - Bart vs the World, The
+OR:1:71260275:Simulcra
+OR:1:21c0dd34:Skate Ball
+OR:1:3f562ab3:Skate Ball
+OR:1:eb9c5b22:Skidz
+OR:1:99ff0814:Skweek
+OR:1:828b8799:Smash TV
+OR:1:c1491992:Son Shu-Shi
+OR:1:9598c201:Son Shu-Shi
+OR:1:0818f7df:Sooty and Sweep
+OR:1:24b755d2:Space Baller
+OR:1:e541b1d5:Space Crusade
+OR:1:73b1bfe9:Space Harrier
+OR:1:012be9fc:Space Harrier
+OR:1:bc83d9b5:Space Invaders
+OR:1:6c9bf257:Space Quest III - The Pirates of Pestulon v1.0q
+OR:1:53b01c44:Space Quest III - The Pirates of Pestulon v1.0q
+OR:1:04fc3a22:Space Quest III - The Pirates of Pestulon v1.0q
+OR:1:9ce08fa5:Space Quest III - The Pirates of Pestulon v1.0q
+OR:1:a8cda4b0:Space Quest III - The Pirates of Pestulon v1.0q
+OR:1:6fe40c15:Space Racer
+OR:1:87e819e2:Speedball
+OR:1:775a7419:Speedball
+OR:1:8c0ad58a:Speedball
+OR:1:5e002cf4:Speedball 2 - Brutal Deluxe
+OR:1:2b1a4870:Spherical
+OR:1:399448aa:Spherical
+OR:1:2e230f4a:Spindizzy Worlds
+OR:1:efbd2453:Spindizzy Worlds
+OR:1:4b026fb4:Spitting Image
+OR:1:14402a37:Spot
+OR:1:142761aa:Spy Who Loved Me, The
+OR:1:2583cbe7:ST Erotica Vol 1 Number 1
+OR:1:e078ef67:ST Erotica Vol 1 Number 2
+OR:1:5b7939f5:Star Raiders
+OR:1:c8107130:Star Trek
+OR:1:80732c6b:Star Wars
+OR:1:96dfa31f:Star Wars
+OR:1:946e5c7d:Star Wars
+OR:1:a29193e4:Star Wars - The Empire Strikes Back
+OR:1:0b382c45:Starball
+OR:1:b1bb644d:Starblade
+OR:1:ea7f0e2f:Starbyte Super Soccer
+OR:1:cd791d8e:Starflight
+OR:1:f7d80cd9:Starglider
+OR:1:b63e30e5:Steve Davis World Snooker
+OR:1:61226e43:Steve McQueen Westphaser
+OR:1:de0eaf18:Steve McQueen Westphaser
+OR:1:2dfb02a5:Storm Master
+OR:1:2c60fd44:Street Fighter
+OR:1:a9a21bcf:Strider
+OR:1:a8bf53c8:Strider II
+OR:1:50d1b872:Stunt Car Racer
+OR:1:693bbb87:Stunt Car Racer
+OR:1:e07625bb:Sundog - Frozen Legacy v3.0
+OR:1:bfe6a09c:Super Cars
+OR:1:85a4377e:Super Cars II
+OR:1:9caeb296:Super Hang-On
+OR:1:c1822d33:Super Hang-On
+OR:1:35c2c8fe:Super Ski II
+OR:1:917c8ad8:Super Ski II
+OR:1:adca678b:Super Skweek
+OR:1:529f4395:Super Skweek
+OR:1:3525271b:Super Skweek
+OR:1:617b31f7:Super Sprint
+OR:1:855b00b3:Super Sprint
+OR:1:32bc6895:Superbike Challenge
+OR:1:e29bbc6d:Superstars Ice Hockey
+OR:1:5bfb5ffb:Switch Blade
+OR:1:612838f5:SWIV
+OR:1:cbf52a4c:Tangram
+OR:1:13be4c8e:Targhan
+OR:1:b7e1b639:Targhan
+OR:1:8dcd068e:Technocop
+OR:1:debfae8d:Tecnoball 2
+OR:1:3f5438dc:Teenage Mutant Hero Turtles
+OR:1:b9a43154:Teenage Queen
+OR:1:d4924415:Teenage Queen
+OR:1:f54ab6a4:Teller, The
+OR:1:dbafa223:Teller, The
+OR:1:79b51fd6:Temple of Apshai Trilogy
+OR:1:7801fa1e:Tennis Cup II
+OR:1:caad696c:Tennis Cup II
+OR:1:04038fd9:Terramex
+OR:1:355e0a51:Test Drive
+OR:1:1cb31d3c:Test Drive
+OR:1:74b833be:Tetris
+OR:1:c7bfa449:Tetris
+OR:1:c1565d9a:Tetris
+OR:1:dd8865fe:Third Reich
+OR:1:6a64c16b:Thunder Burner
+OR:1:a56736db:Thunder Cats
+OR:1:545a7f44:Time Runner
+OR:1:d651789b:Tintin on the Moon
+OR:1:b93cbb9e:Tiny Skweeks
+OR:1:b71646e0:Tip Off
+OR:1:ced787af:Tip Off
+OR:1:b336612b:Toki
+OR:1:4c8248c1:Tonic Tile
+OR:1:91c0d6db:Tony Severa's Hint Disk & Gaming Aids
+OR:1:949a0839:Top Banana
+OR:1:847d1da6:Top Banana
+OR:1:9083da7f:Total Recall
+OR:1:322d0af7:Total Recall
+OR:1:22b1ae79:Touring Car Racer
+OR:1:49aedb49:Towers
+OR:1:edecc7f1:Towers
+OR:1:92a3f556:Transartica
+OR:1:7e2b9e25:Transartica
+OR:1:9ed016b9:Trauma
+OR:1:ba0d2a64:Trivial Pursuit - Genus Edition
+OR:1:425dc03c:Trivial Pursuit - Genus Edition
+OR:1:3c6246f6:Turbo Outrun
+OR:1:76f40155:Turbo Outrun
+OR:1:9588c2c2:Turrican II
+OR:1:5eff7a09:Twin World
+OR:1:f52057f9:Twin World
+OR:1:ff644214:Under the Ice
+OR:1:70a0143f:Untouchables, The
+OR:1:b74fa8d3:Untouchables, The
+OR:1:781bdd7c:Venus The Flytrap
+OR:1:9bb1e008:Venus The Flytrap
+OR:1:d0c33d7d:Verminator
+OR:1:c2cc878c:Video Kid
+OR:1:df23dfec:Video Kid
+OR:1:ea0db270:Virus
+OR:1:ec531b72:Voyageur du Temps, Les
+OR:1:228c3f2b:Voyageur du Temps, Les
+OR:1:1aeed314:Voyageur du Temps, Les
+OR:1:37b42279:Vroom
+OR:1:e5c9a0d3:Walls of Illusion
+OR:1:0965ddd5:War Zone
+OR:1:1a61f7c2:Warlock's Quest
+OR:1:23f711c9:Warship in the Pacific, 1941-45
+OR:1:c67ec37a:Waterloo
+OR:1:e38cd291:Waterski
+OR:1:ecf363a4:Weird Dreams
+OR:1:453c6734:Welltris
+OR:1:4a7fe837:Western Games
+OR:1:d217b6c2:Who Framed Roger Rabbit
+OR:1:aa8c7959:Who Framed Roger Rabbit
+OR:1:fa544ed8:Wicked
+OR:1:005aa2b4:Wild Streets
+OR:1:577f4a1e:Wild Streets
+OR:1:fd40aa41:Wild Wheels
+OR:1:68d8a1dd:Wild Wheels
+OR:1:2c2912ed:Wings of Death
+OR:1:408cbd90:Wings of Death
+OR:1:4e84fe2f:Wings of Death
+OR:1:f0fdbcb3:Wings of Death
+OR:1:8ac1624d:Wings of Death
+OR:1:369bdd27:Winner Bob
+OR:1:81264237:Winter Games
+OR:1:92b5f15e:Winter Games
+OR:1:45936811:Winter Olympiad '88
+OR:1:f34b997b:Winter Olympiad '88
+OR:1:1516fa75:Wipe Out
+OR:1:5b5e7623:Wizball
+OR:1:c6ce52c0:Wizmo
+OR:1:e98d9f95:Wonderboy in Monsterland
+OR:1:5fd16da3:Wonderland
+OR:1:d088795c:Wonderland
+OR:1:aab759e1:Wonderland
+OR:1:dcd5d1cf:Wonderland
+OR:1:0f749fec:Works Team Rally
+OR:1:ba4f4817:World Cricket
+OR:1:ad779acf:World Games
+OR:1:2e1de2e0:World Trophy Soccer
+OR:1:ce755ada:Worm Race
+OR:1:10792783:Xenon
+OR:1:27ab2063:Xenon
+OR:1:81f141d1:Xenon
+OR:1:b5d0ff8e:Xenon 2 - Megablast
+OR:1:9aa9981c:Xenon 2 - Megablast
+OR:1:4a7e6e6e:Xevious
+OR:1:3f5efda2:Xor
+OR:1:40a80905:Xybots
+OR:1:9ee0e1f6:Ynis Witrin
+OR:1:1b03ded6:Yogis - The Big Clean Up
+OR:1:6bb2380f:Yomo
+OR:1:dead0c72:Yuppie's Revenge
+OR:1:09e85310:Z-Out
+OR:1:b82f634d:Zak McKracken and the Alien Mindbenders
+OR:1:63cc0783:Zak McKracken and the Alien Mindbenders
+OR:1:4b574e60:Zak McKracken and the Alien Mindbenders
+OR:1:86ba27af:Zak McKracken and the Alien Mindbenders
+OR:1:cf4defd3:Zany Golf
+OR:1:8afc9997:Zombi
+OR:1:296c9112:Zork I- The Great Underground Empire
+OR:1:6803596f:Zork II- The Wizard of Frobozz
+OR:1:529927cc:Zork III- The Dungeon Master
+OR:1:55b74643:ZZZ-UNK- Croisiere Pour Un Cadavre
+OR:1:a39f1f8b:ZZZ-UNK- Croisiere Pour Un Cadavre
+OR:1:bfe40deb:ZZZ-UNK- Cynix - Lotus Turbo 2
+OR:1:1697a2d9:ZZZ-UNK- dragon's lair
+OR:1:200eb69a:"ZZZ-UNK- Gobec4 1 [Not complete].st"
+OR:1:736de857:"ZZZ-UNK- Gocec8 1 [Not complete].st"
+OR:1:78d9a793:ZZZ-UNK- hollywood collection ghostbuster 2
+OR:1:b8e3d97a:"ZZZ-UNK- In8b20 1 [Not complete].st"
+OR:1:30f77cff:"ZZZ-UNK- Intern 4 [Not complete].st"
+OR:1:e37586c8:"ZZZ-UNK- Joust - Titan.st"
+OR:1:c3319bb4:ZZZ-UNK- Thrust (y)(firebird)[cr][a]
+OR:1:8639240e:ZZZ-UNK-Amfv
+OR:1:a1479b00:ZZZ-UNK-Apshai
+OR:1:9f84f506:ZZZ-UNK-Barb2
+OR:1:9f410c19:ZZZ-UNK-Barb2b
+OR:1:35c1ac26:ZZZ-UNK-Batlzone
+OR:1:29c8d1a4:ZZZ-UNK-Bzork
+OR:1:53f231a0:ZZZ-UNK-Chess
+OR:1:f43841ca:ZZZ-UNK-Coe80e1
+OR:1:7f981456:ZZZ-UNK-Cozumel
+OR:1:04864ee1:ZZZ-UNK-Cruise_1
+OR:1:af93a0be:ZZZ-UNK-Cruise_2
+OR:1:f147804c:ZZZ-UNK-Cruise_3
+OR:1:aa5f83e2:ZZZ-UNK-Cruise_4
+OR:1:81edde0a:ZZZ-UNK-Cruise_5
+OR:1:ad9cc230:ZZZ-UNK-Espacial
+OR:1:3d9b93bc:ZZZ-UNK-Falcon F16
+OR:1:52563fd3:ZZZ-UNK-Fs2
+OR:1:f26bc107:ZZZ-UNK-Fugger
+OR:1:26b7e16d:ZZZ-UNK-Galaxy (disk 1 Of 2)
+OR:1:2b69fddb:ZZZ-UNK-Galaxy (disk 2 Of 2)
+OR:1:8cc919a7:ZZZ-UNK-Hill
+OR:1:b97ce611:ZZZ-UNK-Intern3
+OR:1:0d5114c3:ZZZ-UNK-Jabato
+OR:1:20cf4d91:ZZZ-UNK-Jabato
+OR:1:6a00b096:ZZZ-UNK-Legend1
+OR:1:3c4102ac:ZZZ-UNK-Legend2
+OR:1:a68020c1:ZZZ-UNK-Locext
+OR:1:76268146:ZZZ-UNK-Mindwhel
+OR:1:5e71620c:ZZZ-UNK-Motorh1
+OR:1:661f1baf:ZZZ-UNK-Murder
+OR:1:bad0b644:ZZZ-UNK-Onslght
+OR:1:a9361384:ZZZ-UNK-Ope0e71
+OR:1:f55397e6:ZZZ-UNK-Original
+OR:1:803ef808:ZZZ-UNK-Phan3
+OR:1:6056e72a:ZZZ-UNK-Phant2
+OR:1:e1f2caba:ZZZ-UNK-Phantdat
+OR:1:54cb07d5:ZZZ-UNK-Rogue2
+OR:1:25474c37:ZZZ-UNK-Sh68b61
+OR:1:ebcbe8aa:ZZZ-UNK-Sh8ec31
+OR:1:de856797:ZZZ-UNK-Silenovr
+OR:1:cb8f5cfe:ZZZ-UNK-Stardu1
+OR:1:bb54ddb8:ZZZ-UNK-Stardu2
+OR:1:4e036e9d:ZZZ-UNK-Stardu3
+OR:1:7a4f5483:ZZZ-UNK-Sum_olym
+OR:1:3ba72d57:ZZZ-UNK-Thekil1
+OR:1:59b28cc0:ZZZ-UNK-Thekil2
+OR:1:c68f293d:ZZZ-UNK-Thesho1
+OR:1:a000ced4:ZZZ-UNK-Thesho2
+OR:1:cb751a0c:ZZZ-UNK-Timescan
+OR:1:6419e020:ZZZ-UNK-Timund
+OR:1:c56563ce:ZZZ-UNK-Ul533c1
+OR:1:a5206eba:ZZZ-UNK-Ul573c1
+OR:1:8ef0ddcc:ZZZ-UNK-Ul5b2c1
+OR:1:877ca10c:ZZZ-UNK-Ul5f2c1
+OR:1:fac01332:ZZZ-UNK-Ultima2
+OR:1:a4ecec04:ZZZ-UNK-Wall Street
+OR:1:df21d00c:ZZZ-UNK-Xtron
+OR:1:0f0c2944:ZZZ-UNK-Xtron
+OR:1:76ac65fd:ZZZ-UNK-Zzz_badcat1
+OR:1:8a1b5f41:Another World (A)
+OR:2:8bbddd04:Another World (B)
+OR:1:3fb912fe:1000 Bornes
+OR:1:77406c3:1943
+OR:1:1f8863ec:221B Baker Street
+OR:1:97ba00b3:3D Break-thru
+OR:1:3edc18e3:8 Ball
+OR:1:9f9679c2:9 Lives
+OR:1:b56b1832:Aaargh !
+OR:1:896693a0:Action Service
+OR:1:b049bd2:Advanced Destroyer Simulator
+OR:1:6117eb49:Addicta Ball
+OR:1:e843f872:L'Affaire
+OR:1:6628e30:African Raiders 01
+OR:1:aee80a24:AGE (Disk 1)
+OR:2:239091fb:AGE (Disk 2)
+OR:1:78595f3:Airball
+OR:1:4a479b5e:Airborne Ranger
+OR:1:212cf519:Alcatraz (Disk A)
+OR:2:74df0e37:Alcatraz (Disk B)
+OR:1:640e8de2:Alf
+OR:1:9cd4e028:Aliants
+OR:1:a52c7996:Alien Fires (Disk 0)
+OR:2:9075dfe0:Alien Fires (Disk 1)
+OR:1:48523a26:Alien Syndrome
+OR:1:15bee2d:Alphamax
+OR:1:c728f123:Altair
+OR:1:ab3c0675:Amberstar (Disk A)
+OR:2:3fcac5ff:Amberstar (Disk B)
+OR:3:700987ec:Amberstar (Disk C)
+OR:1:db39d87b:Ammotrack
+OR:1:8a1b5f41:Another World (Disk 1)
+OR:2:8bbddd04:Another World (Disk 2)
+OR:1:958cf649:APB
+OR:1:3e1bc8d:Arabesque Pro
+OR:1:5155dec6:Alternate Reality - The City
+OR:1:5f901765:Arctic Fox
+OR:1:2f774511:Arena Earth
+OR:1:9568b9a6:Arkanoid - Revenge of Doh
+OR:1:f6187a36:Arctic Moves (Disk 1)
+OR:2:3e172d2d:Arctic Moves (Disk 2)
+OR:1:50517a93:Artificial Dreams
+OR:1:6431c9f0:Astate - La Maledictions Des Templiers
+OR:1:ad9cc230:Aventura Espacial
+OR:1:f55397e6:Aventura Original
+OR:1:407da737:Aventura I (Disk 1)
+OR:2:8dc79c99:Aventura I (Disk 2)
+OR:1:afd94b64:Back To The Future II
+OR:1:ec0be92:Backlash
+OR:1:dbf79015:Bank Buster
+OR:1:7854c03a:Barbarian II (Palace) (Disk 1)
+OR:2:aadd9fdc:Barbarian II (Palace) (Disk 2)
+OR:1:9bad10ae:Barbarian (Palace)
+OR:1:4c9d6704:Barbarian (Psygnosis)
+OR:1:e4e6580d:Bard's Tale
+OR:1:8fb5eb26:Bargon Attack (Disk 1)
+OR:2:7e1510ff:Bargon Attack (Disk 2/3)
+OR:3:44e7e1f2:Bargon Attack (Disk 4/5)
+OR:4:844d7d10:Bargon Attack (Disk 6/7)
+OR:1:3887ac11:Battlezone
+OR:1:b74dfdbd:Bill Palmer
+OR:1:c8a90a67:Bio Challenge
+OR:1:66561724:Bivouac
+OR:1:6329e9f:Black Sect (Disk 1)
+OR:2:11712a3a:Black Sect (Disk 2)
+OR:1:61a77f67:Black Sect (Disk 3)
+OR:1:ce43f028:Blob Race
+OR:1:d7ac0c9b:Blueberry
+OR:1:8d99a67f:Bob Winner
+OR:1:7aadd526:Bootiful Babe
+OR:1:2e885433:Battle Chess
+OR:1:c32f63d9:Bubble Bobble Extend
+OR:1:25fea749:Bubble Ghost
+OR:1:74fb8669:Bubble Ghost +
+OR:1:eb42fb3:Bubble Bobble
+OR:1:26c0ff9e:Bubble Trouble
+OR:1:1f6f315c:Buggy Boy
+OR:1:1309495c:Captain Fizz
+OR:1:471358b4:Chaos Strikes Back (Game Disk)
+OR:1:90b35dde:Chess 2150
+OR:2:28d1c5cd:Chaos Strikes Back (Utils Disk)
+OR:1:b49ec414:CIA Aventure
+OR:1:21b0c38:Cisco Heat
+OR:1:79418373:Colonial Conquest
+OR:1:b1f34acc:Colorado
+OR:1:ba903e55:Corona Magica
+OR:1:b78a02c:Corrupt
+OR:1:916e3ca:Croisiere Pour Un Cadavre (Disk 1)
+OR:2:5ea8705e:Croisiere Pour Un Cadavre (Disk 2)
+OR:3:bc6a2cff:Croisiere Pour Un Cadavre (Disk 3)
+OR:4:55606d43:Croisiere Pour Un Cadavre (Disk 4)
+OR:5:9f3e93b:Croisiere Pour Un Cadavre (Disk 5)
+OR:1:ac6312:Crossbow - The Legend Of William Tell
+OR:1:8ce50703:Cyber Snake
+OR:1:6d77f6b9:Dark Castle
+OR:1:560e30e8:Day Of The viper
+OR:1:4f8abba4:Defender Of The Crown
+OR:1:f9738d6f:Deflektor
+OR:1:2b2ef68:Deja Vu
+OR:1:d409cc25:Deja Vu II - Lost In Las Vegas
+OR:1:97b86954:Demenage Man
+OR:1:7eba8a6:Deuteros (Disk 1)
+OR:2:a13acd14:Deuteros (disk 2)
+OR:1:7f981456:Diosa De Cozumel
+OR:1:a3f02630:Dizzy Lizzy
+OR:1:85475a29:Dizzy Lizzy 2
+OR:1:c8b746ab:Dominium
+OR:1:e9ace20e:Donald Duck's Playground
+OR:1:5c18f578:Double Dragon II - The Revenge
+OR:1:89bc8d00:Double Dragon
+OR:1:884a9a68:Dugger
+OR:1:725d43a9:Dungeon Adventure
+OR:1:e787a8a1:Dungeon Master
+OR:1:c76f6d59:ECO - A Game Of Survival
+OR:1:f3a0fe80:Mission Elevator
+OR:1:ff46e679:Elite
+OR:1:39951b0f:Elite 2 - Frontier
+OR:1:b964a8d0:Eliminator; Nebulus; Pac-Mania
+OR:1:762a9592:Entombed
+OR:1:c3243eeb:Exolon; Eliminator
+OR:1:78c963a1:Explora II (Disk 1)
+OR:2:ddc854f1:Explora II (Disk 2)
+OR:3:e3b03103:Explora II (Disk 3)
+OR:1:9d71eed0:Explora III - Sous Le Signe Du Serpent (Disk 1)
+OR:2:9ad84235:Explora III - Sous Le Sugne Du Serpent (Disk 2)
+OR:3:94349847:Explora III - Sous Le Signe Du Serpent (Disk 3)
+OR:1:416ab59c:Explora - Time Run (Disk 1)
+OR:2:fcd8e7c1:Explora - Time Run (Disk 2)
+OR:1:af93f64b:Fallen Angel
+OR:1:966fc521:FOFT - Federation Of Free Traders
+OR:1:340643f7:Full Metal Planet
+OR:1:99d31751:Fun Face
+OR:1:1aea0adb:Garfield
+OR:1:f73cffad:Gladiators
+OR:1:7546ed4a:Grid Runner
+OR:1:47a8538a:Hacker
+OR:1:b7372781:Hacker 2
+OR:1:4aba147f:Harrier Strike Mission
+OR:1:f7fa3755:Head Over Heels
+OR:1:7f80f7d7:Heroes Of The Lance (Disk A)
+OR:2:81f03ca0:Heroes Of The Lance (Disk B)
+OR:3:bf3abcef:Heroes Of The Lance (Disk C)
+OR:1:b309a6ef:Heroe's Quest (Disk 1)
+OR:2:4ebac79e:Heroe's Quest (Disk 2)
+OR:3:9c20919d:Heroe's Quest (Disk 3)
+OR:4:3dc94c0b:Heroe's Quest (Disk 4)
+OR:1:4ef07930:Hillsfar
+OR:1:e960241f:Hong Kong Phooey
+OR:1:ffc087ca:Hammer Boy
+OR:1:5a37c2e2:Horse Racing Simulator
+OR:1:83424cde:Hoyle Book Of Games
+OR:1:95441916:Hunt For The Red October
+OR:1:cb8886be:International Karate +
+OR:1:466c6515:Impact
+OR:1:7f654f25:Incantation
+OR:1:93ce53bf:Indiana Jones Last Crusade (Action)
+OR:1:2305b7a:Indiana Jones Fate Of Atlantis (Action)
+OR:1:b3a07933:Infestation
+OR:1:40f303f4:Interphase
+OR:1:cf48ad40:Iron Lord (Disk 1)
+OR:2:4a841eff:Iron Lord (Disk 2/3)
+OR:1:45954db6:ISS - Incredible Shrinking Sphere
+OR:1:d5114c3:Jabato Vs Imperio (Fase 1)
+OR:2:20cf4d91:Jabato Vs Imperio (Fase 2)
+OR:1:6ababf4d:Jet Set Willy
+OR:1:129c8f38:Joust; Block Out
+OR:1:7c38962f:Kayden Garth
+OR:1:92fa5994:Kephren
+OR:1:bddb4ab1:Kid Gloves
+OR:1:8a4380a0:Kubysimus
+OR:1:957a8978:LCP - Little Computer People
+OR:1:35f85318:Led Storm
+OR:1:13009d50:Legend Of Djell
+OR:1:230a8064:Lorna (Disk 1)
+OR:2:5d0708a7:Lorna (Disk 2)
+OR:1:d870fb03:Manhunter New York (Disk 1)
+OR:2:6fd831ab:Manhunter New York (Disk 2)
+OR:1:125f7338:Manhunter San Francisco (Disk 1)
+OR:2:fe48ff34:Manhunter San Francisco (Disk 2)
+OR:3:dd0a8669:Manhunter San Francisco (Disk 3)
+OR:1:5a265df3:Maniac Mansion
+OR:1:2e18a3ff:Marble Madness
+OR:1:7eca9e8d:Marque Jaune
+OR:1:93de5280:Joust; Massacre; Mudpies; Major Motion
+OR:1:c1c577a3:Match It
+OR:1:7a4c5ce6:Menace
+OR:1:76704bf7:Mercenary - Escape From Targ
+OR:1:412a2d2d:Metrocross
+OR:1:ffa28cb0:Murder On The Atlantic
+OR:1:c7bedcca:Mewilo
+OR:1:6d8f069a:Midnight Resistance
+OR:1:2c2d10ea:Millenium 2.2 (Disk 1)
+OR:2:f2c0d93f:Millenium 2.2 (Disk 2)
+OR:1:2e07afaa:Mind Forever Voyaging (HRes)
+OR:1:e0754907:Secret Of Monkey Island (Disk 1)
+OR:2:a1505d89:Secret Of Monkey Island (Disk 2)
+OR:3:6eb31519:Secret Of Monkey Island (Disk 3)
+OR:4:37d9dab1:Secret Of Monkey Island (Disk 4)
+OR:1:2555c647:Manoir De Mortevielle (Disk 1)
+OR:2:85ddc7c6:Manoir De Mortevielle (Disk 2)
+OR:1:dc9d27c4:Mousetrap
+OR:1:c75a3bf:Nebulus
+OR:1:16fae473:Necron
+OR:1:933e7480:Ninja Mission
+OR:1:89a20cab:North & South
+OR:1:5d0bf3fb:Obliterator (Disk A)
+OR:2:1cc7b960:Obliterator (Disk B)
+OR:1:7c0f4633:Omega
+OR:1:bcde632f:Operation Jupiter / Hostages	
+OR:1:e0522f98:Operation Stealth (Disk 1)
+OR:2:b2a9b23a:Operation Stealth (Disk 2)
+OR:3:6ee0a62e:Operation Stealth (Disk 3)
+OR:1:96992f03:Outrun
+OR:1:825452fe:Pac-Mania
+OR:1:e7428045:Paperboy
+OR:1:e993619a:Passagers Du Vent I
+OR:1:ccd05b5f:Passagers Du Vent II
+OR:1:21ce3d04:Pentacle; Heroquest Court Of The Witchlord; Tult
+OR:1:aceedff6:Phantasie I
+OR:1:14f0b615:Phantasie II
+OR:1:b024399f:Phantasie III - Wrath Of Nikademus
+OR:1:e54fb3e9:Phobia
+OR:1:2bd69bb8:Personal Nightmare (Disk 1)
+OR:2:1cc8385a:Personal Nightmare (Disk 2)
+OR:3:2f94691:Personal Nightmare (Disk 3)
+OR:4:f301a3a1:Personal Nightmare (Disk 4)
+OR:5:f8bd2045:Personal Nightmare (Disk 5)
+OR:1:441a80b:Pop !
+OR:1:7489724a:Portes Du Temps (Disk 1)
+OR:2:3d148fe8:Portes Du Temps (Disk 2)
+OR:3:1a36b97:Portes Du Temps (Disk 3)
+OR:1:c934c6ac:Predator
+OR:1:17f5d16f:Prince Of Persia (Disk 1)
+OR:2:13de0344:Prince of Persia (Disk 2)
+OR:1:3503b1f3:Prohibition
+OR:1:792cfa16:Puffy's Saga
+OR:1:96e9236f:Purple Saturn Day
+OR:1:d33c1bdc:Quadrel
+OR:1:1663c1b5:Questron 2
+OR:1:24fabcf7:Quete De L'Oiseau Du Temps (Disk 1)
+OR:2:fbdb9474:Quete De L'Oiseau Du Temps (Disk 2)
+OR:3:69e58394:Quete De L'oiseau Du Temps (Disk 3)
+OR:1:71153a52:Rampage
+OR:1:f1c24c20:Real Ghostbusters
+OR:1:edd4187:Reversi Brain
+OR:1:c8293ae9:Rings Of Medusa
+OR:1:7eae8c27:Rings Of Zilfin (Disk 1)
+OR:2:2a337b65:Rings Of Zilfin (Disk 2)
+OR:1:49fb84b3:Rings Of Zilfin (Disk 3)
+OR:1:5fdb31bf:Risk
+OR:1:be546ef5:Roadwar 2000
+OR:1:c05c2a6:Roadwar Europa
+OR:1:41c6b0e3:Adventures Of Robin Hood
+OR:1:8ae2f191:Rock'n roll
+OR:1:1b4d7f2d:Rogue
+OR:1:b32e1591:Rogue II
+OR:1:6643f7c8:Roll-Out
+OR:1:bcacb833:Rosemary Racoon's Strip Game
+OR:1:72b34c00:Rotor
+OR:1:48f43cb1:Round The Bend
+OR:1:7515ef19:Sapiens
+OR:1:eed999f5:Scary
+OR:1:d3589639:Steve Davis World Snooker
+OR:1:e593f98e:Sentinel
+OR:1:9f3221fc:Seymour Goes To Hollywood
+OR:1:a454f032:Shadowgate
+OR:1:d4b4a091:Sheer Agony (Disk 1)
+OR:2:fe74aed:Sheer Agony (Disk 2)
+OR:1:e3efef2b:Sherman M4
+OR:1:27f53a03:Shortgrey (Disk 1)
+OR:2:4de6613d:Shortgrey (Disk 2)
+OR:3:82004b9f:Shortgrey (Disk 3)
+OR:4:8d275eb3:Shortgrey (Disk 4)
+OR:1:f1bebf9:Shufflepuck Cafe
+OR:1:a5c69ef:Slaygon (Disk A)
+OR:2:599ae0a6:Slaygon (Disk B)
+OR:1:24a341ee:Solomon's Key
+OR:1:70c3ab6d:Sorcerer Lord
+OR:1:c2becda:Space Crusade (Disk 1)
+OR:2:b0551751:Space Crusade (Disk 2)
+OR:1:91a5dcee:Space Station
+OR:1:8ecd9159:Spaceballer
+OR:1:ef59046:Speedball
+OR:1:6d91a117:Spherical
+OR:1:3a4cca98:Super Sprint
+OR:1:95debcc7:Star Commander (Disk 1)
+OR:2:4a55d4e6:Star Commander (Disk 2)
+OR:3:bdb2dee5:Star Commander (Disk 3)
+OR:1:15ddad70:Starflight
+OR:1:f6d88dc8:Starquake
+OR:1:9a303665:Star Raiders
+OR:1:d175a762:Stormlord
+OR:1:44b92e70:Street Fighter
+OR:1:e3f6e359:Stunt Car Racer
+OR:1:45615ab3:Sundog
+OR:1:874377bb:Super Ski
+OR:1:ce41097:Tau Ceti III
+OR:1:4fb2d929:Tempest
+OR:1:ebd934ae:Tennis Cup
+OR:1:86f9d5d3:Templos Sagrados (Fase 1)
+OR:2:f5765f09:Templos Sagrados (Fase 2)
+OR:1:eb1e4f25:Tonic Tile
+OR:1:ad4312e4:Towers (Disk 1)
+OR:2:c994e97e:Towers (Disk 2)
+OR:1:56d38e5:Trailblazer
+OR:1:630242db:Trivial Pursuit - Genus II
+OR:1:60fd17a8:Turlogh Le Rodeur
+OR:1:17b774c8:Ultima II - Revenge Of The Enchantress
+OR:1:8513353b:Ultima III - Exodus
+OR:1:c8d8744e:Voyage To The Center Of The Earth (Disk A)
+OR:2:a8c13857:Voyage To The Center Of The Earth (Disk B)
+OR:1:73318676:Voyageurs Du Temps (Disk 1)
+OR:2:2c409bc8:Voyageurs Du Temps (Disk 2)
+OR:3:db1b0db5:Voyageurs Du Temps (Disk 3)
+OR:1:c5347ce5:Warship
+OR:1:73d25dd1:Chateau Du Magicien
+OR:1:45b9ea5:Windwalker
+OR:1:e646864c:Wizball
+OR:1:8a303173:Wizmo
+OR:1:af05461a:Wizz
+OR:1:14dfd8b6:Wonderboy In Monsterland
+OR:1:68906ad1:World Games
+OR:1:e8d45534:World Trophy Soccer
+OR:1:fbcd3b9b:Xenakys
+OR:1:3adc57c:Xevious
+OR:1:2ba2e6ea:Xiphos
+OR:1:f1aa807b:XOR
+OR:1:57a556b7:Xybots
+OR:1:4fbfcba8:YAMicroC
+OR:1:9a409fba:Ynis Witrin - Isle Of Glass
+OR:1:82ca5eaf:Yomo
+OR:1:f28f8a0b:Zak McKracken (Disk 1)
+OR:2:1dfd1b68:Zak McKracken (Disk 2)
+OR:1:cc8543c:Abominaball; Kid Kong
+OR:1:68e49093:Academy &#8211; Tau Ceti II
+OR:1:839da006:Action Fighter
+OR:1:2823513f:Addams Family
+OR:1:b656a203:Adrenalynn
+OR:1:2f1bccfa:Advantage Tennis
+OR:1:f3d290c:Afrika Korps; Vulcan
+OR:1:838df2de:After The War (Disk 1)
+OR:2:e64df28:After The War (Disk 2)
+OR:1:d6dc364d:Aigle D&#8217;Or &#8211; Le Retour (Disk A)
+OR:2:470d8854:Aigle D&#8217;Or &#8211; Le Retour (Disk B)
+OR:1:4f5e7536:Air Bucks
+OR:1:807d5e6c:A320 Airbus
+OR:1:64566b3f:Alcantor
+OR:1:88542af1:Alien Storm
+OR:1:8d6a0514:Alien Thing
+OR:1:4c8f14e9:Alien World
+OR:1:34736462:Alpha Waves
+OR:1:2ffd4b29:AMC &#8211; Astro Marine Corps
+OR:1:1f70c759:Acient Games
+OR:1:c622ec32:Andes Attack
+OR:1:1c5aa2bf:Antago
+OR:1:6eb267d5:Prehistoric Tale
+OR:1:fc3c10c0:Aquanaut
+OR:1:35b701f5:Archipelagos
+OR:1:fe9ecbd4:Arcade Trivia Quiz
+OR:1:7ab60ddc:Armalyte
+OR:1:ba1c31b1:Army Moves
+OR:1:f6a4712e:Astaroth
+OR:1:4236beac:Asterix
+OR:1:bf0b61ef:ATF II &#8211; Advanced Tactical Fighter II
+OR:1:ac3faed3:Atomic Robot Kid
+OR:1:ee881e38:Atomino
+OR:1:905a203:Awesome (Disk 1)
+OR:2:89aaef02:Awesome (Disk 2)
+OR:3:6f8f2e07:Awesome (Disk 3)
+OR:1:d40364dc:Axel&#8217;s Magic Hammer; Switchblade
+OR:1:bb169f0:B17 Flying Fortress (Disk A)
+OR:2:4a075713:B17 Flying Fortress (Disk B)
+OR:1:c5c5f091:Baal
+OR:1:9aadebf2:Bad Company
+OR:1:baff937f:Badlands
+OR:1:3872b5af:BAT (Disk 1)
+OR:2:41b75afd:BAT (Disk 2)
+OR:3:c492492f:BAT (Disk 3)
+OR:1:435884bd:Battletech
+OR:1:2beaa88f:Buggy Boy; Ikari Warriors
+OR:1:6be717ef:Beach Volley
+OR:1:491ba548:Beast Busters (Disk 1)
+OR:2:4d806bc:Beast Busters (Disk 2)
+OR:1:12421e11:Better Dead Than Alien
+OR:1:53be4cae:Blastaball
+OR:1:f15e262c:Black Lamp
+OR:1:17efad4f:Blinky&#8217;s Scary School
+OR:1:41112cf2:Block-Out
+OR:1:f052a45f:Blood Money
+OR:1:9307f0d3:Bombuzal
+OR:1:2f29c2c5:Booly
+OR:1:bd440632:Boston Bomb Club
+OR:1:7401e8c0:Botics
+OR:1:fff4eb46:Builderland
+OR:1:a931b4a5:Bumpy
+OR:1:1fb0c3dd:Bumpy&#8217;s Arcade Fantasy
+OR:1:3048af93:Cabal
+OR:1:b8f74e0:Caesar
+OR:1:b4be7e0a:California Games II
+OR:1:c969650d:Carrier Command
+OR:1:1a621017:Car-Vup
+OR:1:5d69e569:Castle Capers
+OR:1:f63bd7d6:Castle Master
+OR:1:ff0f7dd8:Castles
+OR:1:1a6f539d:Centerfold Squares
+OR:1:50ffd034:Chaos Engine (Disk 1)
+OR:2:957e940b:Chaos Engine (Disk 2)
+OR:1:567356ad:Chase HQ II - SCI
+OR:1:3fbcfa52:Chambers Of Shaolin
+OR:1:18a7e0a6:Chip&#8217;s Challenge
+OR:1:16c89fee:Chrono Quest (Disk 1)
+OR:2:2a87040e:Chrono Quest (Disk 2)
+OR:1:b02b8b3f:Chuck Rock
+OR:1:bfce9287:Civilization (Disk 0)
+OR:2:34e98c9a:Civilization (Disk 1)
+OR:3:abd7530a:Civilization (Disk 2)
+OR:4:3d9c6903:Civilization (Disk 3)
+OR:1:8fd6fb3c:Colonel&#8217;s Bequest (Disk 1)
+OR:2:afc4810b:Colonel&#8217;s Bequest (Disk 2)
+OR:3:b4f56c40:Colonel&#8217;s Bequest (Disk 3)
+OR:4:618ae788:Colonel&#8217;s Bequest (Disk 4)
+OR:1:b7ade80d:Corporation
+OR:1:733fea19:Cougar Force (Disk 1)
+OR:2:80a9f535:Cougar Force (Disk 2)
+OR:3:cdb31d50:Cougar force (Disk 3)
+OR:1:cb133c70:Crazy Cars III (Disk - Program)
+OR:2:7f4cb365:Crazy Cars III (Disk - Data)
+OR:1:6be94b49:Crack Down
+OR:1:dc4f1f3b:Crime Does Not Pay
+OR:1:8437b998:Castle Master II &#8211; The Crypt
+OR:1:6c4f0a7b:Crystals Of Arborea
+OR:1:b1074021:Curse Of The Azure Bonds (Disk 1)
+OR:2:8d87d807:Curse Of The Azure Bonds (Disk 2)
+OR:1:e406dcd1:Cyberdrome
+OR:1:f915316f:Cybernoid &#8211; The Fighting Machine
+OR:1:a897ce4f:Dal&#8217;X
+OR:1:9e57d71e:Darkland
+OR:1:6ba02dd4:Deathbringer
+OR:1:fe5b76ef:Deliverance &#8211; Stormlord II (Disk 1)
+OR:2:9cf80f36:Deliverance &#8211; Stormlord II (Disk 2)
+OR:1:43cee0f5:Disc
+OR:1:329a843b:Disciples Of Steel (Disk &#8211; Intro)
+OR:1:3f6eefaa:Disciples Of Steel (Disk 1)
+OR:2:667d2595:Disciples Of Steel (Disk 2)
+OR:1:e84ce91f:Dizzy &#8211; Fantasy World
+OR:1:3ed4641:Advanced Ski Simulator; Dizzy &#8211; Treasure island
+OR:1:f9aa0f32:Dragon&#8217;s Lair 3 &#8211; Curse Of Mordread (Disk 0)
+OR:2:ae0f4857:Dragon&#8217;s Lair 3 &#8211; Curse Of Mordread (Disk 1)
+OR:3:ed74a8b3:Dragon&#8217;s Lair 3 &#8211; Curse Of Mordread (Disk 2)
+OR:4:8526daa2:Dragon&#8217;s Lair 3 &#8211; Curse Of Mordread (Disk 3)
+OR:5:fe0b45b0:Dragon&#8217;s Lair 3 &#8211; Curse Of Mordread (Disk 4)
+OR:6:d7c89a5d:Dragon&#8217;s Lair 3 &#8211; Curse Of Mordread (Disk 5)
+OR:7:a9333677:Dragon&#8217;s Lair 3 &#8211; Curse Of Mordread (Disk 6)
+OR:8:50a4612d:Dragon&#8217;s Lair 3 &#8211; Curse Of Mordread (Disk 7)
+OR:1:3b04a68c:Dragon&#8217;s Breath (Disk 1)
+OR:2:3bf36ac2:Dragon&#8217;s Breath (Disk 2)
+OR:1:412d961a:Dragon Ninja
+OR:1:6b8bcd8b:Elf (Disk 1)
+OR:2:620d5d5f:Elf (Disk 2)
+OR:1:38d513e5:Elvira &#8211; Mistress Of The Dark (Disk 1)
+OR:2:bce93c6b:Elvira &#8211; Mistress Of The Dark (Disk 2)
+OR:3:f02d128e:Elvira &#8211; Mistress Of The Dark (Disk 3)
+OR:4:895f5c96:Elvira &#8211; Mistress Of The Dark (Disk 4)
+OR:1:4235fe9d:Elvira &#8211; Mistress Of The Dark (Disk 5)
+OR:1:72d38466:Elvira II &#8211; Jaws Of Cerberus (Disk 1)
+OR:2:a3bde55a:Elvira II &#8211; Jaws Of Cerberus (Disk 2)
+OR:3:c35c8b12:Elvira II &#8211; Jaws Of Cerberus (Disk 3)
+OR:4:979d9259:Elvira II &#8211; Jaws Of Cerberus (Disk 4)
+OR:5:a8185b55:Elvira II &#8211; Jaws Of Cerberus (Disk 5)
+OR:6:debab985:Elvira II &#8211; Jaws Of Cerberus (Disk 6)
+OR:7:14558637:Elvira II &#8211; Jaws Of Cerberus (Disk 7)
+OR:1:1dadaa66:Exolon
+OR:1:759754c2:Extase
+OR:1:ef5f762e:Fascination (Disk 1)
+OR:2:541caf15:Fascination (Disk 2)
+OR:1:d8120e9:Fetiche Maya
+OR:1:a697d82d:Fire
+OR:1:14b7b8e4:Fire & Brimstone
+OR:1:f4f8365b:Fire & Ice (Disk &#8211; Program)
+OR:2:2cf5c331:Fire & Ice (Disk &#8211; Data)
+OR:1:8d54310f:Fred
+OR:1:50084bcc:Galdregon&#8217;s Domains
+OR:1:64fd6bdd:Gauntlet III &#8211; Final Quest (Disk 1)
+OR:2:f6f7939:Gauntlet III &#8211; Final Quest (Disk 2)
+OR:3:4010a36e:Gauntlet III &#8211; Final Quest (Disk 3)
+OR:1:9aec2288:Geisha (Disk 1)
+OR:2:1add854b:Geisha (Disk 2)
+OR:1:dbedf5ef:Gem&#8217;X
+OR:1:439b43c7:G-Loc Air Battle
+OR:1:f1cd151d:Gobliiins (Disk 1)
+OR:2:5478ad79:Gobliiins (Disk 2)
+OR:3:8452b867:Gobliiins (Disk 3)
+OR:1:846bed85:Gobliins 2 &#8211; Prince Buffoon (Disk 1)
+OR:2:b6d7eea1:Gobliins 2 &#8211; Prince Buffoon (Disk 2)
+OR:3:47da48f0:Gobliins 2 &#8211; Prince Buffoon (Disk 3)
+OR:1:4ee2fc56:Golden Axe
+OR:1:7ba3547b:Grandad &#8211; Quest For The Holy Vest
+OR:1:7dc7e76c:Great Courts II
+OR:1:adf6d1c2:Hammerfist
+OR:1:510efa43:Harricana &#8211; Raid International Motoneige
+OR:1:6510fd40:Harlequin
+OR:1:2177af02:Heimdall (Disk 1)
+OR:2:9b511134:Heimdall (Disk 2)
+OR:3:7d43c401:Heimdall (Disk 3)
+OR:4:37e1ec87:Heimdall (Disk 4)
+OR:5:12d56b87:Heimdall (Disk 5)
+OR:1:3a2b7ec0:Heroquest
+OR:1:e4a7544e:Horror Zombies From The Crypt
+OR:1:66a130d2:Hound Of Shadow (Disk A)
+OR:2:e984a57f:Hound Of Shadow (Disk B/C)
+OR:1:33932ece:Hunter Killer
+OR:1:29dea493:Hyper Force
+OR:1:b5fffb20:International Sports Challenge
+OR:1:469e0f25:Ikari Warriors
+OR:1:4a55a847:IK + - International Karate +
+OR:1:841ab525:Immortal
+OR:1:6e64f195:Imperium
+OR:1:5be4d620:Indiana Jones Last Crusade &#8211; Adventure (Disk 1)
+OR:2:58b65ac3:Indiana Jones Last Crusade &#8211; Adventure (Disk 2)
+OR:3:449307f8:Indiana Jones Last Crusade &#8211; Adventure (Disk 3)
+OR:1:f40a0340:Indiana Jones &#8211; Temple Of Doom
+OR:1:5651db60:Insects In Space
+OR:1:464b9baa:International Ninja Rabbits
+OR:1:f6ee6f66:Ivanhoe
+OR:1:ec0a40ad:Jimmy White&#8217;s Whirlwind Snooker
+OR:1:f1ddc068:Jim Power &#8211; Mutant Planet (Disk 1)
+OR:2:dc471cd5:Jim Power &#8211; Mutant Planet (Disk 2)
+OR:1:98dfa5ab:Joe Blade 2
+OR:1:25928ae6:Karateka
+OR:1:432a694f:Kick Off
+OR:1:67a5dea3:Kid Gloves II
+OR:1:e7c95712:Killing Game Show (Disk 1)
+OR:2:6116322d:Killing Game Show (Disk 2)
+OR:1:91bb6e36:Knights Of The Sky (Disk 1)
+OR:2:8b371531:Knights Of The Sky (Disk 2)
+OR:1:51869e3c:Knightmare (Disk 1)
+OR:2:82f3f7d5:Knightmare (Disk 2)
+OR:1:814dc3ed:Krypton Egg
+OR:1:84c5dcca:Kult
+OR:1:1e5f3714:Last Ninja 2
+OR:1:b8d0327a:Legend Of Faerghail (Disk 1)
+OR:2:7a40e385:Legend Of Faerghail (Disk 2)
+OR:3:78efc9c2:Legend Of Faerghail (Disk 3)
+OR:4:6d1a1cac:Legend Of Faerghail (Disk 4)
+OR:1:e89ea3ae:Lemmings II &#8211; The Tribes
+OR:1:91327b65:Life & Death
+OR:1:c5e807b0:Light Corridor
+OR:1:6f931d2:Little Puff In Dragonland
+OR:1:8412bd06:Livingstone II
+OR:1:20f54983:Lode Runner
+OR:1:125f29fe:Lotus Esprit Turbo Challenge
+OR:1:f3487e9a:Lotus Turbo Challenge 2
+OR:1:3b5d4326:Lotus III - The Ultimate Challenge
+OR:1:bb6532b:Lords Of Chaos
+OR:1:24c3a263:Lure Of The Temptress (Disk 0)
+OR:2:9e95dde8:Lure Of The Temptress (Disk A)
+OR:3:f50898f0:Lure Of The Temptress (Disk B)
+OR:4:b0bdd8b3:Lure Of The Temptress (Disk C)
+OR:1:44c7e375:Magician
+OR:1:92d59885:Magic Boy
+OR:1:e0b1c82e:Mean Machine
+OR:1:70083643:Mega Twins (Disk 1)
+OR:2:9672c4f3:Mega Twins (Disk 2)
+OR:1:30181816:Mercenary III - The Dion Crisis
+OR:1:749a7833:Midwinter II (Disk - Mission)
+OR:2:98b9e8ef:Midwinter II (Disk - Graphics)
+OR:1:3f4ac719:Mighty Bombjack
+OR:1:9982756e:Mission Genocide
+OR:1:2c7b3cae:Aventures De Moktar - La Zoubida
+OR:1:5a187aae:Monty Python's Flying Circus
+OR:1:e05fa026:Magic Pocket
+OR:1:b26c0556:Murder
+OR:1:c79d4f24:Mystical
+OR:1:a5766cbd:No Buddies Land
+OR:1:bb4b07fd:Oh No ! More Lemmings
+OR:1:5bd46370:Operation Stealth (Disk 1)
+OR:2:42da54d5:Operation Stealth (Disk 2)
+OR:3:e5fe3a0a:Operation Stealth (Disk 3)
+OR:1:79b78357:Operation Thunderbolt (Disk 1)
+OR:2:fbd01de9:Operation Thunderbolt (Disk 2)
+OR:1:91f9810f:Operation Wolf (Disk 1)
+OR:2:d80bfc2b:Operation Wolf (Disk 2)
+OR:1:2d5be15f:Ork (Disk 1)
+OR:2:d86054c4:Ork (Disk 2)
+OR:1:f035f934:Outrun
+OR:1:bc7cd885:Outzone
+OR:1:51ec5b26:Oxyd
+OR:1:5b3e5c6a:Paladin 2
+OR:1:c7478cef:Pang
+OR:1:efd9fa9d:Paradroid 90
+OR:1:b97d2019:Parasol Stars
+OR:1:b6667553:Pick'n Pile
+OR:1:99068dce:Picsou - Chasseur De Tresor
+OR:1:d5a26948:Pirates !
+OR:1:547598c4:Plotting
+OR:1:4593c52c:Populous II (1MB Version)
+OR:1:cbec3d52:Populous; Populous Promised Lands
+OR:1:3f58f2a5:Potsworth And Co (Disk 1)
+OR:2:f2d90da9:Potsworth And Co (Disk 2)
+OR:1:8ba68d8a:Psyborg
+OR:1:b140c94b:Pushover (Disk 1)
+OR:2:ccad3432:Pushover (Disk 2)
+OR:1:59dbfc27:Puzznic
+OR:1:58c9d024:Qin
+OR:1:818e7b71:Rainbow Islands
+OR:1:9753b93d:Rambo III
+OR:1:ddfa7298:Rampart
+OR:1:3114b60b:Ranx
+OR:1:6e8c3998:Rick Dangerous 2
+OR:1:7be9d6d0:Ripoux
+OR:1:b40818be:Risky Woods
+OR:1:e461d79d:Robocop 3 (Disk A)
+OR:2:3ba3a3df:Robocop 3 (Disk B)
+OR:1:c83f42c7:Robocop
+OR:1:ccd1deb1:Rockford
+OR:1:dda5d9b9:Rolling Ronny
+OR:1:368c58fa:Rolling Thunder
+OR:1:824cd428:R-Type II
+OR:1:b4bbf9e4:Sarakon
+OR:1:95265e0d:Shadow Of The Beast (Disk 1)
+OR:2:a567ea29:Shadow Of The Beast (Disk 2)
+OR:1:b6cb126e:Shadow Of The Beast II (Disk 1)
+OR:2:af3f754b:Shadow Of The Beast II (Disk 2)
+OR:1:4a3e1944:Shadow Dancer
+OR:1:8e9885eb:Silent Service II
+OR:1:a4607205:Simulcra
+OR:1:7b2d7a27:Skateball
+OR:1:f6f815d1:Skrull
+OR:1:e694bc9:Sliders
+OR:1:818f7df:Sooty & Sweep
+OR:1:57c669da:Sorcery +
+OR:1:d08c9107:Space Fighter
+OR:1:a0932ed6:Space Harrier
+OR:1:277a129c:Speedball 2 - Brutal Deluxe
+OR:1:74d1a86f:Spell Bound
+OR:1:967a2ebe:Spindizzy Worlds
+OR:1:7c7e4247:Spy Vs Spy - The Island Caper
+OR:1:73a573d:Starglider 2
+OR:1:cae24bf5:Stargoose
+OR:1:af249318:Saint Dragon
+OR:1:592d8a3e:Stormbringer
+OR:1:abcd3ccc:Strider
+OR:1:efe8f6c3:Storm Master
+OR:1:86ee7d2:Super Hang-On
+OR:1:d167b6ba:Super Cars II
+OR:1:84b9e838:Super Cauldron
+OR:1:7ac8463c:Super Ski II (Disk 1)
+OR:2:d78ee218:Super Ski II (Disk 2)
+OR:1:aed11386:Super Skweek
+OR:1:8bf41b21:Swap
+OR:1:d260251c:SWIV
+OR:1:eedd3aa1:Switchblade II
+OR:1:c12f5a30:Tennis Cup II (Disk A)
+OR:2:da093982:Tennis Cup II (Disk B)
+OR:1:be39864c:Thrust
+OR:1:6f8eb409:Intruder
+OR:1:a34ef147:Thundercats
+OR:1:6d249364:Times Of Lore
+OR:1:b69db832:Tiny Skweeks
+OR:1:2bd194a8:Titanic Blinky
+OR:1:12fcf6e9:Toki
+OR:1:a85ad6a9:Torvak The Warrior (Disk 1)
+OR:2:e80b238c:Torvak The Warrior (Disk 2)
+OR:1:9578cf01:Total Eclipse
+OR:1:e036eaec:Transarctica (Disk A)
+OR:2:ef99fd75:Transarctica (Disk B)
+OR:1:fe13f900:Untouchables (Scenes 1-3)
+OR:2:b0cd9445:Untouchables (Scenes 4-6)
+OR:1:1284f93b:Turrican
+OR:1:b0792379:Turrican II
+OR:1:3679980f:Ultima IV - Quest Of The Avatar
+OR:1:40aa3cdf:Uninvited
+OR:1:29f5560f:Unreal (Disk 1)
+OR:2:4b62309d:Unreal (Disk 2)
+OR:1:dc461c4d:Utopia (Disk 1)
+OR:2:1a773805:Utopia (Disk 2)
+OR:1:db413267:Utopia (Disk 1)
+OR:2:3d7bcd4c:Utopia (Disk 2)
+OR:1:7916adfc:Vaxine
+OR:1:7713988b:Venus The Flytrap
+OR:1:cb096b18:Virus
+OR:1:eac5f474:Viz
+OR:1:92fde254:Volfied
+OR:1:c0739709:Voodoo Nightmare
+OR:1:bc6d6370:Ween (Disk 1)
+OR:2:803341e:Ween (Disk 2)
+OR:3:3be1ebe8:Ween (Disk 3)
+OR:1:95ef04a7:Weird Dreams
+OR:1:c3af9f1c:Welltris
+OR:1:273e5df3:Wrath Of The Demon (Disk 1)
+OR:2:55f789da:Wrath Of The Demon (Disk 2)
+OR:3:97fde474:Wrath Of The Demon (Disk 3)
+OR:4:e528fe61:Wrath Of The Demon (Disk 4)
+OR:5:976390f0:Wrath Of The Demon (Disk 5)
+OR:1:97c31d03:Xenon 2 - Megablast
+OR:1:46f49300:Z Out

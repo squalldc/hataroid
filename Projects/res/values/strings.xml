@@ -220,4 +220,6 @@
     <string name="input_keyboard_sizeHY_summary">Horizontal on-screen keys size (height)</string>
     <string name="input_joysticks_fire_size">Size of On Screen Joystick Fire Button</string>
     <string name="input_joysticks_fire_size_summary">Default size is 1.0</string>
+    <string name="refreshDB">Refresh DB</string>
+    <string name="clearDB">Clear DB</string>
 </resources>

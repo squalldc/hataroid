@@ -58,6 +58,22 @@
         android:gravity="center" >
 
 	    <Button
+	        android:id="@+id/fb_clearDBBtn"
+	        style="?android:attr/buttonStyleSmall"
+	        android:layout_width="168dp"
+	        android:layout_height="wrap_content"
+	        android:layout_gravity="center"
+	        android:text="@string/clearDB" />
+        
+	    <Button
+	        android:id="@+id/fb_refreshDBBtn"
+	        style="?android:attr/buttonStyleSmall"
+	        android:layout_width="168dp"
+	        android:layout_height="wrap_content"
+	        android:layout_gravity="center"
+	        android:text="@string/refreshDB" />
+        
+	    <Button
 	        android:id="@+id/fb_selectBtn"
 	        style="?android:attr/buttonStyleSmall"
 	        android:layout_width="168dp"

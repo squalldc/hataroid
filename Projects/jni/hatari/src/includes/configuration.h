@@ -325,6 +325,8 @@ typedef struct
 
 	bool mouseActive;
 
+	char saveDispName[FILENAME_MAX];
+
 } CNF_HATAROID;
 
 /* State of system is stored in this structure */

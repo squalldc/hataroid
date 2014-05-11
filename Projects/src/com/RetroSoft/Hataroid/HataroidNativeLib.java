@@ -27,7 +27,7 @@ public class HataroidNativeLib
 	public static native void emulatorToggleUserPaused();
 	public static native boolean emulatorGetUserPaused();
 	public static native void emulatorEjectFloppy(int drive);
-	public static native void emulatorInsertFloppy(int drive, String filename, String zipPath);
+	public static native void emulatorInsertFloppy(int drive, String filename, String zipPath, String dispName);
 	
 	public static native void emulatorSaveStateSave(String path, String filepath, int saveSlot);
 	public static native void emulatorSaveStateLoad(String path, String filepath, int saveSlot);
