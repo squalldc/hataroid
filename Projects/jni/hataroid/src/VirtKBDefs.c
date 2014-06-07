@@ -127,10 +127,12 @@ const VirtKeyDef g_vkbKeyDefs[] =
 	{ VKB_KEY_TOGGLEUI, "UIToggle", "Toggle UI", -1, 1, 0, 0, 0xff, { 104, 208, 391, 239, 0, 0, 0, 0 }, FLAG_CUSTOMKEY, { 34, 455, 66, 486 }, 1, 0 },
 	{ VKB_KEY_AUTOFIRE, "AutoFire", "Toggle Auto Fire", -1, 1, 0, 0, 0xff, { 104, 208, 391, 239, 0, 0, 0, 0 }, FLAG_CUSTOMKEY, { 34, 455, 66, 486 }, 1, 0 },
 	{ VKB_KEY_QUICKSAVESTATE, "SaveState", "Quick Save State", -1, 1, 0, 0, 0xff, { 104, 208, 391, 239, 0, 0, 0, 0 }, FLAG_CUSTOMKEY, { 34, 455, 66, 486 }, 1, 0 },
-	{ VKB_KEY_QUICKLOADSTATE, "LoadState", "Quick Load State", -1, 1, 0, 0, 0xff, { 104, 208, 391, 239, 0, 0, 0, 0 }, FLAG_CUSTOMKEY, { 34, 455, 66, 486 }, 1, 0 }
+	{ VKB_KEY_QUICKLOADSTATE, "LoadState", "Quick Load State", -1, 1, 0, 0, 0xff, { 104, 208, 391, 239, 0, 0, 0, 0 }, FLAG_CUSTOMKEY, { 34, 455, 66, 486 }, 1, 0 },
+	{ VKB_KEY_ANDROID_MENU, "AndroidMenu", "Android Soft Menu", -1, 1, 1, 0, 0xff, { 595, 257, 626, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_MAIN, { 595, 257, 627, 288 }, 1, 0 },
+	{ VKB_KEY_FLOPPY_MENU, "FloppyMenu", "Floppy Menu", -1, 1, 1, 0, 0xff, { 628, 257, 659, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_MAIN, { 628, 257, 660, 288 }, 1, 0 }
 };
 
-const int g_vkbKeyDefsSize = 123;
+const int g_vkbKeyDefsSize = 125;
 
 const int g_vkbTexFullW		= 768;
 const int g_vkbTexFullH		= 488;

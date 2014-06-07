@@ -112,10 +112,23 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 		/* Enough samples available: Pass completed buffer to audio system
 		 * by write samples into sound buffer and by converting them from
 		 * 'signed' to 'unsigned' */
-		for (i = 0; i < len; i++)
+		if (ConfigureParams.Hataroid.downmixStereo)
 		{
-			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][0];
-			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][1];
+			for (i = 0; i < len; i++)
+			{
+				int idx = (CompleteSndBufIdx + i) % MIXBUFFER_SIZE;
+				int val = (MixBuffer[idx][0] + MixBuffer[idx][1]) >> 1;
+				*pBuffer++ = val;
+				*pBuffer++ = val;
+			}
+		}
+		else
+		{
+			for (i = 0; i < len; i++)
+			{
+				*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][0];
+				*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][1];
+			}
 		}
 
 		CompleteSndBufIdx += len;

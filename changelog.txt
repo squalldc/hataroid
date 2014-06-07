@@ -1,3 +1,10 @@
+v1.550
+- Downmix stereo -> mono option
+- Add soft menu button to configurable shortcut and input keys
+- Add floppy menu button to configurable shortcut and input keys
+- Add user warning if developer option 'Don't Keep Activities' is enabled
+- Add D-BUG disks 001 - 193 from the TOSEC collection to the Game Database
+
 v1.540
 - support for game database
 - fix hang on quit in a rare case

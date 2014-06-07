@@ -5,7 +5,7 @@
 int DlgAlert_Notice(const char *text)
 {
 	Debug_Printf("Hatari DlgAlert_Notice: '%s'", text);
-	showGenericDialog(text, 1, 0);
+	showGenericDialog(0, text, 1, 0);
 	for (;;)
 	{
 		if (hasDialogResult()==1)
@@ -24,7 +24,7 @@ int DlgAlert_Notice(const char *text)
 int DlgAlert_Query(const char *text)
 {
 	Debug_Printf("Hatari DlgAlert_Query: '%s'", text);
-	showGenericDialog(text, 0 , 1);
+	showGenericDialog(0, text, 0 , 1);
 	int res = 0;
 	for (;;)
 	{

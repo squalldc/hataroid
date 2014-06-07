@@ -680,7 +680,7 @@ AU:69c:a911afc9 dac5937a 28060a71 fbde6b33:Afterburner; Microprose Soccer
 AU:69d:0bd33b4a a7e0c93d c12f4be7 733a2103:Tech; Rodeo Games
 AU:69e:544d2edd 93b9a03a fdc878e6:Kick Off II; Pro Tennis; Ghosts 'N' Goblins; Slippery Sid
 AU:148a:6eefd418 4cecb312 e2061c3a c4a091cd:Games: Summer Edition (A)
-AU:148b:be10b910 70d93759 355838e2 67e947fd:The; Jump Jet; Games: Summer Edition (B), The; Bio Challenge
+AU:148b:be10b910 70d93759 355838e2 67e947fd:Jump Jet; Games: Summer Edition (B), The; Bio Challenge
 AU:240a:31c4e7b6 bee950ef bd31f45e:Rotor; Operation: Thunderbolt (A); Operation: Thunderbolt (B); Black Tiger
 AU:240b:4f622d1f e681ae46 89ac18f4:Brick Busta; Operation: Thunderbolt (Docs)
 AU:243a:8a5f4e33 47a196be:President is Missing, The; Indiana Jones: the Adventure (A & B)
@@ -689,7 +689,7 @@ AU:280a:ff86c1cf 1f29ebe2 35654516:After the War (A); After the War (B); Crystal
 AU:280b:5079159e e401e4c8 6dd99ad2:Dan Dare III
 AU:284a:3efcf430 36636152 945ce989:Man Hunter: New York City (A)
 AU:284b:aaf45acb dc1b1631 7e249eea:Man Hunter: San Francisco (A)
-AU:284c:5b2a3ec6 0e12c659 cc70c2ce:Man Hunter: New York City (B);Man Hunter: San Francisco (B)
+AU:284c:5b2a3ec6 0e12c659 cc70c2ce:Man Hunter: New York City (B); Man Hunter: San Francisco (B)
 AU:294a:740cb327 bbe04b27 433b6a8d:Leisure Suit Larry II (A)
 AU:294b:077a6628 164a3f3d 09aa9283:Leisure Suit Larry II (B); Damocles
 AU:295a:a498a0af d8e1fb63 0e079cd1:Goldrush (A); Goldrush (B); Goldrush (C)
@@ -967,7 +967,7 @@ SG:158:561ba300 ff54ce96:Rugby Simulator; R-Type
 SG:159:fc1d0b3c 534f37df:Interphase
 SG:160:964c0d12 878fc63:Starflight
 SG:161:3a98ba81 c2e208b5:F-16 Falcon
-SG:162: c2e208b5:F-16 Falcon
+SG:162:c2e208b5:F-16 Falcon
 SG:163:a56ecd0e 91cc0440:Technocop
 SG:164:0c600044 c8a90a67:Bio Challenge
 SG:165:fd9f5711 27b27f57:Afterburner
@@ -1004,7 +1004,7 @@ SG:195:32e9ace3 43329d12:Galdregons' Domain (A)
 SG:196:bb43a9b5 3bdf096a:Galdregons' Domain (B)
 SG:197:09591166 df21f57b:'Swedish New Year' Demo
 SG:198:af1b3671 4fe66d1d:Midwinter
-SG:199: 4fe66d1d:Midwinter
+SG:199:4fe66d1d:Midwinter
 SG:200:ebfeeb4b 79d93939:Bombuzal; Custodian;
 SG:201:2b0065f0 1df5a1bc:Barbarian II (A)
 SG:202:a5ecbafe ba172436:Barbarian II (B)
@@ -1034,8 +1034,8 @@ SG:225: :The Newzealand Story
 SG:226:03e29ca1 6847500d:Kult
 SG:227:9d3ffefb 853c6801:Castle Warrior
 SG:228:78834302 8614ddf1:Spherical
-SG:229: :Weird Dreams
-SG:230: :Archipielagos; Millennium 2.2
+SG:229:0FA092B2:Weird Dreams
+SG:230:1EB79435 :Archipielagos; Millennium 2.2
 SG:231:70783ee6 3652945a:Suspicious Cargo (A)
 SG:232:3746aaba ed102500:Suspicious Cargo (B)
 SG:233:d80d4b72 ffb5542a:Xybots (A)
@@ -1347,7 +1347,7 @@ SG:538:66b8af5d c4ad7d9f:Son Shu Shi (A)
 SG:539:e9a70c33 5f8481ab:Son Shu Shi (B)
 SG:540:084431b0 db226862:Sooty & Sweep
 SG:541:10041138 286b99c0:Speedball 2; Exterminator
-SG:542: :Video Kid (A)
+SG:542:7ACCAB22:Video Kid (A)
 SG:543:a5cb259c 72a58009:Video Kid (B)
 SG:544:fcebb725 a0ab368a:Warriors of Releyne
 SG:545:e8a47e98 de3d63f5:Final Blow; Strong Lines
@@ -1400,11 +1400,11 @@ SG:591:7997d339 27b0d0f7:Cadaver
 SG:592:c6198480 83bf2db:Cadaver Datadisk 1
 SG:593:10a8c051 f3c4cbe7:Cadaver Datadisk 2
 SG:594:4212d170 9f6ae96:California Games 2 (A)
-SG:595: 312f87f4:California Games 2 (B)
-SG:596: 4dda8c45:Cannon Fodder (A)
-SG:597: 7447605b:Cannon Fodder (B)
-SG:598: e82be6f2:Cannon Fodder (C)
-SG:599: 48ff60d8:The Chaos Engine (A)
+SG:595:312f87f4:California Games 2 (B)
+SG:596:4dda8c45:Cannon Fodder (A)
+SG:597:7447605b:Cannon Fodder (B)
+SG:598:e82be6f2:Cannon Fodder (C)
+SG:599:48ff60d8:The Chaos Engine (A)
 SG:600:4365784d 957e940b:The Chaos Engine (B)
 SG:601:3ebbdbca 513867da:The Chessmaster 2000 V1.0
 SG:602:492d7376 adf08d70:Insect in Space; Chip's Challenge
@@ -1433,7 +1433,7 @@ SG:624:6128bd31 1cf0b613:Gods (B)
 SG:625:a9e5882f dba06e9:Frontier - Elite II + Docs; 'Worm Hole Calculator' Fuer Elite II
 SG:626:e555233f 8ea68baf:Gunship
 SG:627:b293f022 58aa4fae:John Barne's European Football; Seymour Goes To Hollywood; Spikey in Transylvania
-SG:628: :Exolon; Heroes of the Lance (A)
+SG:628:A939E14B:Exolon; Heroes of the Lance (A)
 SG:629:de06efe8 8a782f74:Heroes of the Lance (B); Heroes of the Lance (C)
 SG:630:13aee72f c00cbd29:Bug Bash; Jungle Boy; Hot Wheels
 SG:631:f26051bb c8deda86:Hudson Hawk
@@ -1558,13 +1558,13 @@ SG:749:55af7aa3 90c3198a:International Karate; Karate Kid Part II
 SG:750:a47b5ffd 9635526:Spherical
 SG:751:cdb97105 46f4f557:Stunt Car Racer
 SG:752:f8daa064 a56b3108:Swiv
-SG:753: df192b8:Street Fighter 2 (A)
-SG:754: e45ce520:Street Fighter 2 (B)
-SG:755: 351d9f2b:Street Fighter 2 (C)
-SG:756: 5b55ce5a:Street Fighter 2 (D)
-SG:757: 795a0e77:Tip Off (A)
-SG:758: :Tip Off (B)
-SG:759: ec0ba11a:Titus The Fox
+SG:753:df192b8:Street Fighter 2 (A)
+SG:754:e45ce520:Street Fighter 2 (B)
+SG:755:351d9f2b:Street Fighter 2 (C)
+SG:756:5b55ce5a:Street Fighter 2 (D)
+SG:757:795a0e77:Tip Off (A)
+SG:758:255383BD:Tip Off (B)
+SG:759:ec0ba11a:Titus The Fox
 SG:760:dbf755a2 2f9a9c76:Tracker; Airball; Spook - Mighty Munchers
 SG:761:c64b11a4 de4c4720:Vaxine
 SG:762:e589a0b5 e0344420:Goal ! - Kick Off 3
@@ -2354,6 +2354,311 @@ FZ:195:31544efc:Lethal Weapon; Premier Manager; Count Duckula 2
 FZ:196:f5dcd68d:No Second Prize; Sensible Soccer 1.1
 FZ:197:f4a6c018:Bignose The Caveman; Space Crusade 2
 FZ:198:eea9e17f:Shadow Worlds; Fruit Machine
+DB:1a:dc3e3a8e 70895a69 7036e92b:Terminator II (A); Pro Boxing Simulator
+DB:1b:c3cc8929 ca9e13cc 7722c68f 19def66d:Terminator II (B)
+DB:2:40e341d0 e8df3b0e e9531a38 583653c9:Mean Machine; Darkman; Jimmy White's Whirlwind Snooker; CJ's Elephant Antics
+DB:3:4b1de631 6d6bcb6c d9bc94d9 a0878911:Rolling Ronny; Wacky Darts
+DB:4:a439fdf f6567e44 b248d099 d091fbcd:Wolfpack; Guardian
+DB:5:f4d79e54 62830846 8978f554:Final Fight
+DB:6:fef0951a a1cf0d15 61b09021:Supernova; Flight of the Intruder
+DB:7:3a39440b 8f796f0d e3f0e5c0:Magic Pockets; Stackup
+DB:8a:8b04a13d acc50b17 78eb278a f862a589:Midwinter II (A); Midwinter II (B)
+DB:8b:abfb48f7 d7bb7ab9 cfd9bac9 b827c80c:Midwinter II Campaign Disk Creator; Pro Tennis Tour II
+DB:9a:21785347 3cfd1879 510e2917:World Wrestling Federation (A); Striker Manager; Smash TV
+DB:9b:17a01a46 7b0e7b8b 9b9008b4:World Wrestling Federation (B)
+DB:10a:e5e3eee1 e4debc7f da041c4b:Pit Fighter; Double Dragon III (A)
+DB:10b:571b597d 1b969cde:Double Dragon III (B)
+DB:11a:2123f46e 1c8c3309 9976ceaf:Shadow of the Beast II (A); Wacky Races
+DB:11b:6271294d 381b5c50 e6e7c899:Shadow of the Beast II (B)
+DB:12a:3238e93b 81c56f87 febfde05:Robozone (A); Fighter Command
+DB:12b:d6b6d5f2 3376e4ac a49cc612:R-Type II; Robozone (B)
+DB:13:6abac031 08d8c031:Hunter; Cybercon III
+DB:14:d34c64ec b98a4cd8 0bc65227:Silent Service II (1 Meg); Fruit Machine
+DB:15a:3f8923d5 222a8c09 ad29e271 6248c1f3:Devious Designs (A); James Pond II: Robocod
+DB:15b:2f8b8e8c aca81ef5 019bc44e 952ba2eb:Devious Designs (B)
+DB:16:dc5dc8ae f1b1270d 64575027 9be035b3:Wild Wheels; Quik & Silva
+DB:17a:286233d7 aa7543c8 334e7f94 a6f1ad98:Thunderhawk (A); Suspicious Cargo (A)
+DB:17b:1ab8ea01 449042d5 66c902eb:Thunderhawk (B)
+DB:17c:1f220861 8cf69858:Suspicious Cargo (B)
+DB:18:9d37c428 9d99ac06:Rodlands; Cisco Heat
+DB:19:2c21860a 771feeb2 bcf1439b:Railroad Tycoon (1 Meg); Charge of the Light Brigade
+DB:20:99bdf5a 10060ed9 3b18625f a07b9ea8:Shadow Sorceror
+DB:21:ced3b099 dd6e44b1 8048d4f7 967cb5b0:Alien Storm; Warzone
+DB:22a:f56bdd59 27690992 328899f6:Mega Twins (A)
+DB:22b:772e307d b14c88ac 438f816e:Atomik Packer 3.3; Utopia; Mega Twins (B)
+DB:23a:8207da5a fc9fb6f9 7ca96a09:Barbarian II (Psygnosis) (A)
+DB:23b:525511bb f2bbad53:Barbarian II (Psygnosis) (B)
+DB:24a:f1582f4a 8baed66f:Knightmare (A)
+DB:24b:7521b8bf 25556769:Knightmare (B)
+DB:25a:22f90dd7 f9fdd6a2:Armageddon (A)
+DB:25b:a6e50f8f 8d190b08 7633d55e:Super Skweek (A)
+DB:25c:7c04d1bf 41e96f52 6d4fc785:Armageddon (B); Super Skweek (B)
+DB:26:2951c888 8dc38d63 62f6f221:World Class Rugby; Turbo Lotus Esprit II
+DB:27:d7c8edb7 85b99873 a965f02c 752cfafd:Final Blow; Graeme Souness Vector Soccer; Football Director II
+DB:28:756dbae5 8d3a00fa:Revenge of the Mutant Camels; Hot Wheels; Adventures of Robin Hood, The
+DB:29:dce3bb86 36b91366 bd5c6139:Simpsons, The; Oh No! More Lemmings
+DB:30a:46c0abfa 970726e8 a8c3debc:Jungle Boy; Another World (A)
+DB:30b:093ce802 19f8d16d b333f337:Grav; Another World (B)
+DB:31a:475c5fa0 c9c60177 5b6c5882:Super Space Invaders (A); Dungeonz
+DB:31b:f30a0283 b2a62005:Super Space Invaders (B); 1st Division Manager
+DB:32:a11b8681 a6c3d8ff:Switchblade II; Blackjack Plus III
+DB:33:bf502479 a11137f4:Lemmings; Match It!
+DB:34:88c3832a 9b001add:Germ Crazy; Ancient Games; Entombed
+DB:35:2d0c9c4 3012a22a:Rockfall; Deathbringer; Serendipity
+DB:36:430e015b a34ea9ff 1783829e:Crush!; Top Banana
+DB:37:55e9312b c0e06336:Infiltration; First Samurai!
+DB:38:55de656 3d60b0ee 2469ae5b:World Cricket; Tip Off
+DB:39:2cf1921f 17bf941e 0f7483bd:Harlequin
+DB:40:bfc8392c fcd94518:Knights of the Sky
+DB:41a:f79cc322 6fd44e4d 86f57949:Microprose Golf (Program Disk); Microprose Golf Course Disk 2
+DB:41b:bfce113f 888e52cf 69037717:Microprose Golf Course Disk 1; Prince of the Yolkfolk; Spellbound Dizzy
+DB:42:358d6cf3 37e6bd38:Panic Dizzy; Kick Off: Return to Europe; Flipped
+DB:43a:a86d8125 2cf04457:Robocop III (A)
+DB:43b:b8f454ad beadc22a:Robocop III (B); Klatrix; Quik Snax
+DB:44:c887b404 e246e220:Hudson Hawk; Bubble Dizzy; Kick Off 2 Editor
+DB:45a:374953fb d33c766e 2dca9075:Rubicon (A); Titus The Fox
+DB:45b:0037efa7 df9f0f7a 05efb11a 99ecdd1b 1f1d086a c33133a9:Rubicon (B)
+DB:46a:6d3c3ba1 b8974fc7 8eeea32b:Steel Empire (A); Space 1889 (A); STOS Cricket
+DB:46b:dbfc7e45 f9a9c944:Steel Empire (B)
+DB:46c:1a2e5fcb 68c77252:Space 1889 (B)
+DB:47:a23fe343 4694f694 b481ac5d:Hover Sprint
+DB:48a:02ec55e2 219e2ce:Leander (A)
+DB:48b:f38630e1 88cb5081 39bea64f:Leander (B); Armalyte
+DB:49a:0854d945 121939fe 400409a3:Elf (A); Space Gun (A); Atomik Packer 3.5
+DB:49b:3bbdb122 7459edce 1eb1425d:Elf (B)
+DB:49c:89ba65da 61e9e4f4:Space Gun (B)
+DB:50:230e0032 110146b5 d4500220:Parasol Stars; Erik
+DB:51:b08fb2d2 f03dd117 32c1f78f ee33e681 931fa578:Space Crusade; John Barnes Soccer
+DB:52:6b5b7af2 8c2f0ade ba209adb:Digi-Composer; Masterbreak; Asteroids; Shadowlands; Multi-Depacker; Blaster
+DB:53:24ccd563 b85ea000 da20f6c8:Head Coach; Crime City
+DB:54a:d13b111d b239f483:Legend (A); Air to Air; ST Tetris; Taipan II
+DB:54b:22c6a4e7 ef145889:Legend (B); Turrets
+DB:55a:3e8e6b70 688d05d9:Pushover (A); Escapade
+DB:55b:8589758f 27b1c425:Pushover (B); Slug
+DB:56:38aaf7ec 51d0355b e106f22d:HeroQuest Expansion; Adams Family
+DB:57:a88da2f2 e6ebbab0 3fe6abd7:Asterix in Operation Getafix; Football Master
+DB:58a:5dc12b05 6b31b302 e818ceb1:Ultima VI Creator Disk; Toxic Formatter 2.00
+DB:58b:5ab72eac 1948cdf6:Ultima VI Disk Data
+DB:59a:0bdfe5e3 5968ff29 e6149c80:Indy Heat; Pacific Islands (A); CJ in the USA; X-Copy; Spider Spell
+DB:59b:29f1fbbe de964372 388dbd79:Pacific Islands (B)
+DB:60a:c9cdf5ec 7ab87c81 f2d8d5a3:Gobliiins (A); Droid; Mr Dice; Happy Worm; Backgammon; Bang; Maze
+DB:60b:692bb47a 2f668734 666ffcf5:Gobliiins (B)
+DB:60c:e4154ade 97ef4b12 63f3650b:Gobliiins (C)
+DB:61:c8c5d64b 842df514 432232f2 3b2612eb:Graham Taylor Soccer Challenge; Graham Taylor Soccer Challenge (England)
+DB:62a:650953e4 b460e5d4 b654a7a9 e548ac98:European Championships 92 (A); Fast Copy Pro
+DB:62b:5a6b5e8e 434f3ca8 ebaa6c65 54d81808:European Championships 92 (B)
+DB:63:6758e687 bef47080 174dc519:Air Bucks; Boing; Chain Reaction
+DB:64:f925b240 9dfe6ba1 dc26ba09:Zap; Populous II (512k); Plax Atax; Duckdash; Pure Logic
+DB:65:ab3878ef 577c0c5c:Island Hopping; Renaissance 1; Projectyle
+DB:66:6485a566 8b5d3e5e bec48bcf:Ozone; Dick Tracy
+DB:67:a69ebcf3 fcebec42 3b91b019:Horse Racing Simulator; Quiz Construction Kit; Colossal Cave; Football; Discovery
+DB:68a:beefff88 6fff4c85:Heimdall (1meg) (A)
+DB:68b:18388db0 67498640:Alien Blockade; Heimdall (1meg) (B)
+DB:68c:ea38b09e 8f04e5aa:Heimdall (1meg) (C)
+DB:68d:a53963aa 61d55290:Heimdall (1meg) (D); Ballzone
+DB:68e:c73d6237 a1c436dc:Heimdall (1meg) (E); Invasion of Mutant Caterpillars
+DB:69a:c1d63a7b 4e28b35c 2354e888:Hook (1 Meg) (A); Seymour Goes to Hollywood; European Football Champs; Deeplair
+DB:69b:369b1c70 d150e09c f4cad44:Hook (B)
+DB:70:86793012 ab2c7d67:Advantage Tennis; Smash Hit
+DB:71a:8774903c 7677a669 1904a6da:International Sports Challenge (A); Teserae
+DB:71b:80edb678 d798e88a e3d212b:International Sports Challenge (B); Powaqqatsi; Puzmania
+DB:72a:2f8b84c9 e5dd5927 43934fe3:Carl Lewis Challenge (A)
+DB:72b:e9360e93 2d606501 c137434e:Carl Lewis Challenge (B); Steg the Slug; Cyber Snake; Oceans Summer Games
+DB:73a:bcb56079 1a55f0c9 a02934b:Ishar (A)
+DB:73b:4781e006 3917d869 59a43950:Ishar (B)
+DB:74:18d444f9 dfa45947 7d3885e3:Dynamo; Final Command
+DB:75a:ed640cbf 65fb7151 38215bf9:Realms (A)
+DB:75b:781ea989 2a00f0f3 b7d683c4:Realms (B)
+DB:76a:f99540b9 ae057c0d 61c4db1a:Lure of the Temptress (1 Meg) (A)
+DB:76b:05fd4dfb 4a6fb450 384153fd 65ce0134:Lure of the Temptress (1 Meg) (B)
+DB:76c:8824bf71 87ef3e51:Lure of the Temptress (1 Meg) (C)
+DB:77:956d24fb a9d4bbec 6fe80028:Video Kid; Spikey in Transylvania
+DB:78:2e012b71 8ab48acb ce40d251 90ee97cd:Populous II (1 Meg); Hotshot Chequers; Squareoff
+DB:79a:376d8eb2 a04698bb 7733dfd0:Fascination (A); Striker
+DB:79b:62d0d4f0 b56cfd5b cf8d0695:Fascination (B); Adventures of Snatch & Crunch
+DB:80:1a7e202 2501e120 445abb3b 4498e8bc:Wizkid; Blox
+DB:81a:00936310 b1074ba1:Hot Rubber (A); Spellbound; Balls; Frying Friends; Pack Ice 2.4
+DB:81b:80040a51 58da38a1 8eae008e:Hot Rubber (B); Sleuth
+DB:82:ed1f044b b155393c 033eebb7:G-Loc; Aaron; Mystic Well
+DB:83a:a9cc5db5 46c8c7e9 d3ab6259:Championship Manager (1 Meg) (A); Teteri; Unnkulian Underworld
+DB:83b:e9f3634d 81c7eeba f96fca31:Solitaire; Cybernetix; Championship Manager (1 Meg) (B)
+DB:84:41b83369 5a62674f b2ffb04c d32e9d65:Disc
+DB:85:389d2e10 433dfb1e 88392a45:Magic Land Dizzy; Lotus Esprit Turbo Challenge 3
+DB:86a:60ffdbfd 019694fa 39a56aa3:Espania Games 92 (A)
+DB:86b:b4e725d0 223ef0d3 34f156c2:Espania Games 92 (B+C)
+DB:86c:ef4d7ae1 84a79912 844229da:Espania Games 92 (D)
+DB:87:fefc9103 eb18a0f8 b1ef7e03:Captain Planet
+DB:88a:691a3b15 f58f4b31 57e296c1:California Games II (A); Zeppelin World Rugby
+DB:88b:69f47af8 a8d32d06 20e4bdcc:California Games II (B); Frankenstein; Multi-Player Soccer Manager
+DB:89a:d427d90d e564429a ee736ef9:Race Drivin (A); Mrs Munchie
+DB:89b:1a00b77e 1bf9cf35 1596c8df:Race Drivin (B); Super Seymour Saves the Planet; Slightly Magic
+DB:90a:06c0c181 fff3512d aefe14d5 58564058:Epic (A)
+DB:90b:60581d3a bf1bec9d 4c8c2587 85fdf04b:Epic (B)
+DB:91:56ddc2fb f7391b6e:Premier Manager; International Ninja Rabbits
+DB:92:f96591e6 0de3a81f 2f8cbc5d:Round the Bend; Rampart
+DB:93a:e5d3b605 1460ff54 b0ba2db1:Match of the Day
+DB:93b:9f80e043 d6f62315:Castles; Shadowlands Cheat Maker
+DB:94:55bf3b57 4d6c7424 5c81c02f:Slug 2092; Motorhead; Robin Hood
+DB:95a:cba86a08 20adf8eb 8321dced:Sensible Soccer (A); Scooby & Scrappy
+DB:95b:cb012afb 91f8e2a7 a1d1b13c:Sensible Soccer (B); Count Duckula II; Q2 Bubble Bobble 92
+DB:96a:0176add8 f3c12d7e 2e36676d 939bd6cc bbd9f420:Last Ninja III, The (A); Yohanghir Khan Squash; Speed Packer III
+DB:96b:8cc249f7 80c01bae 868b3ebe 4eca4d1c b1ae5e0:Last Ninja III, The (B)
+DB:97a:cd37a511 046a0d08 aaa52856:Amberstar (A); Last Arcadian
+DB:97b:d65c2648 76b899d3 d9d55ac0:Amberstar (B); Chip Music Demo; Chronicle Demo; Music Disk 1 Demo
+DB:97c:821d4900 2a8d5b97 a640b372:Synthetic Arts; Amberstar (C)
+DB:98a:a10f98b1 507a5dce 43f4c3a2:Deuteros + Save Game Converter
+DB:98b:1efe0c1f 46cd3cee a87a68dc:Indiana Jones and the Fate of Atlantis; Deuteros (Save Game Disc)
+DB:99:17559b4a ce975861:Spot; Kid GP; Plop; Wreckers
+DB:100a:7e7c157e 52c9686f 98d6b15a:Streetfighter II (1 Meg) (A)
+DB:100b:90747982 c407018c:Streetfighter II (1 Meg) (B)
+DB:100c:bde43a92 94bfe5dd 2f338940:Streetfighter II (1 Meg) (C); WWF European Rampage (1 Meg) (A)
+DB:100d:0bffca50 186e4521 c589dda0:WWF European Rampage (1 Meg) (B)
+DB:100e:50f516b9 40e577f8 ca0a1f0f:Cool Croc Twins; Hardcore; Streetfighter II (1 Meg) (D)
+DB:101a:9eef1e8b c248d91c 328b084a:Wolfchild (A); Faceoff; Evader
+DB:101b:4d6429dc ec21ac90 21c5b155:Wolfchild (B)
+DB:102a:0cdd8dcb 30cda8c2 4d92a329:Cool World (A); Pakibash; Captain Carnage
+DB:102b:2b763055 99572b6d 5b87ead6:Cool World (B); Space War; Downfall
+DB:103a:dd8dc937 66fbb1fc 36b7449d:Special Forces (A)
+DB:103b:eb0adfe0 ed86fefb b4bc73ad da409393 66bbc65e:Special Forces (B)
+DB:104:318c8cd4 cd70da5f 02fda969:Heavy Metal Heroes; Oxxonian Game II
+DB:105:6a2e4e8b 2dcd6df7 82e4f44c 482eb0c3:Rebellion; Slackskin & Flint
+DB:106:3ddadc61 668978d3 47309e13:Pocket Bike; Lethal Waepon; Spinmania; Oxxonain Game I
+DB:107:a811122f a4dc13a2 017c7e63:Combat Course; Mig-29 Super Fulcrum
+DB:108:9c457658 91f60169 43dc4049:Insecticide; A-320 Airbus
+DB:109:e42197eb d8169a3e c7213371:Fokker; Twin Turbos; Match Maker
+DB:110a:a38bfadb ef67172d 46bb26f6:Sensible Soccer 1.1; Violence
+DB:110b:9b4acf28 e578502f 1dfbd2cb:Night Breed Interactive Movie (A); Insectroid; Sensible Soccer Hi-Lights
+DB:110c:ff5cdb1c af3602e3 aa16c226 d2e079f1 fd76eb6d:Night Breed Interactive Movie (B)
+DB:111:ed4974a8 aaa8b532 f44e4989:Centipede; Senake; Mega Depacker 1.997; Twix; Sky Fox II; Chessmaster 2175; Squish; Pictura 2.0
+DB:112:5528e674 60a35cd8 2cd2f423:Megalomania
+DB:113a:af6feea8 a9e39e86:Microprose F1 Grand Prix (A); Ork (A); Galaxian
+DB:113b:bff52fb4 e9c61216 b1c9305c:Microprose F1 Grand Prix (B)
+DB:113c:bc1024bb be504452:Ork (B)
+DB:114:2afbe068 cd39ea0c 6a542f5e:Thunderjaws; Bloody Run
+DB:115a:2b40fa9b c9f0a192 adbb2003:Gobliiins II (A); Accessory Games
+DB:115b:96043773 be8d1a59 ca1134cd:Gobliiins II (B); Power, The
+DB:115c:d54dd01f f56cec23 4ee4e4:Gobliiins II (C); Course Angler
+DB:116a:afec3dfa 5b18ea62:Obitus (A)
+DB:116b:5c6c327c 2f0ddcde 2e91116a facd1fad 8273bdc3:Obitus (B)
+DB:117a:c3811f76 bf383c48:Fire & Ice (A)
+DB:117b:555a2156 3c39de1b 5faba823:Fire & Ice (B)
+DB:118:6115eb68 15d62dff cd9320b0:AV8b Assault Harrier
+DB:119:52bf2120 57397d41 9d7c47cb:Die Hard II; Archer Maclean Pool
+DB:120:3f8b8c6e 73f779c6:4-7-11; Creatures
+DB:121:327f1ed6 56cf90fe:Alcatraz
+DB:122a:c0944400 6fbeef3c:3D Construction Kit II (A); Knife ST
+DB:122b:537366f2 3005b60a:3D Construction Kit II (B); Neochrome 2.23; Fracland; STOS Fix; Animation Tool
+DB:123a:a7e4133a 85543c9c:Blue Max (A); Kid Kong; Mathematica Dentro
+DB:123b:5e1dd0d9 b0226478:Blue Max (B); Summer Games I & II
+DB:124a:b36e138f b1295155:Crime Wave (A); Manciola
+DB:124b:d90cbea1 35e008fc:Slot Machine; Crime Wave (B); Maze, The
+DB:125:1225883f d9798e6f:International Truck Racing; Cybercop; Grav II
+DB:126:599637be 5907d731:Labotomy Invaders; Kubes; Rayoid
+DB:127:4000d309 52a9dc54:Bugs UK; Crystal Kingdom Dizzy
+DB:128:3977852e 5d54d893:Bolo; Campaign
+DB:129:faed60f6 665903c4 84418c77:Firehawk; No Second Prize
+DB:130:bdd122d5 9ea80dd0:Risky Woods; Abombinaball
+DB:131:e1b4bc2d 6387b657:Graham Gooch World Cricket; Treble Champions II; Stomp
+DB:132:92d0e222 bce6cbcd:Pablo and the Gold of Montezuma; Nigel Mansell
+DB:133:1d10b0a1 d71b2013 6794b78b:Lemmings 2 - The Tribes
+DB:134a:2857d093 9c84e0c7:Reach for the Skies (1 Meg) (A); Psycho Pig II
+DB:134b:755485cf b120e57d:Reach for the Skies (1 Meg) (B); Mega Depacker 2.12
+DB:135a:58764920 f1a6c932:Civilization (1 Meg) (A)
+DB:135b:3cc56bc9 7448d170:Civilization (1 Meg) (B)
+DB:136a:89a52817 f0f8cc05:Chaos Engine (1 Meg) (A); Macdonaldland; Colour Clash
+DB:136b:35d7a9ef 94bb7ac3:Chaos Engine (1 Meg) (B)
+DB:137a:4065caba f619855a:Shoe People, The (A)
+DB:137b:f1560603 1475228d:Noddys Playtime (A); Shoe People, The (B)
+DB:137c:333f16c2 637384f1:Noddys Playtime (B); Shoe People, The (C)
+DB:138:274abea2 f3110dac:Killing Machine; Warriors of Releyne; Henriettas Book of Spells
+DB:139a:eadbb5b2 f79530f5:D-Day (A); John Lowe's Ultimate Darts
+DB:139b:f052ae66 f606670b:D-Day (B)
+DB:140a:5345b5fa d2490999:Sleepwalker (STE) (A)
+DB:140b:6b04ecb4 863a4365:Sleepwalker (STE) (B)
+DB:140c:288ef35d 9da88a54:Sleepwalker (STE) (C)
+DB:141a:d98fc340 27e4371b 6108b6fc:Ween (A); 3rd Reich
+DB:141b:128ee4b1 1835f7d2:Ween (B)
+DB:141c:bf5e9ab5 24e8291c:Ween (C)
+DB:142a:836762a9 247ce3f7: Dalek Attack (A)
+DB:142b:215a890c 91d8cc97: Dalek Attack (B); Bonanza Bros
+DB:143a:a4425bed fd01f973 f4893c4f:Transartica (A); Cohort II - Fighting for Rome
+DB:143b:8743095d 8a0453c8 c75a52e3:Transartica (B)
+DB:144a:e6a544c7 26f76604:Ishar II Messengers of Doom (A)
+DB:144b:62828a05 a0b3c5d0:Ishar II Messengers of Doom (B)
+DB:144c:698a0e98 a43fed03:Ishar II Messengers of Doom (C)
+DB:145:e0db638b ed8f4875:Puzword; Exile; Super Match Maker; Runes
+DB:146:25536efe 0d995076:Grand Prix Manager; Frogger; Space Crusade Expansion Disk; Rebound
+DB:147:9a29d350 8fba00a9:Punt II; Volfied
+DB:148:526fdee5 b6da5894:Arena Earth; Enchanted Lands
+DB:149:91e85f93 3a84a6f8:Grandad - Quest for Holey Vest; Turbo; Missing Link 
+DB:150a:75afd04b 42f3b80b:Plan 9 (A)
+DB:150b:84b11231 c6aa146:Plan 9 (B); Probe ST V2
+DB:150c:b9d15e32 6f5997d6:Plan 9 (C); Fleet Street Madness; Hot Wire 3.00; X Boot 3.00; PA Packer
+DB:150d:633fada4 896f490e:Plan 9 (D); Presorium; Clod Hopper
+DB:151a:bea4f34f 7b6b9c1:Legends of Valour (A)
+DB:151b:be854428 dcf25e4d:Legends of Valour (B)
+DB:151c:88aec61d b89a65a1 bf8a0f84:Legends of Valour (C); Glass Buttock Of Tharg
+DB:152:5f2f81b6 988826d4:Mixuload; Potsworth & Co; Legacy Demo
+DB:153a:f998afab fefee4c:Championship Manager 93 (A); Tornado Ground Attack
+DB:153b:2fc2b4b2 d9137666:Championship Manager 93 (B)
+DB:154:e3a5e271 07977d5b:Fireforce
+DB:155:6dda9938 4376feae e68a17e4:Zool; Junior Typist
+DB:156:b08ae356 74ef61f2:Fatemaster; Countout; Football Manager II Expansion Kit; Cocoons Of Jusse, The
+DB:157a:eaef6295 271e7e38:Patrician, The (A); Holocaust
+DB:157b:d80a028c aedaef78 fe2edaa3:ST Zip 2.5; Patrician, The (B); H-Mec 2 (STe Meg Only)
+DB:157c:8bd54b63 ae543e74:Patrician, The (C); B17 Flying Fortress (A)
+DB:157d:d42ec550 a6c7ab7c:B17 Flying Fortress (B); Tuzzle
+DB:158:d8f231fd d9a4a752:One Step Beyond
+DB:159a:6beb9083 36b872e:Space Shuttle (A); Huckleberry Hound; Pegasus
+DB:159b:0eef91c6 5b53b43b:Space Shuttle (B)
+DB:160:fc654d60 27475703:Coarse Angler 1.2; Makeform II
+DB:161:2d8dd4de 29bbd5e6 d51a2511:Grandad 2
+DB:162:889e16da d5ed779d:Walls Of Illusion; Elite 2 - Frontier
+DB:163a:e2e0e7ab f7a4b28d:Kingmaker (A); Pacman On E's (STe meg only)
+DB:163b:23c01df1 7abf210:Kingmaker (B); Elite 2 Gazeteer
+DB:164a:887af2c3 7b87de3d:Obsession (A)
+DB:164b:825e75eb eef7bab0:Obsession (B)
+DB:165a:575f209c 7b2414b1:Hollywood Hustler (A); Adrenaline Ripper 1.05
+DB:165b:85a046db 69677eb9:Hollywood Hustler (B); Depack (New) 1.01
+DB:165c:a25734a4 ba8eed5f:Hollywood Hustler (C); Deadland (1 Meg)
+DB:166:54d8a9f9 46a2c694:High Speed Pascal
+DB:167a:7309eb02 2bd6116d:Sleeping Gods Lie (A); Brain Damage; Susan
+DB:167b:14c38f33 9f6f2e04:Prism Paint 1.1; Sleeping Gods Lie Data (B)
+DB:168:a4a9a0ec 82de4eaa:Immortal
+DB:169a:b5fc98ce abbc4fb8:Dogfight (A); Dynablaster
+DB:169b:fe77a3c2  5c3dd079:Tri-Heli II; Dogfight (B)
+DB:170:57e637ee 2110b471:Castle Capers (Demo); HMEC 2; Skulls; Megaline; Oh No Not More Radioactive Mineshafts
+DB:171:3093c79 45f716a0:Herman; Mine-Sweeper; Heartland 2000; Team - New Season Edition (STE)
+DB:172:dbaf90e0 1cf4d5ff:Humeur Vitree; Zombie
+DB:173:12d7f7a6 394a4567:Clacker; Chaos (1 Meg); Jet Set Willy
+DB:174:70b73a60 2f062522:Robin Smith's International Cricket; Siegemaster; Boston Bomb Club
+DB:175:5cc8eefa 87f1962a:GodPey; Walls Of Illusion
+DB:176:693ad036 250f2d3a:Under Pressure; Pacific Assault; Hero
+DB:177a:4498f1bb e5e0e9df:Premier Manager II (A); Double Juggle Vegetabobble
+DB:177b:a4ea1169 c697cd9:Premier Manager II (B); Brides of Dracula
+DB:178:f06bdbfc b179a8e5:Trash Heap; Starball
+DB:179:f6809304:Realm of the Trolls; Zombie Apocalypse
+DB:180:5399408c:Superfly; Roger
+DB:181:21eaba48:Mercenary 3; Turn n Burn; Cave Mania
+DB:182:966144dd 7f3229af:Universe II; Breakers
+DB:183:24d55bc9:Realms of Reality; Osmosis
+DB:184a:0ceb6f9f:Pegasus (A); Snacman; Space Battle
+DB:184b:915e6349:Pegasus (B)
+DB:185:85545100:Gary Lineker's Hotshot; Robocop 2; Droid 2
+DB:186:0ac49ae8:HD-Bug Universal Loading System
+DB:187:3bf22a1d:SWIV; Mega Phoenix
+DB:188:c41b4945 71494c38:Journey to the Center of the Earth; Life's a Bitch Demo (HD); Alice in Wonderland
+DB:189:1c86e924:Orbiter; Well'ard; Adventures of Alice, The; In the Year 2093
+DB:190a:ff2d735f:Cannon Fodder (4MB) (A)
+DB:190b:5f2cea78:Cannon Fodder (4MB) (B)
+DB:191:97d6b132 fc5b392b:Lethal Xcess; Monster Business
+DB:192a:bbe8090a:Dragon Flight (German) (A)
+DB:192b:ee201f66:Dragon Flight (German) (B); POOZ + Save Game Editor
+DB:193a:e49cdb6a:Mindbomb Demo
+DB:193b:762fb962:Cuddly Demos
+DB:193c:bd62bb41:Syntax Terror
+DB:193d:0774f0da:Dark Side of the Spoon
+DB:193e:91f00394:Decade Demo
 OR:1:25e62918:Deluxe Paint ST
 OR:1:48d00935:10th Frame
 OR:1:6b867268:1943

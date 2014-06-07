@@ -109,6 +109,8 @@
     <string name="sound_enabled_summary">Toggles sound emulation. (Faster when off)</string>
     <string name="sound_synchronize_enabled">Sound Synchronize</string>
     <string name="sound_synchronize_enabled_summary">Improve sound latency by adjusting video emulation to match audio output</string>
+    <string name="sound_downmix_enabled">Downmix Stereo -> Mono</string>
+    <string name="sound_downmix_enabled_summary">Downmix audio output from stereo to mono</string>
     <string name="playbackquality">Playback quality</string>
     <string name="ymvoices_mixing">YM voices mixing</string>
     <string name="pref_display_monitory_category">Atari Monitor</string>

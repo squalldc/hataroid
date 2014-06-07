@@ -312,6 +312,7 @@ typedef struct
 typedef struct
 {
 	int deviceSoundBufSize;
+	int downmixStereo;
 
 	bool fullScreen;
 	float scrZoomX;

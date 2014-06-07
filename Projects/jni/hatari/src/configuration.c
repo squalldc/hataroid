@@ -361,6 +361,7 @@ static const struct Config_Tag configs_Video[] =
 static const struct Config_Tag configs_Hataroid[] =
 {
 	{ "deviceSoundBufSize", Int_Tag, &ConfigureParams.Hataroid.deviceSoundBufSize },
+	{ "downmixStereo", Int_Tag, &ConfigureParams.Hataroid.downmixStereo },
 
 	{ "fullScreen", Bool_Tag, &ConfigureParams.Hataroid.fullScreen },
 	{ "scrZoomX", Float_Tag, &ConfigureParams.Hataroid.scrZoomX },
@@ -574,6 +575,7 @@ void Configuration_SetDefault(void)
 
 	// Hataroid extra
 	ConfigureParams.Hataroid.deviceSoundBufSize = 18;
+	ConfigureParams.Hataroid.downmixStereo = 0;
 
 	{
 		ConfigureParams.Hataroid.fullScreen = false;

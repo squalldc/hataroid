@@ -237,6 +237,8 @@ static void VirtKB_MouseRB(bool down);
 static void VirtKB_ToggleAutoFire(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 static void VirtKB_QuickSaveState(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 static void VirtKB_QuickLoadState(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
+static void VirtKB_ShowSoftMenu(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
+static void VirtKB_ShowSoftFloppyMenu(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 
 void VirtKB_RefreshKB()
 {
@@ -296,6 +298,8 @@ void VirtKB_SetMouseEmuSpeed(float speed)
 	s_mouseSpeed = speed;
 }
 
+JNIEnv *s_curEnv = 0;
+
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_updateInput(JNIEnv * env, jobject obj,
 		jboolean t0, jfloat tx0, jfloat ty0,
 		jboolean t1, jfloat  tx1, jfloat ty1,
@@ -304,6 +308,8 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_updateInput
 		jintArray keyPresses)
 {
 	if (!(s_InputReady&s_InputEnabled)) return;
+
+	s_curEnv = env;
 
 	{
 		int numVals = (env)->GetArrayLength(keyPresses);
@@ -345,6 +351,8 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_updateInput
 	}
 
 	s_curIndex = 1 - s_curIndex;
+
+	s_curEnv = 0;
 }
 
 /*
@@ -639,6 +647,9 @@ static void VirtKB_InitCallbacks()
 
 				case VKB_KEY_QUICKSAVESTATE:		kcb->onKeyEvent = VirtKB_QuickSaveState; break;
 				case VKB_KEY_QUICKLOADSTATE:		kcb->onKeyEvent = VirtKB_QuickLoadState; break;
+
+				case VKB_KEY_ANDROID_MENU:			kcb->onKeyEvent = VirtKB_ShowSoftMenu; break;
+				case VKB_KEY_FLOPPY_MENU:			kcb->onKeyEvent = VirtKB_ShowSoftFloppyMenu; break;
 			}
 		}
 		else if (vk->flags & (FLAG_STKEY|FLAG_STFNKEY))
@@ -2155,21 +2166,11 @@ static void VirtKB_ToggleAutoFire(const VirtKeyDef *keyDef, uint32_t uParam1, bo
 	}
 }
 
-static void VirtKB_QuickSaveState(const VirtKeyDef *keyDef, uint32_t uParam1, bool down)
-{
-	if (down)
-	{
-		quickSaveStore();
-	}
-}
+static void VirtKB_QuickSaveState(const VirtKeyDef *keyDef, uint32_t uParam1, bool down) { if (down) { quickSaveStore(s_curEnv); } }
+static void VirtKB_QuickLoadState(const VirtKeyDef *keyDef, uint32_t uParam1, bool down) { if (down) { quickSaveLoad(s_curEnv); } }
 
-static void VirtKB_QuickLoadState(const VirtKeyDef *keyDef, uint32_t uParam1, bool down)
-{
-	if (down)
-	{
-		quickSaveLoad();
-	}
-}
+static void VirtKB_ShowSoftMenu(const VirtKeyDef *keyDef, uint32_t uParam1, bool down) { if (down) { showSoftMenu(s_curEnv, 0); } }
+static void VirtKB_ShowSoftFloppyMenu(const VirtKeyDef *keyDef, uint32_t uParam1, bool down) { if (down) { showSoftMenu(s_curEnv, 1); } }
 
 void VirtKB_ResetAllInputPresses()
 {

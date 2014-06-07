@@ -23,8 +23,10 @@ extern void setTurboSpeed(int set);
 extern int getShortcutAutoFire();
 extern void setShortcutAutoFire(int enable, int set);
 
-extern void quickSaveLoad();
-extern void quickSaveStore();
+extern void quickSaveLoad(JNIEnv *curEnv);
+extern void quickSaveStore(JNIEnv *curEnv);
+
+extern void showSoftMenu(JNIEnv *curEnv, int optionType);
 
 extern JavaVM *g_jvm;
 
@@ -50,13 +52,14 @@ struct JNIMainMethodCache
 	JNIEnv *android_mainEmuThreadEnv;
 	jmethodID showGenericDialog;
 	jmethodID showOptionsDialog;
+	jmethodID showSoftMenu;
 	jmethodID quitHataroid;
 	jmethodID setConfigOnSaveStateLoad;
 };
 
 extern struct JNIAudio g_jniAudioInterface;
 
-extern void showGenericDialog(const char *message, int ok, int noyes);
+extern void showGenericDialog(JNIEnv *curEnv, const char *message, int ok, int noyes);
 extern void showOptionsDialog();
 extern int hasEmuCommands();
 extern void processEmuCommands();

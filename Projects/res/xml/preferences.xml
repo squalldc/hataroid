@@ -471,6 +471,13 @@
 			android:dialogTitle="@string/ymvoices_mixing"
 			android:title="@string/ymvoices_mixing"
 			android:defaultValue="st" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_sound_downmix_enabled"
+			android:title="@string/sound_downmix_enabled"
+			android:summaryOn="@string/sound_downmix_enabled_summary"
+			android:summaryOff="@string/sound_downmix_enabled_summary"
+			android:defaultValue="false" />
 	</PreferenceScreen>
 	<PreferenceScreen
 		android:key="storage_category_key"

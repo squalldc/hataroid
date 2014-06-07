@@ -20,6 +20,7 @@ import android.content.res.XmlResourceParser;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -71,6 +72,8 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 	
 	boolean						_tryUseImmersiveMode = false;
 	boolean						_wantImmersiveMode = false;
+
+	Menu						_optionsMenu = null;
 
 	private GameDBHelper		_gameDB = null;
 
@@ -349,8 +352,32 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 		});
 	}
 
+	boolean _showingIncompatibleDialog = false;
 	public void startEmulationThread()
 	{
+		if (isAlwaysFinishActivitiesEnabled())
+		{
+			if (!_showingIncompatibleDialog)
+			{
+				_showingIncompatibleDialog = true;
+		    	this.runOnUiThread(new Runnable()
+		    	{
+					public void run()
+					{
+		    			AlertDialog alertDialog = new AlertDialog.Builder(HataroidActivity.this).create();
+		    			alertDialog.setTitle("Incompatible Setting Detected");
+		    			alertDialog.setMessage("You have the Developer option 'Don't Keep Activities' enabled.\n\nThis will interfere with the operation of Hataroid.\nPlease disable this and retry.");
+						alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Cancel", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { finish(); } });
+						alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showDeveloperOptionsScreen(); _showingIncompatibleDialog = false; } });
+						alertDialog.setCancelable(false);
+		    			alertDialog.show();
+					}
+		    	});
+			}
+
+	    	return;
+		}
+
 		Map<String, Object> options = getFullEmulatorOptions(true);
 		final String [] optionKeys = (String [])options.get("keys");
 		final String [] valKeys = (String [])options.get("vals");
@@ -769,7 +796,9 @@ public class HataroidActivity extends Activity implements IGameDBScanner
     {
     	try
     	{
-			// update floppy option strings
+    		_optionsMenu = menu;
+
+    		// update floppy option strings
 			int [] itemID = { R.id.ejecta, R.id.ejectb };
 			String [] title = { "Eject Floppy A", "Eject Floppy B" };
 			for (int i = 0; i < 2; ++i)
@@ -1109,6 +1138,31 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 		});
     }
 	
+	public void showSoftMenu(int optionType)
+	{
+		final int subMenuType = optionType;
+    	this.runOnUiThread(new Runnable()
+    	{
+			public void run()
+			{
+				openOptionsMenu();
+				if (_optionsMenu != null)
+				{
+					int actionID = -1;
+					switch (subMenuType)
+					{
+						case 1: { actionID = R.id.disk; break; }
+					}
+					if (actionID >= 0)
+					{
+						_optionsMenu.performIdentifierAction(actionID, 0);
+					}
+				}
+				_optionsMenu = null;
+			}
+		});
+	}
+	
 	static boolean _showingGenericDialog = false;
     public void showGenericDialog(final int ok, final int noyes, final String message)
     {
@@ -1374,6 +1428,53 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 		if (_gameDB != null)
 		{
 			_gameDB.setScanInterface(scanInterface);
+		}
+	}
+	
+	@SuppressWarnings("deprecation")
+	boolean isAlwaysFinishActivitiesEnabled()
+	{
+		try
+		{
+			int alwaysFinishActivities = 0;
+			if (Build.VERSION.SDK_INT >= 17)
+			{
+				alwaysFinishActivities = android.provider.Settings.System.getInt(getApplicationContext().getContentResolver(), android.provider.Settings.Global.ALWAYS_FINISH_ACTIVITIES, 0);
+			}
+			else
+			{
+				alwaysFinishActivities = android.provider.Settings.System.getInt(getApplicationContext().getContentResolver(), android.provider.Settings.System.ALWAYS_FINISH_ACTIVITIES, 0);
+			}
+			
+			return (alwaysFinishActivities == 1);
+		}
+		catch (Error e)
+		{
+			e.printStackTrace();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
+		return false;
+	}
+
+	void _showDeveloperOptionsScreen()
+	{
+		try
+		{
+			Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS);
+			intent.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
+			startActivity(intent);
+		}
+		catch (Error e)
+		{
+			e.printStackTrace();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
 		}
 	}
 }

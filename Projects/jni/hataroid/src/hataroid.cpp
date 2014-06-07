@@ -185,11 +185,12 @@ void usleep(int usecs)
 	nanosleep(&ts, &ts);
 }
 
-void showGenericDialog(const char *message, int ok, int noyes)
+void showGenericDialog(JNIEnv *curEnv, const char *message, int ok, int noyes)
 {
 	Debug_Printf("Show Generic Dialog");
-	jstring str = (g_jniMainInterface.android_mainEmuThreadEnv)->NewStringUTF(message);
-	(g_jniMainInterface.android_mainEmuThreadEnv)->CallVoidMethod(g_jniMainInterface.android_mainActivity, g_jniMainInterface.showGenericDialog, ok, noyes, str);
+	JNIEnv* env = (curEnv==0) ? g_jniMainInterface.android_mainEmuThreadEnv : curEnv;
+	jstring str = (env)->NewStringUTF(message);
+	(env)->CallVoidMethod(g_jniMainInterface.android_mainActivity, g_jniMainInterface.showGenericDialog, ok, noyes, str);
 	Debug_Printf("Show Generic Dialog Done");
 }
 
@@ -198,6 +199,14 @@ void showOptionsDialog()
 	Debug_Printf("Show Options Dialog");
 	(g_jniMainInterface.android_mainEmuThreadEnv)->CallVoidMethod(g_jniMainInterface.android_mainActivity, g_jniMainInterface.showOptionsDialog);
 	Debug_Printf("Show Options Dialog Done");
+}
+
+void showSoftMenu(JNIEnv *curEnv, int optionType)
+{
+	Debug_Printf("Show Soft Menu");
+	JNIEnv* env = (curEnv==0) ? g_jniMainInterface.android_mainEmuThreadEnv : curEnv;
+	(env)->CallVoidMethod(g_jniMainInterface.android_mainActivity, g_jniMainInterface.showSoftMenu, optionType);
+	Debug_Printf("Show Soft Menu Done");
 }
 
 static void requestQuitHataroid()
@@ -281,6 +290,7 @@ static void registerJNIcallbacks(JNIEnv * env, jobject activityInstance)
 	g_jniMainInterface.android_mainActivity = mainActivityRef;
 	g_jniMainInterface.showGenericDialog = (env)->GetMethodID(activityClass, "showGenericDialog", "(IILjava/lang/String;)V");
 	g_jniMainInterface.showOptionsDialog = (env)->GetMethodID(activityClass, "showOptionsDialog", "()V");
+	g_jniMainInterface.showSoftMenu = (env)->GetMethodID(activityClass, "showSoftMenu", "(I)V");
 	g_jniMainInterface.quitHataroid = (env)->GetMethodID(activityClass, "quitHataroid", "()V");
 	g_jniMainInterface.setConfigOnSaveStateLoad = (env)->GetMethodID(activityClass, "setConfigOnSaveStateLoad", "([Ljava/lang/String;)V");
 
@@ -856,6 +866,11 @@ void _optionSoundBufferSize(const OptionSetting *setting, const char *val, EmuCo
 	ConfigureParams.Hataroid.deviceSoundBufSize = bufSize;
 }
 
+void _optionSoundDownmixStereoMono(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	ConfigureParams.Hataroid.downmixStereo = _getBoolVal(val) ? 1 : 0;
+}
+
 bool _optionValMonitorType(const OptionSetting *setting, char *dstBuf, int dstBufLen)
 {
 	if (ConfigureParams.Screen.nMonitorType == MONITOR_TYPE_MONO)		{ strncpy(dstBuf, "Mono", dstBufLen); return true; }
@@ -1357,6 +1372,7 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_sound_synchronize_enabled", _optionSetSoundSync, _optionValSoundSync },
 	{ "pref_sound_ymvoicesmixing", _optionSetYMVoicesMixing, _optionValYMVoicesMixing },
 	{ "pref_sound_buffer_size", _optionSoundBufferSize, _optionValSoundBufferSize },
+	{ "pref_sound_downmix_enabled", _optionSoundDownmixStereoMono, 0 },
 	//{ "pref_input_keyboard_extra_keys", _optionSetVKBExtraKeys, 0 },
 	{ "pref_input_keyboard_obsession_keys", _optionSetVKBObsessionKeys, 0 },
 	{ "pref_input_onscreen_hide_all", _optionSetVKBHideAll, 0 },
@@ -2490,7 +2506,7 @@ JNIEXPORT jstring JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulator
 	return str;
 }
 
-void quickSaveStore()
+void quickSaveStore(JNIEnv *curEnv)
 {
 	if (_doubleBusError || _saveAndQuit)
 	{
@@ -2499,7 +2515,7 @@ void quickSaveStore()
 
 	if (_quickSaveSlot == -1 || _quickSavePath[0] == 0)
 	{
-		showGenericDialog("Please select a quick save slot first before using Quick Saves", 1, 0);
+		showGenericDialog(curEnv, "Please select a quick save slot first before using Quick Saves", 1, 0);
 		return;
 	}
 
@@ -2515,11 +2531,11 @@ void quickSaveStore()
 	}
 }
 
-void quickSaveLoad()
+void quickSaveLoad(JNIEnv *curEnv)
 {
 	if (_quickSaveSlot == -1 || _quickSavePath[0] == 0)
 	{
-		showGenericDialog("Please select a quick save slot first before using Quick Saves", 1, 0);
+		showGenericDialog(curEnv, "Please select a quick save slot first before using Quick Saves", 1, 0);
 		return;
 	}
 

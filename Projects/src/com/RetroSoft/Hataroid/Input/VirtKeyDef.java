@@ -142,8 +142,10 @@ public class VirtKeyDef
 	public final static int VKB_KEY_AUTOFIRE		= 120;
 	public final static int VKB_KEY_QUICKSAVESTATE		= 121;
 	public final static int VKB_KEY_QUICKLOADSTATE		= 122;
+	public final static int VKB_KEY_ANDROID_MENU		= 123;
+	public final static int VKB_KEY_FLOPPY_MENU		= 124;
 
-	public final static int VKB_KEY_NumOf		= 123;
+	public final static int VKB_KEY_NumOf		= 125;
 
 	public final static int FLAG_POLY		= (1<<0);
 	public final static int FLAG_STFNKEY		= (1<<1);
@@ -282,6 +284,8 @@ public class VirtKeyDef
 		new VirtKeyDef(VKB_KEY_TOGGLEUI, "Toggle UI", (short)-1, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY),
 		new VirtKeyDef(VKB_KEY_AUTOFIRE, "Toggle Auto Fire", (short)-1, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY),
 		new VirtKeyDef(VKB_KEY_QUICKSAVESTATE, "Quick Save State", (short)-1, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY),
-		new VirtKeyDef(VKB_KEY_QUICKLOADSTATE, "Quick Load State", (short)-1, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY)
+		new VirtKeyDef(VKB_KEY_QUICKLOADSTATE, "Quick Load State", (short)-1, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY),
+		new VirtKeyDef(VKB_KEY_ANDROID_MENU, "Android Soft Menu", (short)-1, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_FLOPPY_MENU, "Floppy Menu", (short)-1, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN)
 	};
 }
