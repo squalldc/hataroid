@@ -499,6 +499,13 @@
 				android:summaryOn="@string/storage_savestate_exitautosave_summary"
 				android:summaryOff="@string/storage_savestate_exitautosave_summary"
 				android:defaultValue="false" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_storage_savestate_kitkat_extsd"
+				android:title="@string/storage_savestate_kitkat_extsd"
+				android:summaryOn="@string/storage_savestate_kitkat_extsd_summary"
+				android:summaryOff="@string/storage_savestate_kitkat_extsd_summary"
+				android:defaultValue="false" />
 		</PreferenceCategory>
 	    <PreferenceCategory 
 	        android:title="@string/pref_storage_floppydisks_category"

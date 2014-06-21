@@ -1,5 +1,6 @@
 package com.RetroSoft.Hataroid.Preferences;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,7 +11,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.os.Build;
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
@@ -58,9 +61,13 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 	public static final String kPrefName_InputDevice_ConfigureMap		= "pref_input_device_configuremap";
 	
 	public static final String kPrefName_OnScreen_ConfigureShortcutsMap	= "pref_input_onscreen_configureshortcutmap";
+	
+	public static final String kPrefName_Storage_SaveStateKitKatExtSD	= "pref_storage_savestate_kitkat_extsd";
+	public static final String kPrefName_Storage_SaveStateFolder		= "pref_storage_savestate_folder";
 
 	public Map<String,Boolean> _noSetSummary = new HashMap<String,Boolean>();
 
+	@SuppressWarnings("deprecation")
 	@Override protected void onCreate(Bundle savedInstanceState)
 	{
 		_noSetSummary.clear();
@@ -105,8 +112,12 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 
 		// add shorcut keys mapping click hooks
 		linkShortcutMapConfigureView(kPrefName_OnScreen_ConfigureShortcutsMap, SHORTCUTMAPACTIVITYRESULT_OK);
+		
+		// kit kat external sd option
+		_setupKitKatExtSDOption();
 	}
 	
+	@SuppressWarnings("deprecation")
 	void linkFileSelector(String prefKey, int fileResultID, boolean allFiles, boolean selectFolder, boolean tosImage, boolean showNewFolder)
 	{
 		final Settings ctx = this;
@@ -137,6 +148,7 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		});
 	}
 	
+	@SuppressWarnings("deprecation")
 	void linkInputDeviceSelector(String prefKey)
 	{
 		Preference item = (Preference)findPreference(prefKey);
@@ -151,6 +163,7 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		});
 	}
 
+	@SuppressWarnings("deprecation")
 	void linkInputMethodConfigureView(String prefKey, int viewResultID)
 	{
 		final Settings ctx = this;
@@ -166,6 +179,7 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		});
 	}
 
+	@SuppressWarnings("deprecation")
 	void linkShortcutMapConfigureView(String prefKey, int viewResultID)
 	{
 		final Settings ctx = this;
@@ -180,7 +194,7 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 			}
 		});
 	}
-
+	
 	@Override protected void onActivityResult(int requestCode, int resultCode, Intent data)
 	{
 		String key = null;
@@ -241,7 +255,8 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		prefs.unregisterOnSharedPreferenceChangeListener(this);
 	}
 
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key)
+    @SuppressWarnings("deprecation")
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key)
 	{
     	_setPreferenceSummary(sharedPreferences, findPreference(key), key);
 	}
@@ -338,6 +353,99 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
     		alertDialog.setMessage("There was a problem saving your input maps. Please try again or log a bug report");
     		alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) {  } });
     		alertDialog.show();
+    	}
+	}
+
+	@SuppressWarnings("deprecation")
+	void _setupKitKatExtSDOption()
+	{
+		try
+		{
+			CheckBoxPreference item = (CheckBoxPreference)findPreference(kPrefName_Storage_SaveStateKitKatExtSD);
+			if (item != null)
+			{
+				if (Build.VERSION.SDK_INT >= 19)
+				{
+					Preference saveFolderItem = (Preference)findPreference(kPrefName_Storage_SaveStateFolder);
+					saveFolderItem.setEnabled(!item.isChecked());
+				}
+				else
+				{
+					item.setEnabled(false);
+				}
+			}
+			if (Build.VERSION.SDK_INT >= 19)
+			{
+				item.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+					public boolean onPreferenceClick(Preference preference) { _onSaveStateKitKatExtSDClicked(preference); return true; }
+				});
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+	
+    @SuppressWarnings("deprecation")
+	void _onSaveStateKitKatExtSDClicked(Preference pref)
+	{
+    	try
+    	{
+    		boolean isChecked = false;
+			{
+				CheckBoxPreference item = (CheckBoxPreference)pref;
+				isChecked = item.isChecked();
+			}
+			
+			{
+				Preference saveFolderItem = (Preference)findPreference("pref_storage_savestate_folder");
+				saveFolderItem.setEnabled(!isChecked);
+			}
+			
+			File[] paths = getExternalFilesDirs(null);
+    		if (paths != null && paths.length > 1)
+    		{
+    			boolean updatePrefs = false;
+    			String savePath = paths[1].getAbsolutePath() + "/saves"; // just use first ext for now
+    			File newFolder = new File(savePath);
+				if (!newFolder.exists())
+				{
+					if (newFolder.mkdir())
+					{
+						updatePrefs = true;
+					}
+				}
+				else
+				{
+					updatePrefs = true;
+				}
+				
+				if (updatePrefs)
+				{
+					SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+					Editor ed = prefs.edit();
+					ed.putString("pref_storage_savestate_folder", savePath);
+					ed.commit();
+				}
+    		}
+
+    		if (isChecked)
+			{
+	    		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+	    		alertDialog.setTitle("KIT KAT Warning");
+	    		alertDialog.setMessage("If you choose to save to External SD Card on KIT KAT,\nWhen uninstalling Hataroid, Android will delete your saves as well.\nMake sure you manually back up your saves when uninstalling.");
+	    		alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) {  } });
+	    		alertDialog.show();
+			}
+    	}
+    	catch (Error e)
+    	{
+    		e.printStackTrace();
+    	}
+    	catch (Exception e)
+    	{
+    		e.printStackTrace();
     	}
 	}
 }

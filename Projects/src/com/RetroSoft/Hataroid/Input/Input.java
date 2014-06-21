@@ -165,6 +165,55 @@ public class Input
 		_cacheInputMapValues();
 	}
 	
+	public boolean dispatchKeyEvent(KeyEvent event)
+	{
+		if (!_inputEnabled)
+		{
+			return false;
+		}
+		
+		int action = event.getAction();
+		int c = event.getKeyCode();
+		//Log.i("hataroid", "CONFIGURE keydown: " + String.valueOf(c) + ", sc: " + event.getScanCode() + ", id: " + event.getDeviceId());
+
+		if (action == KeyEvent.ACTION_DOWN)
+		{
+			if (c >= 0 && c < _numSrcInputs)
+			{
+				//InputDevice idev = event.getDevice();
+				//if (idev != null)
+				//{
+				//	Log.i("hataroid", "id: " + idev.getId() + ", n: " + (idev.getName()!=null?idev.getName():""));
+				//}
+				
+				int im = _srcToDestMap[c];
+				if (im >= 0)
+				{
+					_curPresses.setBit(im);
+					return (c != KeyEvent.KEYCODE_MENU); // yum yum
+				}
+			}
+		}
+		else if (action == KeyEvent.ACTION_UP)
+		{
+			//InputDevice idev = event.getDevice();
+			//if (idev != null)
+			//{
+			//	Log.i("hataroid", "id: " + idev.getId() + ", n: " + (idev.getName()!=null?idev.getName():""));
+			//}
+	
+			int im = _srcToDestMap[c];
+			if (im >= 0)
+			{
+				_curPresses.clearBit(im);
+				return (c != KeyEvent.KEYCODE_MENU); // yum yum
+			}
+		}
+		
+		return false;
+	}
+
+	/*
 	public boolean onKeyDown(int keyCode, KeyEvent event)
 	{
 		if (!_inputEnabled)
@@ -222,6 +271,7 @@ public class Input
 
 		return false;
 	}
+	*/
 	
 	public BitFlags getKeyPresses()
 	{

@@ -1048,12 +1048,22 @@ public class HataroidActivity extends Activity implements IGameDBScanner
     	return dynOptions;
 	}
 	
+	@Override public boolean dispatchKeyEvent(KeyEvent event)
+	{
+		if (_input.dispatchKeyEvent(event))
+		{
+			return true;
+		}
+
+		return super.dispatchKeyEvent(event);
+	}
+
 	@Override public boolean onKeyDown(int keyCode, KeyEvent event)
 	{
-		if (_input.onKeyDown(keyCode, event))
-		{
-			return false;
-		}
+//		if (_input.onKeyDown(keyCode, event))
+//		{
+//			return false;
+//		}
 		
 		switch (keyCode)
 		{
@@ -1073,10 +1083,10 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 
 	@Override public boolean onKeyUp(int keyCode, KeyEvent event)
 	{
-		if (_input.onKeyUp(keyCode, event))
-		{
-			return false;
-		}
+//		if (_input.onKeyUp(keyCode, event))
+//		{
+//			return false;
+//		}
 
 		return super.onKeyDown(keyCode, event);
 	}

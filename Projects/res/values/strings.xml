@@ -224,4 +224,6 @@
     <string name="input_joysticks_fire_size_summary">Default size is 1.0</string>
     <string name="refreshDB">Refresh DB</string>
     <string name="clearDB">Clear DB</string>
+    <string name="storage_savestate_kitkat_extsd">(KIT KAT) Save to Secondary External SD</string>
+    <string name="storage_savestate_kitkat_extsd_summary">Save to the application folder on the External SD Card (KIT KAT only)</string>
 </resources>

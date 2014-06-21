@@ -453,16 +453,21 @@ float Renderer_getEmuScreenZoomX()
 	int emuScrW = g_surface_width;
 
 	GLfloat texWRatio = (float)emuScrW / (float)texW;
-	return curZoomX / texWRatio;
+	GLfloat scrScale = gScrWidth/1024.0f;
+
+	return (scrScale*curZoomX) / texWRatio;
 //	return curZoomX;
 }
+
 float Renderer_getEmuScreenZoomY()
 {
 	int texH = g_videoTex_height;
 	int emuScrH = g_surface_height;
 
 	GLfloat texHRatio = (float)emuScrH / (float)texH;
-	return curZoomY / texHRatio;
+	GLfloat scrScale = gScrHeight/552.0f;
+
+	return (scrScale*curZoomY) / texHRatio;
 //	return curZoomY;
 }
 
