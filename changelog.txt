@@ -1,3 +1,8 @@
+v1.560
+- change external input handling to intercept android system keys (except for the menu button which Hataroid requires for itself)
+- fix virtual mouse speed on diff resolution devices (you may need to re-adjust your mouse speed with this fix)
+- support for saving to a real SD card on Kit Kat (Android only allows saving to a specific folder and when uninstalling, it will also remove your saves, so make a backup if you use this option)
+
 v1.550
 - Downmix stereo -> mono option
 - Add soft menu button to configurable shortcut and input keys
