@@ -564,6 +564,9 @@ void Video_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&bTTSampleHold, sizeof(bTTSampleHold));
 	MemorySnapShot_Store(&bTTHypermono, sizeof(bTTHypermono));
 	MemorySnapShot_Store(&TTSpecialVideoMode, sizeof(TTSpecialVideoMode));
+
+	// HACK: fix to broken Hatari saves (they shouldn't be saving a pointer!!!)
+	pVideoRaster = &STRam[VideoBase];
 }
 
 
