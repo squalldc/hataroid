@@ -33,7 +33,7 @@ public class ShortcutMap
 			VirtKeyDef.VKB_KEY_Y,
 			VirtKeyDef.VKB_KEY_N,
 			VirtKeyDef.VKB_KEY_1,
-			VirtKeyDef.VKB_KEY_2,
+			VirtKeyDef.VKB_KEY_ANDROID_MENU,
 			-1,//VirtKeyDef.VKB_KEY_RETURN,
 		},
 		// kAnchorBR
