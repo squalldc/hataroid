@@ -1,3 +1,7 @@
+v1.561
+- fix hatari saves
+- enable on-screen android soft menu button by default
+
 v1.560
 - change external input handling to intercept android system keys (except for the menu button which Hataroid requires for itself)
 - fix virtual mouse speed on diff resolution devices (you may need to re-adjust your mouse speed with this fix)
