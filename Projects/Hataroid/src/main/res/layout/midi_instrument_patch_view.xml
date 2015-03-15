@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <LinearLayout
+        android:id="@+id/LinearLayout1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.025"
+        android:background="@drawable/gradient_drawable" >
+
+        <TextView
+            android:id="@+id/im_title"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="left|center_vertical"
+            android:layout_marginLeft="@dimen/padding_small"
+            android:layout_weight="0.9"
+            android:gravity="center_vertical"
+            android:text="@string/midi_patch_instrument_configure_title"
+            android:textColor="#ffffff"
+            android:textSize="@dimen/padding_medium" />
+
+        <ImageButton
+            android:id="@+id/im_closeBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right|center_vertical"
+            android:layout_margin="@dimen/padding_smallest"
+            android:background="#00000000"
+            android:scaleType="fitXY"
+            android:src="@drawable/btn_close" />
+
+    </LinearLayout>
+
+    <Spinner
+        android:id="@+id/im_presetSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.025" />
+
+    <ListView
+        android:id="@id/android:list"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.9"
+        android:background="@drawable/bg_gradient"
+        android:choiceMode="singleChoice"
+        android:clickable="true"
+        android:divider="#66888888"
+        android:dividerHeight="1px"
+		android:cacheColorHint="#00000000"
+        android:drawSelectorOnTop="false" >
+    </ListView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.0" >
+
+        <Button
+            android:id="@+id/im_deleteBtn"
+            android:layout_width="168dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="0.25"
+            android:text="@string/delete" />
+
+        <Button
+            android:id="@+id/im_renameBtn"
+            android:layout_width="168dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="0.25"
+            android:text="@string/rename" />
+        
+        <Button
+            android:id="@+id/im_newBtn"
+            android:layout_width="168dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="0.25"
+            android:text="@string/newStr" />
+
+        <Button
+            android:id="@+id/im_showKeyboardBtn"
+            android:layout_width="168dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="0.25"
+            android:text="@string/switchkeyboard" />
+
+    </LinearLayout>
+
+   <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0.0" >
+
+        <Button
+            android:id="@+id/im_sendBtn"
+            android:layout_width="168dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="0.25"
+            android:text="@string/send_to_synth" />
+
+    </LinearLayout>
+
+</LinearLayout>

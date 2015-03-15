@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+/*
+**
+** Copyright 2006, The Android Open Source Project
+**
+** Licensed under the Apache License, Version 2.0 (the "License"); 
+** you may not use this file except in compliance with the License. 
+** You may obtain a copy of the License at 
+**
+**     http://www.apache.org/licenses/LICENSE-2.0 
+**
+** Unless required by applicable law or agreed to in writing, software 
+** distributed under the License is distributed on an "AS IS" BASIS, 
+** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+** See the License for the specific language governing permissions and 
+** limitations under the License.
+*/
+
+-->
+
+<!--
+     This file contains resource definitions for displayed strings, allowing
+     them to be changed based on the locale and options.
+
+-->
+
+<resources>
+
+    <!-- Simple strings. -->
+    <string name="Hataroid_activity">Hataroid</string>
+    <string name="Settings">Settings</string>
+    <string name="Reset">Reset</string>
+    <string name="Pause">Pause</string>
+    <string name="Unpause">Unpause</string>
+    <string name="Disk">Disk</string>
+    <string name="FloppyA">Floppy A</string>
+    <string name="FloppyB">Floppy B</string>
+    <string name="ChangeDisk">Change Disk</string>
+    <string name="Help">Help</string>
+	<string name="About">About</string>
+    <string name="Controls">Controls</string>
+    <string name="ColdReset">Cold Reset</string>
+    <string name="WarmReset">Warm Reset</string>
+    <string name="SaveLoad">Save/Load</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_file_browser">FileBrowser</string>
+    <string name="title_activity_inputmap_configure">Configure Input Mapping</string>
+    <string name="InsertFloppyA">Insert Floppy A</string>
+    <string name="InsertFloppyB">Insert Floppy B</string>
+    <string name="EjectFloppyA">Eject Floppy A</string>
+    <string name="EjectFloppyB">Eject Floppy B</string>
+    <string name="Quit">Quit</string>
+    <string name="ToggleMouseJoystick">Toogle Mouse/Joystick</string>
+    <string name="input">Input</string>
+    <string name="system">System</string>
+    <string name="display">Display</string>
+    <string name="sound">Sound</string>
+    <string name="storage">Storage</string>
+    <string name="cputype">CPU Type</string>
+    <string name="machinetype">Machine Type</string>
+    <string name="cpuclock">CPU clock</string>
+    <string name="memory">Memory</string>
+    <string name="pref_system_main_category">Main</string>
+    <string name="pref_system_rom_category">Rom</string>
+    <string name="pref_system_tweaks_category">Tweaks</string>
+    <string name="pref_system_devices_category">Devices</string>
+    <string name="pref_storage_rom_category">Rom</string>
+    <string name="pref_storage_floppydisks_category">Floppy Disks</string>
+    <string name="pref_storage_harddisks_category">Hard Disks</string>
+    <string name="cartridgeimage">Cartridge image</string>
+    <string name="floppydisks_autoinsertb">Auto insert B</string>
+    <string name="floppydisks_autoinsertb_summary">Automatically detect and insert second floppy disk</string>
+    <string name="floppydisks_fastfloppyaccess">Fast floppy access</string>
+    <string name="floppydisks_fastfloppyaccess_summary">Speed up floppy disc access (may cause incompatibilities)</string>
+    <string name="floppydisks_writeprotection">Write protection</string>
+    <string name="harddisks_acsiimage">ACSI HD image</string>
+    <string name="harddisks_acsi_attach">Attach ACSI HD</string>
+    <string name="harddisks_acsi_attach_summary">Connect the ACSI HD to the emulated system</string>
+    <string name="harddisks_idemasterimage">IDE HD master image</string>
+    <string name="harddisks_idemaster_attach">Attach IDE Master</string>
+    <string name="harddisks_idemaster_attach_summary">Connect the IDE Master HD to the emulated system</string>
+    <string name="harddisks_ideslaveimage">IDE HD slave image</string>
+    <string name="harddisks_ideslave_attach">Attach IDE Slave</string>
+    <string name="harddisks_ideslave_attach_summary">Connect the IDE Slave HD to the emulated system</string>
+    <string name="harddisks_gemdosdrive">GEMDOS drive directory</string>
+    <string name="harddisks_gemdosdrive_attach">Attach GEMDOS drive (Use local folder as hard drive)</string>
+    <string name="harddisks_gemdosdrive_attach_summary">Mount a local folder as a hard drive</string>
+    <string name="harddisks_gemdoswriteprotection">GEMDOS drive write protection</string>
+    <string name="harddisks_bootfromharddisk">Boot from HD</string>
+    <string name="harddisks_bootfromharddisk_summary">Executes the AUTO folder on the hard disk</string>
+    <string name="tosimage">TOS image (ST)</string>
+    <string name="tosimage_ste">TOS image (STE)</string>
+    <string name="tosimage_falcon">TOS image (Falcon)</string>
+    <string name="compatiblecpu">Slower but more compatible CPU</string>
+    <string name="compatiblecpu_summary">Enables 68k address errors and CPU prefetch buffer</string>
+    <string name="blitteremulation">Blitter emulation</string>
+    <string name="blitteremulation_summary">Toggles blitter emulation (ST only), always enabled on STE</string>
+    <string name="rtcemulation">Real time clock emulation</string>
+    <string name="rtcemulation_summary">Requires TOS >= 1.02</string>
+    <string name="patchtimerd">Patch Timer-D</string>
+    <string name="patchtimerd_summary">Modifies the MFP timer D rate for improved performance</string>
+    <string name="patchtosfasterboot">Patch TOS for faster boot</string>
+    <string name="patchtosfasterboot_summary">By-passes the boot memory test</string>
+    <string name="printeremulation">Printer Emulation</string>
+    <string name="printeremulation_summary">Toggles printer emulation</string>
+    <string name="rs232emulation">RS232 Emulation</string>
+    <string name="rs232emulation_summary">Toggles RS232 emulation</string>
+    <string name="sound_enabled">Sound</string>
+    <string name="sound_enabled_summary">Toggles sound emulation. (Faster when off)</string>
+    <string name="sound_mute">Mute ST Sound</string>
+    <string name="sound_mute_summary">Mute the ST sound output (allows MIDI output exclusively)</string>
+    <string name="sound_synchronize_enabled">Sound Synchronize</string>
+    <string name="sound_synchronize_enabled_summary">Improve sound latency by adjusting video emulation to match audio output</string>
+    <string name="sound_downmix_enabled">Downmix Stereo -> Mono</string>
+    <string name="sound_downmix_enabled_summary">Downmix audio output from stereo to mono</string>
+    <string name="playbackquality">Playback quality</string>
+    <string name="ymvoices_mixing">YM voices mixing</string>
+    <string name="pref_display_monitory_category">Atari Monitor</string>
+    <string name="pref_display_extendedvdi_category">Atari Extended VDI</string>
+    <string name="pref_display_display_category">Android Display</string>
+    <string name="display_showborders">Show borders</string>
+    <string name="display_showborders_summary">Shows the screen borders</string>
+    <string name="display_monitortype">Atari monitor type</string>
+    <string name="display_extendedvdi">Use extended VDI screen</string>
+    <string name="display_extendedvdi_summary">Emulates an extended graphics card to allow higher resolutions</string>
+    <string name="display_extendedvdi_colors">Extended VDI colors</string>
+    <string name="display_extendedvdi_resolution">Extended VDI resolution</string>
+    <string name="display_frameskip">Frame skip</string>
+    <string name="display_indicators">Indicators</string>
+    <string name="display_bilinearfilter">Bi-linear filter</string>
+    <string name="display_bilinearfilter_summary">Smooth the emulation screen output</string>
+    <string name="display_fullscreen">Full Screen</string>
+    <string name="display_fullscreen_summary">Stretch emulated screen to the full screen (may not be aspect correct)</string>
+    <string name="display_keepscreenawake">Keep Screen Awake</string>
+    <string name="display_keepscreenawake_summary">Keeps screen on without user input</string>
+    <string name="pref_input_joysticks_category">Joysticks</string>
+    <string name="pref_input_mouse_category">Mouse</string>
+    <string name="pref_input_keyboard_category">Keyboard</string>
+    <string name="input_keyboard_extra_keys">Additional on-screen keys</string>
+    <string name="input_keyboard_extra_keys_summary">Show extra quick keys in the UI. NOTE: the keys may not all fit on your device.</string>
+    <string name="input_keyboard_obsession_keys">Obsession mode keys</string>
+    <string name="input_keyboard_obsession_keys_summary">Swaps the joystick out with keys suited for Obsession</string>
+    <string name="pref_input_onscreen_category">On-Screen</string>
+    <string name="input_joystick_port">On-screen Joystick Port</string>
+    <string name="input_joysticks_autofire">Autofire</string>
+    <string name="input_joysticks_autofire_summary">Toggles auto fire</string>
+    <string name="input_joysticks_maparrowkeys">Map Arrow Keys</string>
+    <string name="input_joysticks_maparrowkeys_summary">On-screen joystick presses map to the Arrow Keys and Space on the Keyboard</string>
+    <string name="input_joysticks_size">Size of On Screen Joystick</string>
+    <string name="input_joysticks_size_summary">Default size is 1.0</string>
+    <string name="input_onscreen_alpha">On Screen Transparency</string>
+    <string name="input_onscreen_alpha_summary">Translucency of on screen controls</string>
+    <string name="input_onscreen_joy_alpha">On Screen Joystick Transparency</string>
+    <string name="input_onscreen_joy_alpha_summary">Translucency of on screen Joystick controls</string>
+    <string name="input_onscreen_hide_all">Hide all on screen UI</string>
+    <string name="input_onscreen_hide_all_summary">Hides all on screen controls</string>
+    <string name="input_onscreen_only_joy">Show joystick only</string>
+    <string name="input_onscreen_only_joy_summary">Hides everything except for the on screen joystick</string>
+    <string name="mouseemutype">Mouse Button Emulation Type</string>
+    <string name="mousespeed">Mouse Emulation Speed</string>
+    <string name="AppDescription">Atari ST Emulator</string>
+    <string name="title_activity_help">About Hataroid</string>
+    <string name="select">Select</string>
+    <string name="newfolder">New Folder</string>
+    <string name="save">Save</string>
+    <string name="load">Load</string>
+    <string name="delete">Delete</string>
+    <string name="rename">Rename</string>
+    <string name="newStr">New</string>
+    <string name="cancel">Cancel</string>
+    <string name="unmap">Un-map</string>
+    <string name="device">Device</string>
+    <string name="ok">OK</string>
+    <string name="renameinputmap_info">Enter a name for your input map</string>
+    <string name="switchkeyboard">Switch Keyboard</string>
+    <string name="device_kitkat_immersive">Immersive Mode</string>
+    <string name="pref_storage_savestates_category">Save States</string>
+    <string name="device_kitkat_immersive_summary">Enable Immersive Mode (Android 4.4 Kit Kat or newer required)</string>
+    <string name="storage_savestate_exitautosave">Auto save on quit</string>
+    <string name="storage_savestate_exitautosave_summary">Automatically saves the session on quit and restores on load. This is saved separately from normal save slots</string>
+    <string name="storage_savestate_folder">Save State Folder</string>
+    <string name="selectquicksaveslot">Select Quick Save Slot</string>
+    <string name="quicksaveslot">Quick Save Slot</string>
+    <string name="savestate_save_title">SAVING...</string>
+    <string name="savestate_load_title">LOADING...</string>
+    <string name="savestate_delete_title">DELETING...</string>
+    <string name="savestate_quicksaveslot_title">Select QUICK SAVE Slot (FOR INPUT DEVICE MAPPING)...</string>
+    <string name="pref_input_device">Input (Method) Devices</string>
+    <string name="input_device_inputmethod">Switch Current Input Device</string>
+    <string name="input_device_inputmethod_summary">Choose the current input device from the Android System menu</string>
+    <string name="input_device_enable_inputmethod">Use Input Method Device</string>
+    <string name="input_device_enable_inputmethod_summary">Enables receiving input from the chosen Input Method Device</string>
+    <string name="input_device_configuremap">Configure Input Mapping</string>
+    <string name="input_device_configuremap_summary">Configure which input keys map to which emulator keys</string>
+    <string name="capture_info">Press the device button you want to map to :</string>
+    <string name="capture_status"> </string>
+    <string name="input_device_dumpmaps">Dump Input Maps to file</string>
+    <string name="input_device_dumpmaps_summary">Saves the user input maps to a file for sending to the developer</string>
+    <string name="sound_buffer_size">Device sound buffer size (latency vs crackling)</string>
+    <string name="sound_buffer_size_summary">Adjust down to reduce audio latency or up to remove popping</string>
+    <string name="blank"> </string>
+    <string name="pref_device_developer_category">Developer Options</string>
+	<string name="pref_device_category">Device Options</string>
+    <string name="device_developer_options">Toggle access to developer options</string>
+    <string name="device_developer_options_summary">Enable experimental (potentially unstable) options</string>
+    <string name="input_mouse_default_android">Old Android hardware mouse behaviour</string>
+    <string name="input_mouse_default_android_summary">Hardware mice can click on-screen controls, but won\'t detect normal mouse clicks, requires holding LMB to move cursor</string>
+    <string name="input_onscreen_hide_extra_joy_keys">Hide extra joystick keys</string>
+    <string name="input_onscreen_hide_extra_joy_keys_summary">Hides the extra keys on the bottom right of the screen</string>
+    <string name="input_onscreen_hide_shortcut_keys">Hide shortcut keys</string>
+    <string name="input_onscreen_hide_shortcut_keys_summary">Hides the shortcut keys on the top right of the screen</string>
+    <string name="input_onscreen_hide_turbo_key">Hide turbo key</string>
+    <string name="input_onscreen_hide_turbo_key_summary">Hides the turbo key on the top right of the screen</string>
+    <string name="title_activity_shortcut_configure">Configure Shortcut Keys</string>
+    <string name="shortcutselect_info">Select Shortcut Key:</string>
+    <string name="input_onscreen_configureshortcutmap">Configure Shortcut Keys</string>
+    <string name="input_onscreen_configureshortcutmap_summary">Configure on-screen keys mapping</string>
+    <string name="input_onscreen_hide_joy">Hide Joystick</string>
+    <string name="input_onscreen_hide_joy_summary">Hides the on-screen joystick</string>
+    <string name="input_keyboard_sizeVX">Vertical on-screen keys size (width)</string>
+    <string name="input_keyboard_sizeVX_summary">Vertical on-screen keys size (width)</string>
+    <string name="input_keyboard_sizeVY">Vertical on-screen keys size (height)</string>
+    <string name="input_keyboard_sizeVY_summary">Vertical on-screen keys size (height)</string>
+    <string name="input_keyboard_sizeHX">Horizontal on-screen keys size (width)</string>
+    <string name="input_keyboard_sizeHX_summary">Horizontal on-screen keys size (width)</string>
+    <string name="input_keyboard_sizeHY">Horizontal on-screen keys size (height)</string>
+    <string name="input_keyboard_sizeHY_summary">Horizontal on-screen keys size (height)</string>
+    <string name="input_joysticks_fire_size">Size of On Screen Joystick Fire Button</string>
+    <string name="input_joysticks_fire_size_summary">Default size is 1.0</string>
+    <string name="refreshDB">Refresh DB</string>
+    <string name="clearDB">Clear DB</string>
+    <string name="storage_savestate_kitkat_extsd">(KIT KAT and newer) Save to Secondary External SD</string>
+    <string name="storage_savestate_kitkat_extsd_summary">Save to the application folder on the External SD Card (KIT KAT and newer only)</string>
+    <string name="midi">MIDI</string>
+    <string name="pref_midi_options_category">MIDI Options</string>
+    <string name="midi_out">Enable MIDI Out</string>
+    <string name="midi_out_summary">Enable MIDI output</string>
+    <string name="midi_st_reset">Reset MIDI synth on ST Reset</string>
+    <string name="midi_st_reset_summary">Reset the MIDI synth when the ST is reset by the user</string>
+    <string name="pref_midi_device_category">MIDI Out Device</string>
+    <string name="midi_device_android">(UNSUPPORTED) Built-in Android MIDI</string>
+    <string name="midi_device_android_summary">NOT recommended as you may get timing issues, but is faster</string>
+    <string name="midi_device_fluidsynth">Use Fluid-Synth (requires a Soundfont)</string>
+    <string name="midi_device_fluidsynth_summary">Recommended, but need fast device. Synced correctly with emulation.</string>
+    <string name="pref_midi_fluidsynth_category">Fluid-synth Settings</string>
+    <string name="midi_fluidsynth_use_custom_sf">Use your own SoundFont</string>
+    <string name="midi_fluidsynth_use_custom_sf_summary">Specify the custom SoundFont below</string>
+    <string name="midi_fluidsynth_soundfont">Custom SoundFont (.sf2) Soundbank</string>
+    <string name="midi_fluidsynth_reverb">Support Reverb</string>
+    <string name="midi_fluidsynth_reverb_summary">Faster if disabled. (Reverb compatible SoundFont required)</string>
+    <string name="midi_fluidsynth_chorus">Support Chorus</string>
+    <string name="midi_fluidsynth_chorus_summary">Faster if disabled. (Chorus compatible SoundFont required)</string>
+    <string name="midi_fluidsynth_interp">Interpolation Quality</string>
+    <string name="midi_fluidsynth_maxpoly">Max Polyphony</string>
+    <string name="midi_fluidsynth_volgain">Volume Gain</string>
+    <string name="midi_fluidsynth_volgain_summary">Adjust volume gain of synth (clipping may occur if this is too high)</string>
+    <string name="pref_midi_patches_category">MIDI Patches</string>
+    <string name="midi_instrument_patches_configure">Load Instrument Patches</string>
+    <string name="midi_instrument_patches_configure_summary">Setup and send program channel changes to the MIDI device</string>
+    <string name="midi_drum_patches_configure">Load Drum Patches</string>
+    <string name="midi_drum_patches_configure_summary">Setup and send drum configurations to the MIDI device</string>
+    <string name="pref_midi_tweaks_category">Midi Tweaks</string>
+    <string name="midi_tweak_ignore_pgm_changes">Ignore Midi Program Changes</string>
+    <string name="midi_tweak_ignore_pgm_changes_summary">Ignore program changes sent to the synth (eg Karate Kid II sends program changes that aren\'t mapped nicely to GM instruments)</string>
+    <string name="midi_patch_instrument_configure_title">Setup and Send MIDI Instrument Patch To Synth</string>
+    <string name="send_to_synth">Send to Synth</string>
+    <string name="midi_patch_instrument_select_title">Select Instrument:</string>
+    <string name="pref_midi_drum_chan">Drum Channel</string>
+    <string name="pref_midi_chan_transpose">Transpose Keys (semi-tones)</string>
+    <string name="pref_midi_chan_transpose_summary">Transpose the midi output (eg Karate Kid 2 is actually tuned incorrectly)</string>
+    <string name="pref_midi_setup_kk2tweaks">Auto-Setup options for Karate Kid 2</string>
+    <string name="pref_midi_setup_kk2tweaks_summary">Setup recommended options for Karate Kid 2 (transpose, ignore program changes and instrument patches)</string>
+	<string name="pref_help_online">Help (http://sites.google.com/site/hataroid/help)</string>
+
+</resources>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item android:id="@+id/disk" android:visible="true" android:title="@string/ChangeDisk" android:enabled="true" android:titleCondensed="@string/Disk" android:icon="@drawable/stdrivea" android:orderInCategory="1" android:menuCategory="system">
+        <menu>
+            <item android:id="@+id/floppya" android:title="@string/InsertFloppyA" android:titleCondensed="@string/FloppyA" android:visible="true" android:enabled="true" android:menuCategory="system" android:orderInCategory="1" />
+            <item android:id="@+id/floppyb" android:title="@string/InsertFloppyB" android:titleCondensed="@string/FloppyB" android:orderInCategory="2" android:menuCategory="system" android:visible="true" android:enabled="true"/>
+            <item android:id="@+id/ejecta" android:titleCondensed="@string/EjectFloppyA" android:title="@string/EjectFloppyA" android:orderInCategory="3" android:menuCategory="system"/>
+            <item android:id="@+id/ejectb" android:orderInCategory="4" android:title="@string/EjectFloppyB" android:menuCategory="system"/>
+        </menu>
+    </item>
+
+    <item android:id="@+id/reset" android:visible="true" android:title="@string/Reset" android:enabled="true" android:titleCondensed="@string/Reset" android:menuCategory="system" android:icon="@android:drawable/ic_menu_rotate" android:orderInCategory="2">
+        <menu>
+            <item android:id="@+id/coldreset" android:title="@string/ColdReset" android:titleCondensed="@string/ColdReset"/>
+            <item android:id="@+id/warmreset" android:title="@string/WarmReset" android:titleCondensed="@string/WarmReset"/>
+        </menu>
+    </item>
+    
+    <item android:id="@+id/savestate" android:visible="true" android:title="@string/SaveLoad" android:titleCondensed="@string/SaveLoad" android:menuCategory="system" android:icon="@drawable/saveload" android:orderInCategory="3">
+        <menu>
+        	<item android:id="@+id/ss_save" android:title="@string/save" android:titleCondensed="@string/save" android:orderInCategory="1" android:menuCategory="system" android:visible="true" android:enabled="true" />
+            <item android:id="@+id/ss_load" android:title="@string/load" android:titleCondensed="@string/load" android:orderInCategory="2" android:menuCategory="system" android:visible="true" android:enabled="true"/>
+            <item android:id="@+id/ss_delete" android:title="@string/delete" android:titleCondensed="@string/delete" android:orderInCategory="3" android:menuCategory="system" android:visible="true" android:enabled="true"/>
+            <item android:id="@+id/ss_quicksaveslot" android:title="@string/selectquicksaveslot" android:titleCondensed="@string/quicksaveslot" android:orderInCategory="4" android:menuCategory="system" android:visible="true" android:enabled="true"/>
+        </menu>
+    </item>
+
+    <item android:id="@+id/settings" android:visible="true" android:title="@string/Settings" android:titleCondensed="@string/Settings" android:menuCategory="system" android:icon="@drawable/st" android:orderInCategory="4"></item>
+    
+    <item android:id="@+id/pause" android:visible="true" android:title="@string/Pause" android:titleCondensed="@string/Pause" android:menuCategory="system" android:icon="@drawable/busybee3" android:orderInCategory="5"></item>
+    
+    <item android:id="@+id/quit" android:titleCondensed="@string/Quit" android:menuCategory="system" android:orderInCategory="6" android:title="@string/Quit" android:icon="@drawable/sttrash"></item>
+
+    <item android:id="@+id/help" android:title="@string/About" android:titleCondensed="@string/About" android:icon="@drawable/atari" android:orderInCategory="7" android:menuCategory="system"></item>
+    
+</menu>

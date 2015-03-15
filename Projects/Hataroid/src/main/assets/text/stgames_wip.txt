@@ -1,0 +1,114 @@
+SU:0:daac32c8:Sensible Soccer 1.20
+SU:70:0e7c32aa d408363a:Predator II (A); Predator II (B); Z-Out
+SU:71:f83f4af0:Running Man, The
+SU:72:e2eb615f:Yohanghir Khan Squash; HeroQuest
+SU:73:b625fb15:California Games; Projectyle
+SU:74:7accb126 fabd8cee:Treasure Trap; Gods (A); Gods (B)
+SU:75:4a31884b:F-29 Retaliator; Ball Game
+SU:100:360320d9 eb1dffac fa92548c:Final Blow; Obitus (A); Devious Designs (A); Obitus (B); Devious Designs (B)
+SU:76:c02b19b2:Storm Ball; Big Business
+SU:101:673656d0:Exile; Populous II
+SU:77:45174ca3:Toki; Dark Century
+SU:78:eeea68f7:Mercs; Violator
+SU:102:4b3a915b 00ac8a48 2c0f0c01:Godfather (C); Godfather (A); Godfather (B)
+SU:79:64f0f79b:Switchblade II; Warzone
+SU:103:0fdb2306:Super Ski II
+SU:104:c5198a1a 49868bbe:Rubicon (B); Populous II (1 Meg); Rubicon (A)
+SU:105:26357b79 41e24c69:Knights of The Sky (1 Meg); Deuteros; Space Gun (A); Populous II; Space Gun (B)
+SU:106:697551aa 2aa3f9ab:Robocop III (B); Super Soccer Challenge; Robocop III (A)
+SU:107:c40ea028:Elvira - The Arcade Game
+SU:108:223bbb5f:No Buddies Land; Spot
+SU:140:6d257865 f0174d08 21cbc136 1076d821:Lemmings 2 - The Tribes (B); Kid Kong; Bargon Attack (A); Bargon Attack (B); Bargon Attack (C); Lemmings 2 - The Tribes (A)
+SU:141:fed0238b b71bb429:B17 Flying Fortress; Centipede; Chaos Engine (A); Chaos Engine; B17 Flying Fortress (A); Chaos Engine (B); B17 Flying Fortress (B)
+SU:109:593546f4 6893205a:Big Run; Power Monger - World War I Edition; Special Forces (A); Special Forces (B)
+SU:142:cebd6d38 197c6b0e:Carl Lewis Challenge; Dalek Attack (A); Dalek Attack (B)
+SU:143:248bf974 1e767cf7 9e3c495e:War in the Gulf (A); War in the Gulf (B); AV8b Assault Harrier; Fascination (B) (A); Fascination (C); Fascination (D); Transartica (A); Transartica (B)
+SU:144:61a0f4ea 47789fda 0769c706:Fireforce; Lure of The Temptress (A); Lure of The Temptress (B); Lure of The Temptress (C); Lure of the Temptress
+SU:145:d0b6263b:Utopos (Preview) (STE); Zool
+SU:146:93a9713a 9991068d d195dbaa:Saint Dragon; Legends of Valour (C); Legends of Valour (D); Legends of Valour (B) (A); Nicky Boom 2
+SU:147:57230ca0 14810ced d01a5201:Ishar II (B) (A); Ishar II (C); SWIV; Ishar II (D)
+SU:148:52ec7040 1b65e632 07cecbca 45497f38:Reach For The Skies (B); Knightmare (A); Shadoworlds; Knightmare (B); Knightmare (Save-Game Disk Creator); Reach For The Skies (A)
+SU:149:d6dc5278:Captain Planet; Paradroid 90
+SU:80:456fe164:Frenetic; R.B.I. 2 Baseball
+SU:81:6d44396d:F-15 Strike Eagle II; Wreckers
+SU:82:0daf7d02 1706380b 47b4791d:Elf (A); Armalyte; Elf (B); Elf (C); CJ's Elephant Antics; Zone Warrior
+SU:83:71bc9bc3 55a42f6d:Thunderhawk (French) (A); Thunderhawk (French) (B); Hunter; Darkman; Jimmy White's Whirlwind Snooker
+SU:84:e26177dd 435adb50:Terminator II (A); Terminator II (B); Magic Pockets
+SU:85:13dc4168:Deathbringer (Demo); Rodland; Boston Bomb Club
+SU:86:557f7e90:R-Type II; Rolling Ronny
+SU:110:eba905f9 302ee024:Formula 1 GP (A); Formula 1 GP (B)
+SU:87:a5830c57 c16a5743:Outrun Europa (B); Titanic Blinky; Wacky Races; Outrun Europa (A)
+SU:111:d3343c08:FFLS Hard-Disk Driver; Harlequin
+SU:88:ff47772b:MiG-29M Super Fulcrum; Kick Off II - Return To Europe (HD-Version)
+SU:112:7050d11d:F1 Tornado; Video Kid
+SU:89:0a4e03eb 2fd18376:Wild Wheels; Utopia (A); Utopia (B)
+SU:113:b1b31a31:Kwiksnax; Prince of the Yolkfolk; Dizzy Panic; Spellbound Dizzy; Bubble Dizzy
+SU:114:83fd5175:Indy Heat; Parasol Stars
+SU:115:7ed84ceb:Race Drivin'
+SU:116:bb2e789d:Die Hard II; Brides of Dracula
+SU:117:24cb5abd e7175091 b92705cb:Space Crusade; European Championship 1992; John Barnes Soccer (1 Meg); Deliverance (1 Meg) (A); Deliverance (1 Meg) (B); Deliverance (1 Meg) (C)
+SU:150:2ca353fa 6659cd37 065ea381:World Class Rugby - 5 Nations Edition (B); Huckleberry Hound In Hollywood Capers; International Truck Racing; One Step Beyond; World Class Rugby - 5 Nations Edition (A)
+SU:118:80dee6bb:Bonanza Bros; Adams Family
+SU:119:0e73ed53:Graham Taylor Soccer; Sensible Soccer; Striker
+SU:151:90c57cd8 0ff00299 e1d97d03:Revenge Document Displayer 3.00; Guy Spy (B) (A); Guy Spy (D) (A); Guy Spy (C) (A); EOS
+SU:152:2cb0ea9a 31315065 1546eb8b:Windsurf Willy; Space Shuttle (A); Dogfight (B); Space Shuttle (B); Dogfight (C) (A)
+SU:153:30ab9ad1:Works Team Racing; Shufflepuck Cafe; ST-Lock
+SU:154:5eb1c0e5:Fire & Ice
+SU:155:cace1996 44b48201:Championship Manager 93 (A); Captive (A); Championship Manager 93 (B); Captive (B)
+SU:156:6cb4521e:Unreal; Leander; Elite 2 - Frontier
+SU:157::Championship Manager 94
+SU:158:76944016 efda4b97:Beast Lord (B); Beast Lord (C) (A); Bart Simpson vs. The World
+SU:159:cc90855f cb01df39 2aa438d8 7a869aad:Gobliiins (F) (C); Gobliiins (D); Gobliiins (E); Gobliiins II (B); Gobliiins II (C) (A); Gobliiins II (D); Pixie'n'dixie (A); Magic Boy (A); Gobliiins (A); Pixie'n'dixie (B); Magic Boy (B); Gobliiins (B)
+SU:55:5f62cdd0:Synth Dream; Enchanted Lands
+SU:56:b54f8327:Team Suzuki; Sarakon; Hunt for the Red October, The
+SU:57:47ee457b:Turrican II
+SU:58:93d09858 a5c1ef70 68f75eaa:Wrath of the Demon (Yellow Disk) (B); Wrath of the Demon (Red Disk) (A); Chips Challenge; Wrath of the Demon (Green Disk) (C)
+SU:90:e36e3784 c8c92016:Street Hockey (B); Robin Hood; Death Trap; Street Hockey (A)
+SU:59:56351549:Horror Zombies From the Crypt; Mighty Bombjack
+SU:91:216efe75 7bba0bb3:Face Off (B); Thunderjaws (A); Thunderjaws (B); Mega-Lo-Mania; Face Off (A)
+SU:92:e653c2d1 54adb6e0 c465d104:Beast Busters (A); World Class Rugby; Super Space Invaders (A); Beast Busters (B); Super Space Invaders (B)
+SU:93:2021f7d9 d8564d50:Shadow of the Beast II (A); Shadow of the Beast II (B); Alien Storm
+SU:94:589db95a:Deuteros; Fighter Command
+SU:95:649ab83b bc61c4a5:Shadow Sorceror; Moonfall; Smash TV (A); Smash TV (B); Hudson Hawk
+SU:120:a7d2d36a:Championship Manager
+SU:96:44c58c83 e9cdefe1:Heavy Metal Heroes; Mega Twins (A); Mega Twins (B); Oh No! More Lemmings
+SU:97:d382a1eb 9cff2134:WWF Wrestlemania (A); WWF Wrestlemania (B); James Pond II: Robocod; Black Hornet
+SU:121:3ecbe1a2:California Games II
+SU:122:c3fd64a9:Wizkid; Lotus III: the Ultimate Challenge
+SU:98:9d23cb73:First Samurai!
+SU:123:3e31473b:Tennis Cup II
+SU:99:bcbb9174 b242f3fe:Tip Off; Steve Mcqueen - Westphaser (A); Steve Mcqueen - Westphaser (B)
+SU:124:926fd7ba c3becd0b b781486a:Jim Power In Mutant Planet (A); Fast Copy Pro 1.1A (German); Jim Power In Mutant Planet (B); Tiny Skweeks; Fast Copy Pro 1.1A
+SU:125:4faeba4a:Sabre Team (1 Meg); Duckula II
+SU:126:88184034:Super Seymour Saves the Planet; Bunny Bricks
+SU:127:f435fffe 4161532e:Ishar (A); Match of the Day; Ishar (B)
+SU:160:105b76de fbf0f784:Cannon Fodder (A); Cannon Fodder (B); European Champions
+SU:128:86066a86:Columns; Cybernetix; Motorhead
+SU:161:090d976b:Sensible Soccer 1.20; Star Ball
+SU:129:9d0fa25f:Liverpool F.C.
+SU:162:44a1b571 b86cb146:Rock'n'roll Clams (A); Rock'n'roll Clams (B); Carlos (C); Rock'n'roll Clams (C); Carlos (B) (A); Trex Warrior; F1-Domark (A); F1-Domark (B)
+SU:163:ded662b2:Premier Manager II
+SU:164:daba79e8 b1a05947 7213adce 7dad3178:Ishar III (C); Ishar III (D); Ishar III (B) (A); Ishar III (E)
+SU:165:f690f3ee:Robinson's Requiem (B) (A); Robinson's Requiem (C)
+SU:166:c43559b0 6235d4dc:Killing Cloud (B) (A); Stardust (Preview); Obsession (Preview); Killing Cloud (C)
+SU:60:7ae77546:Wings of Death
+SU:61:12470ff4:World Championship Soccer; Disc
+SU:62:f467891b:Crown; Prehistoric Tale, A
+SU:63:5f74aa08 d6f9f675:Chambers of Shaolin; Killing Game Show, The (A); Killing Game Show, The (B)
+SU:64:d93a7c02:Back To The Future 3
+SU:65:e3ea572d:Blood Money; Super Monaco GP
+SU:66:c803520c:Quadrel; Great Courts II
+SU:67:6ea0c227:Jug; Hill Street Blues; Navy Seals
+SU:68:18a7a817 cf572807:Awesome (A); Awesome (B)
+SU:69:f3ee1585 d13de476:Moonshine Racers (A); Moonshine Racers (B); Hydra
+SU:130:e3172054:Sensible Soccer 1.1; New Hard-Disk Driver; Lethal Weapon
+SU:131:fece6e84 34678a7c:Vroom Data-Disk; Archer Maclean Pool; Cool World (A); Cool World (B)
+SU:132:6f858755 ef2d6950 a99de789:Street Fighter II (D); Street Fighter II (B) (A); CJ in the USA; Street Fighter II (C); Dynablasters
+SU:133:783856a0:Premier League Manager; No Second Prize
+SU:134:278ef09d 92bd9a1f fbbce590:Sleepwalker (STE) (B); Sleepwalker (STE) (C); Sleepwalker (STE) (A)
+SU:135:f21cb223:Nigel Mansell's World Championships; Big Nose
+SU:136:c92013f3:Robin Hood; Crystal Kingdom Dizzy
+SU:137:23cd4ef6:World Wrestling Federation II
+SU:138:94df8c3c:Vroom Multiplayer; Magic Land Dizzy
+SU:139:1aca1adc 15f21958 37e1446e:Ween (C); Mcdonald Land (B); Graham Gooch Cricket (A); Graham Gooch Cricket (B); Ween (A); Ween (B); Mcdonald Land (A)
+MS:0::Fish - MS Comp. 1 - (B); Corruption - MS Comp. 1 - (A); Guild of Thieves - MS Comp. 1 - (A); Corruption - MS Comp. 1 - (B); Guild of Thieves - MS Comp. 1 - (B); Fish - MS Comp. 1 - (A)

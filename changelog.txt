@@ -1,3 +1,8 @@
+v1.605
+- MIDI support
+- Support for 2nd physical joystick controller
+- New Help Website
+
 v1.561
 - fix hatari saves
 - enable on-screen android soft menu button by default
