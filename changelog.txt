@@ -1,3 +1,6 @@
+v1.607
+- disable soft-synth if usb midi out is enabled
+
 v1.606
 - Custom soft menu implemention due to Google deprecation of old API's
 - Notator fixes

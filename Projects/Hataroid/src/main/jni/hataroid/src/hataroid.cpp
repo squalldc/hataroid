@@ -2288,8 +2288,8 @@ void _loadSaveState()
 
             //if (gSaveVersion >= 1707)
             {
-                //fsMidi_setMidiHardwareOutEnabled(ConfigureParams.HataroidMidi.midiHardwareOutEnabled?1:0); // auto restored
-                //fsMidi_setMidiHardwareInEnabled(ConfigureParams.HataroidMidi.midiHardwareInEnabled?1:0); // auto restored
+                fsMidi_setMidiHardwareOutEnabled(ConfigureParams.HataroidMidi.midiHardwareOutEnabled?1:0);
+                fsMidi_setMidiHardwareInEnabled(ConfigureParams.HataroidMidi.midiHardwareInEnabled?1:0);
             }
 		}
 

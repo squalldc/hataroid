@@ -410,7 +410,7 @@ void fsMidi_applySaveState()
 	{
 		if (_fsMidiOutDevice == MIDI_DEVICE_FLUIDSYNTH)
 		{
-			if (_pendingSaveStateApplyFSynth && s_fsSynth)
+			if (_pendingSaveStateApplyFSynth && s_fsSynth && !_fsMidiHardwareOutEnabled)
 			{
 				int chan = 0;
 				for (; chan < FSMIDI_NUM_CHANNELS; ++chan)
@@ -428,24 +428,24 @@ void fsMidi_applySaveState()
 				_pendingSaveStateApplyFSynth = 0;
 			}
 		}
-	}
 
-    if (_fsMidiHardwareOutEnabled && _pendingSaveStateApplyHardware)
-    {
-        int chan = 0;
-        for (; chan < FSMIDI_NUM_CHANNELS; ++chan)
+        if (_fsMidiHardwareOutEnabled && _pendingSaveStateApplyHardware)
         {
-            int pgm = _fsMidi_saveData.program[chan];
-            if (pgm > 0 && pgm <= 128) { fsMidi_writeHardwareMidiEvent(MIDIEVENT_PROGRAM_CHANGE, chan, pgm-1, 0); }
+            int chan = 0;
+            for (; chan < FSMIDI_NUM_CHANNELS; ++chan)
+            {
+                int pgm = _fsMidi_saveData.program[chan];
+                if (pgm > 0 && pgm <= 128) { fsMidi_writeHardwareMidiEvent(MIDIEVENT_PROGRAM_CHANGE, chan, pgm-1, 0); }
 
-            int pressure = _fsMidi_saveData.pressure[chan];
-            if (pressure > 0 && pressure <= 128) { fsMidi_writeHardwareMidiEvent(MIDIEVENT_CHANNEL_PRESSURE, chan, pressure-1, 0); }
+                int pressure = _fsMidi_saveData.pressure[chan];
+                if (pressure > 0 && pressure <= 128) { fsMidi_writeHardwareMidiEvent(MIDIEVENT_CHANNEL_PRESSURE, chan, pressure-1, 0); }
 
-            int vol = _fsMidi_saveData.vol[chan];
-            if (vol > 0 && vol <= 128) { fsMidi_writeHardwareMidiEvent(MIDIEVENT_CONTROL_CHANGE, chan, 0x7, vol-1); }
+                int vol = _fsMidi_saveData.vol[chan];
+                if (vol > 0 && vol <= 128) { fsMidi_writeHardwareMidiEvent(MIDIEVENT_CONTROL_CHANGE, chan, 0x7, vol-1); }
+            }
+
+            _pendingSaveStateApplyHardware = 0;
         }
-
-        _pendingSaveStateApplyHardware = 0;
     }
 }
 
@@ -480,11 +480,11 @@ void fsMidi_update()
 				fsMidi_applySaveState();
 			}
 		}
-	}
 
-    if (_pendingSaveStateApplyHardware)
-    {
-        fsMidi_applySaveState();
+        if (_pendingSaveStateApplyHardware)
+        {
+            fsMidi_applySaveState();
+        }
     }
 }
 
@@ -499,11 +499,11 @@ void fsMidi_reset(int resetSave)
 				fluid_synth_system_reset(s_fsSynth);
 			}
 		}
-	}
 
-    if (_fsMidiHardwareOutEnabled)
-    {
-        fsMidi_writeHardwareMidiEvent(MIDIEVENT_SYSTEM_RESET, 0, 0, 0);
+        if (_fsMidiHardwareOutEnabled)
+        {
+            fsMidi_writeHardwareMidiEvent(MIDIEVENT_SYSTEM_RESET, 0, 0, 0);
+        }
     }
 
 	if (resetSave)
@@ -522,7 +522,14 @@ void fsMidi_setMidiOutEnabled(int enable)
 
 void fsMidi_setMidiHardwareOutEnabled(int enable)
 {
-    _fsMidiHardwareOutEnabled = enable;
+    if (_fsMidiHardwareOutEnabled != enable)
+    {
+        _pendingDeviceReset = 1;
+        _pendingSaveStateApplyFSynth = 1;
+        _pendingSaveStateApplyHardware = 1;
+
+        _fsMidiHardwareOutEnabled = enable;
+    }
 }
 
 void fsMidi_setMidiHardwareInEnabled(int enable)
@@ -535,8 +542,11 @@ void fsMidi_setDevice(int device)
 	if (_fsMidiOutDevice != device)
 	{
 		_fsMidiOutDevice = device;
+
 		_pendingDeviceReset = 1;
-	}
+        _pendingSaveStateApplyFSynth = 1;
+        _pendingSaveStateApplyHardware = 1;
+    }
 }
 
 void fsMidi_setSoundFont(const char *sfile)
@@ -634,6 +644,7 @@ void fsMidi_writeByte(unsigned char b)
     if (_fsMidiHardwareOutEnabled)
     {
         // TODO: buffer these up before sending to hardware device
+        // TODO: support transposing
         fsMidi_sendHardwareMidiByte(b);
 	}
 
@@ -646,6 +657,8 @@ void fsMidi_writeByte(unsigned char b)
 			switch (fluid_midi_event_get_type(evt))
 			{
                 case 0x90://NOTE_ON:
+                    if (_fsMidiHardwareOutEnabled) { return; }
+
                     if (_transpose != 0)
                     {
     					int channel = fluid_midi_event_get_channel(evt);
@@ -660,6 +673,8 @@ void fsMidi_writeByte(unsigned char b)
                     break;
 
                 case 0x80://NOTE_OFF:
+                    if (_fsMidiHardwareOutEnabled) { return; }
+
                     if (_transpose != 0)
                     {
     					int channel = fluid_midi_event_get_channel(evt);
@@ -766,9 +781,9 @@ void fsMidi_writeByte(unsigned char b)
 			{
 				if (_fsMidiOutDevice == MIDI_DEVICE_FLUIDSYNTH)
 				{
-					if (s_fsSynth)
+					if (s_fsSynth && !_fsMidiHardwareOutEnabled)
 					{
-						fluid_synth_handle_midi_event(s_fsSynth, evt);
+                        fluid_synth_handle_midi_event(s_fsSynth, evt);
 					}
 					else if (dirty)
 					{
