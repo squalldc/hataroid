@@ -381,6 +381,11 @@
 				android:summaryOn="@string/display_keepscreenawake_summary"
 				android:summaryOff="@string/display_keepscreenawake_summary"
 				android:defaultValue="false" />
+			<ListPreference android:key="pref_display_shader"
+				android:persistent="true"
+				android:entries="@array/pref_display_shader_entries"
+				android:entryValues="@array/pref_display_shader_values" android:dialogTitle="@string/shader_effect" android:title="@string/shader_effect"
+				android:defaultValue="basic" />
 		</PreferenceCategory>
 	    <PreferenceCategory 
 	        android:title="@string/pref_display_monitory_category"
@@ -743,6 +748,27 @@
                 android:summary="@string/pref_midi_setup_kk2tweaks_summary"
                 android:defaultValue="" />
 		</PreferenceCategory>
+
+		<PreferenceCategory
+			android:title="@string/pref_midi_experimental"
+			android:key="pref_midi_experimental_category">
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_midi_hardware_out"
+				android:title="@string/midi_hardware_out"
+				android:summaryOn="@string/midi_hardware_out_summary"
+				android:summaryOff="@string/midi_hardware_out_summary"
+				android:defaultValue="false" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_midi_hardware_in"
+				android:title="@string/midi_hardware_in"
+				android:summaryOn="@string/midi_hardware_in_summary"
+				android:summaryOff="@string/midi_hardware_in_summary"
+				android:defaultValue="false" />
+		</PreferenceCategory>
+
+
 	</PreferenceScreen>
 	<PreferenceScreen
 		android:key="device_category_key"

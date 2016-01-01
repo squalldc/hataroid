@@ -9,6 +9,7 @@ LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/hatari/src/includes
 LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/fluidsynth/include
 LOCAL_SRC_FILES := src/hataroid.cpp src/nativeRenderer_ogles2.cpp src/uncompressGZ.cpp
 LOCAL_SRC_FILES += src/virtKBDefs.c src/virtKBTex.c src/VirtKB.cpp src/ShortcutMap.cpp
+LOCAL_SRC_FILES += src/RTShader.cpp
 LOCAL_SRC_FILES += src/midi/fsmidi.c
 LOCAL_LDLIBS    := -llog -lGLESv2 -lz
 

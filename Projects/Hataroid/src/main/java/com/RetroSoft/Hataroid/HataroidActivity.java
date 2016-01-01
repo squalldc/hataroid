@@ -44,8 +44,10 @@ import com.RetroSoft.Hataroid.Input.InputMapConfigureView;
 import com.RetroSoft.Hataroid.Input.Shortcut.ShortcutMap;
 import com.RetroSoft.Hataroid.Input.Shortcut.ShortcutMapConfigureView;
 import com.RetroSoft.Hataroid.Midi.InstrPatchMap;
+import com.RetroSoft.Hataroid.Midi.USBMidi;
 import com.RetroSoft.Hataroid.Preferences.Settings;
 import com.RetroSoft.Hataroid.SaveState.SaveStateBrowser;
+import com.RetroSoft.Hataroid.SoftMenu.SoftMenu;
 
 
 public class HataroidActivity extends Activity implements IGameDBScanner
@@ -71,6 +73,8 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 	
 	private Input				_input = null;
 
+	private USBMidi				_usbMIDI = null;
+
 	boolean						_waitSaveAndQuit = false;
 
 	boolean						_allowDeveloperOptions = false;
@@ -78,7 +82,7 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 	boolean						_tryUseImmersiveMode = false;
 	boolean						_wantImmersiveMode = false;
 
-	Menu						_optionsMenu = null;
+	SoftMenu					_softMenu;
 
 	private GameDBHelper		_gameDB = null;
 	
@@ -120,6 +124,22 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 		{
 			e.printStackTrace();
 		}
+
+		try
+		{
+			_usbMIDI = new USBMidi();
+			_usbMIDI.init(getApplicationContext());
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		catch (Error e)
+		{
+			e.printStackTrace();
+		}
+
+		_initSoftMenu();
 
 		System.loadLibrary("hataroid");
         
@@ -343,6 +363,19 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 				_gameDB.closeDB();
 				_gameDB = null;
 			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
+		try
+		{
+			if (_usbMIDI != null)
+			{
+				_usbMIDI.deinit();
+			}
+			_usbMIDI = null;
 		}
 		catch (Exception e)
 		{
@@ -620,17 +653,17 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 	
 	void _showAudioErrorDialog()
 	{
-    	this.runOnUiThread(new Runnable()
-    	{
-			public void run()
-			{
-    			AlertDialog alertDialog = new AlertDialog.Builder(HataroidActivity.this).create();
-    			alertDialog.setTitle("Unsupported audio setting");
-    			alertDialog.setMessage("The chosen audio setting is not supported on this device.\nResetting to default audio settings.");
-				alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _resetAudioSettings(); } });
-    			alertDialog.show();
+    	this.runOnUiThread(new Runnable() {
+			public void run() {
+				AlertDialog alertDialog = new AlertDialog.Builder(HataroidActivity.this).create();
+				alertDialog.setTitle("Unsupported audio setting");
+				alertDialog.setMessage("The chosen audio setting is not supported on this device.\nResetting to default audio settings.");
+				alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int which) { _resetAudioSettings(); }
+				});
+				alertDialog.show();
 			}
-    	});
+		});
 	}
 
 	void _resetAudioSettings()
@@ -824,148 +857,7 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 
 		return options;
     }
-    
-    @Override public boolean onPrepareOptionsMenu(Menu menu)
-    {
-    	try
-    	{
-    		_optionsMenu = menu;
 
-    		// update floppy option strings
-			int [] itemID = { R.id.ejecta, R.id.ejectb };
-			String [] title = { "Eject Floppy A", "Eject Floppy B" };
-			for (int i = 0; i < 2; ++i)
-			{
-				String filename = HataroidNativeLib.emulatorGetCurFloppy(i);
-				String zipname = HataroidNativeLib.emulatorGetCurFloppyZip(i);
-				MenuItem item = menu.findItem(itemID[i]);
-				if (filename.length() == 0 && zipname.length() == 0)
-				{
-					item.setEnabled(false);
-					item.setTitle(title[i]);
-				}
-				else
-				{
-					item.setEnabled(true);
-					String [] fileSplit = filename.split("/");
-					item.setTitle(title[i] + " (" + fileSplit[fileSplit.length-1] + (zipname.length()>0 ? ("/" + zipname) : "") + ")");
-				}
-			}
-			
-			// update pause/unpause option strings
-			{
-				MenuItem item = menu.findItem(R.id.pause);
-				if (item != null)
-				{
-					boolean paused = HataroidNativeLib.emulatorGetUserPaused();
-					
-					String s = getApplicationContext().getResources().getString(paused ? R.string.Unpause : R.string.Pause);
-					item.setTitle(s);
-					item.setTitleCondensed(s);
-				}
-			}
-    	}
-    	catch (Exception e)
-    	{
-    		e.printStackTrace();
-    	}
-		
-		return super.onPrepareOptionsMenu(menu);
-    }
-    
-    @Override public boolean onCreateOptionsMenu(Menu menu)
-	{
-		MenuInflater inflater = getMenuInflater();
-		inflater.inflate(R.menu.mainmenu, menu);
-		return true;
-	}
-
-	@Override public boolean onOptionsItemSelected(MenuItem item)
-	{
-		if (_waitSaveAndQuit)
-		{
-			return true;
-		}
-
-		// Handle item selection
-		int id = item.getItemId();
-		switch (id)
-		{
-			case R.id.floppya:
-			case R.id.floppyb:
-			{
-		        Intent fileBrowser = new Intent(this, FileBrowser.class);
-		        fileBrowser.putExtra(FileBrowser.CONFIG_REFRESHDB, true);
-		        startActivityForResult(fileBrowser, (id==R.id.floppya)?ACTIVITYRESULT_FLOPPYA:ACTIVITYRESULT_FLOPPYB);
-		        return true;
-			}
-			case R.id.ejecta:
-			case R.id.ejectb:
-			{
-				int floppy = (id==R.id.ejecta)?0:1;
-				HataroidNativeLib.emulatorEjectFloppy(floppy);
-		        return true;
-			}
-			case R.id.coldreset:
-			{
-				_resetEmu(true);
-				return true;
-			}
-			case R.id.warmreset:
-			{
-				_resetEmu(false);
-				return true;
-			}
-			case R.id.pause:
-			{
-				HataroidNativeLib.emulatorToggleUserPaused();
-				return true;
-			}
-			case R.id.quit:
-			{
-				showQuitConfirm();
-				return true;
-			}
-			case R.id.settings:
-			{
-		        Intent settings = new Intent(this, Settings.class);
-		        startActivityForResult(settings, ACTIVITYRESULT_SETTINGS);
-		        return true;
-			}
-			case R.id.help:
-			{
-		        Intent help = new Intent(this, HelpActivity.class);
-		        startActivity(help);
-				return true;
-			}
-			case R.id.ss_save:
-			case R.id.ss_load:
-			case R.id.ss_delete:
-			case R.id.ss_quicksaveslot:
-			{
-				int mode = -1;
-				int resultId = -1;
-				switch (id)
-				{
-					case R.id.ss_save:	{ mode = SaveStateBrowser.SSMODE_SAVE; resultId = ACTIVITYRESULT_SS_SAVE; break; }
-					case R.id.ss_load:	{ mode = SaveStateBrowser.SSMODE_LOAD; resultId = ACTIVITYRESULT_SS_LOAD; break; }
-					case R.id.ss_delete:{ mode = SaveStateBrowser.SSMODE_DELETE; resultId = ACTIVITYRESULT_SS_DELETE; break; }
-					case R.id.ss_quicksaveslot: { mode = SaveStateBrowser.SSMODE_QUICKSAVESLOT; resultId = ACTIVITYRESULT_SS_QUICKSAVESLOT; break; }
-				}
-				if (mode >= 0)
-				{
-			        Intent browser = new Intent(this, SaveStateBrowser.class);
-			        browser.putExtra(SaveStateBrowser.CONFIG_MODE, mode);
-			        startActivityForResult(browser, resultId);
-			        return true;
-				}
-				break;
-			}
-		}
-
-		return super.onOptionsItemSelected(item);
-	}
-	
 	void _resetEmu(boolean cold)
 	{
 		if (cold)
@@ -1105,6 +997,11 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 				showQuitConfirm();
 				return false;
 			}
+			case KeyEvent.KEYCODE_MENU:
+			{
+				showSoftMenu(0);
+				return false;
+			}
 			default:
 			{
 				break;
@@ -1171,41 +1068,36 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 
 	public void showOptionsDialog()
     {
-    	this.runOnUiThread(new Runnable()
-    	{
-			public void run()
-			{
-		        Intent settings = new Intent(HataroidActivity.instance, Settings.class);
-		        startActivityForResult(settings, ACTIVITYRESULT_SETTINGS);
+    	this.runOnUiThread(new Runnable() {
+			public void run() {
+				Intent settings = new Intent(HataroidActivity.instance, Settings.class);
+				startActivityForResult(settings, ACTIVITYRESULT_SETTINGS);
 			}
 		});
     }
-	
-	public void showSoftMenu(int optionType)
+
+	public void showFloppyAInsert()
 	{
-		final int subMenuType = optionType;
-    	this.runOnUiThread(new Runnable()
-    	{
-			public void run()
-			{
-				openOptionsMenu();
-				if (_optionsMenu != null)
-				{
-					int actionID = -1;
-					switch (subMenuType)
-					{
-						case 1: { actionID = R.id.disk; break; }
-					}
-					if (actionID >= 0)
-					{
-						_optionsMenu.performIdentifierAction(actionID, 0);
-					}
-				}
-				_optionsMenu = null;
+		this.runOnUiThread(new Runnable() {
+			public void run() {
+				Intent fileBrowser = new Intent(HataroidActivity.instance, FileBrowser.class);
+				fileBrowser.putExtra(FileBrowser.CONFIG_REFRESHDB, true);
+				startActivityForResult(fileBrowser, ACTIVITYRESULT_FLOPPYA);
 			}
 		});
 	}
-	
+
+	public void showFloppyBInsert()
+	{
+		this.runOnUiThread(new Runnable() {
+			public void run() {
+				Intent fileBrowser = new Intent(HataroidActivity.instance, FileBrowser.class);
+				fileBrowser.putExtra(FileBrowser.CONFIG_REFRESHDB, true);
+				startActivityForResult(fileBrowser, ACTIVITYRESULT_FLOPPYB);
+			}
+		});
+	}
+
 	static boolean _showingGenericDialog = false;
 	static Object _genericDialogMutex = new Object();
 	static Map<Integer,AlertDialog> _genericDialogs = new HashMap<Integer,AlertDialog>();
@@ -1263,7 +1155,7 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 
     			alertDialog.show();
 			}
-    	});
+		    	});
     	
     	//if (ok == 0 && noyes == 0)
     	{
@@ -1278,8 +1170,25 @@ public class HataroidActivity extends Activity implements IGameDBScanner
     	
     	return dialogID;
 	}
-    
-    boolean _hasGenericDialog(int dialogID)
+
+	public void updateDialogMessage(final int dialogID, final String message)
+	{
+		this.runOnUiThread(new Runnable() {
+			public void run() {
+				synchronized(_genericDialogMutex)
+				{
+					AlertDialog d = _genericDialogs.get(dialogID);
+					if (d != null)
+					{
+						String msg = message;
+						d.setMessage(msg);
+					}
+				}
+			}
+		});
+	}
+
+	boolean _hasGenericDialog(int dialogID)
     {
     	boolean exists = false;
 		synchronized(_genericDialogMutex)
@@ -1560,11 +1469,15 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 			int alwaysFinishActivities = 0;
 			if (Build.VERSION.SDK_INT >= 17)
 			{
-				alwaysFinishActivities = android.provider.Settings.System.getInt(getApplicationContext().getContentResolver(), android.provider.Settings.Global.ALWAYS_FINISH_ACTIVITIES, 0);
+				alwaysFinishActivities = android.provider.Settings.Global.getInt(
+						getApplicationContext().getContentResolver(),
+						android.provider.Settings.Global.ALWAYS_FINISH_ACTIVITIES, 0);
 			}
 			else
 			{
-				alwaysFinishActivities = android.provider.Settings.System.getInt(getApplicationContext().getContentResolver(), android.provider.Settings.System.ALWAYS_FINISH_ACTIVITIES, 0);
+				alwaysFinishActivities = android.provider.Settings.System.getInt(
+						getApplicationContext().getContentResolver(),
+						android.provider.Settings.System.ALWAYS_FINISH_ACTIVITIES, 0);
 			}
 			
 			return (alwaysFinishActivities == 1);
@@ -1639,4 +1552,120 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 		}
 		return data;
 	}
+
+	public void sendMidiByte(byte b)
+	{
+		if (_usbMIDI != null)
+		{
+			_usbMIDI.sendMidiByte(b);
+		}
+	}
+
+	void _initSoftMenu()
+	{
+		_softMenu = new SoftMenu();
+		_softMenu.create(getApplicationContext());
+	}
+
+	public void showSoftMenu(int optionType)
+	{
+		final int subMenuType = optionType;
+		this.runOnUiThread(new Runnable()
+		{
+			public void run()
+			{
+				View rootView = HataroidActivity.this.findViewById(android.R.id.content);
+
+				_softMenu.prepare();
+				_softMenu.show(HataroidActivity.instance, rootView, subMenuType);
+			}
+		});
+	}
+
+	public boolean onSoftMenuItemSelected(int itemID)
+	{
+		if (_waitSaveAndQuit)
+		{
+			return true;
+		}
+
+		// Handle item selection
+		int id = itemID;
+		switch (id)
+		{
+			case R.id.floppya:
+			case R.id.floppyb:
+			{
+				Intent fileBrowser = new Intent(this, FileBrowser.class);
+				fileBrowser.putExtra(FileBrowser.CONFIG_REFRESHDB, true);
+				startActivityForResult(fileBrowser, (id==R.id.floppya)?ACTIVITYRESULT_FLOPPYA:ACTIVITYRESULT_FLOPPYB);
+				return true;
+			}
+			case R.id.ejecta:
+			case R.id.ejectb:
+			{
+				int floppy = (id==R.id.ejecta)?0:1;
+				HataroidNativeLib.emulatorEjectFloppy(floppy);
+				return true;
+			}
+			case R.id.coldreset:
+			{
+				_resetEmu(true);
+				return true;
+			}
+			case R.id.warmreset:
+			{
+				_resetEmu(false);
+				return true;
+			}
+			case R.id.pause:
+			{
+				HataroidNativeLib.emulatorToggleUserPaused();
+				return true;
+			}
+			case R.id.quit:
+			{
+				showQuitConfirm();
+				return true;
+			}
+			case R.id.settings:
+			{
+				Intent settings = new Intent(this, Settings.class);
+				startActivityForResult(settings, ACTIVITYRESULT_SETTINGS);
+				return true;
+			}
+			case R.id.help:
+			{
+				Intent help = new Intent(this, HelpActivity.class);
+				startActivity(help);
+				return true;
+			}
+			case R.id.ss_save:
+			case R.id.ss_load:
+			case R.id.ss_delete:
+			case R.id.ss_quicksaveslot:
+			{
+				int mode = -1;
+				int resultId = -1;
+				switch (id)
+				{
+					case R.id.ss_save:	{ mode = SaveStateBrowser.SSMODE_SAVE; resultId = ACTIVITYRESULT_SS_SAVE; break; }
+					case R.id.ss_load:	{ mode = SaveStateBrowser.SSMODE_LOAD; resultId = ACTIVITYRESULT_SS_LOAD; break; }
+					case R.id.ss_delete:{ mode = SaveStateBrowser.SSMODE_DELETE; resultId = ACTIVITYRESULT_SS_DELETE; break; }
+					case R.id.ss_quicksaveslot: { mode = SaveStateBrowser.SSMODE_QUICKSAVESLOT; resultId = ACTIVITYRESULT_SS_QUICKSAVESLOT; break; }
+				}
+				if (mode >= 0)
+				{
+					Intent browser = new Intent(this, SaveStateBrowser.class);
+					browser.putExtra(SaveStateBrowser.CONFIG_MODE, mode);
+					startActivityForResult(browser, resultId);
+					return true;
+				}
+				break;
+			}
+		}
+
+		return false;
+	}
+
 }

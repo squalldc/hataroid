@@ -1,0 +1,51 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+
+apply plugin: 'com.android.application'
+
+dependencies {
+	compile project(':MIDIDriver')
+	compile 'com.android.support:appcompat-v7:21.0.3'
+}
+
+android {
+	compileSdkVersion 21
+	buildToolsVersion "21.1.2"
+
+	defaultConfig {
+		applicationId "com.RetroSoft.Hataroid"
+		minSdkVersion 9
+		targetSdkVersion 9
+		compileOptions {
+			sourceCompatibility JavaVersion.VERSION_1_5
+			targetCompatibility JavaVersion.VERSION_1_5
+		}
+	}
+
+	sourceSets.main {
+		jniLibs.srcDir 'src/main/libs'
+		jni.srcDirs = [] //disable automatic ndk-build call
+	}
+
+	// call regular ndk-build(.cmd) script from app directory
+	task ndkBuild(type: Exec) {
+		def ndkDir = project.plugins.findPlugin('com.android.application').getNdkFolder()
+		def ndkBuildCmd = "$ndkDir/ndk-build"
+
+		if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+			ndkBuildCmd = "$ndkBuildCmd" + ".cmd"
+		}
+
+		commandLine "$ndkBuildCmd", '-j8', 'NDK_PROJECT_PATH=build', 'APP_PROJECT_PATH=src/main', 'APP_BUILD_SCRIPT=src/main/jni/Android.mk', 'NDK_APPLICATION_MK=src/main/jni/Application.mk'
+	}
+
+	tasks.withType(JavaCompile) {
+		compileTask -> compileTask.dependsOn ndkBuild
+	}
+
+	buildTypes {
+		release {
+			minifyEnabled false
+			proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+		}
+	}
+}

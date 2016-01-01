@@ -39,6 +39,7 @@ public class HataroidNativeLib
 	public static native String emulatorGetCurFloppyZip(int floppy);
 
 	public static native void emulatorSendMidiInstrPatch(int[] instrDefs);
+	public static native void emulatorReceiveHardwareMidiBytes(int count, byte[] b);
 
 	public static native void hataroidDialogResult(int result);
 	public static native void hataroidSettingsResult(int result);

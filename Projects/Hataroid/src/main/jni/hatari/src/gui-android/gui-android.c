@@ -55,7 +55,7 @@ bool Dialog_DoProperty(void)
 	clearEmuCommands();
 	clearSettingsResult();
 
-	showOptionsDialog();
+	showOptionsDialog(0);
 
 	for (;;)
 	{

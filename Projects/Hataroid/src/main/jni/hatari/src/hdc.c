@@ -889,7 +889,7 @@ void HDC_WriteCommandPacket(void)
 		//FDCSectorCountRegister = 0;
 		/* If there's no controller, the interrupt line stays high */
 		HDCCommand.returnCode = HD_STATUS_ERROR;
-		MFP_GPIP |= 0x20;
+		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH );
 		return;
 	}
 

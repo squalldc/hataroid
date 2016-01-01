@@ -1,0 +1,39 @@
+/*
+   Author: Themaister
+   License: Public domain
+*/
+#if GL_FRAGMENT_PRECISION_HIGH
+	precision highp float;
+#endif
+
+uniform sampler2D mpass_texture;
+uniform vec2 color_texture_sz;
+uniform vec2 color_texture_pow2_sz;
+
+varying vec2 texCoord;
+
+varying vec2 sine_coord_omega;
+
+//#pragma parameter SCANLINE_BASE_BRIGHTNESS "Scanline Base Brightness" 0.95 0.0 1.0 0.01
+//#pragma parameter SCANLINE_SINE_COMP_A "Scanline Sine Comp A" 0.05 0.0 0.10 0.01
+//#pragma parameter SCANLINE_SINE_COMP_B "Scanline Sine Comp B" 0.15 0.0 1.0 0.05
+
+//#ifdef PARAMETER_UNIFORM
+//uniform float SCANLINE_BASE_BRIGHTNESS;
+//uniform float SCANLINE_SINE_COMP_A;
+//uniform float SCANLINE_SINE_COMP_B;
+//#else
+#define SCANLINE_BASE_BRIGHTNESS 0.95
+#define SCANLINE_SINE_COMP_A 0.00
+#define SCANLINE_SINE_COMP_B 0.15
+//#endif
+
+void main()
+{
+   vec2 sine_comp = vec2(SCANLINE_SINE_COMP_A, SCANLINE_SINE_COMP_B);
+   vec3 res = texture2D(mpass_texture, texCoord).xyz;
+   vec3 scanline = res * (SCANLINE_BASE_BRIGHTNESS + dot(sine_comp * sin(texCoord * sine_coord_omega), vec2(1.0, 1.0)));
+
+   gl_FragColor = vec4(scanline.xyz, 1.0);
+}
+

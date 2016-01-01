@@ -14,6 +14,7 @@
 #include "nativeRenderer_ogles2.h"
 #include "ShortcutMap.h"
 #include "VirtKB.h"
+#include "RTShader.h"
 #include "BitFlags.h"
 #include "hataroid.h"
 
@@ -228,7 +229,7 @@ static void VirtKB_updateHardwareMouse();
 static void VirtKB_clearMousePresses();
 
 static void VirtKB_onRender();
-static void VirtKB_RenderVerts(Shader *pShader, GLfloat *v, GLsizei vstride, GLuint texID, GLushort *ind, int numVerts);
+static void VirtKB_RenderVerts(RTShader *pShader, GLfloat *v, GLsizei vstride, GLuint texID, GLushort *ind, int numVerts);
 static void VirtKB_UpdateRectVerts(	GLfloat *v, float x1, float y1, float x2, float y2,
 								float u1, float v1, float u2, float v2,
 								float r, float g, float b, float a);
@@ -250,6 +251,9 @@ static void VirtKB_QuickSaveState(const VirtKeyDef *keyDef, uint32_t uParam1, bo
 static void VirtKB_QuickLoadState(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 static void VirtKB_ShowSoftMenu(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 static void VirtKB_ShowSoftFloppyMenu(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
+static void VirtKB_ShowFloppyAInsert(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
+static void VirtKB_ShowFloppyBInsert(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
+static void VirtKB_ShowSettingsMenu(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 
 void VirtKB_RefreshKB()
 {
@@ -681,6 +685,9 @@ static void VirtKB_InitCallbacks()
 
 				case VKB_KEY_ANDROID_MENU:			kcb->onKeyEvent = VirtKB_ShowSoftMenu; break;
 				case VKB_KEY_FLOPPY_MENU:			kcb->onKeyEvent = VirtKB_ShowSoftFloppyMenu; break;
+				case VKB_KEY_FLOPPYA_INSERT:		kcb->onKeyEvent = VirtKB_ShowFloppyAInsert; break;
+				case VKB_KEY_FLOPPYB_INSERT:		kcb->onKeyEvent = VirtKB_ShowFloppyBInsert; break;
+				case VKB_KEY_SETTINGS_MENU:			kcb->onKeyEvent = VirtKB_ShowSettingsMenu; break;
 			}
 		}
 		else if (vk->flags & (FLAG_STKEY|FLAG_STFNKEY))
@@ -1052,31 +1059,48 @@ static void VirtKB_SetupShader()
 	}
 }
 
-static void VirtKB_RenderVerts(Shader *pShader, GLfloat *v, GLsizei vstride, GLuint texID, GLushort *ind, int numVerts)
+static void VirtKB_RenderVerts(RTShader *pShader, GLfloat *v, GLsizei vstride, GLuint texID, GLushort *ind, int numVerts)
 {
+	if (pShader == 0 || !pShader->_ready)
+	{
+		return;
+	}
+
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_BLEND);
 
-	glUseProgram(pShader->shaderProgram);
+	glUseProgram(pShader->_shaderProgram);
 
-	glVertexAttribPointer(pShader->paramHandles[ShaderParam_Pos], 3, GL_FLOAT, GL_FALSE, vstride, v);
-	glVertexAttribPointer(pShader->paramHandles[ShaderParam_Color], 4, GL_FLOAT, GL_FALSE, vstride, v+3);
-	glVertexAttribPointer(pShader->paramHandles[ShaderParam_TexCoord], 2, GL_FLOAT, GL_FALSE, vstride, v+7);
+	if (pShader->_paramHandles[RTShader::ShaderParam_Pos] >= 0)
+	{
+		glVertexAttribPointer(pShader->_paramHandles[RTShader::ShaderParam_Pos], 3, GL_FLOAT, GL_FALSE, vstride, v);
+		glEnableVertexAttribArray(pShader->_paramHandles[RTShader::ShaderParam_Pos]);
+	}
 
-	glEnableVertexAttribArray(pShader->paramHandles[ShaderParam_Pos]);
-	glEnableVertexAttribArray(pShader->paramHandles[ShaderParam_Color]);
-	glEnableVertexAttribArray(pShader->paramHandles[ShaderParam_TexCoord]);
+	if (pShader->_paramHandles[RTShader::ShaderParam_Color] >= 0)
+	{
+		glVertexAttribPointer(pShader->_paramHandles[RTShader::ShaderParam_Color], 4, GL_FLOAT, GL_FALSE, vstride, v+3);
+		glEnableVertexAttribArray(pShader->_paramHandles[RTShader::ShaderParam_Color]);
+	}
+	if (pShader->_paramHandles[RTShader::ShaderParam_TexCoord] >= 0)
+	{
+		glVertexAttribPointer(pShader->_paramHandles[RTShader::ShaderParam_TexCoord], 2, GL_FLOAT, GL_FALSE, vstride, v+7);
+		glEnableVertexAttribArray(pShader->_paramHandles[RTShader::ShaderParam_TexCoord]);
+	}
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texID);
-	glUniform1i(pShader->paramHandles[ShaderParam_Sampler], 0);
+	if (pShader->_paramHandles[RTShader::ShaderParam_Sampler] >= 0)
+	{
+		glUniform1i(pShader->_paramHandles[RTShader::ShaderParam_Sampler], 0);
+	}
 
 	glDrawElements(GL_TRIANGLES, 6*numVerts, GL_UNSIGNED_SHORT, ind);
 }
 
 static void VirtKB_onRender()
 {
-	Shader *pShader = Renderer_getSimpleShader();
+	RTShader *pShader = Renderer_getColorModShader();
 
 	// keyboard
 	if (s_showKeyboard)
@@ -1358,17 +1382,10 @@ void VirtKB_updateInput()
 
 			//s_mouseMoved = 1;
 
-			float sX = (STRes == ST_LOW_RES) ? 0.5f : 1;
-			float sY = 1;//(STRes == ST_MEDIUM_RES || STRes == ST_LOW_RES) ? 0.5f : 1;
+			float sX = 1;
+			float sY = (STRes == ST_MEDIUM_RES) ? 0.5f : 1;
 			sX *= s_mouseSpeed / emuScrZoomX;
 			sY *= s_mouseSpeed / emuScrZoomY;
-
-			if (!ConfigureParams.Screen.bAllowOverscan && (STRes == ST_MEDIUM_RES || STRes == ST_LOW_RES))
-			{
-				// HACK: TODO: work out properly
-				sX *= (1.13f/1.15f);
-				sY *= (0.55f/1.19f);
-			}
 
 			int dx = (int)(s_mouseDx * sX);
 			int dy = (int)(s_mouseDy * sY);
@@ -2214,6 +2231,9 @@ static void VirtKB_QuickLoadState(const VirtKeyDef *keyDef, uint32_t uParam1, bo
 
 static void VirtKB_ShowSoftMenu(const VirtKeyDef *keyDef, uint32_t uParam1, bool down) { if (down) { showSoftMenu(s_curEnv, 0); } }
 static void VirtKB_ShowSoftFloppyMenu(const VirtKeyDef *keyDef, uint32_t uParam1, bool down) { if (down) { showSoftMenu(s_curEnv, 1); } }
+static void VirtKB_ShowSettingsMenu(const VirtKeyDef *keyDef, uint32_t uParam1, bool down) { if (down) { showOptionsDialog(s_curEnv); } }
+static void VirtKB_ShowFloppyAInsert(const VirtKeyDef *keyDef, uint32_t uParam1, bool down) { if (down) { showFloppyAInsert(s_curEnv); } }
+static void VirtKB_ShowFloppyBInsert(const VirtKeyDef *keyDef, uint32_t uParam1, bool down) { if (down) { showFloppyBInsert(s_curEnv); } }
 
 void VirtKB_ResetAllInputPresses()
 {

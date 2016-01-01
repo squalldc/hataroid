@@ -14,6 +14,8 @@
 #include "VirtKBDefs.h"
 #include "VirtKB.h"
 
+#include "RTShader.h"
+
 extern "C"
 {
 	extern SDL_mutex* g_videoTex_mutex;
@@ -27,7 +29,7 @@ extern "C"
 	extern volatile int g_videoFrameReady;
 };
 
-static const char gTextureVertexShader[] =
+static const char gBasicVertexShader[] =
 	"attribute vec4 a_position;   \n"
 	"attribute vec2 a_texCoord;   \n"
 	"varying vec2 v_texCoord;     \n"
@@ -37,7 +39,7 @@ static const char gTextureVertexShader[] =
 	"	v_texCoord = a_texCoord;  \n"
 	"}                            \n";
 
-static const char gTextureFragmentShader[] =
+static const char gBasicFragmentShader[] =
 	"precision mediump float;                            \n"
 	"varying vec2 v_texCoord;                            \n"
 	"uniform sampler2D s_texture;                        \n"
@@ -46,7 +48,7 @@ static const char gTextureFragmentShader[] =
 	"	gl_FragColor = texture2D(s_texture, v_texCoord); \n"
 	"}													 \n";
 
-static const char gSimpleVertexShader[] =
+static const char gColorModVertexShader[] =
 	"attribute vec4 a_position;   \n"
 	"attribute vec4 a_color;      \n"
 	"attribute vec2 a_texCoord;   \n"
@@ -59,7 +61,7 @@ static const char gSimpleVertexShader[] =
 	"   v_color = a_color;        \n"
 	"}                            \n";
 
-static const char gSimpleFragmentShader[] =
+static const char gColorModFragmentShader[] =
 	"precision mediump float;                            \n"
     "varying vec4 v_color;                               \n"
 	"varying vec2 v_texCoord;                            \n"
@@ -69,8 +71,12 @@ static const char gSimpleFragmentShader[] =
 	"	gl_FragColor = v_color * texture2D(s_texture, v_texCoord); \n"
 	"}													 \n";
 
-static Shader s_vertTexShader;
-static Shader s_simpleShader;
+static RTShader* s_basicShader = 0;
+static RTShader* s_colorModShader = 0;
+
+#define kSCREENSHADER_NAME_LEN 512
+static char* s_setScreenShaderName = 0;
+static RTShader* s_curScreenShader = 0;
 
 static GLuint gTextureID = 0;
 static GLuint gWhiteTexID = 0;
@@ -111,10 +117,14 @@ GLsizei stride = 5 * sizeof(GLfloat); // 3 for position, 2 for texture
 
 int getScreenWidth()		{ return gScrWidth; }
 int getScreenHeight()		{ return gScrHeight; }
-Shader *Renderer_getSimpleShader()	{ return &s_simpleShader; }
+
+RTShader* Renderer_getColorModShader()	{ return s_colorModShader; }
 GLuint getWhiteTexture()	{ return gWhiteTexID; }
 
 static void updateDispParams(int scrWidth, int scrHeight, int texWidth, int texHeight);
+
+void deleteFallbackShaders();
+void Renderer_unloadCurScreenShader();
 
 static const int MaxRenderCallbacks = 20;
 static RenderCallback s_RenderCallbacks[MaxRenderCallbacks];
@@ -132,114 +142,6 @@ static void checkGlError(const char* op)
     {
     	Debug_Printf("after %s() glError (0x%x)\n", op, error);
     }
-}
-
-void unloadShader(Shader *shader)
-{
-	if (shader->shaderProgram != 0)
-	{
-		glDeleteProgram(shader->shaderProgram);
-	}
-	memset(shader, 0, sizeof(Shader));
-}
-
-GLuint loadShaderSource(GLenum shaderType, const char* pSource)
-{
-	GLuint shader = glCreateShader(shaderType);
-	if (shader)
-	{
-		glShaderSource(shader, 1, &pSource, NULL);
-		glCompileShader(shader);
-		GLint compiled = 0;
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
-		if (!compiled)
-		{
-			GLint infoLen = 0;
-			glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
-			if (infoLen)
-			{
-				char* buf = (char*) malloc(infoLen);
-				if (buf)
-				{
-					glGetShaderInfoLog(shader, infoLen, NULL, buf);
-					Debug_Printf("Could not compile shader %d:\n%s\n", shaderType, buf);
-					free(buf);
-				}
-				glDeleteShader(shader);
-				shader = 0;
-			}
-		}
-	}
-	return shader;
-}
-
-GLuint createProgram(const char* pVertexSource, const char* pFragmentSource)
-{
-	GLuint vertexShader = loadShaderSource(GL_VERTEX_SHADER, pVertexSource);
-	if (!vertexShader)
-	{
-		return 0;
-	}
-
-	GLuint pixelShader = loadShaderSource(GL_FRAGMENT_SHADER, pFragmentSource);
-	if (!pixelShader)
-	{
-		return 0;
-	}
-
-	GLuint program = glCreateProgram();
-	if (program)
-	{
-		glAttachShader(program, vertexShader);
-		checkGlError("glAttachShaderV");
-		glAttachShader(program, pixelShader);
-		checkGlError("glAttachShaderP");
-		glLinkProgram(program);
-		GLint linkStatus = GL_FALSE;
-		glGetProgramiv(program, GL_LINK_STATUS, &linkStatus);
-		if (linkStatus != GL_TRUE)
-		{
-			GLint bufLength = 0;
-			glGetProgramiv(program, GL_INFO_LOG_LENGTH, &bufLength);
-			if (bufLength)
-			{
-				char* buf = (char*) malloc(bufLength);
-				if (buf)
-				{
-					glGetProgramInfoLog(program, bufLength, NULL, buf);
-					Debug_Printf("Could not link program:\n%s\n", buf);
-					free(buf);
-				}
-			}
-			glDeleteProgram(program);
-			program = 0;
-		}
-	}
-	return program;
-}
-
-bool createShader(Shader *dst, const char* pVertexSource, const char* pFragmentSource, const char* attribNames[ShaderParam_Max])
-{
-	memset(dst, 0, sizeof(Shader));
-
-	dst->shaderProgram = createProgram(pVertexSource, pFragmentSource);
-	if (!dst->shaderProgram)
-	{
-		Debug_Printf("Could not create program.");
-		return false;
-	}
-
-	for (int i = 0; i < ShaderParam_Max; ++i)
-	{
-		if (attribNames[i])
-		{
-			dst->paramHandles[i] = glGetAttribLocation(dst->shaderProgram, attribNames[i]);
-			checkGlError("glGetAttribLocation");
-			Debug_Printf("glGetAttribLocation(\"%s\") = %d\n", attribNames[i], dst->paramHandles[i]);
-		}
-	}
-
-	return true;
 }
 
 bool Renderer_addRenderCallback(RenderCallback pCallback)
@@ -360,8 +262,8 @@ void updateVideoTex2D(GLuint textureid, GLubyte * pixels, int scrWidth, int scrH
 
 void cleanupGraphics()
 {
-	unloadShader(&s_vertTexShader);
-	unloadShader(&s_simpleShader);
+	Renderer_unloadCurScreenShader();
+	deleteFallbackShaders();
 
 	if (gTextureID != 0)
 	{
@@ -377,22 +279,123 @@ void cleanupGraphics()
 	s_numRenderCalbacks = 0;
 }
 
-char *_loadShaderFile(const char *path, JNIEnv *env)
+void deleteFallbackShaders()
 {
-	int len = 0;
-	int id = 0;
-	char *buf = (char*)hataroid_getAssetDataRef(env, &path[8], 0, &len, &id);
-	if (buf)
+	if (s_colorModShader != 0)
 	{
-		char *bufZ = new char [len+1];
-		memcpy(bufZ, buf, len);
-		bufZ[len] = 0;
-
-		hataroid_releaseAssetDataRef(id);
-
-		return bufZ;
+		delete s_colorModShader;
+		s_colorModShader = 0;
 	}
-	return 0;
+	if (s_basicShader != 0)
+	{
+		delete s_basicShader;
+		s_basicShader = 0;
+	}
+}
+
+bool createFallbackShaders()
+{
+	deleteFallbackShaders();
+
+	Debug_Printf("loading fallback shaders in memory");
+
+	{
+		s_basicShader = new RTShader();
+		const char *shaderParamMap[RTShader::ShaderParam_Max] = {"a_position", "a_texCoord", 0, "s_texture", 0, 0, 0};
+		if (!s_basicShader->loadShaderDirect("basic", gBasicVertexShader, gBasicFragmentShader, shaderParamMap))
+		{
+			Debug_Printf("Could not create fallback shader: Basic\n");
+			return false;
+		}
+	}
+
+	{
+		s_colorModShader = new RTShader();
+		const char *shaderParamMap[RTShader::ShaderParam_Max] = {"a_position", "a_texCoord", "a_color", "s_texture", 0, 0, 0};
+		if (!s_colorModShader->loadShaderDirect("colormod", gColorModVertexShader, gColorModFragmentShader, shaderParamMap))
+		{
+			Debug_Printf("Could not create fallback shader: ColorMod\n");
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool Renderer_setScreenShader(const char *shaderName)
+{
+	if (s_setScreenShaderName == 0)
+	{
+		s_setScreenShaderName = new char [kSCREENSHADER_NAME_LEN];
+	}
+
+	if (shaderName == 0 || strcmp(shaderName, "basic") == 0)
+	{
+		s_setScreenShaderName[0] = 0;
+	}
+	else
+	{
+		strcpy(s_setScreenShaderName, shaderName);
+	}
+
+	Debug_Printf("pending shader: '%s'", s_setScreenShaderName);
+
+	return true;
+}
+
+void Renderer_unloadCurScreenShader()
+{
+	if (s_curScreenShader != 0)
+	{
+		delete s_curScreenShader;
+		s_curScreenShader = 0;
+	}
+}
+
+bool _initCurScreenShader(JNIEnv * env)
+{
+	if (env == 0)
+	{
+		return true;
+	}
+
+	bool res = true;
+	if (s_setScreenShaderName != 0 && s_setScreenShaderName[0] != 0)
+	{
+		if (s_curScreenShader != 0 && s_curScreenShader->isShaderName(s_setScreenShaderName))
+		{
+			return true;
+		}
+
+		Renderer_unloadCurScreenShader();
+
+		Debug_Printf("loading screen shader: '%s'", s_setScreenShaderName);
+
+		char *shaderPath = new char [FILENAME_MAX];
+		const char *pathPrefix = "asset://shaders/";
+		strcpy(shaderPath, pathPrefix);
+		strcpy(&shaderPath[strlen(shaderPath)], s_setScreenShaderName);
+		strcpy(&shaderPath[strlen(shaderPath)], ".shader");
+
+		s_curScreenShader = new RTShader();
+		if (!s_curScreenShader->loadShader(env, s_setScreenShaderName, shaderPath))
+		{
+			Renderer_unloadCurScreenShader();
+
+			// use fallback shader
+			Debug_Printf("failed loading screen shader: '%s'. Falling back to default shaders ", s_setScreenShaderName);
+			s_setScreenShaderName[0] = 0;
+			res = false;
+		}
+		delete [] shaderPath;
+	}
+
+	if (s_setScreenShaderName == 0 || s_setScreenShaderName[0] == 0)
+	{
+		Renderer_unloadCurScreenShader();
+	}
+
+	return res;
 }
 
 bool setupGraphics(int w, int h, JNIEnv * env)
@@ -409,53 +412,6 @@ bool setupGraphics(int w, int h, JNIEnv * env)
 	
 	Debug_Printf("setupGraphics(%d, %d)", w, h);
 
-	{
-		bool res = true;
-
-		/*
-		char *vsh = _loadShaderFile("asset://shaders/simple.vsh", env);
-		char *fsh = _loadShaderFile("asset://shaders/simple.fsh", env);
-		if (vsh != 0 && fsh != 0)
-		{
-			Debug_Printf("loading simple shaders from assets");
-			const char *shaderParamNames[ShaderParam_Max] = { "a_position", "a_texCoord", 0, "s_texture" };
-			if (!createShader(&s_vertTexShader, vsh, fsh, shaderParamNames))
-			{
-				Debug_Printf("Could not create shader.");
-				res = false;
-			}
-		}
-		else
-		*/
-		{
-			// safe fallback
-			Debug_Printf("loading simple shaders in memory");
-			const char *shaderParamNames[ShaderParam_Max] = { "a_position", "a_texCoord", 0, "s_texture" };
-			if (!createShader(&s_vertTexShader, gTextureVertexShader, gTextureFragmentShader, shaderParamNames))
-			{
-				Debug_Printf("Could not create shader.");
-				res = false;
-			}
-		}
-
-		//if (vsh != 0) { delete [] vsh; }
-		//if (fsh != 0) { delete [] fsh; }
-
-		if (!res)
-		{
-			return res;
-		}
-	}
-	{
-		Debug_Printf("loading ui shaders in memory");
-		const char *shaderParamNames[ShaderParam_Max] = { "a_position", "a_texCoord", "a_color", "a_texCoord" };
-		if (!createShader(&s_simpleShader, gSimpleVertexShader, gSimpleFragmentShader, shaderParamNames))
-		{
-			Debug_Printf("Could not create shader.");
-			return false;
-		}
-	}
-
     glViewport(0, 0, w, h);
 	checkGlError("glViewport");
 
@@ -467,6 +423,13 @@ bool setupGraphics(int w, int h, JNIEnv * env)
 	dispParamsChanged = true;
 
 	allocWhiteTex2D();
+
+	if (!createFallbackShaders())
+	{
+		return false;
+	}
+
+	_initCurScreenShader(env);
 
 	return true;
 }
@@ -498,26 +461,14 @@ void Renderer_setScreenPanZoomRaw(float scrZoomX, float scrZoomY, float scrPanX,
 
 float Renderer_getEmuScreenZoomX()
 {
-	int texW = g_videoTex_width;
-	int emuScrW = g_surface_width;
-
-	GLfloat texWRatio = (float)emuScrW / (float)texW;
-	GLfloat scrScale = gScrWidth/1024.0f;
-
-	return (scrScale*curZoomX) / texWRatio;
-//	return curZoomX;
+    int emuScrW = g_surface_width;
+    return curZoomX * ((float)gScrWidth/emuScrW);
 }
 
 float Renderer_getEmuScreenZoomY()
 {
-	int texH = g_videoTex_height;
-	int emuScrH = g_surface_height;
-
-	GLfloat texHRatio = (float)emuScrH / (float)texH;
-	GLfloat scrScale = gScrHeight/552.0f;
-
-	return (scrScale*curZoomY) / texHRatio;
-//	return curZoomY;
+    int emuScrH = g_surface_height;
+    return curZoomY * ((float)gScrHeight/emuScrH);
 }
 
 void Renderer_zoomEmuScreen(float absChange)
@@ -543,8 +494,8 @@ void Renderer_zoomEmuScreen(float absChange)
 
 void Renderer_setZoomPreset(int preset)
 {
-	int texW = g_videoTex_width;
-	int texH = g_videoTex_height;
+	//int texW = g_videoTex_width;
+	//int texH = g_videoTex_height;
 	int emuScrW = g_surface_width;
 	int emuScrH = g_surface_height;
 
@@ -576,8 +527,18 @@ void Renderer_setZoomPreset(int preset)
 			case ScreenZoom_Fit:
 			default:
 			{
-				curZoomY = 1;
-				curZoomX = curZoomY * ((float)emuScrW/emuScrH) * ((float)gScrHeight/gScrWidth);
+                float emuAspect = (float)emuScrW/emuScrH;
+                float scrAspect = (float)gScrWidth/gScrHeight;
+                if (emuAspect <= scrAspect)
+                {
+                    curZoomY = 1;
+                    curZoomX = emuAspect / scrAspect;
+                }
+                else
+                {
+                    curZoomX = 1;
+                    curZoomY = scrAspect / emuAspect;
+                }
 				break;
 			}
 		}
@@ -655,8 +616,10 @@ void updateDispParams(int scrWidth, int scrHeight, int texWidth, int texHeight)
 	}
 }
 
-void renderFrame()
+void renderFrame(JNIEnv* env)
 {
+	_initCurScreenShader(env);
+
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
 	// update texture
@@ -703,29 +666,67 @@ void renderFrame()
 
 	if (validTex)
 	{
-		// draw emu screen
+		RTShader *curShader = s_curScreenShader;
+		if (curShader == 0 || !curShader->_ready)
 		{
-			glUseProgram(s_vertTexShader.shaderProgram);
-
+			curShader = s_basicShader; // fallback shader
+		}
+		if (curShader != 0 && curShader->_ready)
+		{
+			// draw emu screen
 			{
-				// Load the vertex position
-				glVertexAttribPointer(s_vertTexShader.paramHandles[ShaderParam_Pos], 3, GL_FLOAT, GL_FALSE, stride, emuScreenVerts);
+				glUseProgram(curShader->_shaderProgram);
 
-				// Load the texture coordinate
-				glVertexAttribPointer(s_vertTexShader.paramHandles[ShaderParam_TexCoord], 2, GL_FLOAT, GL_FALSE, stride, emuScreenVerts+3);
+				{
+					// Load the vertex position
+					if (curShader->_paramHandles[RTShader::ShaderParam_Pos] >= 0)
+					{
+						glVertexAttribPointer(curShader->_paramHandles[RTShader::ShaderParam_Pos], 3, GL_FLOAT, GL_FALSE, stride, emuScreenVerts);
+						glEnableVertexAttribArray(curShader->_paramHandles[RTShader::ShaderParam_Pos]);
+					}
 
-				glEnableVertexAttribArray(s_vertTexShader.paramHandles[ShaderParam_Pos]);
-				glEnableVertexAttribArray(s_vertTexShader.paramHandles[ShaderParam_TexCoord]);
+					// Load the texture coordinate
+					if (curShader->_paramHandles[RTShader::ShaderParam_TexCoord] >= 0)
+					{
+						glVertexAttribPointer(curShader->_paramHandles[RTShader::ShaderParam_TexCoord], 2, GL_FLOAT, GL_FALSE, stride, emuScreenVerts+3);
+						glEnableVertexAttribArray(curShader->_paramHandles[RTShader::ShaderParam_TexCoord]);
+					}
+				}
+
+				// Bind the texture
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, gTextureID);
+
+				// Set the sampler texture unit to 0
+				if (curShader->_paramHandles[RTShader::ShaderParam_Sampler] >= 0)
+				{
+					glUniform1i(curShader->_paramHandles[RTShader::ShaderParam_Sampler], 0);
+				}
+
+				{
+					//float uTexSize[2] = { g_videoTex_width, g_videoTex_height };
+					//float uTexSizePow2[2] = { roundUpPower2(g_videoTex_width), roundUpPower2(g_videoTex_height) };
+					float uTexSize[2] = { g_surface_width, g_surface_height };
+					float uTexSizePow2[2] = { roundUpPower2(g_videoTex_width), roundUpPower2(g_videoTex_height) };
+					float uOutputSize[2] = { gScrWidth, gScrHeight };
+
+
+					if (curShader->_paramHandles[RTShader::ShaderParam_TexSize] >= 0)
+					{
+						glUniform2fv(curShader->_paramHandles[RTShader::ShaderParam_TexSize], 1, uTexSize);
+					}
+					if (curShader->_paramHandles[RTShader::ShaderParam_TexSizePow2] >= 0)
+					{
+						glUniform2fv(curShader->_paramHandles[RTShader::ShaderParam_TexSizePow2], 1, uTexSizePow2);
+					}
+					if (curShader->_paramHandles[RTShader::ShaderParam_OutputSize] >= 0)
+					{
+						glUniform2fv(curShader->_paramHandles[RTShader::ShaderParam_OutputSize], 1, uOutputSize);
+					}
+				}
+
+				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices);
 			}
-
-			// Bind the texture
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, gTextureID);
-
-			// Set the sampler texture unit to 0
-			glUniform1i(s_vertTexShader.paramHandles[ShaderParam_Sampler], 0);
-
-			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices);
 		}
 
 		for (int r = 0; r < s_numRenderCalbacks; ++r)

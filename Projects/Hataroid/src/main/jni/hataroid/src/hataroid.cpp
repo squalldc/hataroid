@@ -147,6 +147,7 @@ void _generateSaveNames(const char *savePath, int saveSlot, char* saveMetaFilePa
 bool _findSaveStateMetaFile(int slotID, char *resultBuf);
 void _clearHataroidSaveCommands();
 void _hataroidRetrieveSaveExtraData();
+void _confirmSettings(JNIEnv* env);
 
 static void _initAssetDataItems();
 static void _deinitAssetDataItems();
@@ -201,6 +202,15 @@ int showGenericDialog(JNIEnv *curEnv, const char *message, int ok, int noyes)
 	return dialogID;
 }
 
+void updateGenericDialogMessage(JNIEnv *curEnv, int dialogID, const char *message)
+{
+	//Debug_Printf("Update Generic Dialog Message : %d, %s", dialogID, message);
+	JNIEnv* env = (curEnv==0) ? g_jniMainInterface.android_mainEmuThreadEnv : curEnv;
+	jstring str = (env)->NewStringUTF(message);
+	(env)->CallVoidMethod(g_jniMainInterface.android_mainActivity, g_jniMainInterface.updateDialogMessage, dialogID, str);
+	//Debug_Printf("Update Generic Dialog Message Done");
+}
+
 void destroyGenericDialog(JNIEnv *curEnv, int dialogID)
 {
 	Debug_Printf("Destroy Generic Dialog: %d", dialogID);
@@ -209,11 +219,28 @@ void destroyGenericDialog(JNIEnv *curEnv, int dialogID)
 	Debug_Printf("Destroy Generic Dialog Done");
 }
 
-void showOptionsDialog()
+void showOptionsDialog(JNIEnv *curEnv)
 {
 	Debug_Printf("Show Options Dialog");
-	(g_jniMainInterface.android_mainEmuThreadEnv)->CallVoidMethod(g_jniMainInterface.android_mainActivity, g_jniMainInterface.showOptionsDialog);
+	JNIEnv* env = (curEnv==0) ? g_jniMainInterface.android_mainEmuThreadEnv : curEnv;
+	(env)->CallVoidMethod(g_jniMainInterface.android_mainActivity, g_jniMainInterface.showOptionsDialog);
 	Debug_Printf("Show Options Dialog Done");
+}
+
+void showFloppyAInsert(JNIEnv *curEnv)
+{
+	Debug_Printf("Show Floppy A Dialog");
+	JNIEnv* env = (curEnv==0) ? g_jniMainInterface.android_mainEmuThreadEnv : curEnv;
+	(env)->CallVoidMethod(g_jniMainInterface.android_mainActivity, g_jniMainInterface.showFloppyAInsert);
+	Debug_Printf("Show Floppy A Dialog Done");
+}
+
+void showFloppyBInsert(JNIEnv *curEnv)
+{
+	Debug_Printf("Show Floppy B Dialog");
+	JNIEnv* env = (curEnv==0) ? g_jniMainInterface.android_mainEmuThreadEnv : curEnv;
+	(env)->CallVoidMethod(g_jniMainInterface.android_mainActivity, g_jniMainInterface.showFloppyBInsert);
+	Debug_Printf("Show Floppy B Dialog Done");
 }
 
 void showSoftMenu(JNIEnv *curEnv, int optionType)
@@ -286,34 +313,43 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 static void registerJNIcallbacks(JNIEnv * env, jobject activityInstance)
 {
 	jobject mainActivityRef = (env)->NewGlobalRef(activityInstance);
-	g_jniAudioInterface.android_env = env;
-	g_jniAudioInterface.android_mainActivity = mainActivityRef;
 
 	jclass activityClass = (env)->GetObjectClass(activityInstance);
 
-	g_jniAudioInterface.getMinBufSize = (env)->GetMethodID(activityClass, "getMinBufSize", "(III)I");
-	g_jniAudioInterface.initAudio = (env)->GetMethodID(activityClass, "initAudio", "(IIII)V");
-	g_jniAudioInterface.deinitAudio = (env)->GetMethodID(activityClass, "deinitAudio", "()V");
+	{
+		g_jniAudioInterface.android_env = env;
+		g_jniAudioInterface.android_mainActivity = mainActivityRef;
 
-	g_jniAudioInterface.playAudio = (env)->GetMethodID(activityClass, "playAudio", "()V");
-	g_jniAudioInterface.pauseAudio = (env)->GetMethodID(activityClass, "pauseAudio", "()V");
+		g_jniAudioInterface.getMinBufSize = (env)->GetMethodID(activityClass, "getMinBufSize", "(III)I");
+		g_jniAudioInterface.initAudio = (env)->GetMethodID(activityClass, "initAudio", "(IIII)V");
+		g_jniAudioInterface.deinitAudio = (env)->GetMethodID(activityClass, "deinitAudio", "()V");
 
-	g_jniAudioInterface.sendAudio = (env)->GetMethodID(activityClass, "sendAudio", "([SII)V");
+		g_jniAudioInterface.playAudio = (env)->GetMethodID(activityClass, "playAudio", "()V");
+		g_jniAudioInterface.pauseAudio = (env)->GetMethodID(activityClass, "pauseAudio", "()V");
 
-	g_jniMainInterface.android_env = env;
-	g_jniMainInterface.android_mainEmuThreadEnv = NULL;
-	g_jniMainInterface.android_mainActivity = mainActivityRef;
-	g_jniMainInterface.showGenericDialog = (env)->GetMethodID(activityClass, "showGenericDialog", "(IILjava/lang/String;)I");
-	g_jniMainInterface.destroyGenericDialog = (env)->GetMethodID(activityClass, "destroyGenericDialog", "(I)V");
-	g_jniMainInterface.showOptionsDialog = (env)->GetMethodID(activityClass, "showOptionsDialog", "()V");
-	g_jniMainInterface.showSoftMenu = (env)->GetMethodID(activityClass, "showSoftMenu", "(I)V");
-	g_jniMainInterface.quitHataroid = (env)->GetMethodID(activityClass, "quitHataroid", "()V");
-	g_jniMainInterface.setConfigOnSaveStateLoad = (env)->GetMethodID(activityClass, "setConfigOnSaveStateLoad", "([Ljava/lang/String;)V");
-	g_jniMainInterface.getAssetData = (env)->GetMethodID(activityClass, "getAssetData", "(Ljava/lang/String;)[B");
+		g_jniAudioInterface.sendAudio = (env)->GetMethodID(activityClass, "sendAudio", "([SII)V");
+	}
 
-	//g_jniMainInterface.sendAndMidiAudio = (env)->GetMethodID(activityClass, "sendAndMidiAudio", "()V");
+	{
+		g_jniMainInterface.android_env = env;
+		g_jniMainInterface.android_mainEmuThreadEnv = NULL;
+		g_jniMainInterface.android_mainActivity = mainActivityRef;
+		g_jniMainInterface.showGenericDialog = (env)->GetMethodID(activityClass, "showGenericDialog", "(IILjava/lang/String;)I");
+		g_jniMainInterface.destroyGenericDialog = (env)->GetMethodID(activityClass, "destroyGenericDialog", "(I)V");
+		g_jniMainInterface.updateDialogMessage = (env)->GetMethodID(activityClass, "updateDialogMessage", "(ILjava/lang/String;)V");
+		g_jniMainInterface.showOptionsDialog = (env)->GetMethodID(activityClass, "showOptionsDialog", "()V");
+		g_jniMainInterface.showFloppyAInsert = (env)->GetMethodID(activityClass, "showFloppyAInsert", "()V");
+		g_jniMainInterface.showFloppyBInsert = (env)->GetMethodID(activityClass, "showFloppyBInsert", "()V");
+		g_jniMainInterface.showSoftMenu = (env)->GetMethodID(activityClass, "showSoftMenu", "(I)V");
+		g_jniMainInterface.quitHataroid = (env)->GetMethodID(activityClass, "quitHataroid", "()V");
+		g_jniMainInterface.setConfigOnSaveStateLoad = (env)->GetMethodID(activityClass, "setConfigOnSaveStateLoad", "([Ljava/lang/String;)V");
+		g_jniMainInterface.getAssetData = (env)->GetMethodID(activityClass, "getAssetData", "(Ljava/lang/String;)[B");
 
-	g_jniMainInterface.mainActivityGlobalRefObtained = 1;
+		//g_jniMainInterface.sendAndMidiAudio = (env)->GetMethodID(activityClass, "sendAndMidiAudio", "()V");
+		g_jniMainInterface.sendMidiByte = (env)->GetMethodID(activityClass, "sendMidiByte", "(B)V");
+
+		g_jniMainInterface.mainActivityGlobalRefObtained = 1;
+	}
 
 	g_validMainActivity = 1;
 }
@@ -445,6 +481,7 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationMa
 
 				SDL_UpdateRects(sdlscrn, 0, 0);
 				processEmuCommands();
+				_confirmSettings(env);
 
 				if (_pendingQuit)
 				{
@@ -616,7 +653,7 @@ JNIEXPORT jboolean JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_onDrawF
 			return;
 		}
 //*/
-		renderFrame();
+		renderFrame(env);
 		_frameReady = true;
 
 		if (_checkCrash())
@@ -1116,6 +1153,13 @@ void _optionSetFullScreenStretch(const OptionSetting *setting, const char *val, 
 		}
 	}
 }
+
+void _optionSetDisplayShader(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	const char *shaderName = val;
+	Renderer_setScreenShader(shaderName);
+}
+
 void _optionSetMouseEmuType(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	if (strcmp(val, "direct") == 0)
@@ -1499,6 +1543,28 @@ bool _optionValMidiTranspose(const OptionSetting *setting, char *dstBuf, int dst
 	return true;
 }
 
+void _optionMidiHardwareOutEnabled(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+    fsMidi_setMidiHardwareOutEnabled(_getBoolVal(val) ? 1 : 0);
+}
+
+bool _optionValMidiHardwareOutEnabled(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+    strncpy(dstBuf, ConfigureParams.HataroidMidi.midiHardwareOutEnabled?"true":"false", dstBufLen);
+    return true;
+}
+
+void _optionMidiHardwareInEnabled(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+    fsMidi_setMidiHardwareInEnabled(_getBoolVal(val) ? 1 : 0);
+}
+
+bool _optionValMidiHardwareInEnabled(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+    strncpy(dstBuf, ConfigureParams.HataroidMidi.midiHardwareInEnabled?"true":"false", dstBufLen);
+    return true;
+}
+
 static const OptionSetting s_OptionsMap[] =
 {
 	{ "pref_input_joystick_port", _optionSetJoystickPort, 0 },
@@ -1527,6 +1593,7 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_display_vsync", _optionSetVSync, 0 },
 	{ "pref_display_fullscreen", _optionSetFullScreenStretch, 0 },
 	{ "pref_display_keepscreenawake", 0, 0 },
+	{ "pref_display_shader", _optionSetDisplayShader, 0 },
 	{ "pref_display_extendedvdi", 0, 0 },
 	{ "pref_display_extendedvdi_colors", 0, 0 },
 	{ "pref_display_extendedvdi_resolution", 0, 0 },
@@ -1583,6 +1650,8 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_midi_fluidsynth_volgain", _optionMidiFluidSynthVolGain, 0 },
 	{ "pref_midi_tweak_ignore_pgm_changes", _optionMidiIgnoreProgramChanges, _optionValIgnoreProgramChanges },
 	{ "pref_midi_chan_transpose", _optionMidiTranspose, _optionValMidiTranspose },
+    { "pref_midi_hardware_out", _optionMidiHardwareOutEnabled, _optionValMidiHardwareOutEnabled },
+    { "pref_midi_hardware_in", _optionMidiHardwareInEnabled, _optionValMidiHardwareInEnabled },
 };
 static const int s_NumOptionMaps = sizeof(s_OptionsMap)/sizeof(OptionSetting);
 
@@ -2147,6 +2216,12 @@ void _hataroidRetrieveSaveExtraData()
 		ConfigureParams.HataroidMidi.midiIgnoreProgramChanges = fsMidi_getIgnoreProgramChanges()?true:false;
 		ConfigureParams.HataroidMidi.midiChanTranspose = fsMidi_getMidiTranspose();
 	}
+
+    //if (gSaveVersion >= 1707)
+    {
+        ConfigureParams.HataroidMidi.midiHardwareOutEnabled = fsMidi_isMidiHardwareOutEnabled();
+        ConfigureParams.HataroidMidi.midiHardwareInEnabled = fsMidi_isMidiHardwareInEnabled();
+    }
 }
 
 void _loadSaveState()
@@ -2210,6 +2285,12 @@ void _loadSaveState()
 				fsMidi_setIgnoreProgramChanges(ConfigureParams.HataroidMidi.midiIgnoreProgramChanges ? 1 : 0);
 				fsMidi_setMidiTranspose(ConfigureParams.HataroidMidi.midiChanTranspose);
 			}
+
+            //if (gSaveVersion >= 1707)
+            {
+                //fsMidi_setMidiHardwareOutEnabled(ConfigureParams.HataroidMidi.midiHardwareOutEnabled?1:0); // auto restored
+                //fsMidi_setMidiHardwareInEnabled(ConfigureParams.HataroidMidi.midiHardwareInEnabled?1:0); // auto restored
+            }
 		}
 
 		// back propagate settings back to java activity settings
@@ -2894,9 +2975,54 @@ extern "C" void hataroid_releaseAssetDataRef(int assetID)
 	}
 }
 
+extern "C" const char* hataroid_getAssetDataDirect(JNIEnv *curEnv, const char* assetPath, int nullTerm, int *len)
+{
+	Debug_Printf("hataroid_getAssetDataDirect: %s", assetPath);
+
+	if (!envInited)
+	{
+		Debug_Printf("env not inited yet: %s", assetPath);
+		return 0;
+	}
+
+	(*len) = 0;
+
+	JNIEnv* env = (curEnv==0) ? g_jniMainInterface.android_mainEmuThreadEnv : curEnv;
+	jstring str = (env)->NewStringUTF(assetPath);
+	jbyteArray assetData = (jbyteArray)((env)->CallObjectMethod(g_jniMainInterface.android_mainActivity, g_jniMainInterface.getAssetData, str));
+
+	char* buf = 0;
+
+	if (assetData != 0)
+	{
+		int dataLen = (env)->GetArrayLength(assetData);
+		if (dataLen > 0)
+		{
+			jbyte* dataBytes = (env)->GetByteArrayElements(assetData, 0);
+
+			buf = new char [dataLen + (nullTerm?1:0)];
+			memcpy(buf, dataBytes, dataLen);
+			if (nullTerm)
+			{
+				buf[dataLen] = 0;
+			}
+
+			(env)->ReleaseByteArrayElements(assetData, dataBytes, JNI_ABORT);
+
+			(*len) = dataLen;
+
+			Debug_Printf("retrieved asset (direct): %s, %d", assetPath, dataLen);
+		}
+
+		//(env)->DeleteLocalRef(assetData); // explicitly releasing to assist garbage collection, though not required
+	}
+
+	return buf;
+}
+
 extern "C" const char* hataroid_getAssetDataRef(JNIEnv *curEnv, const char* assetPath, int persist, int *len, int *id)
 {
-	Debug_Printf("hataroid_getAssetData: %s", assetPath);
+	Debug_Printf("hataroid_getAssetDataRef: %s", assetPath);
 
 	(*len) = 0;
 	(*id) = 0;
@@ -2943,41 +3069,23 @@ extern "C" const char* hataroid_getAssetDataRef(JNIEnv *curEnv, const char* asse
 		return 0; // no more slots
 	}
 
-	JNIEnv* env = (curEnv==0) ? g_jniMainInterface.android_mainEmuThreadEnv : curEnv;
-	jstring str = (env)->NewStringUTF(assetPath);
-	jbyteArray assetData = (jbyteArray)((env)->CallObjectMethod(g_jniMainInterface.android_mainActivity, g_jniMainInterface.getAssetData, str));
-
-	char* buf = 0;
-
-	if (assetData != 0)
+	const char* buf = hataroid_getAssetDataDirect(curEnv, assetPath, 0, len);
+	if (buf != 0)
 	{
-		int dataLen = (env)->GetArrayLength(assetData);
-		if (dataLen > 0)
-		{
-			jbyte* dataBytes = (env)->GetByteArrayElements(assetData, 0);
+		freeSlot->dataID = _assetDataNextID++;
+		freeSlot->data = buf;
+		freeSlot->dataLen = (*len);
+		freeSlot->persist = persist;
+		freeSlot->refCount = 1;
+		strcpy(freeSlot->assetPath, assetPath);
+		++_assetDataNumItems;
 
-			buf = new char [dataLen];
-			memcpy(buf, dataBytes, dataLen);
-
-			(env)->ReleaseByteArrayElements(assetData, dataBytes, JNI_ABORT);
-
-			freeSlot->dataID = _assetDataNextID++;
-			freeSlot->data = buf;
-			freeSlot->dataLen = dataLen;
-			freeSlot->persist = persist;
-			freeSlot->refCount = 1;
-			strcpy(freeSlot->assetPath, assetPath);
-			++_assetDataNumItems;
-
-			(*len) = freeSlot->dataLen;
-			(*id) = freeSlot->dataID;
-
-			Debug_Printf("retrieved asset: %s, %d", assetPath, dataLen);
-		}
-
-		//(env)->DeleteLocalRef(assetData); // explicitly releasing to assist garbage collection, though not required
+		(*id) = freeSlot->dataID;
 	}
 
 	return buf;
 }
 
+void _confirmSettings(JNIEnv* curEnv)
+{
+}

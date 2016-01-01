@@ -4,30 +4,18 @@
 #include <GLES2/gl2.h>
 #include <jni.h>
 
+class RTShader;
+
 typedef void (*RenderCallback)(void);
 
-enum
-{
-	ShaderParam_Pos		= 0,
-	ShaderParam_TexCoord,
-	ShaderParam_Color,
-	ShaderParam_Sampler,
+extern bool Renderer_setScreenShader(const char *shaderName);
 
-	ShaderParam_Max
-};
-
-struct Shader
-{
-	GLuint shaderProgram;
-	GLuint paramHandles[ShaderParam_Max];
-};
-
-extern Shader *Renderer_getSimpleShader();
+extern RTShader* Renderer_getColorModShader();
 extern GLuint getWhiteTexture();
 
 extern void cleanupGraphics();
 extern bool setupGraphics(int w, int h, JNIEnv * env);
-extern void renderFrame();
+extern void renderFrame(JNIEnv* env);
 
 extern bool Renderer_addRenderCallback(RenderCallback pCallback);
 

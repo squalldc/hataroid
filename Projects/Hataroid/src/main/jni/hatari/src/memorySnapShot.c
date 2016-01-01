@@ -39,6 +39,7 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "mfp.h"
+#include "midi.h"
 #include "psg.h"
 #include "reset.h"
 #include "sound.h"
@@ -53,8 +54,9 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "statusbar.h"
 
 
-#define VERSION_STRING        "1.7.6"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
-#define VERSION_INT			   1706
+#define HATAROID_SAVE_ID      "HTSAV"
+#define VERSION_STRING        "1.7.7"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define VERSION_INT           1707
 
 #define COMPRESS_MEMORYSNAPSHOT       /* Compress snapshots to reduce disk space used */
 
@@ -172,6 +174,8 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 		}
 		bCaptureSave = true;
 		/* Store version string */
+        MemorySnapShot_Store(HATAROID_SAVE_ID, sizeof(HATAROID_SAVE_ID));
+        MemorySnapShot_Store(&gSaveVersion, sizeof(gSaveVersion));
 		MemorySnapShot_Store(VersionString, sizeof(VersionString));
 	}
 	else
@@ -189,23 +193,30 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 		/* Restore version string */
 		MemorySnapShot_Store(VersionString, sizeof(VersionString));
 
-		// HACK: store this properly so we don't have to do these cmps.
-		// NOTE: I really should fix this soon as it's getting out of hand (it's in my 1.80 test branch)
-		gSaveVersion = 0;
-		if (strcasecmp(VersionString, VERSION_STRING)==0)	{ gSaveVersion = VERSION_INT; }
-		else if (strcasecmp(VersionString, "1.7.5")==0)		{ gSaveVersion = 1705; }
-		else if (strcasecmp(VersionString, "1.7.4")==0)		{ gSaveVersion = 1704; }
-		else if (strcasecmp(VersionString, "1.7.3")==0)		{ gSaveVersion = 1703; }
-		else if (strcasecmp(VersionString, "1.7.2")==0)		{ gSaveVersion = 1702; }
-		else if (strcasecmp(VersionString, "1.7.1")==0)		{ gSaveVersion = 1701; }
-		else if (strcasecmp(VersionString, "1.7.0")==0)		{ gSaveVersion = 1700; }
+        if (strcasecmp(VersionString, HATAROID_SAVE_ID)==0)
+        {
+            MemorySnapShot_Store(&gSaveVersion, sizeof(gSaveVersion));
+            MemorySnapShot_Store(VersionString, sizeof(VersionString));
+        }
+        else
+        {
+            // old save support
+            gSaveVersion = 0;
+            if (strcasecmp(VersionString, "1.7.6")==0)          { gSaveVersion = 1706; }
+            else if (strcasecmp(VersionString, "1.7.5")==0)		{ gSaveVersion = 1705; }
+            else if (strcasecmp(VersionString, "1.7.4")==0)		{ gSaveVersion = 1704; }
+            else if (strcasecmp(VersionString, "1.7.3")==0)		{ gSaveVersion = 1703; }
+            else if (strcasecmp(VersionString, "1.7.2")==0)		{ gSaveVersion = 1702; }
+            else if (strcasecmp(VersionString, "1.7.1")==0)		{ gSaveVersion = 1701; }
+            else if (strcasecmp(VersionString, "1.7.0")==0)		{ gSaveVersion = 1700; }
+        }
 
 		/* Does match current version? */
 		if (gSaveVersion == 0)
 		{
 			/* No, inform user and error */
-			Log_AlertDlg(LOG_ERROR, "Unable to restore Hatari memory state. File\n"
-			                       "is compatible only with Hatari version %s.",
+			Log_AlertDlg(LOG_ERROR, "Unable to restore Hataroid memory state. File\n"
+			                       "is compatible only with Hataroid version %s/%d.",
 				     VersionString);
 			bCaptureError = true;
 			return false;
@@ -269,6 +280,7 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		GemDOS_MemorySnapShot_Capture(true);
 		ACIA_MemorySnapShot_Capture(true);
 		IKBD_MemorySnapShot_Capture(true);
+		MIDI_MemorySnapShot_Capture(true);
 		CycInt_MemorySnapShot_Capture(true);
 		Cycles_MemorySnapShot_Capture(true);
 		M68000_MemorySnapShot_Capture(true);
@@ -324,6 +336,7 @@ int MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		GemDOS_MemorySnapShot_Capture(false);
 		ACIA_MemorySnapShot_Capture(false);
 		IKBD_MemorySnapShot_Capture(false);			/* After ACIA */
+		MIDI_MemorySnapShot_Capture(false);
 		CycInt_MemorySnapShot_Capture(false);
 		Cycles_MemorySnapShot_Capture(false);
 		M68000_MemorySnapShot_Capture(false);

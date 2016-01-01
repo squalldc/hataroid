@@ -11,7 +11,20 @@
 #include "fsmidi.h"
 //#include "andmidi.h"
 
+#include "../hataroid.h"
+
+extern struct JNIMainMethodCache g_jniMainInterface;
+
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSendMidiInstrPatch(JNIEnv * env, jobject obj, jintArray instrDefs);
+JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorReceiveHardwareMidiBytes(JNIEnv * env, jobject obj, jint count, jbyteArray b);
+
+void fsMidi_sendHardwareMidiByte(unsigned char b);
+void fsMidi_writeHardwareMidiEvent(int evt, int chan, int param1, int param2);
+
+#define MIDIEVENT_SYSTEM_RESET      0xff
+#define MIDIEVENT_PROGRAM_CHANGE    0xc0
+#define MIDIEVENT_CHANNEL_PRESSURE  0xd0
+#define MIDIEVENT_CONTROL_CHANGE    0xb0
 
 #define FSMIDI_MAX_INTERP_TYPES	4
 static const int s_fsMidiInterpTypes[FSMIDI_MAX_INTERP_TYPES] =
@@ -24,6 +37,9 @@ static const int s_fsMidiInterpTypes[FSMIDI_MAX_INTERP_TYPES] =
 
 int _fsMidiOutEnabled = 0;
 int _fsMidiOutDevice = MIDI_DEVICE_NONE;
+
+int _fsMidiHardwareOutEnabled = 0;
+int _fsMidiHardwareInEnabled = 0;
 
 static fluid_settings_t* s_fsSettings = 0;
 static fluid_synth_t* s_fsSynth = 0;
@@ -43,7 +59,7 @@ static int _ignorePgmChanges = 0;
 
 static int _pendingDeviceReset = 0;
 static int _pendingSaveStateApplyFSynth = 0;
-static int _pendingSaveStateApplyAndroid = 0;
+static int _pendingSaveStateApplyHardware = 0;
 static int _pendingSettingChange = 0;
 static char _pendingSoundFontName[FILENAME_MAX] = "";
 static int _pendingSampleRate = 0;
@@ -58,6 +74,13 @@ static int _drumChannel = 9; // 0 offset
 
 static FSMIDI_SAVEDATA _fsMidi_saveData;
 
+#define kHardwareInRecvBufSize 512
+static unsigned char* _hRecvBuf = 0; // TODO: save in memory snapshot?
+static volatile int _hRecvBufReadIdx = 0;
+static volatile int _hRecvBufWriteIdx = 0;
+static volatile int _hRecvBufCount = 0;
+static volatile int _hRecvBufLock = 0;
+
 int fsMidi_isMidiOutEnabled() { return _fsMidiOutEnabled; }
 int fsMidi_getMidiOutDevice() { return _fsMidiOutDevice; }
 const char* fsMidi_getFSynthSoundFont() { return _curSoundFontName; }
@@ -67,12 +90,15 @@ int fsMidi_getFSynthInterp() { return _curInterp; }
 int fsMidi_getFSynthMaxPoly() { return _curMaxPoly; }
 int fsMidi_getFSynthVolGain() { return _curVolGain; }
 
+int fsMidi_isMidiHardwareOutEnabled() { return _fsMidiHardwareOutEnabled; }
+int fsMidi_isMidiHardwareInEnabled() { return _fsMidiHardwareInEnabled; }
+
 const FSMIDI_SAVEDATA* fsMidi_getSaveData() { return &_fsMidi_saveData; }
 void fsMidi_setSaveData(FSMIDI_SAVEDATA* saveData)
 {
 	memcpy(&_fsMidi_saveData, saveData, sizeof(FSMIDI_SAVEDATA));
 	_pendingSaveStateApplyFSynth = 1;
-	_pendingSaveStateApplyAndroid = 1;
+	_pendingSaveStateApplyHardware = 1;
 }
 void fsMidi_resetSaveData(FSMIDI_SAVEDATA* saveData)
 {
@@ -84,6 +110,18 @@ void fsMidi_init()
 	fsMidi_deinit();
 
 	fsMidi_resetSaveData(&_fsMidi_saveData);
+
+    Debug_Printf("----> alloc hardware midi buffers");
+    {
+        if (_hRecvBuf == 0)
+        {
+            _hRecvBuf = (unsigned char *) malloc(kHardwareInRecvBufSize * sizeof(unsigned char));
+        }
+        _hRecvBufReadIdx = 0;
+        _hRecvBufWriteIdx = 0;
+        _hRecvBufCount = 0;
+        _hRecvBufLock = 0;
+    }
 
 	Debug_Printf("----> fsSynth - new Settings");
 	{
@@ -174,6 +212,19 @@ void fsMidi_deinit()
 	if (s_fsSettings)	{ delete_fluid_settings(s_fsSettings);					s_fsSettings = 0; }
 	Debug_Printf("----> fsSynth - destroyed");
 
+    Debug_Printf("----> freeing hardware midi buffers");
+    {
+        //if (_hRecvBuf != 0)
+        //{
+        //    free(_hRecvBuf);
+        //    _hRecvBuf = 0;
+        //}
+        _hRecvBufReadIdx = 0;
+        _hRecvBufWriteIdx = 0;
+        _hRecvBufCount = 0;
+        _hRecvBufLock = 0;
+    }
+
 	_curSoundFontName[0] = 0;
 	_curSampleRate = 0;
 	_curReverb = 0;
@@ -184,7 +235,7 @@ void fsMidi_deinit()
 
 	_pendingDeviceReset = 0;
 	_pendingSaveStateApplyFSynth = 0;
-	_pendingSaveStateApplyAndroid = 0;
+	_pendingSaveStateApplyHardware = 0;
 	_pendingSettingChange = 0;
 	_pendingSoundFontName[0] = 0;
 	_pendingSampleRate = 0;
@@ -378,6 +429,24 @@ void fsMidi_applySaveState()
 			}
 		}
 	}
+
+    if (_fsMidiHardwareOutEnabled && _pendingSaveStateApplyHardware)
+    {
+        int chan = 0;
+        for (; chan < FSMIDI_NUM_CHANNELS; ++chan)
+        {
+            int pgm = _fsMidi_saveData.program[chan];
+            if (pgm > 0 && pgm <= 128) { fsMidi_writeHardwareMidiEvent(MIDIEVENT_PROGRAM_CHANGE, chan, pgm-1, 0); }
+
+            int pressure = _fsMidi_saveData.pressure[chan];
+            if (pressure > 0 && pressure <= 128) { fsMidi_writeHardwareMidiEvent(MIDIEVENT_CHANNEL_PRESSURE, chan, pressure-1, 0); }
+
+            int vol = _fsMidi_saveData.vol[chan];
+            if (vol > 0 && vol <= 128) { fsMidi_writeHardwareMidiEvent(MIDIEVENT_CONTROL_CHANGE, chan, 0x7, vol-1); }
+        }
+
+        _pendingSaveStateApplyHardware = 0;
+    }
 }
 
 void fsMidi_postUpdate()
@@ -401,7 +470,7 @@ void fsMidi_update()
 					fsMidi_reset(0);
 					_pendingDeviceReset = 0;
 				}
-			}
+            }
 			if (_pendingSettingChange)
 			{
 				fsMidi_applyPendingChanges();
@@ -412,6 +481,11 @@ void fsMidi_update()
 			}
 		}
 	}
+
+    if (_pendingSaveStateApplyHardware)
+    {
+        fsMidi_applySaveState();
+    }
 }
 
 void fsMidi_reset(int resetSave)
@@ -427,18 +501,33 @@ void fsMidi_reset(int resetSave)
 		}
 	}
 
+    if (_fsMidiHardwareOutEnabled)
+    {
+        fsMidi_writeHardwareMidiEvent(MIDIEVENT_SYSTEM_RESET, 0, 0, 0);
+    }
+
 	if (resetSave)
 	{
 		fsMidi_resetSaveData(&_fsMidi_saveData);
 	}
 
 	_pendingSaveStateApplyFSynth = 1;
-	_pendingSaveStateApplyAndroid = 1;
+	_pendingSaveStateApplyHardware = 1;
 }
 
 void fsMidi_setMidiOutEnabled(int enable)
 {
 	_fsMidiOutEnabled = enable;
+}
+
+void fsMidi_setMidiHardwareOutEnabled(int enable)
+{
+    _fsMidiHardwareOutEnabled = enable;
+}
+
+void fsMidi_setMidiHardwareInEnabled(int enable)
+{
+    _fsMidiHardwareInEnabled = enable;
 }
 
 void fsMidi_setDevice(int device)
@@ -541,6 +630,12 @@ short *fsMidi_consumeBuffer(int bufLenReqShorts, int *startOffsetShorts, int *re
 void fsMidi_writeByte(unsigned char b)
 {
     //Debug_Printf("midi out: %x", b);
+
+    if (_fsMidiHardwareOutEnabled)
+    {
+        // TODO: buffer these up before sending to hardware device
+        fsMidi_sendHardwareMidiByte(b);
+	}
 
 	if (s_fsMidiParser)
 	{
@@ -684,9 +779,13 @@ void fsMidi_writeByte(unsigned char b)
 			else if (dirty)
 			{
 				_pendingSaveStateApplyFSynth = 1;
-				_pendingSaveStateApplyAndroid = 1;
 			}
-		}
+
+            if (dirty && !_fsMidiHardwareOutEnabled)
+            {
+                _pendingSaveStateApplyHardware = 1;
+            }
+        }
 
 		//if (_fsMidiOutEnabled && _fsMidiOutDevice == MIDI_DEVICE_ANDROID)
 		//{
@@ -718,8 +817,119 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSen
 	}
 
 	_pendingSaveStateApplyFSynth = 1;
-	_pendingSaveStateApplyAndroid = 1;
+	_pendingSaveStateApplyHardware = 1;
 
 	(*env)->ReleaseIntArrayElements(env, instrDefs, instrVals, JNI_ABORT);
 	//(*env)->DeleteLocalRef(env, instrDefs); // explicitly releasing to assist garbage collection, though not required
+}
+
+JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorReceiveHardwareMidiBytes(JNIEnv * env, jobject obj, jint count, jbyteArray b)
+{
+    if (_fsMidiHardwareInEnabled == 0)
+    {
+        return;
+    }
+
+	jbyte* data = (*env)->GetByteArrayElements(env, b, 0);
+	int i;
+
+	while (_hRecvBufLock) { usleep(2); }
+    _hRecvBufLock = 1; // TODO: proper atomic lock
+
+	for (i = 0; i < count; ++i)
+	{
+		if (_hRecvBufCount >= kHardwareInRecvBufSize)
+		{
+			break;
+		}
+        _hRecvBuf[_hRecvBufWriteIdx] = data[i];
+        _hRecvBufWriteIdx = (_hRecvBufWriteIdx+1) % kHardwareInRecvBufSize; // TODO: optimize
+		++_hRecvBufCount;
+	}
+
+    _hRecvBufLock = 0;
+
+	(*env)->ReleaseByteArrayElements(env, b, data, JNI_ABORT);
+	//(*env)->DeleteLocalRef(env, b); // explicitly releasing to assist garbage collection, though not required
+}
+
+int fsMidi_hasRecvData()
+{
+	return (_hRecvBufCount > 0) ? 1 : 0;
+}
+
+unsigned char fsMidi_readRecvData()
+{
+	if (_hRecvBufCount > 0)
+	{
+		unsigned char b = _hRecvBuf[_hRecvBufReadIdx];
+        _hRecvBufReadIdx = (_hRecvBufReadIdx+1) % kHardwareInRecvBufSize; // TODO: optimize
+
+		while (_hRecvBufLock) { usleep(2); }
+        _hRecvBufLock = 1; // TODO: proper atomic lock
+		{
+			--_hRecvBufCount;
+		}
+        _hRecvBufLock = 0;
+
+		return b;
+	}
+	return 0;
+}
+
+void fsMidi_writeHardwareMidiEvent(int evt, int chan, int param1, int param2)
+{
+    if (_fsMidiHardwareOutEnabled)
+    {
+        switch (evt)
+        {
+            case MIDIEVENT_SYSTEM_RESET: // 0xff
+            {
+                fsMidi_sendHardwareMidiByte(MIDIEVENT_SYSTEM_RESET);
+                break;
+            }
+            case MIDIEVENT_PROGRAM_CHANGE: //0xc0
+            {
+                unsigned char b1 = (unsigned char)(MIDIEVENT_PROGRAM_CHANGE | chan);
+                unsigned char b2 = (unsigned char)param1; // prg
+
+                fsMidi_sendHardwareMidiByte(b1);
+                fsMidi_sendHardwareMidiByte(b2);
+                break;
+            }
+            case MIDIEVENT_CHANNEL_PRESSURE: //0xd0
+            {
+                unsigned char b1 = (unsigned char)(MIDIEVENT_CHANNEL_PRESSURE | chan);
+                unsigned char b2 = (unsigned char)param1; // pressure
+
+                fsMidi_sendHardwareMidiByte(b1);
+                fsMidi_sendHardwareMidiByte(b2);
+                break;
+            }
+            case MIDIEVENT_CONTROL_CHANGE: //0xb0
+            {
+                unsigned char b1 = (unsigned char)(MIDIEVENT_CONTROL_CHANGE | chan);
+                unsigned char b2 = (unsigned char)param1; // control
+                unsigned char b3 = (unsigned char)param2; // val
+
+                fsMidi_sendHardwareMidiByte(b1);
+                fsMidi_sendHardwareMidiByte(b2);
+                fsMidi_sendHardwareMidiByte(b3);
+                break;
+            }
+        }
+    }
+}
+
+void fsMidi_sendHardwareMidiByte(unsigned char b)
+{
+    if (_fsMidiHardwareOutEnabled)
+    {
+        // TODO: buffer these up before sending to hardware device
+        if (g_jniMainInterface.android_mainEmuThreadEnv != 0)
+        {
+            (*g_jniMainInterface.android_mainEmuThreadEnv)->CallVoidMethod(g_jniMainInterface.android_mainEmuThreadEnv, g_jniMainInterface.android_mainActivity,
+                                                                           g_jniMainInterface.sendMidiByte, (jbyte)b);
+        }
+    }
 }

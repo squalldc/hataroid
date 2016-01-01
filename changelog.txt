@@ -1,3 +1,10 @@
+v1.606
+- Custom soft menu implemention due to Google deprecation of old API's
+- Notator fixes
+- USB Midi support (experimental)
+- Scanline and CRT shaders
+- Fix screen aspect ratio and mouse speed on some devices
+
 v1.605
 - MIDI support
 - Support for 2nd physical joystick controller

@@ -236,4 +236,19 @@
 			<item >128</item>
 		</string-array>
 
+		<string-array name="pref_display_shader_entries">
+			<item >None</item>
+			<item >Scanline [Horz]</item>
+			<item >Scanline [Horz + Vert]</item>
+			<item >(Slow) CRT-Geom Curved</item>
+			<item >(Slow) CRT-Geom Flat</item>
+		</string-array>
+		<string-array name="pref_display_shader_values">
+			<item >basic</item>
+			<item >scanline</item>
+			<item >scanline_xy</item>
+			<item >crt-geom</item>
+			<item >crt-geom-flat</item>
+		</string-array>
+
 	</resources>

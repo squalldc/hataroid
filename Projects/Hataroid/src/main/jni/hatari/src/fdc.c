@@ -990,8 +990,7 @@ static int	FDC_NextSectorID_NbBytes ( void )
 void FDC_AcknowledgeInterrupt ( void )
 {
 	/* Acknowledge in MFP circuit, pass bit, enable, pending */
-	MFP_InputOnChannel ( MFP_INT_FDCHDC , 0 );
-	MFP_GPIP &= ~0x20;
+	MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_LOW );
 }
 
 
@@ -2284,7 +2283,7 @@ static int FDC_ExecuteTypeICommands ( void )
 	int	Delay_micro = 0;
 
 	FDC.CommandType = 1;
-	MFP_GPIP |= 0x20;
+	MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH );
 
 	/* Check Type I Command */
 	switch ( FDC.CR & 0xf0 )
@@ -2325,7 +2324,7 @@ static int FDC_ExecuteTypeIICommands ( void )
 	int	Delay_micro = 0;
 
 	FDC.CommandType = 2;
-	MFP_GPIP |= 0x20;
+	MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH );
 
 	/* Check Type II Command */
 	switch ( FDC.CR & 0xf0 )
@@ -2356,7 +2355,7 @@ static int FDC_ExecuteTypeIIICommands ( void )
 	int	Delay_micro = 0;
 
 	FDC.CommandType = 3;
-	MFP_GPIP |= 0x20;
+	MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH );
 
 	/* Check Type III Command */
 	switch ( FDC.CR & 0xf0 )
@@ -2402,7 +2401,7 @@ static int FDC_ExecuteTypeIVCommands ( void )
 
 	else								/* I3-I2 clear (0xD0) : stop command without IRQ */
 	{
-		MFP_GPIP |= 0x20;					/* reset IRQ signal */
+		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH ); /* reset IRQ signal */
 		Delay_micro = FDC_TypeIV_ForceInterrupt ( false );
 	}
 		
@@ -2698,7 +2697,7 @@ void FDC_DiskControllerStatus_ReadWord ( void )
 				LOG_TRACE(TRACE_FDC, "force wprt=%d VBL=%d drive=%d str=%x\n", ForceWPRT==1?1:0, nVBLs, FDC_DRIVE, DiskControllerByte );
 
 			/* When Status Register is read, FDC's INTRQ is reset */
-			MFP_GPIP |= 0x20;
+			MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_FDC_HDC , MFP_GPIP_STATE_HIGH );
 			break;
 		 case 0x2:						/* 0 1 - Track register */
 			DiskControllerByte = FDC.TR;

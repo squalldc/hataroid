@@ -16,13 +16,11 @@
 ** See the License for the specific language governing permissions and 
 ** limitations under the License.
 */
-
 -->
-
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.RetroSoft.Hataroid"
-    android:versionCode="1605"
-    android:versionName="1.605" >
+    android:versionCode="1606"
+    android:versionName="1.606" >
 
     <uses-sdk
         android:minSdkVersion="9"
@@ -31,15 +29,25 @@
     <uses-feature
         android:glEsVersion="0x00020000"
         android:required="true" />
-    <supports-screens android:smallScreens="true" android:xlargeScreens="true" android:anyDensity="true" android:resizeable="true" android:largeScreens="true" android:normalScreens="true"/>
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+
+    <supports-screens
+        android:anyDensity="true"
+        android:largeScreens="true"
+        android:normalScreens="true"
+        android:resizeable="true"
+        android:smallScreens="true"
+        android:xlargeScreens="true" />
+
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <android:uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
 
     <application
         android:description="@string/AppDescription"
         android:icon="@drawable/hataroid"
-        android:label="@string/Hataroid_activity">
+        android:label="@string/Hataroid_activity" >
         <activity
-            android:name="HataroidActivity"
+            android:name=".HataroidActivity"
             android:configChanges="orientation|keyboardHidden"
             android:launchMode="singleTask"
             android:screenOrientation="sensorLandscape"
@@ -62,16 +70,42 @@
         </activity>
         <activity
             android:name=".Help.HelpActivity"
-            android:label="@string/title_activity_help" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" android:screenOrientation="sensorLandscape">
+            android:label="@string/title_activity_help"
+            android:screenOrientation="sensorLandscape"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
         </activity>
-        <activity android:name=".Input.InputMapConfigureView" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" android:label="@string/title_activity_inputmap_configure"></activity>
-        <activity android:name=".Input.InputCaptureView" android:theme="@android:style/Theme.Dialog" android:label="@string/blank"></activity>
-        <activity android:name=".Input.RenameInputMapView" android:theme="@android:style/Theme.Dialog" android:label="@string/blank"></activity>
-        <activity android:name=".SaveState.SaveStateBrowser" android:theme="@android:style/Theme.Dialog" android:label="@string/blank"></activity>
-        <activity android:name=".Input.Shortcut.ShortcutMapConfigureView" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" android:label="@string/title_activity_shortcut_configure"></activity>
-        <activity android:name=".Input.Shortcut.ShortcutSelectView" android:theme="@android:style/Theme.Dialog" android:label="@string/blank"></activity>
-        <activity android:name=".Util.MapSetConfigureView" android:theme="@android:style/Theme.NoTitleBar.Fullscreen" android:label="@string/midi_patch_instrument_configure_title"></activity>
-        <activity android:name=".Util.MapSetSelectView" android:theme="@android:style/Theme.Dialog" android:label="@string/blank"></activity>
+        <activity
+            android:name=".Input.InputMapConfigureView"
+            android:label="@string/title_activity_inputmap_configure"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+        <activity
+            android:name=".Input.InputCaptureView"
+            android:label="@string/blank"
+            android:theme="@android:style/Theme.Dialog" />
+        <activity
+            android:name=".Input.RenameInputMapView"
+            android:label="@string/blank"
+            android:theme="@android:style/Theme.Dialog" />
+        <activity
+            android:name=".SaveState.SaveStateBrowser"
+            android:label="@string/blank"
+            android:theme="@android:style/Theme.Dialog" />
+        <activity
+            android:name=".Input.Shortcut.ShortcutMapConfigureView"
+            android:label="@string/title_activity_shortcut_configure"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+        <activity
+            android:name=".Input.Shortcut.ShortcutSelectView"
+            android:label="@string/blank"
+            android:theme="@android:style/Theme.Dialog" />
+        <activity
+            android:name=".Util.MapSetConfigureView"
+            android:label="@string/midi_patch_instrument_configure_title"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+        <activity
+            android:name=".Util.MapSetSelectView"
+            android:label="@string/blank"
+            android:theme="@android:style/Theme.Dialog" />
     </application>
 
 </manifest>

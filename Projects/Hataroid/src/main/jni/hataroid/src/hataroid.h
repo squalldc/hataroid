@@ -52,20 +52,27 @@ struct JNIMainMethodCache
 	JNIEnv *android_mainEmuThreadEnv;
 	jmethodID showGenericDialog;
 	jmethodID destroyGenericDialog;
+	jmethodID updateDialogMessage;
 	jmethodID showOptionsDialog;
+	jmethodID showFloppyAInsert;
+	jmethodID showFloppyBInsert;
 	jmethodID showSoftMenu;
 	jmethodID quitHataroid;
 	jmethodID setConfigOnSaveStateLoad;
 	jmethodID getAssetData;
 
 	//jmethodID sendAndMidiAudio;
+	jmethodID sendMidiByte;
 };
 
-extern struct JNIAudio g_jniAudioInterface;
+extern struct JNIAudio	g_jniAudioInterface;
 
 extern int showGenericDialog(JNIEnv *curEnv, const char *message, int ok, int noyes);
 extern void destroyGenericDialog(JNIEnv *curEnv, int dialogID);
-extern void showOptionsDialog();
+extern void updateGenericDialogMessage(JNIEnv *curEnv, int dialogID, const char *message);
+extern void showOptionsDialog(JNIEnv *curEnv);
+extern void showFloppyAInsert(JNIEnv *curEnv);
+extern void showFloppyBInsert(JNIEnv *curEnv);
 extern int hasEmuCommands();
 extern void processEmuCommands();
 extern void clearEmuCommands();
@@ -73,6 +80,7 @@ extern void RequestAndWaitQuit();
 extern void setUserEmuPaused(int pause);
 
 extern void hataroid_releaseAssetDataRef(int assetID);
+extern const char* hataroid_getAssetDataDirect(JNIEnv *curEnv, const char* assetPath, int nullTerm, int *len);
 extern const char* hataroid_getAssetDataRef(JNIEnv *curEnv, const char* assetPath, int persist, int *len, int *id);
 
 #ifdef __cplusplus

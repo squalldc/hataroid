@@ -271,6 +271,13 @@
     <string name="pref_midi_chan_transpose_summary">Transpose the midi output (eg Karate Kid 2 is actually tuned incorrectly)</string>
     <string name="pref_midi_setup_kk2tweaks">Auto-Setup options for Karate Kid 2</string>
     <string name="pref_midi_setup_kk2tweaks_summary">Setup recommended options for Karate Kid 2 (transpose, ignore program changes and instrument patches)</string>
+	<string name="pref_midi_experimental">Experimental (DEV) options</string>
+	<string name="midi_hardware_out">Output to USB MIDI device (experimental)</string>
+	<string name="midi_hardware_out_summary">Send MIDI output to a connected MIDI device</string>
+	<string name="midi_hardware_in">Input from USB MIDI device (experimental)</string>
+	<string name="midi_hardware_in_summary">Receive MIDI input from a connected MIDI device</string>
 	<string name="pref_help_online">Help (http://sites.google.com/site/hataroid/help)</string>
+	<string name="shader_effect">Shader Effect</string>
+	<string name="shader">Shader</string>
 
 </resources>

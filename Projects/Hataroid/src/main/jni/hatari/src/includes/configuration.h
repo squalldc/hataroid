@@ -350,6 +350,9 @@ typedef struct
 	bool midiIgnoreProgramChanges;
 	int midiChanTranspose;
 
+    bool midiHardwareOutEnabled;
+    bool midiHardwareInEnabled;
+
 } CNF_HATAROID_MIDI;
 
 /* State of system is stored in this structure */

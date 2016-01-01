@@ -609,6 +609,9 @@ void Configuration_SetDefault(void)
 		ConfigureParams.HataroidMidi.midiResetOnSTReset = false;
 		ConfigureParams.HataroidMidi.midiIgnoreProgramChanges = false;
 		ConfigureParams.HataroidMidi.midiChanTranspose = 0;
+
+        ConfigureParams.HataroidMidi.midiHardwareOutEnabled = false;
+        ConfigureParams.HataroidMidi.midiHardwareInEnabled = false;
 	}
 
 	/* Set defaults for Video */
@@ -935,6 +938,12 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 			MemorySnapShot_Store(&ConfigureParams.HataroidMidi.midiIgnoreProgramChanges, sizeof(ConfigureParams.HataroidMidi.midiIgnoreProgramChanges));
 			MemorySnapShot_Store(&ConfigureParams.HataroidMidi.midiChanTranspose, sizeof(ConfigureParams.HataroidMidi.midiChanTranspose));
 		}
+
+        if (gSaveVersion >= 1707)
+        {
+            MemorySnapShot_Store(&ConfigureParams.HataroidMidi.midiHardwareOutEnabled, sizeof(ConfigureParams.HataroidMidi.midiHardwareOutEnabled));
+            MemorySnapShot_Store(&ConfigureParams.HataroidMidi.midiHardwareInEnabled, sizeof(ConfigureParams.HataroidMidi.midiHardwareInEnabled));
+        }
 	}
 
 	// HACKS

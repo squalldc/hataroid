@@ -1,7 +1,7 @@
 #include "VirtKBDefs.h"
 
-static const short s_refs_id_VKB_KEY_NUMPAD_ENTER[] = { 90, 96 };
 static const short s_refs_id_VKB_KEY_RETURN[] = { 44, 65 };
+static const short s_refs_id_VKB_KEY_NUMPAD_ENTER[] = { 90, 96 };
 
 const VirtKeyDef g_vkbKeyDefs[] =
 {
@@ -134,10 +134,13 @@ const VirtKeyDef g_vkbKeyDefs[] =
 	{ VKB_KEY_JOY2RIGHT, "J2right", "Joystick 2 Right", -1, 1, 1, 7, 0xff, { 100, 257, 131, 288, 0, 0, 0, 0 }, FLAG_JOY, { 100, 257, 132, 288 }, 1, 0 },
 	{ VKB_KEY_JOY2DOWN, "J2down", "Joystick 2 Down", -1, 1, 1, 9, 0xff, { 133, 257, 164, 288, 0, 0, 0, 0 }, FLAG_JOY, { 133, 257, 165, 288 }, 1, 0 },
 	{ VKB_KEY_JOY2UP, "J2up", "Joystick 2 Up", -1, 1, 1, 8, 0xff, { 166, 257, 197, 288, 0, 0, 0, 0 }, FLAG_JOY, { 166, 257, 198, 288 }, 1, 0 },
-	{ VKB_KEY_JOY2FIRE, "J2fire", "Joystick 2 Fire", -1, 1, 0, 5, 0xff, { 701, 421, 766, 486, 0, 0, 0, 0 }, FLAG_JOY, { 701, 421, 766, 486 }, 1, 0 }
+	{ VKB_KEY_JOY2FIRE, "J2fire", "Joystick 2 Fire", -1, 1, 0, 5, 0xff, { 701, 421, 766, 486, 0, 0, 0, 0 }, FLAG_JOY, { 701, 421, 766, 486 }, 1, 0 },
+	{ VKB_KEY_FLOPPYA_INSERT, "InsertA", "Floppy A Insert", -1, 1, 1, 0, 0xff, { 628, 257, 659, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_MAIN, { 628, 257, 660, 288 }, 1, 0 },
+	{ VKB_KEY_FLOPPYB_INSERT, "InsertB", "Floppy B Insert", -1, 1, 1, 0, 0xff, { 628, 257, 659, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_MAIN, { 628, 257, 660, 288 }, 1, 0 },
+	{ VKB_KEY_SETTINGS_MENU, "SettingsMenu", "Settings Menu", -1, 1, 1, 0, 0xff, { 595, 257, 626, 288, 0, 0, 0, 0 }, FLAG_CUSTOMKEY|FLAG_MAIN, { 595, 257, 627, 288 }, 1, 0 }
 };
 
-const int g_vkbKeyDefsSize = 130;
+const int g_vkbKeyDefsSize = 133;
 
 const int g_vkbTexFullW		= 768;
 const int g_vkbTexFullH		= 488;

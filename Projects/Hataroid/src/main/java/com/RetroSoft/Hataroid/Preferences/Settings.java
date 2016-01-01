@@ -77,6 +77,9 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 	public static final String kPrefName_Midi_Configure_InstrPatch		= "pref_midi_instrument_patches_configure";
 	public static final String kPrefName_Midi_Configure_PercPatch		= "pref_midi_drum_patches_configure";
 
+	public static final String kPrefName_Midi_Hardware_Out				= "pref_midi_hardware_out";
+	public static final String kPrefName_Midi_Hardware_In				= "pref_midi_hardware_in";
+
 	public static final String kPrefName_Midi_MuteSTSound				= "pref_sound_mute";
 	public static final String kPrefName_Midi_Tweak_Ignore_Pgm_Changes	= "pref_midi_tweak_ignore_pgm_changes";
 	public static final String kPrefName_Midi_Chan_Transpose			= "pref_midi_chan_transpose";
@@ -588,6 +591,11 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 			cat = (Preference)findPreference(kPrefName_Midi_Chan_Transpose);
 			if (cat != null) { cat.setEnabled(midiOutEnabled); }
 			cat = (Preference)findPreference(kPrefName_Midi_Setup_KK2Tweaks);
+			if (cat != null) { cat.setEnabled(midiOutEnabled); }
+
+			cat = (Preference)findPreference(kPrefName_Midi_Hardware_Out);
+			if (cat != null) { cat.setEnabled(midiOutEnabled); }
+			cat = (Preference)findPreference(kPrefName_Midi_Hardware_In);
 			if (cat != null) { cat.setEnabled(midiOutEnabled); }
 
 			{

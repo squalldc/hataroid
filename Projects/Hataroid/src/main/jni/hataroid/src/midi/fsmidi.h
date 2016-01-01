@@ -40,8 +40,12 @@ extern void fsMidi_setSetting(int sampleRate, int reverb, int chorus, int interp
 extern void fsMidi_setSettingVolGain(int volGain);
 extern void fsMidi_setIgnoreProgramChanges(int ignore);
 extern void fsMidi_setMidiTranspose(int transpose);
+extern void fsMidi_setMidiHardwareOutEnabled(int enable);
+extern void fsMidi_setMidiHardwareInEnabled(int enable);
 
 extern void fsMidi_writeByte(unsigned char b);
+extern int fsMidi_hasRecvData();
+extern unsigned char fsMidi_readRecvData();
 
 extern const FSMIDI_SAVEDATA* fsMidi_getSaveData();
 extern void fsMidi_setSaveData(FSMIDI_SAVEDATA* saveData);
@@ -57,6 +61,8 @@ extern int fsMidi_getFSynthMaxPoly();
 extern int fsMidi_getFSynthVolGain();
 extern int fsMidi_getIgnoreProgramChanges();
 extern int fsMidi_getMidiTranspose();
+extern int fsMidi_isMidiHardwareOutEnabled();
+extern int fsMidi_isMidiHardwareInEnabled();
 
 #ifdef __cplusplus
 }
