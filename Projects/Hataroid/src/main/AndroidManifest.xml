@@ -19,8 +19,8 @@
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.RetroSoft.Hataroid"
-    android:versionCode="1607"
-    android:versionName="1.607" >
+    android:versionCode="1608"
+    android:versionName="1.608" >
 
     <uses-sdk
         android:minSdkVersion="9"

@@ -143,7 +143,7 @@ void Midi_Reset(void)
  */
 void    MIDI_MemorySnapShot_Capture(bool bSave)
 {
-    if (gSaveVersion < 1706)
+    if (gSaveVersion <= 1706)
     {
         return;
     }

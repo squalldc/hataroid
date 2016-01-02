@@ -1,3 +1,6 @@
+v1.608
+- fix saves from v1.605 not loading
+
 v1.607
 - disable soft-synth if usb midi out is enabled
 
