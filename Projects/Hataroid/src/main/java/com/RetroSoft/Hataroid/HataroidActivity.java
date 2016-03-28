@@ -125,18 +125,21 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 			e.printStackTrace();
 		}
 
-		try
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1)
 		{
-			_usbMIDI = new USBMidi();
-			_usbMIDI.init(getApplicationContext());
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-		catch (Error e)
-		{
-			e.printStackTrace();
+			try
+			{
+				_usbMIDI = new USBMidi();
+				_usbMIDI.init(getApplicationContext());
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace();
+			}
+			catch (Error e)
+			{
+				e.printStackTrace();
+			}
 		}
 
 		_initSoftMenu();

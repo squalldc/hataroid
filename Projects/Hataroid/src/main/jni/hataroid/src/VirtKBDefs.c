@@ -142,10 +142,8 @@ const VirtKeyDef g_vkbKeyDefs[] =
 
 const int g_vkbKeyDefsSize = 133;
 
-const int g_vkbTexFullW		= 768;
-const int g_vkbTexFullH		= 488;
-const int g_vkbTexKbW		= 768;
-const int g_vkbTexKbH		= 256;
+const int g_vkbTexFullW		= 1024;
+const int g_vkbTexFullH		= 1024;
 
 const int g_vkbRowSearchSize		 = 6;
 
@@ -158,3 +156,11 @@ const RowSearch g_vkbRowSearch[] =
 	{ 176, 207, 74, 90 },
 	{ 208, 239, 91, 96 }
 };
+
+const SpriteDef g_vkbSpriteDefs[] =
+{
+	{ "vkbd", 0, 0, 768, 256, 768, 256 },
+	{ "jsRing", 0, 850, 175, 1023, 175, 173 },
+	{ "jsKnob", 176, 936, 260, 1020, 84, 84 }
+};
+const int g_vkbSpriteDefsCount = 3;

@@ -1,3 +1,12 @@
+v1.609
+- New Arcade-style Virtual Joystick
+	- Fixed or floating Joystick option
+	- Customizable deadzone and diagonal sensitivity
+	- Old joystick can be re-enabled in the options if you want it
+- Auto hide UI option (UI auto-hides if no touch input)
+- Native support for x86 Android devices
+- Fix crash on some Gingerbread devices
+
 v1.608
 - fix saves from v1.605 not loading
 

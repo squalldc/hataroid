@@ -23,6 +23,9 @@ enum
 	VkbZoom_NumOf
 };
 
+#define VKB_MaxTouches 3
+
+
 extern int VirtKB_OnSurfaceChanged(int width, int height);
 extern void VirtKB_CleanUp();
 extern void VirtKB_EnableInput(bool enable);
@@ -41,6 +44,7 @@ extern void VirtKB_setScreenZoomMode(bool set);
 extern void VirtKB_setDefaultScreenZoomPreset();
 //extern void VirtKB_setExtraKeys(bool set);
 extern void VirtKB_setObsessionKeys(bool set);
+extern void VirtKB_setAutoHide(bool set);
 extern void VirtKB_setHideAll(bool set);
 extern void VirtKB_setJoystickOnly(bool set);
 extern void VirtKB_setHideExtraJoyKeys(bool hide);
@@ -64,5 +68,12 @@ extern void VirtKB_SetKeySizeVX(float size);
 extern void VirtKB_SetKeySizeVY(float size);
 extern void VirtKB_SetKeySizeHX(float size);
 extern void VirtKB_SetKeySizeHY(float size);
+
+extern const SpriteDef* VirtKB_findSpriteDef(const char *name);
+
+extern void VirtKB_VJStickEnable(bool useVJStick);
+extern void VirtKB_VJStickSetFloating(bool vjStickFloating);
+extern void VirtKB_VJStickSetDeadZone(float size);
+extern void VirtKB_VJStickSetDiagSensitivity(float sensitivity);
 
 #endif /* VIRTKB_H_ */

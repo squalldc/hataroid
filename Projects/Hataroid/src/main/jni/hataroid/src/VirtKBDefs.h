@@ -164,8 +164,8 @@ enum
 
 enum
 {
-	FLAG_STFNKEY		= (1<<0),
-	FLAG_POLY		= (1<<1),
+	FLAG_POLY		= (1<<0),
+	FLAG_STFNKEY		= (1<<1),
 	FLAG_STKEY		= (1<<2),
 	FLAG_PERSIST		= (1<<3),
 	FLAG_CUSTOMKEY		= (1<<4),
@@ -180,8 +180,6 @@ enum
 
 extern const int g_vkbTexFullW;
 extern const int g_vkbTexFullH;
-extern const int g_vkbTexKbW;
-extern const int g_vkbTexKbH;
 
 typedef struct
 {
@@ -193,6 +191,17 @@ typedef struct
 
 extern const RowSearch g_vkbRowSearch[];
 extern const int g_vkbRowSearchSize;
+
+typedef struct
+{
+	const char*		name;
+	const short		x1, y1, x2, y2;
+	const short		w, h;
+
+} SpriteDef;
+
+extern const SpriteDef g_vkbSpriteDefs[];
+extern const int g_vkbSpriteDefsCount;
 
 #ifdef __cplusplus
 };  /* end of extern "C" */

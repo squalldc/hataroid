@@ -46,6 +46,42 @@
 				android:defaultValue="1" />
 			<CheckBoxPreference
 				android:persistent="true"
+				android:key="pref_input_joysticks_vjstick"
+				android:title="@string/input_joysticks_vjstick"
+				android:summaryOn="@string/input_joysticks_vjstick_summary"
+				android:summaryOff="@string/input_joysticks_vjstick_summary"
+				android:defaultValue="true" />
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_input_joysticks_vjstick_floating"
+				android:title="@string/input_joysticks_vjstick_floating"
+				android:summaryOn="@string/input_joysticks_vjstick_floating_summary"
+				android:summaryOff="@string/input_joysticks_vjstick_floating_summary"
+				android:defaultValue="false" />
+			<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
+				android:persistent="true"
+				android:key="pref_input_joysticks_vjstick_deadzone"
+				android:title="@string/input_joysticks_deadzone"
+				android:summary="@string/input_joysticks_deadzone_summary"
+				android:defaultValue="40"
+				android:max="100"
+				robobunny:min="0"
+				robobunny:unitsLeft=""
+				robobunny:unitsRight=" %"
+				/>
+			<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
+				android:persistent="true"
+				android:key="pref_input_joysticks_vjstick_diag_sensitivity"
+				android:title="@string/input_joysticks_diag_sensitivity"
+				android:summary="@string/input_joysticks_diag_sensitivity_summary"
+				android:defaultValue="50"
+				android:max="100"
+				robobunny:min="0"
+				robobunny:unitsLeft=""
+				robobunny:unitsRight=" %"
+				/>
+			<CheckBoxPreference
+				android:persistent="true"
 				android:key="pref_input_joysticks_autofire"
 				android:title="@string/input_joysticks_autofire"
 				android:summaryOn="@string/input_joysticks_autofire_summary"
@@ -130,6 +166,13 @@
 				robobunny:unitsLeft=""
 				robobunny:unitsRight=" %"
 			/>
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_input_onscreen_autohide"
+				android:title="@string/input_onscreen_autohide"
+				android:summaryOn="@string/input_onscreen_autohide_summary"
+				android:summaryOff="@string/input_onscreen_autohide_summary"
+				android:defaultValue="false" />
 			<CheckBoxPreference
 				android:persistent="true"
 				android:key="pref_input_onscreen_hide_all"

@@ -10,6 +10,7 @@
 
 #include "VirtKBDefs.h"
 #include "VirtKBTex.h"
+#include "VirtJoy.h"
 #include "uncompressGZ.h"
 #include "nativeRenderer_ogles2.h"
 #include "ShortcutMap.h"
@@ -54,6 +55,8 @@ extern "C"
 #define ST_SCANCODE_RIGHTARROW	0x4D
 #define ST_SCANCODE_LEFTARROW	0x4B
 
+#define AUTOHIDE_DELAY_SECS     1.0f
+
 struct QuickKey;
 typedef void (*OnKeyEvent)(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 
@@ -92,6 +95,9 @@ struct QuickKey
 static volatile bool	s_InputReady = false;
 static volatile bool	s_InputEnabled = false;
 
+static int          g_vkbTexKbW = 0;
+static int          g_vkbTexKbH = 0;
+
 static bool			s_showKeyboard = false;
 static bool			s_keyboardZoomMode = false;
 static bool			s_screenZoomMode = false;
@@ -122,10 +128,9 @@ static float		s_QuickKeyAlpha = 0.65f;
 static float		s_QuickKeyLum = 1.0f;
 static float		s_joystickAlpha = 0.65f;
 
-static const int	MaxTouches = 3;
-static bool			s_curtouched[2][MaxTouches] = { false };
-static float		s_curtouchX[2][MaxTouches] = {0};
-static float		s_curtouchY[2][MaxTouches] = {0};
+static bool			s_curtouched[2][VKB_MaxTouches] = { false };
+static float		s_curtouchX[2][VKB_MaxTouches] = {0};
+static float		s_curtouchY[2][VKB_MaxTouches] = {0};
 
 static BitFlags*	s_curButtons[2] = {0};
 static BitFlags*	s_changedButtons = 0;
@@ -162,6 +167,12 @@ static int			s_curKeyboardZoomPreset = VkbZoom_Fit;
 static int			s_mouseButtonIgnoreQuickKeyIdx[2]; // HACK
 static float		s_mouseSpeed = 1;
 
+static bool         s_autoHide = false;
+static bool         s_autoHideInput = false;
+static float        s_autoHideAlpha = 1;
+static float        s_autoHideDelay = 0;
+static long         s_autoHideTicks = 0;
+
 static bool			s_hideAll = false;
 static bool			s_showJoystickOnly = false;
 static bool			s_hideExtraJoyKeys = false;
@@ -180,27 +191,34 @@ static BitFlags*	s_jKeyPresses = new BitFlags(VKB_KEY_NumOf);
 
 static ShortcutMap*	s_shortcutMap = new ShortcutMap();
 
-static int s_mouseFinger = -1;
-static int s_mouseMoved = 0;
-static float s_prevMouseX = 0;
-static float s_prevMouseY = 0;
-static float s_mouseDx = 0;
-static float s_mouseDy = 0;
+static int			s_mouseFinger = -1;
+static int			s_mouseMoved = 0;
+static float		s_prevMouseX = 0;
+static float		s_prevMouseY = 0;
+static float		s_mouseDx = 0;
+static float		s_mouseDy = 0;
 
-static bool s_LMB = false;
-static bool s_RMB = false;
+static bool			s_LMB = false;
+static bool			s_RMB = false;
 
-static int s_prevFingerCount = 0;
-static int s_mousePresses = 0;
-static float s_mousePressTime = 0;
+static int			s_prevFingerCount = 0;
+static int			s_mousePresses = 0;
+static float		s_mousePressTime = 0;
 
-static bool s_mouseQuickPress = false;
+static bool			s_mouseQuickPress = false;
 
 static float		_prevHWMouseX = MAXFLOAT;
 static float		_prevHWMouseY = MAXFLOAT;
 static float		_curHWMouseX = MAXFLOAT;
 static float		_curHWMouseY = MAXFLOAT;
 static int			_curHWMouseBtns = 0;
+
+static VirtJoy*		_virtJoy = 0;
+static bool         _virtJoyEnabled = false;
+static bool         _virtJoyFloating = false;
+static float        _virtJoyDeadZone = 0;
+static float        _virtJoyDiagSensitivity = 0.5f;
+
 
 static void VirtKB_Create();
 static void VirtKB_CreateTextures();
@@ -229,7 +247,7 @@ static void VirtKB_updateHardwareMouse();
 static void VirtKB_clearMousePresses();
 
 static void VirtKB_onRender();
-static void VirtKB_RenderVerts(RTShader *pShader, GLfloat *v, GLsizei vstride, GLuint texID, GLushort *ind, int numVerts);
+static void VirtKB_RenderVerts(RTShader *pShader, GLfloat *v, GLsizei vstride, GLuint texID, GLushort *ind, int numQuads);
 static void VirtKB_UpdateRectVerts(	GLfloat *v, float x1, float y1, float x2, float y2,
 								float u1, float v1, float u2, float v2,
 								float r, float g, float b, float a);
@@ -255,6 +273,20 @@ static void VirtKB_ShowFloppyAInsert(const VirtKeyDef *keyDef, uint32_t uParam1,
 static void VirtKB_ShowFloppyBInsert(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 static void VirtKB_ShowSettingsMenu(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 
+static void VirtKB_updateAutoHide(bool touched);
+
+const SpriteDef* VirtKB_findSpriteDef(const char *name)
+{
+    for (int i = 0; i < g_vkbSpriteDefsCount; ++i)
+    {
+        if (strcmp(g_vkbSpriteDefs[i].name, name) == 0)
+        {
+            return &g_vkbSpriteDefs[i];
+        }
+    }
+    return 0;
+}
+
 void VirtKB_RefreshKB()
 {
 	s_recreateQuickKeys = true;
@@ -265,6 +297,16 @@ int VirtKB_GetJoystickPort()
 	return s_joyID;
 }
 
+
+void _clearJoystickInput()
+{
+    Joy_CustomUp(s_joyID, ATARIJOY_BITMASK_LEFT);
+    Joy_CustomUp(s_joyID, ATARIJOY_BITMASK_RIGHT);
+    Joy_CustomUp(s_joyID, ATARIJOY_BITMASK_UP);
+    Joy_CustomUp(s_joyID, ATARIJOY_BITMASK_DOWN);
+    Joy_CustomUp(s_joyID, ATARIJOY_BITMASK_FIRE);
+}
+
 void VirtKB_SetJoystickPort(int port)
 {
 	if (port < 0 || port >= JOYSTICK_COUNT)
@@ -273,11 +315,7 @@ void VirtKB_SetJoystickPort(int port)
 	}
 
 	// clear cur joystick
-	Joy_CustomUp(s_joyID, ATARIJOY_BITMASK_LEFT);
-	Joy_CustomUp(s_joyID, ATARIJOY_BITMASK_RIGHT);
-	Joy_CustomUp(s_joyID, ATARIJOY_BITMASK_UP);
-	Joy_CustomUp(s_joyID, ATARIJOY_BITMASK_DOWN);
-	Joy_CustomUp(s_joyID, ATARIJOY_BITMASK_FIRE);
+    _clearJoystickInput();
 
 	s_joyID = port;
 }
@@ -357,6 +395,12 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_updateInput
 	_curHWMouseY = mouseY;
 	_curHWMouseBtns = mouseBtns;
 
+    VirtKB_updateAutoHide(t0 || t1 || t2);
+
+    if (_virtJoyEnabled && _virtJoy != 0)
+    {
+        _virtJoy->update(s_curIndex, s_curtouched, s_curtouchX, s_curtouchY, VKB_MaxTouches);
+    }
 	VirtKB_updateInput();
 
 	if (s_recreateQuickKeys)
@@ -397,6 +441,12 @@ int VirtKB_OnSurfaceChanged(int width, int height)
 
 void VirtKB_CleanUp()
 {
+	if (_virtJoy != 0)
+	{
+		delete _virtJoy;
+		_virtJoy = 0;
+	}
+
 	VirtKB_DestroyShader();
 	VirtKB_ClearQuickKeys();
 	VirtKB_DestroyTextures();
@@ -411,7 +461,7 @@ void VirtKB_CleanUp()
 
 	for (int j = 0; j < 2; ++j)
 	{
-		for (int i = 0; i < MaxTouches; ++i)
+		for (int i = 0; i < VKB_MaxTouches; ++i)
 		{
 			s_curtouched[j][i] = false;
 			s_curtouchX[j][i] = 0;
@@ -426,14 +476,26 @@ void VirtKB_CleanUp()
 
 void VirtKB_Create()
 {
-	VirtKB_InitCallbacks();
+    {
+        g_vkbTexKbW = 0;
+        g_vkbTexKbH = 0;
+
+        const SpriteDef *vkbSprite = VirtKB_findSpriteDef("vkbd");
+        if (vkbSprite != 0)
+        {
+            g_vkbTexKbW = vkbSprite->w;
+            g_vkbTexKbH = vkbSprite->h;
+        }
+    }
+
+    VirtKB_InitCallbacks();
 	s_jKeyPresses->clearAll();
 
 	Joy_SetCustomEmu(1);
 
 	for (int j = 0; j < 2; ++j)
 	{
-		for (int i = 0; i < MaxTouches; ++i)
+		for (int i = 0; i < VKB_MaxTouches; ++i)
 		{
 			s_curtouched[j][i] = false;
 			s_curtouchX[j][i] = 0;
@@ -451,6 +513,14 @@ void VirtKB_Create()
 	s_changedButtons = new BitFlags(VKB_KEY_NumOf);
 
 	VirtKB_CreateTextures();
+
+    if (_virtJoy == 0)
+    {
+        _virtJoy = new VirtJoy();
+        _virtJoy->create(s_KbTextureID, s_VkbGPUTexWidth, s_VkbGPUTexHeight, _virtJoyDeadZone, s_joystickSize, _virtJoyDiagSensitivity,
+                         s_joystickAlpha, s_autoHideAlpha, _virtJoyFloating);
+    }
+
 	VirtKB_CreateQuickKeys();
 
 	if (!s_VkbZoomInited)
@@ -735,7 +805,7 @@ void VirtKB_CreateQuickKeys()
 
 	if (s_hideAll)
 	{
-		return;
+		//return;
 	}
 
 	int scrwidth = getScreenWidth();
@@ -747,7 +817,7 @@ void VirtKB_CreateQuickKeys()
 	float sscale = (float)scrwidth/1024.0f;
 
 	// top left keys
-	if (!s_showJoystickOnly)
+	if (!s_showJoystickOnly && !s_hideAll)
 	{
 		int keyOffsetX = (int)ceilf(10*sscale);
 		int keyOffsetY = (int)ceilf(10*sscale);
@@ -781,7 +851,7 @@ void VirtKB_CreateQuickKeys()
 
 	// top right keys
 	//if (!s_showJoystickOnly && !(s_hideShortcutKeys && s_hideTurboKey))
-	if (!s_showJoystickOnly && !(s_hideShortcutKeys))
+	//if (!s_showJoystickOnly && !(s_hideShortcutKeys))
 	{
 		int keyOffsetX = (int)ceilf(10*sscale);
 		int keyOffsetY = (int)ceilf(10*sscale);
@@ -798,32 +868,40 @@ void VirtKB_CreateQuickKeys()
 		//	vkbKeys[numKeys++] = VKB_KEY_NORMALSPEED;
 		//}
 
-		if (s_vkbObsessionKeys)
-		{
-			vkbKeys[numKeys++] = VKB_KEY_NORMALSPEED;
-			vkbKeys[numKeys++] = VKB_KEY_F1; vkbKeys[numKeys++] = VKB_KEY_F2; vkbKeys[numKeys++] = VKB_KEY_F3; vkbKeys[numKeys++] = VKB_KEY_ANDROID_MENU;
-		}
-		else
-		{
-			if (!s_hideShortcutKeys)
-			{
-				const int *shortcutKeys = s_shortcutMap->getCurAnchorList(ShortcutMap::kAnchorTR);
-				for (int k = 0; k < ShortcutMap::kMaxKeys[ShortcutMap::kAnchorTR]; ++k)
-				{
-					int vkId = shortcutKeys[k];
-					if (vkId >= 0)
-					{
-						vkbKeys[numKeys++] = vkId;
-					}
-				}
+        if (!s_showJoystickOnly && !(s_hideShortcutKeys) && !s_hideAll)
+        {
+            if (s_vkbObsessionKeys)
+            {
+                vkbKeys[numKeys++] = VKB_KEY_NORMALSPEED;
+                vkbKeys[numKeys++] = VKB_KEY_F1; vkbKeys[numKeys++] = VKB_KEY_F2; vkbKeys[numKeys++] = VKB_KEY_F3; vkbKeys[numKeys++] = VKB_KEY_ANDROID_MENU;
+            }
+            else
+            {
+                if (!s_hideShortcutKeys)
+                {
+                    const int *shortcutKeys = s_shortcutMap->getCurAnchorList(ShortcutMap::kAnchorTR);
+                    for (int k = 0; k < ShortcutMap::kMaxKeys[ShortcutMap::kAnchorTR]; ++k)
+                    {
+                        int vkId = shortcutKeys[k];
+                        if (vkId >= 0)
+                        {
+                            vkbKeys[numKeys++] = vkId;
+                        }
+                    }
 
-				//vkbKeys[numKeys++] = VKB_KEY_Y; vkbKeys[numKeys++] = VKB_KEY_N; vkbKeys[numKeys++] = VKB_KEY_1; vkbKeys[numKeys++] = VKB_KEY_2;
-				//if (s_vkbExtraKeys)
-				//{
-				//	vkbKeys[numKeys++] = VKB_KEY_RETURN;
-				//}
-			}
-		}
+                    //vkbKeys[numKeys++] = VKB_KEY_Y; vkbKeys[numKeys++] = VKB_KEY_N; vkbKeys[numKeys++] = VKB_KEY_1; vkbKeys[numKeys++] = VKB_KEY_2;
+                    //if (s_vkbExtraKeys)
+                    //{
+                    //	vkbKeys[numKeys++] = VKB_KEY_RETURN;
+                    //}
+                }
+            }
+        }
+        else
+        {
+            // always show menu key
+            vkbKeys[numKeys++] = VKB_KEY_ANDROID_MENU;
+        }
 
 		int curKeyY = keyOffsetY;
 		for (int i = 0; i < numKeys; ++i)
@@ -881,6 +959,7 @@ void VirtKB_CreateQuickKeys()
 	// bottom right keys
 	bool joyMode = (s_curInputFlags & FLAG_JOY) != 0;
 	int obsessionButtonSize = 120;
+	if (!s_hideAll)
 	{
 		int keyOffsetX = (int)ceilf(30*sscale);
 		int keyOffsetY = (int)ceilf(30*sscale);
@@ -949,10 +1028,11 @@ void VirtKB_CreateQuickKeys()
 		joyAreaMaxX = curKeyX;
 	}
 
+    bool enableVirtJoystick = false;
 	if (joyMode)
 	{
 		// bottom left keys
-		if (s_vkbObsessionKeys)
+		if (s_vkbObsessionKeys && !s_hideAll)
 		{
 			int keyOffsetX = (int)ceilf(30*sscale);
 			int keyOffsetY = (int)ceilf(30*sscale);
@@ -981,9 +1061,12 @@ void VirtKB_CreateQuickKeys()
 
 			joyAreaMaxX = curKeyX;
 		}
-		else if (!s_hideJoystick)
+		else if (!s_hideJoystick && !s_hideAll)
 		{
+            enableVirtJoystick = _virtJoyEnabled;
+
 			// joystick dir - from bottom left
+			if (!_virtJoyEnabled)
 			{
 				int keyOffsetX = (int)ceilf(30*sscale);
 				int keyOffsetY = (int)ceilf(30*sscale);
@@ -1025,6 +1108,12 @@ void VirtKB_CreateQuickKeys()
 		}
 	}
 
+	if (_virtJoy != 0)
+    {
+        _virtJoy->setEnabled(enableVirtJoystick);
+        _virtJoy->setJoyArea(0, joyAreaMinY, joyAreaMaxX, scrheight);
+    }
+
 	VirtKB_UpdateQuickKeyVerts();
 }
 
@@ -1059,7 +1148,7 @@ static void VirtKB_SetupShader()
 	}
 }
 
-static void VirtKB_RenderVerts(RTShader *pShader, GLfloat *v, GLsizei vstride, GLuint texID, GLushort *ind, int numVerts)
+static void VirtKB_RenderVerts(RTShader *pShader, GLfloat *v, GLsizei vstride, GLuint texID, GLushort *ind, int numQuads)
 {
 	if (pShader == 0 || !pShader->_ready)
 	{
@@ -1095,7 +1184,7 @@ static void VirtKB_RenderVerts(RTShader *pShader, GLfloat *v, GLsizei vstride, G
 		glUniform1i(pShader->_paramHandles[RTShader::ShaderParam_Sampler], 0);
 	}
 
-	glDrawElements(GL_TRIANGLES, 6*numVerts, GL_UNSIGNED_SHORT, ind);
+	glDrawElements(GL_TRIANGLES, 6*numQuads, GL_UNSIGNED_SHORT, ind);
 }
 
 static void VirtKB_onRender()
@@ -1118,6 +1207,10 @@ static void VirtKB_onRender()
 	// Quick Keys
 	VirtKB_RenderVerts(pShader, s_QuickKeyVerts, s_QuickKeyStride, s_KbTextureID, s_QuickKeyIndices, s_numQuickKeys);
 
+	if (_virtJoyEnabled && _virtJoy != 0)
+	{
+		_virtJoy->render();
+	}
 }
 
 static void VirtKB_UpdateQuickKeyVerts()
@@ -1140,6 +1233,8 @@ static void VirtKB_UpdateQuickKeyVerts()
 		float tx2 = qk->tx2, ty2 = qk->ty2;
 
 		float a = (qk->panel == QuickKey::PANEL_BL || qk->panel == QuickKey::PANEL_BR) ? s_joystickAlpha : s_QuickKeyAlpha;
+        a *= s_autoHideAlpha;
+
 		float r = s_QuickKeyLum;
 		float g = s_QuickKeyLum;
 		float b = s_QuickKeyLum;
@@ -1158,6 +1253,8 @@ void updateQuickKeyColor(int qkID, QuickKey *qk, bool down)
 //	float b = down ? 1.0f : s_QuickKeyLum;
 
 	float a = (qk->panel == QuickKey::PANEL_BL || qk->panel == QuickKey::PANEL_BR) ? s_joystickAlpha : s_QuickKeyAlpha;
+    a *= s_autoHideAlpha;
+
 	float r = down ? 0.1f : s_QuickKeyLum;
 	float g = down ? 0.1f : s_QuickKeyLum;
 	float b = s_QuickKeyLum;
@@ -1194,7 +1291,7 @@ void VirtKB_updateInput()
 	VirtKB_resetVkbPresses();
 
 	// retrieve current touches
-	for (int i = 0; i < MaxTouches; ++i)
+	for (int i = 0; i < VKB_MaxTouches; ++i)
 	{
 		if (curtouched[i])
 		{
@@ -1218,6 +1315,35 @@ void VirtKB_updateInput()
 			}
 		}
 	}
+
+	// new arcade virtual joystick
+	if (_virtJoyEnabled && _virtJoy != 0 && _virtJoy->isEnabled())
+    {
+        const int virtJoy1VKIDMap[] = {VKB_KEY_JOYUP, VKB_KEY_JOYDOWN, VKB_KEY_JOYLEFT, VKB_KEY_JOYRIGHT};
+        const int virtJoy2VKIDMap[] = {VKB_KEY_JOY2UP, VKB_KEY_JOY2DOWN, VKB_KEY_JOY2LEFT, VKB_KEY_JOY2RIGHT};
+
+        const int *virtJoyVKIDMap = (s_joyID==0) ? virtJoy2VKIDMap : virtJoy1VKIDMap;
+
+        unsigned int vjBtnDown = _virtJoy->getBtnFlags();
+        if (vjBtnDown != 0)
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                if (numCurButtonDown >= MaxButtonDown)
+                {
+                    break;
+                }
+
+                if ((vjBtnDown & (1<<i)) != 0)
+                {
+                    int vkID = virtJoyVKIDMap[i];
+                    curButtons->setBit(vkID);
+                    curButtonDownSet[numCurButtonDown] = MAKE_BUTTON_DOWN_SET(vkID, INVALID_QUICK_KEY_ID);
+                    ++numCurButtonDown;
+                }
+            }
+        }
+    }
 
 	// vkb
 	if (s_keyboardZoomMode || s_screenZoomMode)
@@ -1254,7 +1380,7 @@ void VirtKB_updateInput()
 	}
 	else if (s_showKeyboard)
 	{
-		for (int i = 0; i < MaxTouches; ++i)
+		for (int i = 0; i < VKB_MaxTouches; ++i)
 		{
 			if (numCurButtonDown >= MaxButtonDown)
 			{
@@ -1464,7 +1590,7 @@ static void VirtKB_updateMouse()
 		s_mousePresses = 0;
 	}
 
-	for (int i = 0; i < MaxTouches; ++i)
+	for (int i = 0; i < VKB_MaxTouches; ++i)
 	{
 		if (curtouched[i]) { ++fingers; }
 	}
@@ -1473,7 +1599,7 @@ static void VirtKB_updateMouse()
 	{
 		bool isButtonMode = (s_curInputFlags & FLAG_MOUSEBUTTON) != 0;
 
-		for (int i = 0; i < MaxTouches; ++i)
+		for (int i = 0; i < VKB_MaxTouches; ++i)
 		{
 			if (curtouched[i])
 			{
@@ -1817,7 +1943,7 @@ static void VirtKB_UpdateVkbVerts()
 		float tx1 = 0.0f, ty1 = 0.0f;
 		float tx2 = (float)g_vkbTexKbW/(float)tw, ty2 = (float)g_vkbTexKbH/(float)th;
 
-		float a = s_VkbAlpha;
+		float a = s_VkbAlpha * s_autoHideAlpha;
 		float r = s_VkbLum;
 		float g = s_VkbLum;
 		float b = s_VkbLum;
@@ -2148,12 +2274,22 @@ void VirtKB_SetJoystickAlpha(float alpha)
 	s_recreateQuickKeys = true;
 
 	VirtKB_UpdateVkbVerts();
+
+	if (_virtJoy != 0)
+    {
+        _virtJoy->setAlpha(alpha);
+    }
 }
 
 void VirtKB_SetJoystickSize(float size)
 {
 	s_joystickSize = size;
 	s_recreateQuickKeys = true;
+
+	if (_virtJoy != 0)
+    {
+        _virtJoy->setScale(size);
+    }
 }
 
 void VirtKB_SetJoystickFireSize(float size)
@@ -2176,17 +2312,99 @@ void VirtKB_setObsessionKeys(bool set)
 	s_recreateQuickKeys = true;
 }
 
+void _setAutoHideAlpha(float a)
+{
+    s_autoHideAlpha = a;
+    if (_virtJoy != 0)
+    {
+        _virtJoy->setAutoHideAlpha(s_autoHideAlpha);
+    }
+
+}
+void VirtKB_setAutoHide(bool set)
+{
+    s_autoHide = set;
+    _setAutoHideAlpha(set ? 0 : 1);
+    s_autoHideInput = false;
+    s_autoHideDelay = 0;
+
+    s_recreateQuickKeys = true;
+}
+
+void VirtKB_updateAutoHide(bool touched)
+{
+    if (!s_autoHide && !s_hideAll)
+    {
+        return;
+    }
+
+    bool refreshVerts = false;
+
+    if (touched != s_autoHideInput)
+    {
+        s_autoHideInput = touched;
+        if (touched)
+        {
+            _setAutoHideAlpha(1);
+            refreshVerts = true;
+        }
+        if (!touched)
+        {
+            s_autoHideTicks = SDL_GetTicks();
+            s_autoHideDelay = AUTOHIDE_DELAY_SECS;
+        }
+    }
+
+    if (!s_autoHideInput)
+    {
+        if (s_autoHideAlpha > 0.0f)
+        {
+            long nowMS = SDL_GetTicks();
+            long elapsedMS = nowMS - s_autoHideTicks;
+            float deltaSecs = elapsedMS * (1.0f/1000.0f);
+
+            if (s_autoHideDelay > 0.0f)
+            {
+                s_autoHideDelay -= deltaSecs;
+            }
+            else
+            {
+                float alpha = s_autoHideAlpha - (2.0f * deltaSecs);
+                if (alpha < 0.0f)
+                {
+                    alpha = 0.0f;
+                }
+                _setAutoHideAlpha(alpha);
+            }
+            refreshVerts = true;
+
+            s_autoHideTicks = nowMS;
+        }
+    }
+
+    if (refreshVerts)
+    {
+        VirtKB_UpdateQuickKeyVerts();
+        VirtKB_UpdateVkbVerts();
+    }
+}
+
 void VirtKB_setHideAll(bool set)
 {
 	s_hideAll = set;
 	s_recreateQuickKeys = true;
+
+	if (_virtJoy != 0)
+    {
+        _virtJoy->setHide(set);
+    }
 }
 
 static void VirtKB_ToggleShowUI(const VirtKeyDef *keyDef, uint32_t uParam1, bool down)
 {
 	if (down)
 	{
-		s_hideAll = !s_hideAll;
+        VirtKB_setHideAll(!s_hideAll);
 		s_recreateQuickKeys = true;
 	}
 }
@@ -2332,4 +2550,45 @@ void VirtKB_SetKeySizeHY(float size)
 {
 	s_keySizeHY = size;
 	s_recreateQuickKeys = true;
+}
+
+void VirtKB_VJStickEnable(bool useVJStick)
+{
+    _virtJoyEnabled = useVJStick;
+    if (_virtJoy != 0)
+    {
+        _virtJoy->setEnabled(_virtJoyEnabled);
+    }
+
+    // clear current joystick buttons
+    //_clearJoystickInput();
+
+    s_recreateQuickKeys = true;
+}
+
+void VirtKB_VJStickSetFloating(bool vjStickFloating)
+{
+    _virtJoyFloating = vjStickFloating;
+    if (_virtJoy != 0)
+    {
+        _virtJoy->setFloating(_virtJoyFloating);
+    }
+}
+
+void VirtKB_VJStickSetDeadZone(float size)
+{
+    _virtJoyDeadZone = size;
+    if (_virtJoy != 0)
+    {
+        _virtJoy->setDeadZone(size);
+    }
+}
+
+void VirtKB_VJStickSetDiagSensitivity(float sensitivity)
+{
+    _virtJoyDiagSensitivity = sensitivity;
+    if (_virtJoy != 0)
+    {
+        _virtJoy->setDiagSensitivity(sensitivity);
+    }
 }

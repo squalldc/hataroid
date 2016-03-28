@@ -155,8 +155,8 @@ public class VirtKeyDef
 
 	public final static int VKB_KEY_NumOf		= 133;
 
-	public final static int FLAG_STFNKEY		= (1<<0);
-	public final static int FLAG_POLY		= (1<<1);
+	public final static int FLAG_POLY		= (1<<0);
+	public final static int FLAG_STFNKEY		= (1<<1);
 	public final static int FLAG_STKEY		= (1<<2);
 	public final static int FLAG_PERSIST		= (1<<3);
 	public final static int FLAG_CUSTOMKEY		= (1<<4);

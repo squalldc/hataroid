@@ -1216,6 +1216,30 @@ void _optionSetJoystickFireSize(const OptionSetting *setting, const char *val, E
 	VirtKB_SetJoystickFireSize(size);
 }
 
+void _optionSetJoystickVJStick(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+    bool useVJStick = _getBoolVal(val);
+    VirtKB_VJStickEnable(useVJStick);
+}
+
+void _optionSetJoystickVJStickFloating(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+    bool vjStickFloating = _getBoolVal(val);
+    VirtKB_VJStickSetFloating(vjStickFloating);
+}
+
+void _optionSetJoystickVJStickDeadZone(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+    float size = _getOptionFloatPercent(val, 0.0f, 0.99f);
+    VirtKB_VJStickSetDeadZone(size);
+}
+
+void _optionSetJoystickVJStickDiagSensitivity(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+    float sensitivity = _getOptionFloatPercent(val, 0.0f, 1.0f);
+    VirtKB_VJStickSetDiagSensitivity(sensitivity);
+}
+
 bool _optionValBootFromHD(const OptionSetting *setting, char *dstBuf, int dstBufLen)
 {
 	strncpy(dstBuf, ConfigureParams.HardDisk.bBootFromHardDisk?"true":"false", dstBufLen);
@@ -1351,6 +1375,12 @@ void _optionSetVKBObsessionKeys(const OptionSetting *setting, const char *val, E
 	bool valSet = _getBoolVal(val);
 //	_altUpdate = valSet;
 	VirtKB_setObsessionKeys(valSet);
+}
+
+void _optionSetVKBAutoHide(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+    bool valSet = _getBoolVal(val);
+    VirtKB_setAutoHide(valSet);
 }
 
 void _optionSetVKBHideAll(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
@@ -1572,6 +1602,10 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_input_joysticks_maparrowkeys", _optionSetJoystickMapArrowKeys, 0 },
 	{ "pref_input_joysticks_size", _optionSetJoystickSize, 0 },
 	{ "pref_input_joysticks_fire_size", _optionSetJoystickFireSize, 0 },
+    { "pref_input_joysticks_vjstick", _optionSetJoystickVJStick, 0 },
+    { "pref_input_joysticks_vjstick_floating", _optionSetJoystickVJStickFloating, 0 },
+    { "pref_input_joysticks_vjstick_deadzone", _optionSetJoystickVJStickDeadZone, 0 },
+    { "pref_input_joysticks_vjstick_diag_sensitivity", _optionSetJoystickVJStickDiagSensitivity, 0 },
 	{ "pref_input_mouse_emutype", _optionSetMouseEmuType, 0 },
 	{ "pref_input_mouse_speed", _optionSetMouseSpeed, 0 },
 	{ "pref_input_onscreen_alpha", _optionSetOnScreenAlpha, 0 },
@@ -1624,6 +1658,7 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_sound_downmix_enabled", _optionSoundDownmixStereoMono, 0 },
 	//{ "pref_input_keyboard_extra_keys", _optionSetVKBExtraKeys, 0 },
 	{ "pref_input_keyboard_obsession_keys", _optionSetVKBObsessionKeys, 0 },
+    { "pref_input_onscreen_autohide", _optionSetVKBAutoHide, 0 },
 	{ "pref_input_onscreen_hide_all", _optionSetVKBHideAll, 0 },
 	{ "pref_input_onscreen_only_joy", _optionSetVKBJoystickOnly, 0 },
 	{ "pref_input_onscreen_hide_extra_joy_keys", _optionSetVKBHideExtraJoyKeys, 0 },
