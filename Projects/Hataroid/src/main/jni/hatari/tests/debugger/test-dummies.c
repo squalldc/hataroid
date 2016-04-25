@@ -10,15 +10,63 @@ Uint64 LogTraceFlags = 0;
 #include "configuration.h"
 CNF_PARAMS ConfigureParams;
 
+/* fake options.c */
+#include "options.h"
+bool Opt_IsAtariProgram(const char *path) { return false; }
+
 /* fake cycles stuff */
 #include "cycles.h"
 int CurrentInstrCycles;
 int Cycles_GetCounter(int nId) { return 0; }
 
-/* fake ST RAM */
+/* bring in gemdos defines (EMULATEDDRIVES) */
+#include "gemdos.h"
+
+/* fake ST RAM, only 24-bit support */
 #include "stMemory.h"
 Uint8 STRam[16*1024*1024];
 Uint32 STRamEnd = 4*1024*1024;
+Uint32 STMemory_ReadLong(Uint32 addr) {
+	Uint32 val;
+	if (addr >= STRamEnd) return 0;
+	val = (STRam[addr] << 24) | (STRam[addr+1] << 16) | (STRam[addr+2] << 8) | STRam[addr+3];
+	return val;
+}
+Uint16 STMemory_ReadWord(Uint32 addr) {
+	Uint16 val;
+	if (addr >= STRamEnd) return 0;
+	val = (STRam[addr] << 8) | STRam[addr+1];
+	return val;
+}
+Uint8 STMemory_ReadByte(Uint32 addr) {
+	if (addr >= STRamEnd) return 0;
+	return STRam[addr];
+}
+void STMemory_WriteByte(Uint32 addr, Uint8 val) {
+	if (addr < STRamEnd)
+		STRam[addr] = val;
+}
+void STMemory_WriteWord(Uint32 addr, Uint16 val) {
+	if (addr < STRamEnd) {
+		STRam[addr+0] = val >> 8;
+		STRam[addr+1] = val & 0xff;
+	}
+}
+void STMemory_WriteLong(Uint32 addr, Uint32 val) {
+	if (addr < STRamEnd) {
+		STRam[addr+0] = val >> 24;
+		STRam[addr+1] = val >> 16 & 0xff;
+		STRam[addr+2] = val >> 8 & 0xff;
+		STRam[addr+3] = val & 0xff;
+	}
+}
+bool STMemory_CheckAreaType(Uint32 addr, int size, int mem_type ) {
+	if ((addr > STRamEnd && addr < 0xe00000) ||
+	    (addr >= 0xff0000 && addr < 0xff8000)) {
+		return false;
+	}
+	return true;
+}
 
 /* fake memory banks */
 #include "cpuMemory.h"
@@ -56,19 +104,25 @@ Uint32 TosAddress, TosSize;
 #include "debugui.h"
 FILE *debugOutput;
 void DebugUI(debug_reason_t reason) { }
-void DebugUI_PrintCmdHelp(const char *psCmd) { }
+int DebugUI_PrintCmdHelp(const char *psCmd) { return DEBUGGER_CMDDONE; }
+char *DebugUI_MatchHelper(const char **strings, int items, const char *text, int state) {
+	return NULL;
+}
 
 /* fake debugInfo.c stuff */
 #include "debugInfo.h"
 void DebugInfo_ShowSessionInfo(void) {}
-Uint32 DebugInfo_GetTEXT(void) { return 0x1234; }
-Uint32 DebugInfo_GetTEXTEnd(void) { return 0x1234; }
-Uint32 DebugInfo_GetDATA(void) { return 0x12f4; }
-Uint32 DebugInfo_GetBSS(void)  { return 0x1f34; }
+Uint32 DebugInfo_GetBASEPAGE(void) { return 0x1f34; }
+Uint32 DebugInfo_GetTEXT(void)     { return 0x1234; }
+Uint32 DebugInfo_GetTEXTEnd(void)  { return 0x1234; }
+Uint32 DebugInfo_GetDATA(void)     { return 0x12f4; }
+Uint32 DebugInfo_GetBSS(void)      { return 0x1f34; }
 
-/* fake debugdsp. stuff */
+/* fake debugdsp.c stuff */
 #include "debugdsp.h"
 void DebugDsp_InitSession(void) { }
+Uint32 DebugDsp_InstrCount(void) { return 0; }
+Uint32 DebugDsp_OpcodeType(void) { return 0; }
 
 /* use fake dsp.c stuff in case config.h is configured with DSP emu */
 #include "dsp.h"
@@ -92,10 +146,6 @@ Uint32 DSP_ReadMemory(Uint16 addr, char space, const char **mem_str)
 #include "console.h"
 int ConOutDevice;
 void Console_Check(void) { }
-
-/* fake gemdos stuff */
-#include "gemdos.h"
-const char *GemDOS_GetLastProgramPath(void) { return NULL; }
 
 /* fake profiler stuff */
 #include "profile.h"
@@ -138,7 +188,7 @@ bool File_Exists(const char *filename)
 
 /* fake debugger file parsing */
 #include "debugui.h"
-bool DebugUI_ParseFile(const char *path)
+bool DebugUI_ParseFile(const char *path, bool reinit)
 {
 	return File_Exists(path);
 }

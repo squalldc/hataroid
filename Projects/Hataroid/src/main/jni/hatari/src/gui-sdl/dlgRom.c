@@ -28,13 +28,13 @@ static SGOBJ romdlg[] =
 	{ SGBOX, 0, 0, 1,1, 50,8, NULL },
 	{ SGTEXT, 0, 0, 22,2, 9,1, "TOS setup" },
 	{ SGTEXT, 0, 0, 2,5, 25,1, "TOS image:" },
-	{ SGBUTTON, 0, 0, 42,5, 8,1, "Browse" },
+	{ SGBUTTON, 0, 0, 42,5, 8,1, "_Browse" },
 	{ SGTEXT, 0, 0, 2,7, 46,1, NULL },
 	{ SGBOX, 0, 0, 1,10, 50,8, NULL },
 	{ SGTEXT, 0, 0, 18,11, 15,1, "Cartridge setup" },
 	{ SGTEXT, 0, 0, 2,14, 25,1, "Cartridge image:" },
-	{ SGBUTTON, 0, 0, 32,14, 8,1, "Eject" },
-	{ SGBUTTON, 0, 0, 42,14, 8,1, "Browse" },
+	{ SGBUTTON, 0, 0, 32,14, 8,1, "_Eject" },
+	{ SGBUTTON, 0, 0, 42,14, 8,1, "B_rowse" },
 	{ SGTEXT, 0, 0, 2,16, 46,1, NULL },
 	{ SGTEXT, 0, 0, 2,19, 25,1, "A reset is needed after changing these options." },
 	{ SGBUTTON, SG_DEFAULT, 0, 16,21, 20,1, "Back to main menu" },
@@ -62,12 +62,12 @@ void DlgRom_Main(void)
 
 	do
 	{
-		but = SDLGui_DoDialog(romdlg, NULL);
+		but = SDLGui_DoDialog(romdlg, NULL, false);
 		switch (but)
 		{
 		 case DLGROM_TOSBROWSE:
 			/* Show and process the file selection dlg */
-			SDLGui_FileConfSelect(szDlgTosName,
+			SDLGui_FileConfSelect("TOS ROM image:", szDlgTosName,
 					      ConfigureParams.Rom.szTosImageFileName,
 					      sizeof(szDlgTosName)-1,
 					      false);
@@ -80,7 +80,7 @@ void DlgRom_Main(void)
 
 		 case DLGROM_CARTBROWSE:
 			/* Show and process the file selection dlg */
-			SDLGui_FileConfSelect(szDlgCartName,
+			SDLGui_FileConfSelect("Cartridge image:", szDlgCartName,
 					      ConfigureParams.Rom.szCartridgeImageFileName,
 					       sizeof(szDlgCartName)-1,
 					      false);

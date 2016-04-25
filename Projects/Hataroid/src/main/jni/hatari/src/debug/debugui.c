@@ -29,6 +29,7 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "options.h"
+#include "reset.h"
 #include "screen.h"
 #include "statusbar.h"
 #include "str.h"
@@ -43,8 +44,6 @@ const char DebugUI_fileid[] = "Hatari debugui.c : " __DATE__ " " __TIME__;
 #include "evaluate.h"
 #include "history.h"
 #include "symbols.h"
-
-int bExceptionDebugging;
 
 FILE *debugOutput;
 
@@ -169,8 +168,7 @@ static int DebugUI_Evaluate(int nArgc, char *psArgs[])
 
 	if (nArgc < 2)
 	{
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
 	errstr = Eval_Expression(expression, &result, &offset, false);
@@ -190,8 +188,9 @@ static int DebugUI_Evaluate(int nArgc, char *psArgs[])
  */
 static bool DebugUI_IsForDsp(const char *cmd)
 {
-	return ((cmd[0] == 'd' && isalpha(cmd[1]) && !isalpha(cmd[2]))
-		|| strncmp(cmd, "dsp", 3) == 0);
+	return ((cmd[0] == 'd' && isalpha((unsigned char)cmd[1])
+	                       && !isalpha((unsigned char)cmd[2]))
+	        || strncmp(cmd, "dsp", 3) == 0);
 }
 
 /**
@@ -229,6 +228,7 @@ static char *DebugUI_EvaluateExpressions(const char *initial)
 		if (!end)
 		{
 			fprintf(stderr, "ERROR: matching '%c' missing from '%s'!\n", *start, start);
+			free(input);
 			return NULL;
 		}
 		
@@ -245,6 +245,7 @@ static char *DebugUI_EvaluateExpressions(const char *initial)
 			*end = *start; /* restore expression mark */
 			fprintf(stderr, "Expression ERROR:\n'%s'\n%*c-%s\n",
 				input, (int)(start-input)+offset+3, '^', errstr);
+			free(input);
 			return NULL;
 		}
 		end++;
@@ -266,6 +267,7 @@ static char *DebugUI_EvaluateExpressions(const char *initial)
 			if (!tmp)
 			{
 				perror("ERROR: Input string alloc failed\n");
+				free(input);
 				return NULL;
 			}
 
@@ -324,8 +326,7 @@ static int DebugUI_SetOptions(int argc, char *argv[])
 	
 	if (argc < 2)
 	{
-		DebugUI_PrintCmdHelp(argv[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(argv[0]);
 	}
 	arg = argv[1];
 
@@ -372,8 +373,7 @@ static int DebugUI_SetTracing(int argc, char *argv[])
 	const char *errstr;
 	if (argc != 2)
 	{
-		DebugUI_PrintCmdHelp(argv[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(argv[0]);
 	}
 	errstr = Log_SetTraceOptions(argv[1]);
 	if (errstr && errstr[0])
@@ -394,8 +394,44 @@ static int DebugUI_ChangeDir(int argc, char *argv[])
 			return DEBUGGER_CMDDONE;
 		perror("ERROR");
 	}
-	DebugUI_PrintCmdHelp(argv[0]);
-	return DEBUGGER_CMDDONE;
+	return DebugUI_PrintCmdHelp(argv[0]);
+}
+
+/**
+ * Command: Rename file
+ */
+static int DebugUI_Rename(int argc, char *argv[])
+{
+	if (argc == 3)
+	{
+		if (rename(argv[1], argv[2]) == 0)
+			return DEBUGGER_CMDDONE;
+		perror("ERROR");
+	}
+	return DebugUI_PrintCmdHelp(argv[0]);
+}
+
+
+/**
+ * Command: Reset emulation
+ */
+static char *DebugUI_MatchReset(const char *text, int state)
+{
+	static const char* types[] = {	"cold", "hard", "soft", "warm" };
+	return DebugUI_MatchHelper(types, ARRAYSIZE(types), text, state);
+}
+static int DebugUI_Reset(int argc, char *argv[])
+{
+	if (argc != 2)
+		return DebugUI_PrintCmdHelp(argv[0]);
+
+	if (strcmp(argv[1], "soft") == 0 || strcmp(argv[1], "warm") == 0)
+		Reset_Warm();
+	else if (strcmp(argv[1], "cold") == 0 || strcmp(argv[1], "hard") == 0)
+		Reset_Cold(true);
+	else
+		return DebugUI_PrintCmdHelp(argv[0]);
+	return DEBUGGER_END;
 }
 
 
@@ -417,8 +453,18 @@ static int DebugUI_CommandsFromFile(int argc, char *argv[])
  */
 static int DebugUI_QuitEmu(int nArgc, char *psArgv[])
 {
-	bQuitProgram = true;
-	M68000_SetSpecial(SPCFLAG_BRK);   /* Assure that CPU core shuts down */
+	int exitval;
+
+	if (nArgc > 2)
+		return DebugUI_PrintCmdHelp(psArgv[0]);
+
+	if (nArgc == 2)
+		exitval = atoi(psArgv[1]);
+	else
+		exitval = 0;
+
+	ConfigureParams.Log.bConfirmQuit = false;
+	Main_RequestQuit(exitval);
 	return DEBUGGER_END;
 }
 
@@ -426,7 +472,7 @@ static int DebugUI_QuitEmu(int nArgc, char *psArgv[])
 /**
  * Print help text for one command
  */
-void DebugUI_PrintCmdHelp(const char *psCmd)
+int DebugUI_PrintCmdHelp(const char *psCmd)
 {
 	dbgcommand_t *cmd;
 	int i;
@@ -457,11 +503,12 @@ void DebugUI_PrintCmdHelp(const char *psCmd)
 			fprintf(stderr, "Usage:  %s %s\n",
 				bShort ? cmd->sShortName : cmd->sLongName,
 				cmd->sUsage);
-			return;
+			return DEBUGGER_CMDDONE;
 		}
 	}
 
 	fprintf(stderr, "Unknown command '%s'\n", psCmd);
+	return DEBUGGER_CMDDONE;
 }
 
 
@@ -474,8 +521,7 @@ static int DebugUI_Help(int nArgc, char *psArgs[])
 
 	if (nArgc > 1)
 	{
-		DebugUI_PrintCmdHelp(psArgs[1]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(psArgs[1]);
 	}
 
 	for (i = 0; i < debugCommands; i++)
@@ -575,7 +621,10 @@ static int DebugUI_ParseCommand(const char *input_orig)
 	retval = debugCommand[i].pFunction(nArgc, psArgs);
 	/* Save commando string if it can be repeated */
 	if (retval == DEBUGGER_CMDCONT)
-		strncpy(sLastCmd, psArgs[0], sizeof(sLastCmd));
+	{
+		if (psArgs[0] != sLastCmd)
+			strlcpy(sLastCmd, psArgs[0], sizeof(sLastCmd));
+	}
 	else
 		sLastCmd[0] = '\0';
 	free(input);
@@ -584,6 +633,29 @@ static int DebugUI_ParseCommand(const char *input_orig)
 
 
 /* See "info:readline" e.g. in Konqueror for readline usage. */
+
+/**
+ * Generic readline match callback helper.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+char *DebugUI_MatchHelper(const char **strings, int items, const char *text, int state)
+{
+	static int i, len;
+	
+	if (!state)
+	{
+		/* first match */
+		len = strlen(text);
+		i = 0;
+	}
+	/* next match */
+	while (i < items) {
+		if (strncasecmp(strings[i++], text, len) == 0)
+			return (strdup(strings[i-1]));
+	}
+	return NULL;
+}
 
 /**
  * Readline match callback for long command name completion.
@@ -634,10 +706,10 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 	size_t len;
 
 	/* check where's the first word (ignore white space) */
-	while (start < rl_point && isspace(rl_line_buffer[start]))
+	while (start < rl_point && isspace((unsigned char)rl_line_buffer[start]))
 		start++;
 	end = start;
-	while (end < rl_point && !isspace(rl_line_buffer[end]))
+	while (end < rl_point && !isspace((unsigned char)rl_line_buffer[end]))
 		end++;
 
 	if (end >= rl_point)
@@ -697,9 +769,8 @@ static char **DebugUI_Completion(const char *text, int a, int b)
 /**
  * Add non-repeated command to readline history
  * and free the given string
- *  @return	its new value
  */
-static char *DebugUI_FreeCommand(char *input)
+static void DebugUI_FreeCommand(char *input)
 {
 	if (input && *input)
 	{
@@ -711,7 +782,6 @@ static char *DebugUI_FreeCommand(char *input)
 		}
 		free(input);
 	}
-	return NULL;
 }
 
 /**
@@ -729,7 +799,7 @@ static char *DebugUI_GetCommand(char *input)
 	
 	/* Tell the completer that we want a crack first. */
 	rl_attempted_completion_function = DebugUI_Completion;
-	input = DebugUI_FreeCommand(input);
+	DebugUI_FreeCommand(input);
 	return Str_Trim(readline("> "));
 }
 
@@ -737,13 +807,11 @@ static char *DebugUI_GetCommand(char *input)
 
 /**
  * Free Command input string
- *  @return	its new value
  */
-static char *DebugUI_FreeCommand(char *input)
+static void DebugUI_FreeCommand(char *input)
 {
 	if (input)
 		free(input);
-	return NULL;
 }
 
 /**
@@ -806,14 +874,15 @@ static const dbgcommand_t uicommand[] =
 	  "[command]\n"
 	  "\tPrint help text for available commands.",
 	  false },
-	{ History_Parse, NULL,
+	{ History_Parse, History_Match,
 	  "history", "hi",
 	  "show last CPU/DSP PC values & executed instructions",
-	  "cpu|dsp|on|off|<count>\n"
-	  "\t'cpu' and 'dsp' tracks instruction history for just given\n"
-	  "\t processor, 'on' tracks them both, 'off' will disable history.\n"
-	  "\tCount will show (at max) given number of last saved PC values\n"
-	  "\tand instructions at corresponding RAM addresses.",
+	  "cpu|dsp|on|off|<count> [limit]|save <file>\n"
+	  "\t'cpu' and 'dsp' enable instruction history tracking for just given\n"
+	  "\tprocessor, 'on' tracks them both, 'off' will disable history.\n"
+	  "\tOptional 'limit' will set how many past instructions are tracked.\n"
+	  "\tGiving just count will show (at max) given number of last saved PC\n"
+	  "\tvalues and instructions currently at corresponding RAM addresses.",
 	  false },
 	{ DebugInfo_Command, DebugInfo_MatchInfo,
 	  "info", "i",
@@ -842,14 +911,24 @@ static const dbgcommand_t uicommand[] =
 	  "[filename]\n"
 	  "\tRead debugger commands from given file and do them.",
 	  false },
+	{ DebugUI_Rename, NULL,
+	  "rename", "",
+	  "rename given file",
+	  "old new\n"
+	  "\tRenames file with 'old' name to 'new'.",
+	  false },
+	{ DebugUI_Reset, DebugUI_MatchReset,
+	  "reset", "",
+	  "reset emulation",
+	  "<soft|hard>\n",
+	  false },
 	{ DebugUI_SetOptions, Opt_MatchOption,
 	  "setopt", "o",
 	  "set Hatari command line and debugger options",
 	  "[bin|dec|hex|<command line options>]\n"
-	  "\tSet Hatari options. For example to enable exception catching,\n"
-	  "\tuse following command line option: 'setopt --debug'. Special\n"
-	  "\t'bin', 'dec' and 'hex' arguments change the default number base\n"
-	  "\tused in debugger.",
+	  "\tSpecial 'bin', 'dec' and 'hex' arguments change the default\n"
+	  "\tnumber base used in debugger.  <TAB> lists available command\n"
+	  "\tline options, 'setopt --help' their descriptions.",
 	  false },
 	{ DebugUI_DoMemorySnap, NULL,
 	  "stateload", "",
@@ -874,8 +953,8 @@ static const dbgcommand_t uicommand[] =
 	{ DebugUI_QuitEmu, NULL,
 	  "quit", "q",
 	  "quit emulator",
-	  "\n"
-	  "\tLeave debugger and quit emulator.",
+	  "[exit value]\n"
+	  "\tLeave debugger and quit emulator with given exit value.",
 	  false }
 };
 
@@ -942,11 +1021,26 @@ void DebugUI(debug_reason_t reason)
 	static const char *welcome =
 		"\n----------------------------------------------------------------------"
 		"\nYou have entered debug mode. Type c to continue emulation, h for help.\n";
+	static bool recursing;
+
+	if (recursing)
+	{
+		fprintf(stderr, "WARNING: recursive call to DebugUI (through profiler debug option?)!\n");
+		recursing = false;
+		return;
+	}
+	recursing = true;
 
 	History_Mark(reason);
 
 	if (bInFullScreen)
 		Screen_ReturnFromFullScreen();
+
+	/* Make sure mouse isn't grabbed regardless of where
+	 * this is invoked from.  E.g. returning from fullscreen
+	 * enables grab if that was enabled on windowed mode.
+	 */
+	SDL_WM_GrabInput(SDL_GRAB_OFF);
 
 	DebugUI_Init();
 
@@ -957,13 +1051,14 @@ void DebugUI(debug_reason_t reason)
 	}
 	DebugCpu_InitSession();
 	DebugDsp_InitSession();
+	Symbols_LoadCurrentProgram();
 	DebugInfo_ShowSessionInfo();
 
 	/* override paused message so that user knows to look into console
 	 * on how to continue in case he invoked the debugger by accident.
 	 */
 	Statusbar_AddMessage("Console Debugger", 100);
-	Statusbar_Update(sdlscrn);
+	Statusbar_Update(sdlscrn, true);
 
 	/* disable normal GUI alerts while on console */
 	alertLevel = Log_SetAlertLevel(LOG_FATAL);
@@ -989,13 +1084,15 @@ void DebugUI(debug_reason_t reason)
 	while (cmdret != DEBUGGER_END);
 
 	/* free exit command */
-	psCmd = DebugUI_FreeCommand(psCmd);
+	DebugUI_FreeCommand(psCmd);
 
 	Log_SetAlertLevel(alertLevel);
 	DebugUI_SetLogDefault();
 
 	DebugCpu_SetDebugging();
 	DebugDsp_SetDebugging();
+
+	recursing = false;
 }
 
 
@@ -1113,4 +1210,30 @@ bool DebugUI_ParseLine(const char *input)
 		DebugDsp_SetDebugging();
 	}
 	return (ret == DEBUGGER_CMDDONE);
+}
+
+/**
+ * Debugger invocation based on exception
+ */
+void DebugUI_Exceptions(int nr, long pc)
+{
+	static struct {
+		int flag;
+		const char *name;
+	} ex[] = {
+		{ EXCEPT_BUS,       "Bus error" },              /* 2 */
+		{ EXCEPT_ADDRESS,   "Address error" },          /* 3 */
+		{ EXCEPT_ILLEGAL,   "Illegal instruction" },	/* 4 */
+		{ EXCEPT_ZERODIV,   "Div by zero" },		/* 5 */
+		{ EXCEPT_CHK,       "CHK" },			/* 6 */
+		{ EXCEPT_TRAPV,     "TRAPV" },			/* 7 */
+		{ EXCEPT_PRIVILEGE, "Privilege violation" }	/* 8 */
+	};
+	nr -= 2;
+	if (nr < 0  || nr >= ARRAYSIZE(ex))
+		return;
+	if (!(ExceptionDebugMask & ex[nr].flag))
+		return;
+	fprintf(stderr,"%s exception at 0x%lx!\n", ex[nr].name, pc);
+	DebugUI(REASON_CPU_EXCEPTION);
 }

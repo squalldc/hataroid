@@ -119,6 +119,8 @@ extern struct regstruct
     uae_u32 pc;
     uae_u8 *pc_p;
     uae_u8 *pc_oldp;
+    uae_u16 opcode;
+    uae_u32 instruction_pc;
 
     uae_u32 vbr,sfc,dfc;
 
@@ -171,17 +173,49 @@ STATIC_INLINE uaecptr m68k_getpc_p (uae_u8 *p)
 STATIC_INLINE void refill_prefetch (uae_u32 currpc, uae_u32 offs)
 {
     uae_u32 t = (currpc + offs) & ~1;
-    uae_s32 pc_p_offs = t - currpc;
-    uae_u8 *ptr = regs.pc_p + pc_p_offs;
     uae_u32 r;
+
+//fprintf ( stderr , "refill pc %x o %d old %x\n" , currpc,offs,regs.prefetch_pc );
 #ifdef UNALIGNED_PROFITABLE
-    r = *(uae_u32 *)ptr;
+    if ( t - regs.prefetch_pc == 2 )				/* keep 1 word and read 1 new word */
+    {
+        r = regs.prefetch;
+        r <<= 16;
+        r |= get_word (t+2);
+    }
+    else
+    {
+	/* [NP] FIXME : when we refill with 4 bytes, we should not read one long */
+	/* but 2 words, else some bus errors are not detected if the address overlaps */
+	/* on a bus error region (eg : get_long(t=213ffffe) doesn't give a bus error, */
+	/* but it should. This should be better handled in memory.c */
+//        r = get_long (t);					/* read 2 new words */
+        r = get_word (t);
+        r <<= 16;
+        r |= get_word (t+2);
+    }
     regs.prefetch = r;
 #else
-    r = do_get_mem_long (ptr);
+    if ( t - regs.prefetch_pc == 2 )				/* keep 1 word and read 1 new word */
+    {
+        r = do_get_mem_word (((uae_u8 *)&regs.prefetch) + 2);
+        r <<= 16;
+        r |= get_word (t+2);
+    }
+    else
+    {
+	/* [NP] FIXME : when we refill with 4 bytes, we should not read one long */
+	/* but 2 words, else some bus errors are not detected if the address overlaps */
+	/* on a bus error region (eg : get_long(t=213ffffe) doesn't give a bus error, */
+	/* but it should. This should be better handled in memory.c */
+//        r = get_long (t);					/* read 2 new words */
+        r = get_word (t);
+        r <<= 16;
+        r |= get_word (t+2);
+    }
     do_put_mem_long (&regs.prefetch, r);
 #endif
-    /* printf ("PC %lx T %lx PCPOFFS %d R %lx\n", currpc, t, pc_p_offs, r); */
+//fprintf (stderr,"PC %x PREFPC %x T %x R %x\n", currpc, regs.prefetch_pc, t, r);
     regs.prefetch_pc = t;
 }
 
@@ -207,6 +241,7 @@ STATIC_INLINE uae_u32 get_iword_prefetch (uae_s32 o)
     uae_u32 addr = currpc + o;
     uae_u32 offs = addr - regs.prefetch_pc;
     uae_u32 v;
+//fprintf (stderr,"get_iword PC %lx ADDR %lx OFFS %lx V %lx\n", currpc, addr, offs, v);
     if (offs > 3) {
 	refill_prefetch (currpc, o);
 	offs = addr - regs.prefetch_pc;
@@ -214,6 +249,7 @@ STATIC_INLINE uae_u32 get_iword_prefetch (uae_s32 o)
     v = do_get_mem_word (((uae_u8 *)&regs.prefetch) + offs);
     if (offs >= 2)
 	refill_prefetch (currpc, 2);
+//fprintf (stderr,"get_iword PC %lx ADDR %lx OFFS %lx V %lx\n", currpc, addr, offs, v);
     /* printf ("get_iword PC %lx ADDR %lx OFFS %lx V %lx\n", currpc, addr, offs, v); */
     return v;
 }
@@ -340,6 +376,10 @@ extern uae_u16 last_op_for_exception_3;
 extern uaecptr last_addr_for_exception_3;
 /* Address that generated the exception */
 extern uaecptr last_fault_for_exception_3;
+/* read (0) or write (1) access */
+extern int last_writeaccess_for_exception_3;
+/* instruction (1) or data (0) access */
+extern int last_instructionaccess_for_exception_3;
 
 #define CPU_OP_NAME(a) op ## a
 

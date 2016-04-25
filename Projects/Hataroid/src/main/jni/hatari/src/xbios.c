@@ -6,8 +6,8 @@
 
   XBios Handler (Trap #14)
 
-  We intercept and direct some XBios calls to handle the RS-232 etc.
-  and to help with debugging.
+  Intercept and direct some XBios calls to handle the RS-232 etc.
+  and to help with tracing/debugging.
 */
 const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
 
@@ -25,6 +25,22 @@ const char XBios_fileid[] = "Hatari xbios.c : " __DATE__ " " __TIME__;
 
 #define HATARI_CONTROL_OPCODE 255
 
+/* whether to enable XBios(20/255) */
+static bool bXBiosCommands;
+
+void XBios_ToggleCommands(void)
+{
+	if (bXBiosCommands)
+	{
+		fprintf(stderr, "XBios 15/20/255 parsing disabled.\n");
+		bXBiosCommands = false;
+	}
+	else
+	{
+		fprintf(stderr, "XBios 15/20/255 parsing enabled.\n");
+		bXBiosCommands = true;
+	}
+}
 
 /* List of Atari ST RS-232 baud rates */
 static const int BaudRates[] =
@@ -67,8 +83,8 @@ static bool XBios_Floprd(Uint32 Params)
 	Count = STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
 	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x08 Floprd(0x%x, %d, %d, %d, %d, %d) at PC 0x%X for: %s\n",
-		  pBuffer, Dev, Sector, Track, Side, Count,
-		  M68000_GetPC(), EmulationDrives[Dev].sFileName);
+		  pBuffer, Dev, Sector, Track, Side, Count, M68000_GetPC(),
+		  Dev < MAX_FLOPPYDRIVES ? EmulationDrives[Dev].sFileName : "n/a");
 	return false;
 }
 
@@ -91,8 +107,8 @@ static bool XBios_Flopwr(Uint32 Params)
 	Count = STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
 	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x09 Flopwr(0x%x, %d, %d, %d, %d, %d) at PC 0x%X for: %s\n",
-		  pBuffer, Dev, Sector, Track, Side, Count,
-		  M68000_GetPC(), EmulationDrives[Dev].sFileName);
+		  pBuffer, Dev, Sector, Track, Side, Count, M68000_GetPC(),
+		  Dev < MAX_FLOPPYDRIVES ? EmulationDrives[Dev].sFileName : "n/a");
 	return false;
 }
 
@@ -112,8 +128,9 @@ static bool XBios_Devconnect(Uint32 Params)
 	prescale = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	protocol = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x8B Devconnect(%hd, 0x%hx, %hd, %hd, %hd)\n",
-		  src, dst, clk, prescale, protocol);
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x8B Devconnect(%hd, 0x%hx, %hd, %hd, %hd) at PC 0x%X\n",
+		  src, dst, clk, prescale, protocol ,
+		  M68000_GetPC() );
 	return false;
 }
 
@@ -142,34 +159,36 @@ static bool XBios_Rsconf(Uint32 Params)
 	Rsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Tsr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
 	Scr = STMemory_ReadWord(Params+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD+SIZE_WORD);
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x0F Rsconf(%d, %d, %d, %d, %d, %d)\n",
-		   Baud, Ctrl, Ucr, Rsr, Tsr, Scr);
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x0F Rsconf(%d, %d, %d, %d, %d, %d) at PC 0x%X\n",
+		   Baud, Ctrl, Ucr, Rsr, Tsr, Scr,
+		   M68000_GetPC());
 #endif
+	if (!bXBiosCommands)
+		return false;
+	
+	if (!ConfigureParams.RS232.bEnableRS232)
+		return false;
+
 	/* Set baud rate and other configuration, if RS232 emaulation is enabled */
-	if (ConfigureParams.RS232.bEnableRS232)
+	if (Baud >= 0 && Baud < ARRAYSIZE(BaudRates))
 	{
-		if (Baud >= 0 && Baud < ARRAYSIZE(BaudRates))
-		{
-			/* Convert ST baud rate index to value */
-			int BaudRate = BaudRates[Baud];
-			/* And set new baud rate: */
-			RS232_SetBaudRate(BaudRate);
-		}
-
-		if (Ucr != -1)
-		{
-			RS232_HandleUCR(Ucr);
-		}
-
-		if (Ctrl != -1)
-		{
-			RS232_SetFlowControl(Ctrl);
-		}
-
-		return true;
+		/* Convert ST baud rate index to value */
+		int BaudRate = BaudRates[Baud];
+		/* And set new baud rate: */
+		RS232_SetBaudRate(BaudRate);
 	}
 
-	return false;
+	if (Ucr != -1)
+	{
+		RS232_HandleUCR(Ucr);
+	}
+
+	if (Ctrl != -1)
+	{
+		RS232_SetFlowControl(Ctrl);
+	}
+
+	return true;
 }
 
 
@@ -179,7 +198,11 @@ static bool XBios_Rsconf(Uint32 Params)
  */
 static bool XBios_Scrdmp(Uint32 Params)
 {
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x14 Scrdmp()\n");
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x14 Scrdmp() at PC 0x%X\n" , M68000_GetPC());
+
+	if (!bXBiosCommands)
+		return false;
+
 	ScreenSnapShot_SaveScreen();
 
 	/* Correct return code? */
@@ -195,9 +218,13 @@ static bool XBios_Scrdmp(Uint32 Params)
  */
 static bool XBios_HatariControl(Uint32 Params)
 {
-	char *pText;
-	pText = (char *)STRAM_ADDR(STMemory_ReadLong(Params));
-	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02X HatariControl(%s)\n", HATARI_CONTROL_OPCODE, pText);
+	const char *pText;
+	pText = (const char *)STMemory_STAddrToPointer(STMemory_ReadLong(Params));
+	LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02X HatariControl(%s) at PC 0x%X\n", HATARI_CONTROL_OPCODE, pText, M68000_GetPC());
+
+	if (!bXBiosCommands)
+		return false;
+
 	Control_ProcessBuffer(pText);
 	Regs[REG_D0] = 0;
 	return true;
@@ -387,21 +414,21 @@ static const char* XBios_Call2Name(Uint16 opcode)
 	return "???";
 }
 
-void XBios_Info(Uint32 dummy)
+void XBios_Info(FILE *fp, Uint32 dummy)
 {
 	Uint16 opcode;
 	for (opcode = 0; opcode < 168; ) {
-		fprintf(stderr, "%02x %-21s", opcode,
+		fprintf(fp, "%02x %-21s", opcode,
 			XBios_Call2Name(opcode));
 		if (++opcode % 3 == 0) {
-			fputs("\n", stderr);
+			fputs("\n", fp);
 		}
 	}
 }
 #else /* !ENABLE_TRACING */
-void XBios_Info(Uint32 bShowOpcodes)
+void XBios_Info(FILE *fp, Uint32 bShowOpcodes)
 {
-	        fputs("Hatari isn't configured with ENABLE_TRACING\n", stderr);
+	        fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
 }
 #endif /* !ENABLE_TRACING */
 
@@ -458,8 +485,9 @@ bool XBios(void)
 	case 128:	/* Locksnd */
 	case 129:	/* Unlocksnd */
 		/* commands with no args */
-		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s()\n",
-			  XBiosCall, XBios_Call2Name(XBiosCall));
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s() at PC 0x%X\n",
+			  XBiosCall, XBios_Call2Name(XBiosCall),
+			  M68000_GetPC());
 		return false;
 		
 	case 1:		/* Ssbrk */
@@ -489,9 +517,10 @@ bool XBios(void)
 	case 136:	/* Buffoper */
 	case 140:	/* Sndstatus */
 		/* ones taking single word */
-		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%hX)\n",
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%hX) at PC 0x%X\n",
 			  XBiosCall, XBios_Call2Name(XBiosCall),
-			  STMemory_ReadWord(Params));
+			  STMemory_ReadWord(Params),
+			  M68000_GetPC());
 		return false;
 
 	case 6:		/* Setpalette */
@@ -502,9 +531,10 @@ bool XBios(void)
 	case 48:	/* Metainit */
 	case 141:	/* Buffptr */
 		/* ones taking long or pointer */
-		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%X)\n",
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%X) at PC 0x%X\n",
 			  XBiosCall, XBios_Call2Name(XBiosCall),
-			  STMemory_ReadLong(Params));
+			  STMemory_ReadLong(Params),
+			  M68000_GetPC());
 		return false;
 
 	case 7:		/* Setcolor */
@@ -519,20 +549,22 @@ bool XBios(void)
 	case 135:	/* Setinterrupt */
 	case 138:	/* Gpio */
 		/* ones taking two words */
-		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%hX, 0x%hX)\n",
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%hX, 0x%hX) at PC 0x%X\n",
 			  XBiosCall, XBios_Call2Name(XBiosCall),
 			  STMemory_ReadWord(Params),
-			  STMemory_ReadWord(Params+SIZE_WORD));
+			  STMemory_ReadWord(Params+SIZE_WORD),
+			  M68000_GetPC());
 		return false;
 
 	case 12:	/* Midiws */
 	case 13:	/* Mfpint */
 	case 25:	/* Ikbdws */
 		/* ones taking word length/index and pointer */
-		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(%hd, 0x%X)\n",
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(%hd, 0x%X) at PC 0x %X\n",
 			  XBiosCall, XBios_Call2Name(XBiosCall),
 			  STMemory_ReadWord(Params),
-			  STMemory_ReadLong(Params+SIZE_WORD));
+			  STMemory_ReadLong(Params+SIZE_WORD),
+			  M68000_GetPC());
 		return false;
 
 	case 11:	/* Dbmsg */
@@ -541,11 +573,12 @@ bool XBios(void)
 	case 93:	/* VsetRGB */
 	case 94:	/* VgetRGB */
 		/* ones taking word, word and long/pointer */
-		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%hX, 0x%hX, 0x%X)\n",
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%hX, 0x%hX, 0x%X) at PC 0x%X\n",
 			  XBiosCall, XBios_Call2Name(XBiosCall),
 			  STMemory_ReadWord(Params),
 			  STMemory_ReadWord(Params+SIZE_WORD),
-			  STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD));
+			  STMemory_ReadLong(Params+SIZE_WORD+SIZE_WORD),
+			  M68000_GetPC());
 		return false;
 
 	case 106:	/* Dsp_Available */
@@ -553,19 +586,21 @@ bool XBios(void)
 	case 111:	/* Dsp_LodToBinary */
 	case 126:	/* Dsp_SetVectors */
 		/* ones taking two longs/pointers */
-		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%X, 0x%X)\n",
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%X, 0x%X) at PC 0x%X\n",
 			  XBiosCall, XBios_Call2Name(XBiosCall),
 			  STMemory_ReadLong(Params),
-			  STMemory_ReadLong(Params+SIZE_LONG));
+			  STMemory_ReadLong(Params+SIZE_LONG),
+			  M68000_GetPC());
 		return false;
 
 	case 5:		/* Setscreen */
 		if (STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG) == 3) {
 			/* actually VSetscreen with extra parameter */
-			LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX VsetScreen(0x%X, 0x%X, 3, 0x%hX)\n",
+			LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX VsetScreen(0x%X, 0x%X, 3, 0x%hX) at PC 0x%X\n",
 				  XBiosCall, STMemory_ReadLong(Params),
 				  STMemory_ReadLong(Params+SIZE_LONG),
-				  STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG+SIZE_WORD));
+				  STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG+SIZE_WORD),
+				  M68000_GetPC());
 			return false;			
 		}
 	case 109:	/* Dsp_ExecProg */
@@ -573,11 +608,12 @@ bool XBios(void)
 	case 116:	/* Dsp_LoadSubroutine */
 	case 150:	/* VsetMask */
 		/* ones taking two longs/pointers and a word */
-		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%X, 0x%X, 0x%hX)\n",
+		LOG_TRACE(TRACE_OS_XBIOS, "XBIOS 0x%02hX %s(0x%X, 0x%X, 0x%hX) at PC 0x%X\n",
 			  XBiosCall, XBios_Call2Name(XBiosCall),
 			  STMemory_ReadLong(Params),
 			  STMemory_ReadLong(Params+SIZE_LONG),
-			  STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG));
+			  STMemory_ReadWord(Params+SIZE_LONG+SIZE_LONG),
+			  M68000_GetPC());
 		return false;
 
 	default:  /* rest of XBios calls */

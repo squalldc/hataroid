@@ -12,14 +12,15 @@ const char Resolution_fileid[] = "Hatari resolution.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "configuration.h"
 #include "resolution.h"
+#include "statusbar.h"
 #include "screen.h"
 
-#define RESOLUTION_DEBUG 0
+#define DEBUG 0
 
-#if RESOLUTION_DEBUG
-#define Dprintf(a) printf a
+#if DEBUG
+# define DEBUGPRINT(x) printf x
 #else
-#define Dprintf(a)
+# define DEBUGPRINT(x)
 #endif
 
 static int DesktopWidth, DesktopHeight;
@@ -30,6 +31,20 @@ static int DesktopWidth, DesktopHeight;
  */
 void Resolution_Init(void)
 {
+#if WITH_SDL2
+	SDL_DisplayMode dm;
+	if (SDL_GetDesktopDisplayMode(0, &dm) == 0)
+	{
+		DesktopWidth = dm.w;
+		DesktopHeight = dm.h;
+	}
+	else
+	{
+		fprintf(stderr, "SDL_GetDesktopDisplayMode failed: %s", SDL_GetError());
+		DesktopWidth = 2*NUM_VISIBLE_LINE_PIXELS;
+		DesktopHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
+	}
+#else
 	/* Needs to be called after SDL video and configuration
 	 * initialization, but before Hatari Screen init is called
 	 * for the first time!
@@ -40,19 +55,22 @@ void Resolution_Init(void)
 		DesktopHeight = info->current_h;
 	} else {
 		/* target 800x600 screen with statusbar out of screen */
-		DesktopWidth = 2*(48+320+48);
-		DesktopHeight = 2*NUM_VISIBLE_LINES+24;
+		DesktopWidth = 2*NUM_VISIBLE_LINE_PIXELS;
+		DesktopHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
 		fprintf(stderr, "WARNING: invalid desktop size %dx%d, defaulting to %dx%d!\n",
 			info->current_w, info->current_h, DesktopWidth, DesktopHeight);
 	}
+#endif
 	/* if user hasn't set own max zoom size, use desktop size */
 	if (!(ConfigureParams.Screen.nMaxWidth &&
 	      ConfigureParams.Screen.nMaxHeight)) {
 		ConfigureParams.Screen.nMaxWidth = DesktopWidth;
 		ConfigureParams.Screen.nMaxHeight = DesktopHeight;
 	}
-	Dprintf(("Desktop resolution: %dx%d\n",DesktopWidth, DesktopHeight));
-	fprintf(stderr, "Configured max Hatari resolution = %dx%d.\n", ConfigureParams.Screen.nMaxWidth, ConfigureParams.Screen.nMaxHeight);
+	DEBUGPRINT(("Desktop resolution: %dx%d\n",DesktopWidth, DesktopHeight));
+	fprintf(stderr, "Configured max Hatari resolution = %dx%d, optimal for ST = %dx%d\n",
+		ConfigureParams.Screen.nMaxWidth, ConfigureParams.Screen.nMaxHeight,
+		2*NUM_VISIBLE_LINE_PIXELS, 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT);
 }
 
 /**
@@ -60,7 +78,7 @@ void Resolution_Init(void)
  */
 void Resolution_GetDesktopSize(int *width, int *height)
 {
-	Dprintf(("resolution: limit to desktop size\n"));
+	DEBUGPRINT(("resolution: limit to desktop size\n"));
 	*width = DesktopWidth;
 	*height = DesktopHeight;
 }
@@ -70,7 +88,7 @@ void Resolution_GetDesktopSize(int *width, int *height)
  */
 static void Resolution_GetMaxSize(int *width, int *height)
 {
-	Dprintf(("resolution: force to specified max size\n"));
+	DEBUGPRINT(("resolution: force to specified max size\n"));
 	*width = ConfigureParams.Screen.nMaxWidth;
 	*height = ConfigureParams.Screen.nMaxHeight;
 }
@@ -82,7 +100,7 @@ static void Resolution_GetMaxSize(int *width, int *height)
  * - Otherwise select the largest available mode
  * return true for success and false if no matching mode was found.
  */
-static bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
+static inline bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
 {
 #define TOO_LARGE 0x7fff
 	int i, bestw, besth;
@@ -95,7 +113,7 @@ static bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
 				*height = modes[i]->h;
 			}
 		}
-		Dprintf(("resolution: largest found video mode: %dx%d\n",*width,*height));
+		DEBUGPRINT(("resolution: largest found video mode: %dx%d\n",*width,*height));
 		return true;
 	}
 
@@ -115,7 +133,7 @@ static bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
 	}
 	*width = bestw;
 	*height = besth;
-	Dprintf(("resolution: video mode found: %dx%d\n",*width,*height));
+	DEBUGPRINT(("resolution: video mode found: %dx%d\n",*width,*height));
 	return true;
 #undef TOO_LARGE
 }
@@ -124,46 +142,52 @@ static bool Resolution_Select(SDL_Rect **modes, int *width, int *height)
 /**
  * Search video mode size that best suits the given width/height/bpp
  * constraints and set them into given arguments.  With zeroed arguments,
- * return largest video mode.
+ * set largest video mode.
+ * 
+ * Return true if mode is forced (shouldn't be further limited).
  */
-void Resolution_Search(int *width, int *height, int *bpp)
+bool Resolution_Search(int *width, int *height, int *bpp, bool keep)
 {
+#if !WITH_SDL2
 	SDL_Rect **modes;
 	SDL_PixelFormat pixelformat;
-	Uint32 modeflags;
+	Uint32 modeflags = 0 /*SDL_HWSURFACE | SDL_HWPALETTE*/;
+#endif
 
 	/* Search in available modes the best suited */
-	Dprintf(("resolution: video mode asked: %dx%dx%d\n",
-		 *width, *height, *bpp));
+	DEBUGPRINT(("resolution: video mode asked: %dx%dx%d (%s)\n",
+		 *width, *height, *bpp, bInFullScreen ? "fullscreen" : "windowed"));
 
-	modeflags = 0 /*SDL_HWSURFACE | SDL_HWPALETTE*/;
-
-	if (bInFullScreen) {
+	if (bInFullScreen)
+	{
 		/* resolution change not allowed? */
-		if (ConfigureParams.Screen.bKeepResolution) {
+		if (keep)
+		{
 			Resolution_GetDesktopSize(width, height);
-			return;
+			return true;
 		}
-		modeflags |= SDL_FULLSCREEN;
 	}
-	if (ConfigureParams.Screen.bForceMax) {
+	if (ConfigureParams.Screen.bForceMax)
+	{
 		/* force given max size */
 		Resolution_GetMaxSize(width, height);
-		return;
+		return true;
 	}
 
-	/* Read available video modes */
+#if !WITH_SDL2
+	if (bInFullScreen)
+		modeflags |= SDL_FULLSCREEN;
 
 	/*--- Search a video mode with asked bpp ---*/
 	if (*bpp != 0) {
 		pixelformat.BitsPerPixel = *bpp;
 		modes = SDL_ListModes(&pixelformat, modeflags);
 		if ((modes != (SDL_Rect **) 0) && (modes != (SDL_Rect **) -1)) {
-			Dprintf(("resolution: searching a good video mode (given bpp)\n"));
+			DEBUGPRINT(("resolution: searching a good video mode (given bpp)\n"));
 			if (Resolution_Select(modes, width, height)) {
-				Dprintf(("resolution: video mode selected: %dx%dx%d\n",
+				DEBUGPRINT(("resolution: video mode selected: %dx%dx%d\n",
 					 *width, *height, *bpp));
-				return;
+				return false;
 			}
 		}
 	}
@@ -171,11 +195,11 @@ void Resolution_Search(int *width, int *height, int *bpp)
 	/*--- Search a video mode with any bpp ---*/
 	modes = SDL_ListModes(NULL, modeflags);
 	if ((modes != (SDL_Rect **) 0) && (modes != (SDL_Rect **) -1)) {
-		Dprintf(("resolution: searching a good video mode (any bpp)\n"));
+		DEBUGPRINT(("resolution: searching a good video mode (any bpp)\n"));
 		if (Resolution_Select(modes, width, height)) {
-			Dprintf(("resolution: video mode selected: %dx%dx%d\n",
+			DEBUGPRINT(("resolution: video mode selected: %dx%dx%d\n",
 				 *width, *height, *bpp));
-			return;
+			return false;
 		}
 	}
 
@@ -185,11 +209,13 @@ void Resolution_Search(int *width, int *height, int *bpp)
 
 	if (modes == (SDL_Rect **) -1) {
 		/* Any mode available */
-		Dprintf(("resolution: All resolutions available.\n"));
+		DEBUGPRINT(("resolution: All resolutions available.\n"));
 	}
+#endif
 
-	Dprintf(("resolution: video mode selected: %dx%dx%d\n",
+	DEBUGPRINT(("resolution: video mode selected: %dx%dx%d\n",
 		 *width, *height, *bpp));
+	return false;
 }
 
 
@@ -201,25 +227,19 @@ void Resolution_Search(int *width, int *height, int *bpp)
 void Resolution_GetLimits(int *width, int *height, int *bpp, bool keep)
 {
 	*width = *height = 0;
+
 	/* constrain max size to what HW/SDL offers */
-	Dprintf(("resolution: request limits for: %dx%dx%d\n", *width, *height, *bpp));
-	Resolution_Search(width, height, bpp);
-	
-	if (bInFullScreen && keep) {
-		/* resolution change not allowed */
-		Resolution_GetDesktopSize(width, height);
-		return;
-	}
-	if (ConfigureParams.Screen.bForceMax) {
-		/* force given max window size */
-		Resolution_GetMaxSize(width, height);
+	DEBUGPRINT(("resolution: request limits for: %dx%dx%d\n", *width, *height, *bpp));
+
+	/* forced resolution? */
+	if (Resolution_Search(width, height, bpp, keep)) {
 		return;
 	}
 
 	if (!(*width && *height) ||
 	    (ConfigureParams.Screen.nMaxWidth < *width &&
 	     ConfigureParams.Screen.nMaxHeight < *height)) {
-		Dprintf(("resolution: limit to user configured max\n"));
+		DEBUGPRINT(("resolution: limit to user configured max\n"));
 		*width = ConfigureParams.Screen.nMaxWidth;
 		*height = ConfigureParams.Screen.nMaxHeight;
 	}

@@ -46,27 +46,27 @@ static SGOBJ devicedlg[] =
 	{ SGTEXT, 0, 0, 20,1, 13,1, "Devices setup" },
 
 	{ SGBOX, 0, 0, 1,3, 50,4, NULL },
- 	{ SGCHECKBOX, 0, 0, 2,3, 28,1, "Enable printer emulation" },
+ 	{ SGCHECKBOX, 0, 0,  2,3, 26,1, "Enable _printer emulation" },
  	{ SGTEXT, 0, 0, 2,5, 10,1, "Print to file:" },
- 	{ SGBUTTON, 0, 0, 42,5, 8,1, "Browse" },
+ 	{ SGBUTTON,   0, 0, 42,5,  8,1, "_Browse" },
  	{ SGTEXT, 0, 0, 3,6, 46,1, dlgPrinterName },
 
 	{ SGBOX, 0, 0, 1,8, 50,6, NULL },
- 	{ SGCHECKBOX, 0, 0, 2,8, 28,1, "Enable RS232 emulation" },
+ 	{ SGCHECKBOX, 0, 0,  2,8, 24,1, "Enable _RS232 emulation" },
  	{ SGTEXT, 0, 0, 2,10, 10,1, "Write RS232 output to file:" },
- 	{ SGBUTTON, 0, 0, 42,10, 8,1, "Browse" },
+ 	{ SGBUTTON,   0, 0, 42,10, 8,1, "Br_owse" },
  	{ SGTEXT, 0, 0, 3,11, 46,1, dlgRs232OutName },
  	{ SGTEXT, 0, 0, 2,12, 10,1, "Read RS232 input from file:" },
- 	{ SGBUTTON, 0, 0, 42,12, 8,1, "Browse" },
+ 	{ SGBUTTON,   0, 0, 42,12, 8,1, "Bro_wse" },
  	{ SGTEXT, 0, 0, 3,13, 46,1, dlgRs232InName },
 
 	{ SGBOX, 0, 0, 1,15, 50,6, NULL },
- 	{ SGCHECKBOX, 0, 0, 2,15, 28,1, "Enable MIDI emulation" },
+ 	{ SGCHECKBOX, 0, 0, 2,15, 23,1, "Enable _MIDI emulation" },
  	{ SGTEXT, 0, 0, 2,17, 26,1, "Read MIDI input from file:" },
- 	{ SGBUTTON, 0, 0, 42,17, 8,1, "Browse" },
+ 	{ SGBUTTON,   0, 0, 42,17, 8,1, "Brow_se" },
  	{ SGTEXT, 0, 0, 3,18, 46,1, dlgMidiInName },
  	{ SGTEXT, 0, 0, 2,19, 26,1, "Write MIDI output to file:" },
- 	{ SGBUTTON, 0, 0, 42,19, 8,1, "Browse" },
+ 	{ SGBUTTON,   0, 0, 42,19, 8,1, "Brows_e" },
  	{ SGTEXT, 0, 0, 3,20, 46,1, dlgMidiOutName },
 
  	{ SGBUTTON, SG_DEFAULT, 0, 16,22, 20,1, "Back to main menu" },
@@ -109,36 +109,36 @@ void Dialog_DeviceDlg(void)
 	/* The devices dialog main loop */
 	do
 	{
-		but = SDLGui_DoDialog(devicedlg, NULL);
+		but = SDLGui_DoDialog(devicedlg, NULL, false);
 
 		switch(but)
 		{
 		 case DEVDLG_PRNBROWSE:                 /* Choose a new printer file */
-			SDLGui_FileConfSelect(dlgPrinterName,
+			SDLGui_FileConfSelect("Printer output:", dlgPrinterName,
                                               ConfigureParams.Printer.szPrintToFileName,
                                               devicedlg[DEVDLG_PRNFILENAME].w,
                                               true);
 			break;
 		 case DEVDLG_RS232OUTBROWSE:            /* Choose a new RS232 output file */
-			SDLGui_FileConfSelect(dlgRs232OutName,
+			SDLGui_FileConfSelect("RS232 output:", dlgRs232OutName,
                                               ConfigureParams.RS232.szOutFileName,
                                               devicedlg[DEVDLG_RS232OUTNAME].w,
                                               true);
 			break;
 		 case DEVDLG_RS232INBROWSE:             /* Choose a new RS232 input file */
-			SDLGui_FileConfSelect(dlgRs232InName,
+			SDLGui_FileConfSelect("RS232 input:", dlgRs232InName,
                                               ConfigureParams.RS232.szInFileName,
                                               devicedlg[DEVDLG_RS232INNAME].w,
                                               true);
 			break;
 		 case DEVDLG_MIDIINBROWSE:              /* Choose a new MIDI file */
-			SDLGui_FileConfSelect(dlgMidiInName,
+			SDLGui_FileConfSelect("MIDI input:", dlgMidiInName,
                                               ConfigureParams.Midi.sMidiInFileName,
                                               devicedlg[DEVDLG_MIDIINNAME].w,
                                               true);
 			break;
 		 case DEVDLG_MIDIOUTBROWSE:             /* Choose a new MIDI file */
-			SDLGui_FileConfSelect(dlgMidiOutName,
+			SDLGui_FileConfSelect("MIDI output:", dlgMidiOutName,
                                               ConfigureParams.Midi.sMidiOutFileName,
                                               devicedlg[DEVDLG_MIDIOUTNAME].w,
                                               true);

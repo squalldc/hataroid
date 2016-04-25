@@ -131,6 +131,10 @@ static int DlgAlert_ShowDlg(const char *text)
 	bool bOldMouseVisibility;
 	int nOldMouseX, nOldMouseY;
 
+#if WITH_SDL2
+	bool bOldMouseMode = SDL_GetRelativeMouseMode();
+	SDL_SetRelativeMouseMode(SDL_FALSE);
+#endif
 	strcpy(t, text);
 	lines = DlgAlert_FormatTextToBox(t, maxlen, &len);
 	offset = (maxlen-len)/2;
@@ -160,11 +164,15 @@ static int DlgAlert_ShowDlg(const char *text)
 	bOldMouseVisibility = SDL_ShowCursor(SDL_QUERY);
 	SDL_ShowCursor(SDL_ENABLE);
 
-	i = SDLGui_DoDialog(alertdlg, NULL);
+	i = SDLGui_DoDialog(alertdlg, NULL, false);
 
 	SDL_UpdateRect(sdlscrn, 0,0, 0,0);
 	SDL_ShowCursor(bOldMouseVisibility);
-	Main_WarpMouse(nOldMouseX, nOldMouseY);
+	Main_WarpMouse(nOldMouseX, nOldMouseY, true);
+
+#if WITH_SDL2
+	SDL_SetRelativeMouseMode(bOldMouseMode);
+#endif
 
 	return (i == DLGALERT_OK);
 }
@@ -176,8 +184,11 @@ static int DlgAlert_ShowDlg(const char *text)
  */
 int DlgAlert_Notice(const char *text)
 {
-#ifdef ALERT_HOOKS 
-	return HookedAlertNotice(text);
+#ifdef ALERT_HOOKS
+	if (!Main_UnPauseEmulation())
+		Main_PauseEmulation(true);
+	if(!bInFullScreen)
+		return HookedAlertNotice(text);
 #endif
 
 	/* Hide "cancel" button: */
@@ -200,7 +211,8 @@ int DlgAlert_Notice(const char *text)
 int DlgAlert_Query(const char *text)
 {
 #ifdef ALERT_HOOKS
-	return HookedAlertQuery(text);
+	if(!bInFullScreen)
+		return HookedAlertQuery(text);
 #endif
 
 	/* Show "cancel" button: */

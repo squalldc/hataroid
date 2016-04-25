@@ -19,9 +19,17 @@
 #define	FLOPPY_DRIVE_TRANSITION_STATE_EJECT		2
 #define	FLOPPY_DRIVE_TRANSITION_DELAY_VBL		18	/* min of 16 VBLs */
 
+#define	FLOPPY_IMAGE_TYPE_NONE			0		/* no recognized image inserted */
+#define	FLOPPY_IMAGE_TYPE_ST			1
+#define	FLOPPY_IMAGE_TYPE_MSA			2
+#define	FLOPPY_IMAGE_TYPE_DIM			3
+#define	FLOPPY_IMAGE_TYPE_IPF			4		/* handled by capsimage library */
+#define	FLOPPY_IMAGE_TYPE_STX			5
+
 /* Structure for each drive connected as emulation */
 typedef struct
 {
+	int ImageType;
 	Uint8 *pBuffer;
 	char sFileName[FILENAME_MAX];
 	int nImageBytes;
@@ -52,7 +60,9 @@ extern int Floppy_DriveTransitionUpdateState ( int Drive );
 extern bool Floppy_InsertDiskIntoDrive(int Drive);
 extern bool Floppy_EjectDiskFromDrive(int Drive);
 extern void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes, Uint16 *pnSectorsPerTrack, Uint16 *pnSides);
-extern bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, Uint16 Sector, Uint16 Track, Uint16 Side, short Count, int *pnSectorsPerTrack, int *pSectorSize);
+extern bool Floppy_ReadSectors(int Drive, Uint8 **pBuffer, Uint16 Sector, Uint16 Track, Uint16 Side, short Count, int *pnSectorsPerTrack, int *pSectorSize);
 extern bool Floppy_WriteSectors(int Drive, Uint8 *pBuffer, Uint16 Sector, Uint16 Track, Uint16 Side, short Count, int *pnSectorsPerTrack, int *pSectorSize);
+
+extern bool Floppy_IsPasti(const char *pszFileName, const char *pszZipPath);
 
 #endif

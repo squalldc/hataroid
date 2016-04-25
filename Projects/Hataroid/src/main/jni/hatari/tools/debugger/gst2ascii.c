@@ -1,7 +1,7 @@
 /*
  * Hatari - gst2ascii.c
  * 
- * Copyright (C) 2013 by Eero Tamminen
+ * Copyright (C) 2013-2015 by Eero Tamminen
  * 
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -186,6 +186,21 @@ static void symbol_list_free(symbol_list_t *list)
 }
 
 /**
+ * Return symbol type identifier char
+ */
+static char symbol_char(int type)
+{
+	switch (type) {
+	case SYMTYPE_TEXT: return 'T';
+	case SYMTYPE_DATA: return 'D';
+	case SYMTYPE_BSS:  return 'B';
+	default: return '?';
+	}
+}
+
+#define INVALID_SYMBOL_OFFSETS ((symbol_list_t*)1)
+
+/**
  * Load symbols of given type and the symbol address addresses from
  * DRI/GST format symbol table, and add given offsets to the addresses:
  *	http://toshyp.atari.org/en/005005.html
@@ -193,7 +208,7 @@ static void symbol_list_free(symbol_list_t *list)
  */
 static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32_t tablesize)
 {
-	int i, count, symbols;
+	int i, count, symbols, outside;
 	int notypes, dtypes, locals, ofiles;
 	prg_section_t *section;
 	symbol_list_t *list;
@@ -212,7 +227,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 		return NULL;
 	}
 
-	dtypes = notypes = ofiles = locals = count = 0;
+	outside = dtypes = notypes = ofiles = locals = count = 0;
 	for (i = 1; i <= symbols; i++) {
 		/* read DRI symbol table slot */
 		if (fread(name, 8, 1, fp) != 1 ||
@@ -292,7 +307,15 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 		}
 		address += section->offset;
 		if (address > section->end) {
-			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %d with invalid offset 0x%x (>= 0x%x).\n", name, i, address, section->end);
+			/* VBCC has 1 symbol outside of its section */
+			if (++outside > 2) {
+				/* potentially buggy version of VBCC vlink used */
+				fprintf(stderr, "ERROR: too many invalid offsets, skipping rest of symbols!\n");
+				symbol_list_free(list);
+				return INVALID_SYMBOL_OFFSETS;
+			}
+			fprintf(stderr, "WARNING: ignoring symbol '%s' of %c type in slot %d with invalid offset 0x%x (>= 0x%x).\n",
+				name, symbol_char(symtype), i, address, section->end);
 			continue;
 		}
 		list->names[count].address = address;
@@ -329,15 +352,65 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, uint32
 }
 
 /**
+ * Print program header information.
+ * Return false for unrecognized symbol table type.
+ */
+static bool symbols_print_prg_info(Uint32 tabletype, Uint32 prgflags, Uint16 relocflag)
+{
+	static const struct {
+		Uint32 flag;
+		const char *name;
+	} flags[] = {
+		{ 0x0001, "FASTLOAD"   },
+		{ 0x0002, "TTRAMLOAD"  },
+		{ 0x0004, "TTRAMMEM"   },
+		{ 0x0008, "MINIMUM"    }, /* MagiC */
+		{ 0x1000, "SHAREDTEXT" }
+	};
+	const char *info;
+	int i;
+
+	switch (tabletype) {
+	case 0x4D694E54:	/* "MiNT" */
+		info = "GCC/MiNT executable, GST symbol table";
+		break;
+	case 0x0:
+		info = "TOS executable, DRI / GST symbol table";
+		break;
+	default:
+		fprintf(stderr, "ERROR: unknown executable type 0x%x!\n", tabletype);
+		return false;
+	}
+	fprintf(stderr, "%s, reloc=%d, program flags:", info, relocflag);
+	/* bit flags */
+	for (i = 0; i < ARRAYSIZE(flags); i++) {
+		if (prgflags & flags[i].flag) {
+			fprintf(stderr, " %s", flags[i].name);
+		}
+	}
+	/* memory protection flags */
+	switch((prgflags >> 4) & 3) {
+		case 0:	info = "PRIVATE";  break;
+		case 1: info = "GLOBAL";   break;
+		case 2: info = "SUPER";    break;
+		case 3: info = "READONLY"; break;
+	}
+	fprintf(stderr, " %s (0x%x)\n", info, prgflags);
+	return true;
+}
+
+/**
  * Parse program header and use symbol table format specific loader
  * loader function to load the symbols.
  * Return symbols list or NULL for failure.
  */
 static symbol_list_t* symbols_load_binary(FILE *fp)
 {
-	uint32_t textlen, datalen, bsslen, tablesize, tabletype;
+	Uint32 textlen, datalen, bsslen, tablesize, tabletype, prgflags;
 	prg_section_t sections[3];
 	int offset, reads = 0;
+	Uint16 relocflag;
+	symbol_list_t* symbols;
 
 	/* get TEXT, DATA & BSS section sizes */
 	reads += fread(&textlen, sizeof(textlen), 1, fp);
@@ -350,16 +423,34 @@ static symbol_list_t* symbols_load_binary(FILE *fp)
 	/* get symbol table size & type and check that all reads succeeded */
 	reads += fread(&tablesize, sizeof(tablesize), 1, fp);
 	tablesize = SDL_SwapBE32(tablesize);
+	reads += fread(&tabletype, sizeof(tabletype), 1, fp);
+	tabletype = SDL_SwapBE32(tabletype);
+
+	/* get program header and whether there's reloc table */
+	reads += fread(&prgflags, sizeof(prgflags), 1, fp);
+	prgflags = SDL_SwapBE32(prgflags);
+	reads += fread(&relocflag, sizeof(relocflag), 1, fp);
+	relocflag = SDL_SwapBE32(relocflag);
+	
+	if (reads != 7) {
+		fprintf(stderr, "ERROR: program header reading failed!\n");
+		return NULL;
+	}
+	if (!symbols_print_prg_info(tabletype, prgflags, relocflag)) {
+		return NULL;
+	}
 	if (!tablesize) {
 		fprintf(stderr, "ERROR: symbol table missing from the program!\n");
 		return NULL;
 	}
-	reads += fread(&tabletype, sizeof(tabletype), 1, fp);
-	tabletype = SDL_SwapBE32(tabletype);
-	if (reads != 5) {
-		fprintf(stderr, "ERROR: program header reading failed!\n");
-		return NULL;
-	}
+
+	/* symbols already have suitable offsets, so only acceptable end position needs to be calculated */
+	sections[0].offset = 0;
+	sections[0].end = textlen;
+	sections[1].offset = 0;
+	sections[1].end = datalen;
+	sections[2].offset = 0;
+	sections[2].end = bsslen;
 
 	/* go to start of symbol table */
 	offset = 0x1C + textlen + datalen;
@@ -367,25 +458,25 @@ static symbol_list_t* symbols_load_binary(FILE *fp)
 		perror("ERROR: seeking to symbol table failed");
 		return NULL;
 	}
-	/* symbols already have suitable offsets, so only acceptable end position needs to be calculated */
-	sections[0].offset = 0;
-	sections[0].end = textlen;
-	sections[1].offset = 0;
-	sections[1].end = textlen + datalen;
-	sections[2].offset = 0;
-	sections[2].end = textlen + datalen + bsslen;
+	fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
+	symbols = symbols_load_dri(fp, sections, tablesize);
 
-	switch (tabletype) {
-	case 0x4D694E54:	/* "MiNT" */
-		fprintf(stderr, "MiNT executable, trying to load GST symbol table at offset 0x%x...\n", offset);
-		return symbols_load_dri(fp, sections, tablesize);
-	case 0x0:
-		fprintf(stderr, "Old style excutable, loading DRI / GST symbol table at offset 0x%x.\n", offset);
-		return symbols_load_dri(fp, sections, tablesize);
-	default:
-		fprintf(stderr, "ERROR: unknown executable type 0x%x at offset 0x%x!\n", tabletype, offset);
+	if (symbols == INVALID_SYMBOL_OFFSETS && fseek(fp, offset, SEEK_SET) == 0) {
+		fprintf(stderr, "Re-trying with TEXT-relative BSS/DATA section offsets...\n");
+		sections[1].end += textlen;
+		sections[2].end += (textlen + datalen);
+		symbols = symbols_load_dri(fp, sections, tablesize);
+		if (symbols) {
+			fprintf(stderr, "Load symbols without giving separate BSS/DATA offsets (they're TEXT relative).\n");
+		}
+	} else {
+		fprintf(stderr, "Load symbols with 'symbols <filename> TEXT DATA BSS' after starting the program.\n");
 	}
-	return NULL;
+	if (!symbols || symbols == INVALID_SYMBOL_OFFSETS) {
+		fprintf(stderr, "\n\n*** Try with 'nm -n <program>' (Atari/cross-compiler tool) instead ***\n\n");
+		return NULL;
+	}
+	return symbols;
 }
 
 /**
@@ -400,7 +491,7 @@ static symbol_list_t* symbols_load(const char *filename)
 	FILE *fp;
 
 	fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
-	if (!(fp = fopen(filename, "r"))) {
+	if (!(fp = fopen(filename, "rb"))) {
 		return usage("opening program file failed");
 	}
 	if (fread(&magic, sizeof(magic), 1, fp) != 1) {
@@ -492,7 +583,7 @@ int main(int argc, const char *argv[])
 		if (argv[i][0] != '-') {
 			break;
 		}
-		switch(tolower(argv[i][1])) {
+		switch(tolower((unsigned char)argv[i][1])) {
 		case 'n':
 			Options.sort_name = true;
 		case 'b':

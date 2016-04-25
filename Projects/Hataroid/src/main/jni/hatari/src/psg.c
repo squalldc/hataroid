@@ -127,11 +127,12 @@ const char PSG_fileid[] = "Hatari psg.c : " __DATE__ " " __TIME__;
 #include "video.h"
 #include "statusbar.h"
 #include "mfp.h"
+#include "fdc.h"
 
 
-Uint8 PSGRegisterSelect;        /* Write to 0xff8800 sets the register number used in read/write accesses */
-Uint8 PSGRegisterReadData;	/* Value returned when reading from 0xff8800 */
-Uint8 PSGRegisters[MAX_PSG_REGISTERS]; /* Registers in PSG, see PSG_REG_xxxx */
+static Uint8 PSGRegisterSelect;		/* Write to 0xff8800 sets the register number used in read/write accesses */
+static Uint8 PSGRegisterReadData;	/* Value returned when reading from 0xff8800 */
+Uint8 PSGRegisters[MAX_PSG_REGISTERS];	/* Registers in PSG, see PSG_REG_xxxx */
 
 static unsigned int LastStrobe=0; /* Falling edge of Strobe used for printer */
 
@@ -255,6 +256,8 @@ Uint8 PSG_Get_DataRegister(void)
  */
 void PSG_Set_DataRegister(Uint8 val)
 {
+	Uint8	val_old;
+
 	if (LOG_TRACE_LEVEL(TRACE_PSG_WRITE))
 	{
 		int FrameCycles, HblCounterVideo, LineCycles;
@@ -274,6 +277,9 @@ void PSG_Set_DataRegister(Uint8 val)
 	/* When a read is made from $ff8800 without changing PSGRegisterSelect, we should return */
 	/* the non masked value. */
 	PSGRegisterReadData = val;			/* store non masked value for PSG_Get_DataRegister */
+
+	/* Read previous content */
+	val_old = PSGRegisters[PSGRegisterSelect];
 
 	/* Copy value to PSGRegisters[] */
 	PSGRegisters[PSGRegisterSelect] = val;
@@ -342,15 +348,20 @@ void PSG_Set_DataRegister(Uint8 val)
 			Statusbar_SetFloppyLed(DRIVE_LED_B, LED_STATE_OFF);
 		}
 
-		/* Bit 3 - Centronics as input */
-		if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<3))
-		{
-			/* FIXME: might be needed if we want to emulate sound sampling hardware */
-		}
-		
+		/* Report a possible drive/side change */
+		FDC_SetDriveSide ( val_old & 7 , PSGRegisters[PSG_REG_IO_PORTA] & 7 );
+
 		/* handle Falcon specific bits in PORTA of the PSG */
 		if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
 		{
+			/* Bit 3 - centronics port SELIN line (pin 17) */
+			/*
+			if (PSGRegisters[PSG_REG_IO_PORTA] & (1 << 3))
+			{
+				// not emulated yet
+			}
+			*/
+
 			/* Bit 4 - DSP reset? */
 			if(PSGRegisters[PSG_REG_IO_PORTA]&(1<<4))
 			{
@@ -374,7 +385,7 @@ void PSG_Set_DataRegister(Uint8 val)
 				/* FIXME: add code to handle IDE reset */
 			}
 		}
-	
+
 	}
 }
 
@@ -540,5 +551,18 @@ void PSG_ff8803_WriteByte(void)
 					IoAccessCurrentAddress, IoMem[IoAccessCurrentAddress],
 					FrameCycles, LineCycles, HblCounterVideo, M68000_GetPC(), CurrentInstrCycles);
 		}
+	}
+}
+
+
+/* ------------------------------------------------------------------
+ * YM-2149 register content dump (for debugger info command)
+ */
+void PSG_Info(FILE *fp, Uint32 dummy)
+{
+	int i;
+	for(i = 0; i < ARRAYSIZE(PSGRegisters); i++)
+	{
+		fprintf(fp, "Reg $%02X : $%02X\n", i, PSGRegisters[i]);
 	}
 }

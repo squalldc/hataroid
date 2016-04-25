@@ -1,7 +1,7 @@
 /*
  * Hatari - symbols.c
  * 
- * Copyright (C) 2010-2013 by Eero Tamminen
+ * Copyright (C) 2010-2015 by Eero Tamminen
  * 
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -26,12 +26,14 @@ const char Symbols_fileid[] = "Hatari symbols.c : " __DATE__ " " __TIME__;
 #include <SDL_types.h>
 #include <SDL_endian.h>
 #include "main.h"
+#include "file.h"
+#include "options.h"
 #include "symbols.h"
 #include "debugui.h"
 #include "debug_priv.h"
 #include "debugInfo.h"
 #include "evaluate.h"
-#include "gemdos.h"
+#include "configuration.h"
 
 typedef struct {
 	char *name;
@@ -61,6 +63,11 @@ typedef struct {
 /* TODO: add symbol name/address file names to configuration? */
 static symbol_list_t *CpuSymbolsList;
 static symbol_list_t *DspSymbolsList;
+
+/* path for last loaded program (through GEMDOS HD emulation) */
+static char *CurrentProgramPath;
+static bool SymbolsAreForProgram;
+static bool AutoLoadFailed;
 
 
 /* ------------------ load and free functions ------------------ */
@@ -138,6 +145,21 @@ static void symbol_list_free(symbol_list_t *list)
 }
 
 /**
+ * Return symbol type identifier char
+ */
+static char symbol_char(int type)
+{
+	switch (type) {
+	case SYMTYPE_TEXT: return 'T';
+	case SYMTYPE_DATA: return 'D';
+	case SYMTYPE_BSS:  return 'B';
+	default: return '?';
+	}
+}
+
+#define INVALID_SYMBOL_OFFSETS ((symbol_list_t*)1)
+
+/**
  * Load symbols of given type and the symbol address addresses from
  * DRI/GST format symbol table, and add given offsets to the addresses:
  *	http://toshyp.atari.org/en/005005.html
@@ -145,7 +167,7 @@ static void symbol_list_free(symbol_list_t *list)
  */
 static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtype_t gettype, Uint32 tablesize)
 {
-	int i, count, symbols, len;
+	int i, count, symbols, len, outside;
 	int dtypes, locals, ofiles;
 	prg_section_t *section;
 	symbol_list_t *list;
@@ -155,7 +177,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 	Uint16 symid;
 	Uint32 address;
 
-	if (tablesize % DRI_ENTRY_SIZE) {
+	if (tablesize % DRI_ENTRY_SIZE || !tablesize) {
 		fprintf(stderr, "ERROR: invalid DRI/GST symbol table size %d!\n", tablesize);
 		return NULL;
 	}
@@ -164,7 +186,7 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		return NULL;
 	}
 
-	dtypes = ofiles = locals = count = 0;
+	outside = dtypes = ofiles = locals = count = 0;
 	for (i = 1; i <= symbols; i++) {
 		/* read DRI symbol table slot */
 		if (fread(name, 8, 1, fp) != 1 ||
@@ -223,7 +245,15 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 		}
 		address += section->offset;
 		if (address > section->end) {
-			fprintf(stderr, "WARNING: ignoring symbol '%s' in slot %d with invalid offset 0x%x (>= 0x%x).\n", name, i, address, section->end);
+			/* VBCC has 1 symbol outside of its section */
+			if (++outside > 2) {
+				/* potentially buggy version of VBCC vlink used */
+				fprintf(stderr, "ERROR: too many invalid offsets, skipping rest of symbols!\n");
+				symbol_list_free(list);
+				return INVALID_SYMBOL_OFFSETS;
+			}
+			fprintf(stderr, "WARNING: ignoring symbol '%s' of %c type in slot %d with invalid offset 0x%x (>= 0x%x).\n",
+				name, symbol_char(symtype), i, address, section->end);
 			continue;
 		}
 		list->names[count].address = address;
@@ -256,6 +286,55 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
 	return list;
 }
 
+
+/**
+ * Print program header information.
+ * Return false for unrecognized symbol table type.
+ */
+static bool symbols_print_prg_info(Uint32 tabletype, Uint32 prgflags, Uint16 relocflag)
+{
+	static const struct {
+		Uint32 flag;
+		const char *name;
+	} flags[] = {
+		{ 0x0001, "FASTLOAD"   },
+		{ 0x0002, "TTRAMLOAD"  },
+		{ 0x0004, "TTRAMMEM"   },
+		{ 0x0008, "MINIMUM"    }, /* MagiC */
+		{ 0x1000, "SHAREDTEXT" }
+	};
+	const char *info;
+	int i;
+
+	switch (tabletype) {
+	case 0x4D694E54:	/* "MiNT" */
+		info = "GCC/MiNT executable, GST symbol table";
+		break;
+	case 0x0:
+		info = "TOS executable, DRI / GST symbol table";
+		break;
+	default:
+		fprintf(stderr, "ERROR: unknown executable type 0x%x!\n", tabletype);
+		return false;
+	}
+	fprintf(stderr, "%s, reloc=%d, program flags:", info, relocflag);
+	/* bit flags */
+	for (i = 0; i < ARRAYSIZE(flags); i++) {
+		if (prgflags & flags[i].flag) {
+			fprintf(stderr, " %s", flags[i].name);
+		}
+	}
+	/* memory protection flags */
+	switch((prgflags >> 4) & 3) {
+		case 0:	info = "PRIVATE";  break;
+		case 1: info = "GLOBAL";   break;
+		case 2: info = "SUPER";    break;
+		case 3: info = "READONLY"; break;
+	}
+	fprintf(stderr, " %s (0x%x)\n", info, prgflags);
+	return true;
+}
+
 /**
  * Parse program header and use symbol table format specific loader
  * loader function to load the symbols.
@@ -263,11 +342,14 @@ static symbol_list_t* symbols_load_dri(FILE *fp, prg_section_t *sections, symtyp
  */
 static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 {
-	Uint32 textlen, datalen, bsslen, start, tablesize, tabletype;
+	Uint32 textlen, datalen, bsslen, start, tablesize, tabletype, prgflags;
 	prg_section_t sections[3];
 	int offset, reads = 0;
+	Uint16 relocflag;
+	symbol_list_t* symbols;
 
 	/* get TEXT, DATA & BSS section sizes */
+	fseek(fp, 2, SEEK_SET);
 	reads += fread(&textlen, sizeof(textlen), 1, fp);
 	textlen = SDL_SwapBE32(textlen);
 	reads += fread(&datalen, sizeof(datalen), 1, fp);
@@ -278,23 +360,27 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	/* get symbol table size & type and check that all reads succeeded */
 	reads += fread(&tablesize, sizeof(tablesize), 1, fp);
 	tablesize = SDL_SwapBE32(tablesize);
+	reads += fread(&tabletype, sizeof(tabletype), 1, fp);
+	tabletype = SDL_SwapBE32(tabletype);
+
+	/* get program header and whether there's reloc table */
+	reads += fread(&prgflags, sizeof(prgflags), 1, fp);
+	prgflags = SDL_SwapBE32(prgflags);
+	reads += fread(&relocflag, sizeof(relocflag), 1, fp);
+	relocflag = SDL_SwapBE32(relocflag);
+	
+	if (reads != 7) {
+		fprintf(stderr, "ERROR: program header reading failed!\n");
+		return NULL;
+	}
+	if (!symbols_print_prg_info(tabletype, prgflags, relocflag)) {
+		return NULL;
+	}
 	if (!tablesize) {
 		fprintf(stderr, "ERROR: symbol table missing from the program!\n");
 		return NULL;
 	}
-	reads += fread(&tabletype, sizeof(tabletype), 1, fp);
-	tabletype = SDL_SwapBE32(tabletype);
-	if (reads != 5) {
-		fprintf(stderr, "ERROR: program header reading failed!\n");
-		return NULL;
-	}
 
-	/* go to start of symbol table */
-	offset = 0x1C + textlen + datalen;
-	if (fseek(fp, offset, SEEK_SET) < 0) {
-		perror("ERROR: seeking to symbol table failed");
-		return NULL;
-	}
 	/* offsets & max sizes for running program TEXT/DATA/BSS section symbols */
 	start = DebugInfo_GetTEXT();
 	if (!start) {
@@ -309,24 +395,35 @@ static symbol_list_t* symbols_load_binary(FILE *fp, symtype_t gettype)
 	}
 
 	start = DebugInfo_GetDATA();
-	sections[1].offset = start - textlen;
+	sections[1].offset = start;
 	sections[1].end = start + datalen - 1;
 
 	start = DebugInfo_GetBSS();
-	sections[2].offset = start - textlen - datalen;
+	sections[2].offset = start;
 	sections[2].end = start + bsslen - 1;
 
-	switch (tabletype) {
-	case 0x4D694E54:	/* "MiNT" */
-		fprintf(stderr, "MiNT executable, trying to load GST symbol table at offset 0x%x...\n", offset);
-		return symbols_load_dri(fp, sections, gettype, tablesize);
-	case 0x0:
-		fprintf(stderr, "Old style excutable, loading DRI / GST symbol table at offset 0x%x.\n", offset);
-		return symbols_load_dri(fp, sections, gettype, tablesize);
-	default:
-		fprintf(stderr, "ERROR: unknown executable type 0x%x at offset 0x%x!\n", tabletype, offset);
+	/* go to start of symbol table */
+	offset = 0x1C + textlen + datalen;
+	if (fseek(fp, offset, SEEK_SET) < 0) {
+		perror("ERROR: seeking to symbol table failed");
+		return NULL;
 	}
-	return NULL;
+	fprintf(stderr, "Trying to load symbol table at offset 0x%x...\n", offset);
+	symbols = symbols_load_dri(fp, sections, gettype, tablesize);
+
+	if (symbols == INVALID_SYMBOL_OFFSETS && fseek(fp, offset, SEEK_SET) == 0) {
+		fprintf(stderr, "Re-trying with TEXT-relative BSS/DATA section offsets...\n");
+		start = DebugInfo_GetTEXT();
+		sections[1].offset = start;
+		sections[2].offset = start;
+		sections[1].end += textlen;
+		sections[2].end += (textlen + datalen);
+		symbols = symbols_load_dri(fp, sections, gettype, tablesize);
+	}
+	if (symbols == INVALID_SYMBOL_OFFSETS) {
+		return NULL;
+	}
+	return symbols;
 }
 
 /**
@@ -350,12 +447,16 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 			continue;
 		}
 		/* skip empty lines */
-		for (buf = buffer; isspace(*buf); buf++);
+		for (buf = buffer; isspace((unsigned char)*buf); buf++);
 		if (!*buf) {
 			continue;
 		}
 		symbols++;
 	}
+	if (!symbols) {
+		fprintf(stderr, "ERROR: no symbols.\n");
+	}
+
 	fseek(fp, 0, SEEK_SET);
 
 	/* allocate space for symbol list & names */
@@ -371,7 +472,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 			continue;
 		}
 		/* skip empty lines */
-		for (buf = buffer; isspace(*buf); buf++);
+		for (buf = buffer; isspace((unsigned char)*buf); buf++);
 		if (!*buf) {
 			continue;
 		}
@@ -380,7 +481,7 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 			fprintf(stderr, "WARNING: syntax error on line %d, skipping.\n", line);
 			continue;
 		}
-		switch (toupper(symchar)) {
+		switch (toupper((unsigned char)symchar)) {
 		case 'T':
 			symtype = SYMTYPE_TEXT;
 			offset = offsets[0];
@@ -425,34 +526,34 @@ static symbol_list_t* symbols_load_ascii(FILE *fp, Uint32 *offsets, Uint32 maxad
 static symbol_list_t* Symbols_Load(const char *filename, Uint32 *offsets, Uint32 maxaddr)
 {
 	symbol_list_t *list;
-	Uint16 magic;
 	FILE *fp;
 
-	if (!(fp = fopen(filename, "r"))) {
-		fprintf(stderr, "ERROR: opening '%s' failed!\n", filename);
+	if (!File_Exists(filename)) {
+		fprintf(stderr, "ERROR: file '%s' doesn't exist or isn't readable!\n", filename);
 		return NULL;
 	}
-	if (fread(&magic, sizeof(magic), 1, fp) != 1) {
-		fprintf(stderr, "ERROR: reading file '%s' failed.\n", filename);
-		fclose(fp);
-		return NULL;
-	}
-
-	if (SDL_SwapBE16(magic) == 0x601A) {
-		const char *last = GemDOS_GetLastProgramPath();
-		fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
-		if (strcmp(last, filename) != 0) {
-			fprintf(stderr, "WARNING: given program doesn't match last program executed by GEMDOS HD emulation:\n\t%s", last);
+	if (Opt_IsAtariProgram(filename)) {
+		const char *last = CurrentProgramPath;
+		if (!last) {
+			/* "pc=text" breakpoint used as point for loading program symbols gives false hits during bootup */
+			fprintf(stderr, "WARNING: no program loaded yet (through GEMDOS HD emu)!\n");
+		} else if (strcmp(last, filename) != 0) {
+			fprintf(stderr, "WARNING: given program doesn't match last program executed by GEMDOS HD emulation:\n\t%s\n", last);
 		}
+		fprintf(stderr, "Reading symbols from program '%s' symbol table...\n", filename);
+		fp = fopen(filename, "rb");
 		list = symbols_load_binary(fp, SYMTYPE_ALL);
+		SymbolsAreForProgram = true;
 	} else {
 		fprintf(stderr, "Reading 'nm' style ASCII symbols from '%s'...\n", filename);
+		fp = fopen(filename, "r");
 		list = symbols_load_ascii(fp, offsets, maxaddr, SYMTYPE_ALL);
+		SymbolsAreForProgram = false;
 	}
 	fclose(fp);
 
 	if (!list) {
-		fprintf(stderr, "ERROR: no symbols, or reading them from '%s' failed!\n", filename);
+		fprintf(stderr, "ERROR: reading symbols from '%s' failed!\n", filename);
 		return NULL;
 	}
 
@@ -735,7 +836,7 @@ int Symbols_DspCount(void)
 	return (DspSymbolsList ? DspSymbolsList->count : 0);
 }
 
-/* ---------------- symbol showing and command parsing ------------------ */
+/* ---------------- symbol showing ------------------ */
 
 /**
  * Show symbols from given list with paging.
@@ -760,19 +861,7 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 		(list == CpuSymbolsList ? "CPU" : "DSP"), sorttype);
 
 	for (entry = entries, i = 0; i < list->count; i++, entry++) {
-		switch (entry->type) {
-		case SYMTYPE_TEXT:
-			symchar = 'T';
-			break;
-		case SYMTYPE_DATA:
-			symchar = 'D';
-			break;
-		case SYMTYPE_BSS:
-			symchar = 'B';
-			break;
-		default:
-			symchar = '?';
-		}
+		symchar = symbol_char(entry->type);
 		fprintf(stderr, "0x%08x %c %s\n",
 			entry->address, symchar, entry->name);
 		if (i && i % 20 == 0) {
@@ -782,6 +871,69 @@ static void Symbols_Show(symbol_list_t* list, const char *sorttype)
 			}
 		}
 	}
+}
+
+/* ---------------- binary load handling ------------------ */
+
+
+/**
+ * Remove last opened program path.
+ */
+void Symbols_RemoveCurrentProgram(void)
+{
+	if (CurrentProgramPath) {
+		free(CurrentProgramPath);
+		CurrentProgramPath = NULL;
+
+		if (SymbolsAreForProgram) {
+			Symbols_Free(CpuSymbolsList);
+			CpuSymbolsList = NULL;
+		}
+	}
+	AutoLoadFailed = false;
+}
+
+/**
+ * Set last opened program path.
+ */
+void Symbols_ChangeCurrentProgram(const char *path)
+{
+	if (Opt_IsAtariProgram(path)) {
+		Symbols_RemoveCurrentProgram();
+		CurrentProgramPath = strdup(path);
+	}
+}
+
+/**
+ * Load symbols for last opened program.
+ */
+void Symbols_LoadCurrentProgram(void)
+{
+	/* symbols already loaded, program path missing or previous load failed? */
+	if (CpuSymbolsList || !CurrentProgramPath || AutoLoadFailed) {
+		return;
+	}
+	CpuSymbolsList = Symbols_Load(CurrentProgramPath, NULL, 0);
+	if (!CpuSymbolsList) {
+		AutoLoadFailed = true;
+	} else {
+		AutoLoadFailed = false;
+	}
+}
+
+/* ---------------- command parsing ------------------ */
+
+/**
+ * Readline match callback to list symbols subcommands.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+char *Symbols_MatchCommand(const char *text, int state)
+{
+	static const char* subs[] = {
+		"addr", "free", "name", "prg"
+	};
+	return DebugUI_MatchHelper(subs, ARRAYSIZE(subs), text, state);
 }
 
 const char Symbols_Description[] =
@@ -817,14 +969,16 @@ int Symbols_Command(int nArgc, char *psArgs[])
 		maxaddr = 0xFFFF;
 	} else if (strcmp("symbols", psArgs[0]) == 0) {
 		listtype = TYPE_CPU;
-		maxaddr = 0xFFFFFF;
+		if ( ConfigureParams.System.bAddressSpace24 )
+			maxaddr = 0x00FFFFFF;
+		else
+			maxaddr = 0xFFFFFFFF;
 	} else {
 		listtype = TYPE_NONE;
 		maxaddr = 0;
 	}
 	if (nArgc < 2 || listtype == TYPE_NONE) {
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 	file = psArgs[1];
 
@@ -858,7 +1012,7 @@ int Symbols_Command(int nArgc, char *psArgs[])
 	}
 
 	if (strcmp(file, "prg") == 0) {
-		file = GemDOS_GetLastProgramPath();
+		file = CurrentProgramPath;
 		if (!file) {
 			fprintf(stderr, "ERROR: no program loaded (through GEMDOS HD emu)!\n");
 			return DEBUGGER_CMDDONE;

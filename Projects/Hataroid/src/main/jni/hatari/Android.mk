@@ -12,7 +12,7 @@ LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/hatari/src/debug
 LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/hatari/src/falcon
 LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/hatari/src/gui-sdl
 
-#cpu
+#uae-cpu
 LOCAL_SRC_FILES :=	src/uae-cpu/cpudefs.c src/uae-cpu/cpuemu.c src/uae-cpu/cpustbl.c \
 					src/uae-cpu/fpp.c src/uae-cpu/hatari-glue.c src/uae-cpu/cpuMemory.c \
 					src/uae-cpu/newcpu.c src/uae-cpu/readcpu.c
@@ -37,7 +37,8 @@ LOCAL_SRC_FILES +=	src/falcon/crossbar.c src/falcon/dsp.c src/falcon/dsp_core.c 
 #LOCAL_SRC_FILES +=	src/gui-sdl/dlgAbout.c src/gui-sdl/dlgAlert.c src/gui-sdl/dlgDevice.c src/gui-sdl/dlgFileSelect.c \
 #					src/gui-sdl/dlgFloppy.c src/gui-sdl/dlgHardDisk.c src/gui-sdl/dlgJoystick.c src/gui-sdl/dlgKeyboard.c \
 #					src/gui-sdl/dlgMain.c src/gui-sdl/dlgMemory.c src/gui-sdl/dlgNewDisk.c src/gui-sdl/dlgRom.c \
-#					src/gui-sdl/dlgScreen.c src/gui-sdl/dlgSound.c src/gui-sdl/dlgSystem.c src/gui-sdl/sdlgui.c
+#					src/gui-sdl/dlgScreen.c src/gui-sdl/dlgSound.c src/gui-sdl/dlgSystem.c src/gui-sdl/sdlgui.c \
+#					src/gui-sdl/dlgHalt.c
 LOCAL_SRC_FILES +=	src/gui-sdl/sdlgui.c
 
 #gui-android
@@ -47,7 +48,8 @@ LOCAL_SRC_FILES +=	src/gui-android/gui-android.c
 LOCAL_SRC_FILES +=	src/acia.c src/audio.c src/avi_record.c src/bios.c src/blitter.c src/cart.c \
 					src/cfgopts.c src/change.c src/clocks_timings.c src/configuration.c \
 					src/control.c src/createBlankImage.c src/cycInt.c src/cycles.c \
-					src/dim.c src/dmaSnd.c src/fdc.c src/file.c \
+					src/dim.c src/dmaSnd.c src/fdc_compat.c src/fdc.c src/fdc_old.c src/file.c \
+					src/floppy_ipf.c src/floppy_stx.c \
 					src/floppy.c src/gemdos.c src/hd6301_cpu.c src/hdc.c src/ide.c \
 					src/ikbd.c src/ioMem.c src/ioMemTabFalcon.c \
 					src/ioMemTabST.c src/ioMemTabSTE.c src/ioMemTabTT.c src/joy.c src/keymap.c src/m68000.c \

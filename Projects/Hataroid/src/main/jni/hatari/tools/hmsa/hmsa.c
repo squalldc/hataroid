@@ -40,10 +40,17 @@ static void print_prefix(LOGTYPE nType)
 	fputs(sType, stdout);
 }
 
+/* output newline if it's missing from text */
+static void do_newline(const char *text)
+{
+	if (text[strlen(text)-1] != '\n')
+		fputs("\n", stdout);
+}
+
 /**
  * Output Hatari log string.
  */
-extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
+void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 {
 	va_list argptr;
 	print_prefix(nType);
@@ -55,16 +62,14 @@ extern void Log_Printf(LOGTYPE nType, const char *psFormat, ...)
 /**
  * Output Hatari Alert dialog string.
  */
-extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
+void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 {
 	va_list argptr;
 	print_prefix(nType);
 	va_start(argptr, psFormat);
 	vfprintf(stdout, psFormat, argptr);
 	va_end(argptr);
-	/* Add a new-line if necessary: */
-	if (psFormat[strlen(psFormat)-1] != '\n')
-		fputs("\n", stdout);
+	do_newline(psFormat);
 }
 
 /**
@@ -73,8 +78,28 @@ extern void Log_AlertDlg(LOGTYPE nType, const char *psFormat, ...)
 int DlgAlert_Query(const char *text)
 {
 	puts(text);
+	do_newline(text);
 	return TRUE;
 }
+
+
+/**
+ * ../src/file.c requires zip.c, which calls IPF_FileNameIsIPF
+ * We create an empty function to replace it, as we don't use IPF here
+ * and don't want to compile with all the IPF related files.
+ * We do it also for STX.
+ */
+extern bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ);		/* function prototype */
+bool IPF_FileNameIsIPF(const char *pszFileName, bool bAllowGZ)
+{
+	return FALSE;
+}
+extern bool STX_FileNameIsSTX(const char *pszFileName, bool bAllowGZ);		/* function prototype */
+bool STX_FileNameIsSTX(const char *pszFileName, bool bAllowGZ)
+{
+	return FALSE;
+}
+
 
 /**
  * Create MSA or ST image of requested size.
@@ -141,6 +166,8 @@ int main(int argc, char *argv[])
 	unsigned char *diskbuf;
 	const char *srcfile, *srcdot;
 	char *dstfile, *dstdot;
+	int ImageType;
+	int drive;
 
 	if(argc < 2 || argv[1][0] == '-') {
 		usage(argv[0]);
@@ -202,10 +229,12 @@ int main(int argc, char *argv[])
 		free(dstfile);
 		return -1;
 	}
-	
+
+	drive = 0;                              /* drive is not used for ST/MSA/DIM, set it to 0 */
+
 	if (isMsa) {
 		/* Read the source disk image */
-		diskbuf = MSA_ReadDisk(srcfile, &disksize);
+		diskbuf = MSA_ReadDisk(drive, srcfile, &disksize, &ImageType);
 		if (!diskbuf || disksize < 512*8) {
 			fprintf(stderr, "ERROR: could not read MSA disk %s!\n", srcfile);
 			retval = -1;
@@ -222,7 +251,7 @@ int main(int argc, char *argv[])
 			retval = -1;
 		} else {
 			printf("Converting %s to %s (%li Bytes).\n", srcfile, dstfile, disksize);
-			retval = MSA_WriteDisk(dstfile, diskbuf, disksize);
+			retval = MSA_WriteDisk(drive, dstfile, diskbuf, disksize);
 		}
 	}
 

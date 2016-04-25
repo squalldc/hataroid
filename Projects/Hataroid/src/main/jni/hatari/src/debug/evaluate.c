@@ -1,7 +1,7 @@
 /*
-  Hatari - calculate.c
+  Hatari - evaluate.c
 
-  Copyright (C) 1994, 2009-2010 by Eero Tamminen
+  Copyright (C) 1994, 2009-2014 by Eero Tamminen
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
@@ -21,6 +21,7 @@ const char Eval_fileid[] = "Hatari calculate.c : " __DATE__ " " __TIME__;
 #include <stdlib.h>
 #include <stdbool.h>
 #include <SDL_types.h>
+#include <inttypes.h>
 #include "breakcond.h"
 #include "configuration.h"
 #include "dsp.h"
@@ -158,7 +159,7 @@ static int getNumber(const char *str, Uint32 *number, int *nbase)
 		}
 		str += 2;
 	}
-	else if (!isxdigit(str[0])) {
+	else if (!isxdigit((unsigned char)str[0])) {
 
 		/* doesn't start with (hex) number -> is it prefix? */
 		switch (*str++) {
@@ -206,8 +207,8 @@ static int getValue(const char *str, Uint32 *number, int *base, bool bForDsp)
 	Uint32 mask, *addr;
 	int len;
 
-	for (end = str; *end == '_' || isalnum(*end); end++);
-	
+	for (end = str; *end == '_' || isalnum((unsigned char)*end); end++);
+
 	len = end-str;
 	if (len >= (int)sizeof(name)) {
 		fprintf(stderr, "ERROR: symbol name at '%s' too long (%d chars)\n", str, len);
@@ -314,7 +315,10 @@ bool Eval_Number(const char *str, Uint32 *number)
 	 * addition to numbers.
 	 */
 	offset = getNumber(str, number, &base);
-	return isNumberOK(str, offset, base);
+	if (!offset)
+		return false;
+	else
+		return isNumberOK(str, offset, base);
 }
 
 
@@ -343,7 +347,7 @@ int Eval_Range(char *str1, Uint32 *lower, Uint32 *upper, bool fordsp)
 	}
 
 	offset = getValue(str1, lower, &base, fordsp);
-	if (!isNumberOK(str1, offset, base)) {
+	if (offset == 0 || !isNumberOK(str1, offset, base)) {
 		/* first number not OK */
 		fprintf(stderr,"Invalid address value '%s'!\n", str1);
 		ret = -1;
@@ -353,7 +357,7 @@ int Eval_Range(char *str1, Uint32 *lower, Uint32 *upper, bool fordsp)
 	}
 	if (fDash) {
 		offset = getValue(str2, upper, &base, fordsp);
-		if (!isNumberOK(str2, offset, base)) {
+		if (offset == 0 || !isNumberOK(str2, offset, base)) {
 			/* second number not OK */
 			fprintf(stderr, "Invalid address value '%s'!\n", str2);
 			ret = -1;
@@ -689,7 +693,7 @@ static long long apply_op (char opcode, long long value1, long long value2)
 /* ==================================================================== */
 
 /**
- * open prenthesis, push values & operators to stack
+ * open parenthesis, push values & operators to stack
  */
 static void open_bracket (void)
 {
@@ -706,7 +710,7 @@ static void open_bracket (void)
 
 /* -------------------------------------------------------------------- */
 /**
- * close prenthesis, and evaluate / pop stacks
+ * close parenthesis, and evaluate / pop stacks
  */
 /* last parsed value, last param. flag, trigonometric mode	*/
 static long long close_bracket (long long value)
@@ -714,7 +718,7 @@ static long long close_bracket (long long value)
 	/* returns the value of the parenthesised expression	*/
 
 	if (id.valid) {			/* preceded by an operator	*/
-		if (par.idx > 0) {	/* prenthesis has a pair	*/
+		if (par.idx > 0) {	/* parenthesis has a pair	*/
 			Uint32 addr;
 
 			/* calculate the value of parenthesised exp.	*/
@@ -722,7 +726,8 @@ static long long close_bracket (long long value)
 			/* fetch the indirect ST RAM value */
 			addr = val.buf[val.idx];
 			value = STMemory_ReadLong(addr);
-			fprintf(stderr, "  value in RAM at ($%x).l = $%llx\n", addr, value);
+			fprintf(stderr, "  value in RAM at ($%x).l = $%"PRIx64"\n",
+				addr, (uint64_t)value);
 			/* restore state before parenthesis */
 			op.idx = par.opx[par.idx] - 1;
 			val.idx = par.vax[par.idx] - 1;

@@ -67,14 +67,15 @@
 0000 0110 zzdd dDDD:00:XNZVC:-----:13: ADD.z   #z,d[!Areg]
 0000 0110 11ss sSSS:20:?????:?????:10: CALLM   s[!Dreg,Areg,Aipi,Apdi,Immd]
 0000 0110 11ss sSSS:20:?????:?????:10: RTM     s[Dreg,Areg]
-0000 1000 00ss sSSS:00:--Z--:-----:11: BTST    #1,s[!Areg]
-0000 1000 01ss sSSS:00:--Z--:-----:13: BCHG    #1,s[!Areg,Immd]
-0000 1000 10ss sSSS:00:--Z--:-----:13: BCLR    #1,s[!Areg,Immd]
-0000 1000 11ss sSSS:00:--Z--:-----:13: BSET    #1,s[!Areg,Immd]
+0000 1000 00ss sSSS:00:--Z--:-----:11: BTST    #1,s[!Areg,Immd]
+0000 1000 01ss sSSS:00:--Z--:-----:13: BCHG    #1,s[!Areg,Immd,PC8r,PC16]
+0000 1000 10ss sSSS:00:--Z--:-----:13: BCLR    #1,s[!Areg,Immd,PC8r,PC16]
+0000 1000 11ss sSSS:00:--Z--:-----:13: BSET    #1,s[!Areg,Immd,PC8r,PC16]
 0000 1010 0011 1100:00:XNZVC:XNZVC:10: EORSR.B #1
 0000 1010 0111 1100:02:?????:?????:10: EORSR.W #1
 0000 1010 zzdd dDDD:00:-NZ00:-----:13: EOR.z   #z,d[!Areg]
-0000 1100 zzss sSSS:00:-NZVC:-----:11: CMP.z   #z,s[!Areg,Immd]
+0000 1100 zzss sSSS:00:-NZVC:-----:11: CMP.z   #z,s[!Areg,Immd,PC8r,PC16]
+0000 1100 zzss sSSS:20:-NZVC:-----:11: CMP.z   #z,s[PC8r,PC16]
 
 0000 1010 11ss sSSS:20:?????:?????:13: CAS.B   #1,s[!Dreg,Areg,Immd,PC8r,PC16]
 0000 1100 11ss sSSS:20:?????:?????:13: CAS.W   #1,s[!Dreg,Areg,Immd,PC8r,PC16]
@@ -88,9 +89,9 @@
 0000 rrr1 10dd dDDD:00:-----:-----:12: MVPRM.W Dr,d[Areg-Ad16]
 0000 rrr1 11dd dDDD:00:-----:-----:12: MVPRM.L Dr,d[Areg-Ad16]
 0000 rrr1 00ss sSSS:00:--Z--:-----:11: BTST    Dr,s[!Areg]
-0000 rrr1 01ss sSSS:00:--Z--:-----:13: BCHG    Dr,s[!Areg,Immd]
-0000 rrr1 10ss sSSS:00:--Z--:-----:13: BCLR    Dr,s[!Areg,Immd]
-0000 rrr1 11ss sSSS:00:--Z--:-----:13: BSET    Dr,s[!Areg,Immd]
+0000 rrr1 01ss sSSS:00:--Z--:-----:13: BCHG    Dr,s[!Areg,Immd,PC8r,PC16]
+0000 rrr1 10ss sSSS:00:--Z--:-----:13: BCLR    Dr,s[!Areg,Immd,PC8r,PC16]
+0000 rrr1 11ss sSSS:00:--Z--:-----:13: BSET    Dr,s[!Areg,Immd,PC8r,PC16]
 
 0001 DDDd ddss sSSS:00:-NZ00:-----:12: MOVE.B  s,d[!Areg]
 0010 DDDd ddss sSSS:00:-----:-----:12: MOVEA.L s,d[Areg]
@@ -116,7 +117,8 @@
 0100 1000 11dd dDDD:00:-NZ00:-----:30: EXT.L   d[Dreg]         
 0100 1000 11dd dDDD:00:-----:-----:02: MVMLE.L #1,d[!Dreg,Areg,Aipi]
 0100 1001 11dd dDDD:20:-NZ00:-----:30: EXT.B   d[Dreg]         
-0100 1010 zzss sSSS:00:-NZ00:-----:10: TST.z   s
+0100 1010 zzss sSSS:00:-NZ00:-----:10: TST.z   s[!Areg,Immd,PC8r,PC16]
+0100 1010 zzss sSSS:20:-NZ00:-----:10: TST.z   s[Areg,PC8r,PC16]
 0100 1010 11dd dDDD:00:?????:?????:30: TAS.B   d[!Areg]
 0100 1010 1111 1100:00:?????:?????:00: ILLEGAL
 0100 1100 00ss sSSS:20:-NZVC:-----:13: MULL.L  #1,s[!Areg]
@@ -132,7 +134,7 @@
 0100 1110 0111 0001:00:-----:-----:00: NOP
 0100 1110 0111 0010:02:XNZVC:-----:10: STOP    #1
 0100 1110 0111 0011:02:XNZVC:-----:00: RTE
-0100 1110 0111 0100:00:?????:?????:10: RTD     #1
+0100 1110 0111 0100:10:?????:?????:10: RTD     #1
 0100 1110 0111 0101:00:-----:-----:00: RTS
 0100 1110 0111 0110:00:-----:XNZVC:00: TRAPV
 0100 1110 0111 0111:00:XNZVC:-----:00: RTR

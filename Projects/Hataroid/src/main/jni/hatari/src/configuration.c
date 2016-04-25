@@ -11,7 +11,7 @@
 */
 const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __TIME__;
 
-#include <SDL_keysym.h>
+#include <SDL_keyboard.h>
 
 #include "main.h"
 #include "configuration.h"
@@ -24,11 +24,15 @@ const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __T
 #include "memorySnapShot.h"
 #include "paths.h"
 #include "screen.h"
+#include "statusbar.h"
 #include "vdi.h"
 #include "video.h"
 #include "avi_record.h"
 #include "clocks_timings.h"
 #include "68kDisass.h"
+#include "fdc.h"
+#include "dsp.h"
+#include "joy.h"
 
 extern int SdlDeviceBufferSizeScale;
 extern void hataroidRetrieveSaveExtraData();
@@ -42,6 +46,7 @@ static const struct Config_Tag configs_Log[] =
 {
 	{ "sLogFileName", String_Tag, ConfigureParams.Log.sLogFileName },
 	{ "sTraceFileName", String_Tag, ConfigureParams.Log.sTraceFileName },
+	{ "nExceptionDebugMask", Int_Tag, &ConfigureParams.Log.nExceptionDebugMask },
 	{ "nTextLogLevel", Int_Tag, &ConfigureParams.Log.nTextLogLevel },
 	{ "nAlertDlgLogLevel", Int_Tag, &ConfigureParams.Log.nAlertDlgLogLevel },
 	{ "bConfirmQuit", Bool_Tag, &ConfigureParams.Log.bConfirmQuit },
@@ -77,12 +82,17 @@ static const struct Config_Tag configs_Screen[] =
 	{ "nVdiWidth", Int_Tag, &ConfigureParams.Screen.nVdiWidth },
 	{ "nVdiHeight", Int_Tag, &ConfigureParams.Screen.nVdiHeight },
 	{ "nVdiColors", Int_Tag, &ConfigureParams.Screen.nVdiColors },
+	{ "bMouseWarp", Bool_Tag, &ConfigureParams.Screen.bMouseWarp },
 	{ "bShowStatusbar", Bool_Tag, &ConfigureParams.Screen.bShowStatusbar },
 	{ "bShowDriveLed", Bool_Tag, &ConfigureParams.Screen.bShowDriveLed },
 	{ "bCrop", Bool_Tag, &ConfigureParams.Screen.bCrop },
 	{ "bForceMax", Bool_Tag, &ConfigureParams.Screen.bForceMax },
 	{ "nMaxWidth", Int_Tag, &ConfigureParams.Screen.nMaxWidth },
 	{ "nMaxHeight", Int_Tag, &ConfigureParams.Screen.nMaxHeight },
+#if WITH_SDL2
+	{ "nRenderScaleQuality", Int_Tag, &ConfigureParams.Screen.nRenderScaleQuality },
+	{ "bUseVsync", Int_Tag, &ConfigureParams.Screen.bUseVsync },
+#endif
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -206,6 +216,10 @@ static const struct Config_Tag configs_ShortCutWithMod[] =
 	{ "keyLoadMem",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_LOADMEM] },
 	{ "keySaveMem",    Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_SAVEMEM] },
 	{ "keyInsertDiskA",Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_INSERTDISKA] },
+	{ "keySwitchJoy0", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_JOY_0] },
+	{ "keySwitchJoy1", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_JOY_1] },
+	{ "keySwitchPadA", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_PAD_A] },
+	{ "keySwitchPadB", Int_Tag, &ConfigureParams.Shortcut.withModifier[SHORTCUT_PAD_B] },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -230,6 +244,10 @@ static const struct Config_Tag configs_ShortCutWithoutMod[] =
 	{ "keyLoadMem",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_LOADMEM] },
 	{ "keySaveMem",    Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_SAVEMEM] },
 	{ "keyInsertDiskA",Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_INSERTDISKA] },
+	{ "keySwitchJoy0", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_JOY_0] },
+	{ "keySwitchJoy1", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_JOY_1] },
+	{ "keySwitchPadA", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_PAD_A] },
+	{ "keySwitchPadB", Int_Tag, &ConfigureParams.Shortcut.withoutModifier[SHORTCUT_PAD_B] },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -251,6 +269,7 @@ static const struct Config_Tag configs_Sound[] =
 static const struct Config_Tag configs_Memory[] =
 {
 	{ "nMemorySize", Int_Tag, &ConfigureParams.Memory.nMemorySize },
+	{ "nTTRamSize", Int_Tag, &ConfigureParams.Memory.nTTRamSize },
 	{ "bAutoSave", Bool_Tag, &ConfigureParams.Memory.bAutoSave },
 	{ "szMemoryCaptureFileName", String_Tag, ConfigureParams.Memory.szMemoryCaptureFileName },
 	{ "szAutoSaveFileName", String_Tag, ConfigureParams.Memory.szAutoSaveFileName },
@@ -263,6 +282,10 @@ static const struct Config_Tag configs_Floppy[] =
 {
 	{ "bAutoInsertDiskB", Bool_Tag, &ConfigureParams.DiskImage.bAutoInsertDiskB },
 	{ "FastFloppy", Bool_Tag, &ConfigureParams.DiskImage.FastFloppy },
+	{ "EnableDriveA", Bool_Tag, &ConfigureParams.DiskImage.EnableDriveA },
+	{ "DriveA_NumberOfHeads", Int_Tag, &ConfigureParams.DiskImage.DriveA_NumberOfHeads },
+	{ "EnableDriveB", Bool_Tag, &ConfigureParams.DiskImage.EnableDriveB },
+	{ "DriveB_NumberOfHeads", Int_Tag, &ConfigureParams.DiskImage.DriveB_NumberOfHeads },
 	{ "nWriteProtection", Int_Tag, &ConfigureParams.DiskImage.nWriteProtection },
 	{ "szDiskAZipPath", String_Tag, ConfigureParams.DiskImage.szDiskZipPath[0] },
 	{ "szDiskAFileName", String_Tag, ConfigureParams.DiskImage.szDiskFileName[0] },
@@ -275,17 +298,61 @@ static const struct Config_Tag configs_Floppy[] =
 /* Used to load/save HD options */
 static const struct Config_Tag configs_HardDisk[] =
 {
+	{ "nGemdosDrive", Int_Tag, &ConfigureParams.HardDisk.nGemdosDrive },
 	{ "bBootFromHardDisk", Bool_Tag, &ConfigureParams.HardDisk.bBootFromHardDisk },
 	{ "bUseHardDiskDirectory", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskDirectories },
 	{ "szHardDiskDirectory", String_Tag, ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C] },
 	{ "nGemdosCase", Int_Tag, &ConfigureParams.HardDisk.nGemdosCase },
 	{ "nWriteProtection", Int_Tag, &ConfigureParams.HardDisk.nWriteProtection },
-	{ "bUseHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseHardDiskImage },
-	{ "szHardDiskImage", String_Tag, ConfigureParams.HardDisk.szHardDiskImage },
+	{ "bFilenameConversion", Bool_Tag, &ConfigureParams.HardDisk.bFilenameConversion },
+	{ "bUseHardDiskImage", Bool_Tag, &ConfigureParams.Acsi[0].bUseDevice },
+	{ "szHardDiskImage", String_Tag, ConfigureParams.Acsi[0].sDeviceFile },
 	{ "bUseIdeMasterHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage },
 	{ "bUseIdeSlaveHardDiskImage", Bool_Tag, &ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage },
 	{ "szIdeMasterHardDiskImage", String_Tag, ConfigureParams.HardDisk.szIdeMasterHardDiskImage },
 	{ "szIdeSlaveHardDiskImage", String_Tag, ConfigureParams.HardDisk.szIdeSlaveHardDiskImage },
+	{ NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save ACSI options */
+static const struct Config_Tag configs_Acsi[] =
+{
+	// { "bUseDevice0", Bool_Tag, &ConfigureParams.Acsi[0].bUseDevice },
+	// { "sDeviceFile0", String_Tag, ConfigureParams.Acsi[0].sDeviceFile },
+	{ "bUseDevice1", Bool_Tag, &ConfigureParams.Acsi[1].bUseDevice },
+	{ "sDeviceFile1", String_Tag, ConfigureParams.Acsi[1].sDeviceFile },
+	{ "bUseDevice2", Bool_Tag, &ConfigureParams.Acsi[2].bUseDevice },
+	{ "sDeviceFile2", String_Tag, ConfigureParams.Acsi[2].sDeviceFile },
+	{ "bUseDevice3", Bool_Tag, &ConfigureParams.Acsi[3].bUseDevice },
+	{ "sDeviceFile3", String_Tag, ConfigureParams.Acsi[3].sDeviceFile },
+	{ "bUseDevice4", Bool_Tag, &ConfigureParams.Acsi[4].bUseDevice },
+	{ "sDeviceFile4", String_Tag, ConfigureParams.Acsi[4].sDeviceFile },
+	{ "bUseDevice5", Bool_Tag, &ConfigureParams.Acsi[5].bUseDevice },
+	{ "sDeviceFile5", String_Tag, ConfigureParams.Acsi[5].sDeviceFile },
+	{ "bUseDevice6", Bool_Tag, &ConfigureParams.Acsi[6].bUseDevice },
+	{ "sDeviceFile6", String_Tag, ConfigureParams.Acsi[6].sDeviceFile },
+	{ "bUseDevice7", Bool_Tag, &ConfigureParams.Acsi[7].bUseDevice },
+	{ "sDeviceFile7", String_Tag, ConfigureParams.Acsi[7].sDeviceFile },
+	{ NULL , Error_Tag, NULL }
+};
+
+/* Used to load/save SCSI options */
+static const struct Config_Tag configs_Scsi[] =
+{
+	{ "bUseDevice1", Bool_Tag, &ConfigureParams.Scsi[1].bUseDevice },
+	{ "sDeviceFile1", String_Tag, ConfigureParams.Scsi[1].sDeviceFile },
+	{ "bUseDevice2", Bool_Tag, &ConfigureParams.Scsi[2].bUseDevice },
+	{ "sDeviceFile2", String_Tag, ConfigureParams.Scsi[2].sDeviceFile },
+	{ "bUseDevice3", Bool_Tag, &ConfigureParams.Scsi[3].bUseDevice },
+	{ "sDeviceFile3", String_Tag, ConfigureParams.Scsi[3].sDeviceFile },
+	{ "bUseDevice4", Bool_Tag, &ConfigureParams.Scsi[4].bUseDevice },
+	{ "sDeviceFile4", String_Tag, ConfigureParams.Scsi[4].sDeviceFile },
+	{ "bUseDevice5", Bool_Tag, &ConfigureParams.Scsi[5].bUseDevice },
+	{ "sDeviceFile5", String_Tag, ConfigureParams.Scsi[5].sDeviceFile },
+	{ "bUseDevice6", Bool_Tag, &ConfigureParams.Scsi[6].bUseDevice },
+	{ "sDeviceFile6", String_Tag, ConfigureParams.Scsi[6].sDeviceFile },
+	{ "bUseDevice7", Bool_Tag, &ConfigureParams.Scsi[7].bUseDevice },
+	{ "sDeviceFile7", String_Tag, ConfigureParams.Scsi[7].sDeviceFile },
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -337,9 +404,9 @@ static const struct Config_Tag configs_System[] =
 	{ "bPatchTimerD", Bool_Tag, &ConfigureParams.System.bPatchTimerD },
 	{ "bFastBoot", Bool_Tag, &ConfigureParams.System.bFastBoot },
 	{ "bFastForward", Bool_Tag, &ConfigureParams.System.bFastForward },
+	{ "bAddressSpace24", Bool_Tag, &ConfigureParams.System.bAddressSpace24 },
 
 #if ENABLE_WINUAE_CPU
-	{ "bAddressSpace24", Bool_Tag, &ConfigureParams.System.bAddressSpace24 },
 	{ "bCycleExactCpu", Bool_Tag, &ConfigureParams.System.bCycleExactCpu },
 	{ "n_FPUType", Int_Tag, &ConfigureParams.System.n_FPUType },
 	{ "bCompatibleFPU", Bool_Tag, &ConfigureParams.System.bCompatibleFPU },
@@ -376,6 +443,8 @@ static const struct Config_Tag configs_Hataroid[] =
 
 	{ "mouseActive", Bool_Tag, &ConfigureParams.Hataroid.mouseActive },
 
+    { "useEmuTOS", Bool_Tag, &ConfigureParams.Hataroid.useEmuTOS },
+
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -385,7 +454,7 @@ static const struct Config_Tag configs_Hataroid[] =
  */
 void Configuration_SetDefault(void)
 {
-	int i;
+	int i, maxjoy;
 	const char *psHomeDir;
 	const char *psWorkingDir;
 
@@ -398,6 +467,7 @@ void Configuration_SetDefault(void)
 	/* Set defaults for logging and tracing */
 	strcpy(ConfigureParams.Log.sLogFileName, "stderr");
 	strcpy(ConfigureParams.Log.sTraceFileName, "stderr");
+	ConfigureParams.Log.nExceptionDebugMask = DEFAULT_EXCEPTIONS;
 	ConfigureParams.Log.nTextLogLevel = LOG_TODO;
 	ConfigureParams.Log.nAlertDlgLogLevel = LOG_ERROR;
 	ConfigureParams.Log.bConfirmQuit = true;
@@ -416,7 +486,18 @@ void Configuration_SetDefault(void)
 	ConfigureParams.DiskImage.bAutoInsertDiskB = true;
 	ConfigureParams.DiskImage.FastFloppy = false;
 	ConfigureParams.DiskImage.nWriteProtection = WRITEPROT_OFF;
-	for (i = 0; i < 2; i++)
+
+	ConfigureParams.DiskImage.EnableDriveA = true;
+	FDC_Drive_Set_Enable ( 0 , ConfigureParams.DiskImage.EnableDriveA );
+	ConfigureParams.DiskImage.DriveA_NumberOfHeads = 2;
+	FDC_Drive_Set_NumberOfHeads ( 0 , ConfigureParams.DiskImage.DriveA_NumberOfHeads );
+
+	ConfigureParams.DiskImage.EnableDriveB = true;
+	FDC_Drive_Set_Enable ( 1 , ConfigureParams.DiskImage.EnableDriveB );
+	ConfigureParams.DiskImage.DriveB_NumberOfHeads = 2;
+	FDC_Drive_Set_NumberOfHeads ( 1 , ConfigureParams.DiskImage.DriveB_NumberOfHeads );
+
+	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
 	{
 		ConfigureParams.DiskImage.szDiskZipPath[i][0] = '\0';
 		ConfigureParams.DiskImage.szDiskFileName[i][0] = '\0';
@@ -426,38 +507,56 @@ void Configuration_SetDefault(void)
 
 	/* Set defaults for hard disks */
 	ConfigureParams.HardDisk.bBootFromHardDisk = false;
+	ConfigureParams.HardDisk.bFilenameConversion = false;
 	ConfigureParams.HardDisk.nGemdosCase = GEMDOS_NOP;
 	ConfigureParams.HardDisk.nWriteProtection = WRITEPROT_OFF;
-	ConfigureParams.HardDisk.nHardDiskDir = DRIVE_C;
+	ConfigureParams.HardDisk.nGemdosDrive = DRIVE_C;
 	ConfigureParams.HardDisk.bUseHardDiskDirectories = false;
 	for (i = 0; i < MAX_HARDDRIVES; i++)
 	{
 		strcpy(ConfigureParams.HardDisk.szHardDiskDirectories[i], psWorkingDir);
 		File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[i]);
 	}
-	ConfigureParams.HardDisk.bUseHardDiskImage = false;
-	strcpy(ConfigureParams.HardDisk.szHardDiskImage, psWorkingDir);
 	ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = false;
 	strcpy(ConfigureParams.HardDisk.szIdeMasterHardDiskImage, psWorkingDir);
 	ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = false;
 	strcpy(ConfigureParams.HardDisk.szIdeSlaveHardDiskImage, psWorkingDir);
 
+	/* ACSI */
+	for (i = 0; i < MAX_ACSI_DEVS; i++)
+	{
+		ConfigureParams.Acsi[i].bUseDevice = false;
+		strcpy(ConfigureParams.Acsi[i].sDeviceFile, psWorkingDir);
+	}
+
+	/* SCSI */
+	for (i = 0; i < MAX_SCSI_DEVS; i++)
+	{
+		ConfigureParams.Scsi[i].bUseDevice = false;
+		strcpy(ConfigureParams.Scsi[i].sDeviceFile, psWorkingDir);
+	}
+
 	/* Set defaults for Joysticks */
+	maxjoy = Joy_GetMaxId();
 	for (i = 0; i < JOYSTICK_COUNT; i++)
 	{
 		ConfigureParams.Joysticks.Joy[i].nJoystickMode = JOYSTICK_DISABLED;
 		ConfigureParams.Joysticks.Joy[i].bEnableAutoFire = false;
 		ConfigureParams.Joysticks.Joy[i].bEnableJumpOnFire2 = false;
-		ConfigureParams.Joysticks.Joy[i].nJoyId = i;
+		ConfigureParams.Joysticks.Joy[i].nJoyId = (i > maxjoy ? maxjoy : i);
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeUp = SDLK_UP;
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeDown = SDLK_DOWN;
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeLeft = SDLK_LEFT;
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeRight = SDLK_RIGHT;
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeFire = SDLK_RCTRL;
 	}
-	ConfigureParams.Joysticks.Joy[1].nJoyId = 0;    /* ST Joystick #1 is default joystick */
-	ConfigureParams.Joysticks.Joy[0].nJoyId = 1;
-	ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_KEYBOARD;//JOYSTICK_REALSTICK;
+	//if (SDL_NumJoysticks() > 0)
+	{
+		/* ST Joystick #1 is default joystick */
+		ConfigureParams.Joysticks.Joy[1].nJoyId = 0;
+		ConfigureParams.Joysticks.Joy[0].nJoyId = 1;//(maxjoy ? 1 : 0);
+		ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_KEYBOARD; //JOYSTICK_REALSTICK;
+	}
 
 	/* Set defaults for Keyboard */
 	ConfigureParams.Keyboard.bDisableKeyRepeat = false;
@@ -486,9 +585,14 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_LOADMEM] = SDLK_l;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_SAVEMEM] = SDLK_k;
 	ConfigureParams.Shortcut.withModifier[SHORTCUT_INSERTDISKA] = SDLK_d;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_JOY_0] = SDLK_F1;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_JOY_1] = SDLK_F2;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_PAD_A] = SDLK_F3;
+	ConfigureParams.Shortcut.withModifier[SHORTCUT_PAD_B] = SDLK_F4;
 
 	/* Set defaults for Memory */
 	ConfigureParams.Memory.nMemorySize = 1;     /* 1 MiB */
+	ConfigureParams.Memory.nTTRamSize = 0;     /* disabled */
 	ConfigureParams.Memory.bAutoSave = false;
 	sprintf(ConfigureParams.Memory.szMemoryCaptureFileName, "%s%chatari.sav",
 	        psHomeDir, PATHSEP);
@@ -516,7 +620,7 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.bKeepResolutionST = false;
 	ConfigureParams.Screen.nFrameSkips = AUTO_FRAMESKIP_LIMIT;
 	ConfigureParams.Screen.bAllowOverscan = true;
-	ConfigureParams.Screen.nSpec512Threshold = 16;
+	ConfigureParams.Screen.nSpec512Threshold = 1;
 	ConfigureParams.Screen.nForceBpp = 16;
 	ConfigureParams.Screen.bAspectCorrect = true;
 	ConfigureParams.Screen.nMonitorType = MONITOR_TYPE_RGB;
@@ -524,13 +628,18 @@ void Configuration_SetDefault(void)
 	ConfigureParams.Screen.nVdiWidth = 640;
 	ConfigureParams.Screen.nVdiHeight = 480;
 	ConfigureParams.Screen.nVdiColors = GEMCOLOR_16;
+	ConfigureParams.Screen.bMouseWarp = true;
 	ConfigureParams.Screen.bShowStatusbar = true;
 	ConfigureParams.Screen.bShowDriveLed = true;
 	ConfigureParams.Screen.bCrop = false;
 	/* gives zoomed Falcon/TT windows about same size as ST/STE windows */
-	ConfigureParams.Screen.nMaxWidth = 2*(48+320+48);
-	ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+24;
+	ConfigureParams.Screen.nMaxWidth = 2*NUM_VISIBLE_LINE_PIXELS;
+	ConfigureParams.Screen.nMaxHeight = 2*NUM_VISIBLE_LINES+STATUSBAR_MAX_HEIGHT;
 	ConfigureParams.Screen.bForceMax = false;
+#if WITH_SDL2
+	ConfigureParams.Screen.nRenderScaleQuality = 0;
+	ConfigureParams.Screen.bUseVsync = false;
+#endif
 
 	/* Set defaults for Sound */
 	ConfigureParams.Sound.bEnableMicrophone = true;
@@ -566,12 +675,13 @@ void Configuration_SetDefault(void)
  	ConfigureParams.System.nCpuLevel = 0;
  	ConfigureParams.System.nCpuFreq = 8;
 	ConfigureParams.System.nDSPType = DSP_TYPE_NONE;
+	ConfigureParams.System.bAddressSpace24 = true;
 #endif
 	ConfigureParams.System.bCompatibleCpu = true;
 	ConfigureParams.System.bBlitter = false;
 	ConfigureParams.System.bPatchTimerD = true;
-	ConfigureParams.System.bFastBoot = true;
-	ConfigureParams.System.bRealTimeClock = true;
+	ConfigureParams.System.bFastBoot = false;
+	ConfigureParams.System.bRealTimeClock = false;
 	ConfigureParams.System.bFastForward = false;
 
 	// Hataroid extra
@@ -591,6 +701,8 @@ void Configuration_SetDefault(void)
 		ConfigureParams.Hataroid.kbdPanY = 0;
 
 		ConfigureParams.Hataroid.mouseActive = false;
+
+        ConfigureParams.Hataroid.useEmuTOS = false;
 	}
 
 	// Hataroid Midi extra
@@ -643,6 +755,8 @@ void Configuration_SetDefault(void)
  */
 void Configuration_Apply(bool bReset)
 {
+	int i;
+
 	if (bReset)
 	{
 		/* Set resolution change */
@@ -703,7 +817,6 @@ void Configuration_Apply(bool bReset)
 	File_MakeAbsoluteName(ConfigureParams.Rom.szTosImageFileName);
 	if (strlen(ConfigureParams.Rom.szCartridgeImageFileName) > 0)
 		File_MakeAbsoluteName(ConfigureParams.Rom.szCartridgeImageFileName);
-	File_MakeAbsoluteName(ConfigureParams.HardDisk.szHardDiskImage);
 	File_CleanFileName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 	File_MakeAbsoluteName(ConfigureParams.HardDisk.szHardDiskDirectories[0]);
 	File_MakeAbsoluteName(ConfigureParams.Memory.szMemoryCaptureFileName);
@@ -711,7 +824,15 @@ void Configuration_Apply(bool bReset)
 	if (strlen(ConfigureParams.Keyboard.szMappingFileName) > 0)
 		File_MakeAbsoluteName(ConfigureParams.Keyboard.szMappingFileName);
 	File_MakeAbsoluteName(ConfigureParams.Video.AviRecordFile);
-	
+	for (i = 0; i < MAX_ACSI_DEVS; i++)
+	{
+		File_MakeAbsoluteName(ConfigureParams.Acsi[i].sDeviceFile);
+	}
+	for (i = 0; i < MAX_SCSI_DEVS; i++)
+	{
+		File_MakeAbsoluteName(ConfigureParams.Scsi[i].sDeviceFile);
+	}
+
 	/* make path names absolute, but handle special file names */
 	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sLogFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Log.sTraceFileName);
@@ -720,6 +841,27 @@ void Configuration_Apply(bool bReset)
 	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiInFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Midi.sMidiOutFileName);
 	File_MakeAbsoluteSpecialName(ConfigureParams.Printer.szPrintToFileName);
+
+	/* Enable/disable floppy drives */
+	FDC_Drive_Set_Enable ( 0 , ConfigureParams.DiskImage.EnableDriveA );
+	FDC_Drive_Set_Enable ( 1 , ConfigureParams.DiskImage.EnableDriveB );
+	FDC_Drive_Set_NumberOfHeads ( 0 , ConfigureParams.DiskImage.DriveA_NumberOfHeads );
+	FDC_Drive_Set_NumberOfHeads ( 1 , ConfigureParams.DiskImage.DriveB_NumberOfHeads );
+
+        /* Update disassembler */
+#if ENABLE_WINUAE_CPU
+        Disasm_SetCPUType ( ConfigureParams.System.nCpuLevel , ConfigureParams.System.n_FPUType );
+#else
+        Disasm_SetCPUType ( ConfigureParams.System.nCpuLevel , 0 );
+#endif
+
+#if ENABLE_DSP_EMU
+	/* Enable DSP ? */
+	if ( ConfigureParams.System.nDSPType == DSP_TYPE_EMU )
+		DSP_Enable ();
+	else
+		DSP_Disable ();
+#endif
 }
 
 
@@ -767,12 +909,19 @@ void Configuration_Load(const char *psFileName)
 	Configuration_LoadSection(psFileName, configs_Joystick4, "[Joystick4]");
 	Configuration_LoadSection(psFileName, configs_Joystick5, "[Joystick5]");
 	Configuration_LoadSection(psFileName, configs_Keyboard, "[Keyboard]");
+#if WITH_SDL2
+	Configuration_LoadSection(psFileName, configs_ShortCutWithMod, "[ShortcutsWithModifiers2]");
+	Configuration_LoadSection(psFileName, configs_ShortCutWithoutMod, "[ShortcutsWithoutModifiers2]");
+#else
 	Configuration_LoadSection(psFileName, configs_ShortCutWithMod, "[ShortcutsWithModifiers]");
 	Configuration_LoadSection(psFileName, configs_ShortCutWithoutMod, "[ShortcutsWithoutModifiers]");
+#endif
 	Configuration_LoadSection(psFileName, configs_Sound, "[Sound]");
 	Configuration_LoadSection(psFileName, configs_Memory, "[Memory]");
 	Configuration_LoadSection(psFileName, configs_Floppy, "[Floppy]");
 	Configuration_LoadSection(psFileName, configs_HardDisk, "[HardDisk]");
+	Configuration_LoadSection(psFileName, configs_Acsi, "[ACSI]");
+	Configuration_LoadSection(psFileName, configs_Scsi, "[SCSI]");
 	Configuration_LoadSection(psFileName, configs_Rom, "[ROM]");
 	Configuration_LoadSection(psFileName, configs_Rs232, "[RS232]");
 	Configuration_LoadSection(psFileName, configs_Printer, "[Printer]");
@@ -820,12 +969,19 @@ void Configuration_Save(void)
 	Configuration_SaveSection(sConfigFileName, configs_Joystick4, "[Joystick4]");
 	Configuration_SaveSection(sConfigFileName, configs_Joystick5, "[Joystick5]");
 	Configuration_SaveSection(sConfigFileName, configs_Keyboard, "[Keyboard]");
+#if WITH_SDL2
+	Configuration_SaveSection(sConfigFileName, configs_ShortCutWithMod, "[ShortcutsWithModifiers2]");
+	Configuration_SaveSection(sConfigFileName, configs_ShortCutWithoutMod, "[ShortcutsWithoutModifiers2]");
+#else
 	Configuration_SaveSection(sConfigFileName, configs_ShortCutWithMod, "[ShortcutsWithModifiers]");
 	Configuration_SaveSection(sConfigFileName, configs_ShortCutWithoutMod, "[ShortcutsWithoutModifiers]");
+#endif
 	Configuration_SaveSection(sConfigFileName, configs_Sound, "[Sound]");
 	Configuration_SaveSection(sConfigFileName, configs_Memory, "[Memory]");
 	Configuration_SaveSection(sConfigFileName, configs_Floppy, "[Floppy]");
 	Configuration_SaveSection(sConfigFileName, configs_HardDisk, "[HardDisk]");
+	/*Configuration_SaveSection(sConfigFileName, configs_Acsi, "[ACSI]");*/
+	/*Configuration_SaveSection(sConfigFileName, configs_Scsi, "[SCSI]");*/
 	Configuration_SaveSection(sConfigFileName, configs_Rom, "[ROM]");
 	Configuration_SaveSection(sConfigFileName, configs_Rs232, "[RS232]");
 	Configuration_SaveSection(sConfigFileName, configs_Printer, "[Printer]");
@@ -843,20 +999,57 @@ void Configuration_Save(void)
  */
 void Configuration_MemorySnapShot_Capture(bool bSave)
 {
+	int i;
+
 	MemorySnapShot_Store(ConfigureParams.Rom.szTosImageFileName, sizeof(ConfigureParams.Rom.szTosImageFileName));
 	MemorySnapShot_Store(ConfigureParams.Rom.szCartridgeImageFileName, sizeof(ConfigureParams.Rom.szCartridgeImageFileName));
 
 	MemorySnapShot_Store(&ConfigureParams.Memory.nMemorySize, sizeof(ConfigureParams.Memory.nMemorySize));
+    if (gSaveVersion >= 1900)
+    {
+        MemorySnapShot_Store(&ConfigureParams.Memory.nTTRamSize, sizeof(ConfigureParams.Memory.nTTRamSize));
+    }
 
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskFileName[0], sizeof(ConfigureParams.DiskImage.szDiskFileName[0]));
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskZipPath[0], sizeof(ConfigureParams.DiskImage.szDiskZipPath[0]));
+    if (gSaveVersion >= 1900)
+    {
+        MemorySnapShot_Store(&ConfigureParams.DiskImage.EnableDriveA, sizeof(ConfigureParams.DiskImage.EnableDriveA));
+        MemorySnapShot_Store(&ConfigureParams.DiskImage.DriveA_NumberOfHeads, sizeof(ConfigureParams.DiskImage.DriveA_NumberOfHeads));
+    }
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskFileName[1], sizeof(ConfigureParams.DiskImage.szDiskFileName[1]));
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.szDiskZipPath[1], sizeof(ConfigureParams.DiskImage.szDiskZipPath[1]));
+    if (gSaveVersion >= 1900)
+    {
+        MemorySnapShot_Store(&ConfigureParams.DiskImage.EnableDriveB, sizeof(ConfigureParams.DiskImage.EnableDriveB));
+        MemorySnapShot_Store(&ConfigureParams.DiskImage.DriveB_NumberOfHeads, sizeof(ConfigureParams.DiskImage.DriveB_NumberOfHeads));
+    }
 
 	MemorySnapShot_Store(&ConfigureParams.HardDisk.bUseHardDiskDirectories, sizeof(ConfigureParams.HardDisk.bUseHardDiskDirectories));
 	MemorySnapShot_Store(ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C], sizeof(ConfigureParams.HardDisk.szHardDiskDirectories[DRIVE_C]));
-	MemorySnapShot_Store(&ConfigureParams.HardDisk.bUseHardDiskImage, sizeof(ConfigureParams.HardDisk.bUseHardDiskImage));
-	MemorySnapShot_Store(ConfigureParams.HardDisk.szHardDiskImage, sizeof(ConfigureParams.HardDisk.szHardDiskImage));
+    if (gSaveVersion >= 1900)
+    {
+        for (i = 0; i < MAX_ACSI_DEVS; i++)
+        {
+            MemorySnapShot_Store(&ConfigureParams.Acsi[i].bUseDevice, sizeof(ConfigureParams.Acsi[i].bUseDevice));
+            MemorySnapShot_Store(ConfigureParams.Acsi[i].sDeviceFile, sizeof(ConfigureParams.Acsi[i].sDeviceFile));
+        }
+        /* for (i = 0; i < MAX_SCSI_DEVS; i++)
+        {
+            MemorySnapShot_Store(&ConfigureParams.Scsi[i].bUseDevice, sizeof(ConfigureParams.Scsi[i].bUseDevice));
+            MemorySnapShot_Store(ConfigureParams.Scsi[i].sDeviceFile, sizeof(ConfigureParams.Scsi[i].sDeviceFile));
+        }*/
+    }
+    else
+    {
+        MemorySnapShot_Store(&ConfigureParams.Acsi[0].bUseDevice, sizeof(ConfigureParams.Acsi[0].bUseDevice));
+        MemorySnapShot_Store(ConfigureParams.Acsi[0].sDeviceFile, sizeof(ConfigureParams.Acsi[0].sDeviceFile));
+        if (!bSave)
+        {
+            ConfigureParams.Acsi[i].bUseDevice = false;
+            ConfigureParams.Acsi[i].sDeviceFile[0] = 0;
+        }
+    }
 
 	MemorySnapShot_Store(&ConfigureParams.Screen.nMonitorType, sizeof(ConfigureParams.Screen.nMonitorType));
 	MemorySnapShot_Store(&ConfigureParams.Screen.bUseExtVdiResolutions, sizeof(ConfigureParams.Screen.bUseExtVdiResolutions));
@@ -876,9 +1069,12 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.System.nDSPType, sizeof(ConfigureParams.System.nDSPType));
 	MemorySnapShot_Store(&ConfigureParams.System.bRealTimeClock, sizeof(ConfigureParams.System.bRealTimeClock));
 	MemorySnapShot_Store(&ConfigureParams.System.bPatchTimerD, sizeof(ConfigureParams.System.bPatchTimerD));
+    if (gSaveVersion >= 1900)
+    {
+        MemorySnapShot_Store(&ConfigureParams.System.bAddressSpace24, sizeof(ConfigureParams.System.bAddressSpace24));
+    }
 
 #if ENABLE_WINUAE_CPU
-	MemorySnapShot_Store(&ConfigureParams.System.bAddressSpace24, sizeof(ConfigureParams.System.bAddressSpace24));
 	MemorySnapShot_Store(&ConfigureParams.System.bCycleExactCpu, sizeof(ConfigureParams.System.bCycleExactCpu));
 	MemorySnapShot_Store(&ConfigureParams.System.n_FPUType, sizeof(ConfigureParams.System.n_FPUType));
 	MemorySnapShot_Store(&ConfigureParams.System.bCompatibleFPU, sizeof(ConfigureParams.System.bCompatibleFPU));
@@ -888,6 +1084,7 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.FastFloppy, sizeof(ConfigureParams.DiskImage.FastFloppy));
 
 	ConfigureParams.Hataroid.saveDispName[0] = 0;
+    ConfigureParams.Hataroid.useEmuTOS = false;
 	if (gSaveVersion >= 1702)
 	{
 		// Hataroid settings
@@ -909,6 +1106,11 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 		MemorySnapShot_Store(&ConfigureParams.Hataroid.kbdPanY, sizeof(ConfigureParams.Hataroid.kbdPanY));
 
 		MemorySnapShot_Store(&ConfigureParams.Hataroid.mouseActive, sizeof(ConfigureParams.Hataroid.mouseActive));
+
+        if (gSaveVersion >= 1901)
+        {
+            MemorySnapShot_Store(&ConfigureParams.Hataroid.useEmuTOS, sizeof(ConfigureParams.Hataroid.useEmuTOS));
+        }
 
 		if (gSaveVersion >= 1703)
 		{

@@ -7,7 +7,7 @@
   <meta name="author" content="Hatari development team" />
   <meta name="keywords" content="hatari, documentation, manual, linux" />
   <meta name="viewport" content="width=device-width; initial-scale=1.0;" />
-  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-15" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <style type="text/css">
   <!--
 	body {  background:#FFFFFF;
@@ -64,7 +64,7 @@
 <h1 class="pageheader">Hatari User's Manual</h1>
 
 <p class="pageheader">
-Version 1.7, June 2013
+Version 1.9.0, September 2015
 </p>
 <p class="pageheader">
 Manual written by: <strong>Thomas Huth</strong>, <strong>Matthias Arndt</strong>
@@ -110,8 +110,9 @@ Recent versions of Hatari even feature STE, Falcon and basic TT emulation.
 <h3>Features</h3>
 <ul>
   <li>68000 - 68040 emulation via the UAE CPU core
-      (MMU emulation only with the WinUAE CPU core)</li>
+      (68060 and MMU emulation only with the WinUAE CPU core)</li>
   <li>ST RAM size variable (from 512kiB up to 14MiB are possible)</li>
+  <li>TT RAM size variable (from 0 up to 256MiB are possible)</li>
   <li>optional cartridge images for the ST ROM port</li>
   <li>most of the ST specific hardware</li>
   <li>ST Shifter with ST-High, ST-Medium and ST-Low resolutions,
@@ -132,12 +133,15 @@ Recent versions of Hatari even feature STE, Falcon and basic TT emulation.
     keyboard mapping</li>
   <li>joystick emulation via cursor keys and joystick emulation via a
     connected PC joystick</li>
-  <li>FDC emulation using floppy disk images in standard formats (*.ST,
-    *.MSA and *.DIM)</li>
+  <li>FDC (floppy disk controller) emulation using floppy disk images
+    in standard formats (*.ST, *.MSA, *.DIM and *.STX)</li>
+  <li>FDC emulation via the IPF support library for using
+    *.IPF, *.RAW and *.CTR images</li>
   <li>support for packed disk images (PkZip and Gzip)</li>
   <li>optional write-protection for floppy disk images</li>
-  <li>partial ACSI emulation for harddisk support</li>
-  <li>GEMDOS interface driver to mount directories as harddrives
+  <li>ACSI emulation for hard drive support (with basic support for extended
+    host adapter protocol to access disks &gt; 1 GB)</li>
+  <li>GEMDOS interface driver to mount directories as hard drives
     with optional write-protection</li>
   <li>support for memory snapshots (save whole system state)</li>
   <li>driver for extended VDI resolutions</li>
@@ -165,7 +169,7 @@ Recent versions of Hatari even feature STE, Falcon and basic TT emulation.
 <ul>
   <li>TT low/med/high resolution support</li>
   <li>ST/TT palette switching and video shifter</li>
-  <li>RAM upto 14MiB (ST-RAM only, there is no support for TT-RAM yet)</li>
+  <li>RAM up to 14MiB (ST-RAM) and up to 256 MiB (TT-RAM)</li>
   <li>Only TOS version 3.06 (and EmuTOS) can be used in TT mode.</li>
 </ul>
 
@@ -177,11 +181,12 @@ Recent versions of Hatari even feature STE, Falcon and basic TT emulation.
   <li>STE/Falcon palette switching and shifter</li>
   <li>Mono/RGB/VGA/TV monitor types</li>
   <li>DSP co-processor emulation</li>
+  <li>RAM up to 14MiB (ST-RAM) and up to 256 MiB (TT-RAM)</li>
   <li>Experimental microphone (jack) emulation</li>
-  <li>Experimental Crossbar sound matrix (ADC (mic & PSG), DAC, DMA, DSP)
+  <li>Experimental Crossbar sound matrix (ADC (mic &amp; PSG), DAC, DMA, DSP)
       interconnect emulation + support for the additional DMA sound
       sample rates</li>
-  <li>Experimental IDE master and slave emulation for harddisk support</li>
+  <li>Experimental IDE master and slave emulation for hard drive support</li>
   <li>TOS versions 4.00, 4.02, 4.04 and 4.92 (and EmuTOS) can be used in Falcon mode.</li>
 </ul>
 
@@ -351,7 +356,7 @@ overriding the earlier given ones:
     command or through the (optionally enabled) Hatari control socket.
 </ul>
 
-<p>Some of the run-time changes require emulation to be reseted for them
+<p>Some of the run-time changes require emulation to be reset for them
 to take effect.</p>
 
 
@@ -365,7 +370,7 @@ to take effect.</p>
 <p>As an argument one can give either a name of:</p>
 <ul>
 <li>A floppy disk image,
-<li>A directory that should be emulated as a virtual GEMDOS hard disk, or</li>
+<li>A directory that should be emulated as a virtual GEMDOS HD, or</li>
 <li>An Atari program that should be autostarted.  In this case
     the program's directory will be used as the C: drive from
     where this program will be started.
@@ -384,7 +389,7 @@ corresponds to A: or C:).</p>
 <!--
 Generated from hatari.1 options section by changing subheaders to h3
 and removing extra paragraphs:
-  groff -man -Thtml hatari.1 | tidy | awk '
+  groff -man -Thtml hatari.1 | sed -e 's/&minus;/-/g' | tidy | awk '
   /h2.OPTIONS/ { out = 1; next }
   /COMMANDS/ { out = 0; next }
   { if(out) print }' \
@@ -394,74 +399,83 @@ and removing extra paragraphs:
 -->
 
 <h3>General options</h3>
-<p class="parameter">&minus;h,
-&minus;&minus;help</p>
+<p class="parameter">-h,
+--help</p>
 <p class="paramdesc">Print command line options and
 terminate</p>
-<p class="parameter">&minus;v,
-&minus;&minus;version</p>
+<p class="parameter">-v,
+--version</p>
 <p class="paramdesc">Print version information and
 terminate</p>
-<p class="parameter">&minus;&minus;confirm-quit
+<p class="parameter">--confirm-quit
 &lt;bool&gt;</p>
 <p class="paramdesc">Whether Hatari confirms quitting</p>
-<p class="parameter">&minus;c, &minus;&minus;configfile
+<p class="parameter">-c, --configfile
 &lt;filename&gt;</p>
 <p class="paramdesc">Read additional configuration values from
 &lt;file&gt;, these override values read from the global and
 user configuration files
 </p>
-<p class="parameter">&minus;k, &minus;&minus;keymap
+<p class="parameter">-k, --keymap
 &lt;file&gt;</p>
 <p class="paramdesc">load keyboard mapping from
 &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;fast-forward
+<p class="parameter">--fast-forward
 &lt;bool&gt;</p>
 <p class="paramdesc">On fast machine helps skipping (fast
 forwarding) Hatari output</p>
 
 <h3>Common display options</h3>
-<p class="parameter">&minus;m,
-&minus;&minus;mono</p>
+<p class="parameter">-m,
+--mono</p>
 <p class="paramdesc">Start in monochrome mode instead of
 color</p>
-<p class="parameter">&minus;&minus;monitor
+<p class="parameter">--monitor
 &lt;x&gt;</p>
 <p class="paramdesc">Select monitor type (x =
 mono/rgb/vga/tv)</p>
-<p class="parameter">&minus;f,
-&minus;&minus;fullscreen</p>
+<p class="parameter">-f,
+--fullscreen</p>
 <p class="paramdesc">Start the emulator in fullscreen
 mode</p>
-<p class="parameter">&minus;w,
-&minus;&minus;window</p>
-<p class="paramdesc">Start the emulator in window mode</p>
-<p class="parameter">&minus;&minus;grab</p>
-<p class="paramdesc">Grab mouse (also) in window mode</p>
-<p class="parameter">&minus;&minus;frameskips
+<p class="parameter">-w, --window</p>
+<p class="paramdesc">Start the emulator in windowed mode</p>
+<p class="parameter">--grab</p>
+<p class="paramdesc">Grab mouse (also) in windowed mode</p>
+<p class="parameter">--borders &lt;bool&gt;</p>
+<p class="paramdesc">Show ST/STE/Falcon screen borders
+(for low/med resolution overscan demos)</p>
+<p class="parameter">--frameskips
 &lt;x&gt;</p>
 <p class="paramdesc">Skip &lt;x&gt; frames after each
 displayed frame to accelerate emulation (0=disabled, &gt;4 uses
 automatic frameskip with given value as maximum)</p>
-<p class="parameter">&minus;&minus;statusbar
+<p class="parameter">--slowdown &lt;x&gt;</p>
+<p class="paramdesc">Slow down emulation by factor of x
+(used as multiplier for VBL wait time)</p>
+<p class="parameter">--statusbar
 &lt;bool&gt;</p>
 <p class="paramdesc">Show statusbar (with floppy leds etc
 etc)</p>
-<p class="parameter">&minus;&minus;drive-led
+<p class="parameter">--drive-led
 &lt;bool&gt;</p>
 <p class="paramdesc">Show overlay drive led when statusbar
 isn&rsquo;t shown</p>
-<p class="parameter">&minus;&minus;bpp
+<p class="parameter">--max-width
+&lt;x&gt;</p>
+<p class="paramdesc">Preferred / maximum window width
+for borders / zooming</p>
+<p class="parameter">--max-height
+&lt;x&gt;</p>
+<p class="paramdesc">Preferred / maximum window height
+for borders / zooming</p>
+<p class="parameter">--bpp
 &lt;bool&gt;</p>
 <p class="paramdesc">Force internal bitdepth (x =
 8/15/16/32, 0=disable)</p>
 
 <h3>ST/STE specific display options</h3>
-<p class="parameter">
-&minus;&minus;borders &lt;bool&gt;</p>
-<p class="paramdesc">Show ST/STE screen borders (for low/med
-resolution overscan demos)</p>
-<p class="parameter">&minus;&minus;desktop-st
+<p class="parameter">--desktop-st
 &lt;bool&gt;</p>
 <p class="paramdesc">Whether fullscreen mode uses desktop
 resolution to avoid: messing multi-screen setups, several seconds
@@ -472,179 +486,190 @@ Hatari or monitor) when this is enabled. Therefore this is mainly
 useful only if you suffer from the described effects, but still
 want to grab mouse and remove other distractions from the screen
 just by toggling fullscreen mode. (disabled by default)</p>
-<p class="parameter">&minus;&minus;spec512
+<p class="parameter">--spec512
 &lt;x&gt;</p>
 <p class="paramdesc">Hatari uses this threshold to decide
 when to render a screen with the slower but more accurate
 Spectrum512 screen conversion functions (0 &lt;= x &lt;= 512,
 0=disable)</p>
-<p class="parameter">&minus;z, &minus;&minus;zoom
+<p class="parameter">-z, --zoom
 &lt;x&gt;</p>
 <p class="paramdesc">Zoom (double) low resolution (1=no,
 2=yes)</p>
 
-<h3>Falcon/TT specific display options</h3>
-<p class="parameter">Zooming to sizes
-specified below is internally done using integer scaling factors.
-This means that different Atari resolutions may show up with
-different sizes, but they are never blurry. <br />
-&minus;&minus;desktop &lt;bool&gt;</p>
+<h3>TT/Falcon specific display options</h3>
+<p>
+Zooming to sizes specified below is internally done using integer scaling
+factors. This means that different Atari resolutions may show up with
+different sizes, but they are never blurry.
+<p class="parameter">--desktop &lt;bool&gt;</p>
 <p class="paramdesc">Whether to use desktop resolution on
 fullscreen to avoid issues related to resolution switching.
 Otherwise fullscreen will use a resolution that is closest to the
 Hatari window size. (enabled by default)</p>
-<p class="parameter">&minus;&minus;max-width
-&lt;x&gt;</p>
-<p class="paramdesc">Preferred / maximum window width</p>
-<p class="parameter">&minus;&minus;max-height
-&lt;x&gt;</p>
-<p class="paramdesc">Preferred / maximum window height</p>
-<p class="parameter">&minus;&minus;force-max
+<p class="parameter">--force-max
 &lt;bool&gt;</p>
 <p class="paramdesc">Hatari window size is forced to
 specified maximum size and black borders used when Atari resolution
 doesn&rsquo;t scale evenly to it. This is most useful when
 recording videos of Falcon demos that change their resolution.
 (disabled by default)</p>
-<p class="parameter">&minus;&minus;aspect
+<p class="parameter">--aspect
 &lt;bool&gt;</p>
 <p class="paramdesc">Whether to do monitor aspect ratio
 correction (enabled by default)</p>
 
 <h3>VDI options</h3>
-<p class="parameter">&minus;&minus;vdi
+<p class="parameter">--vdi
 &lt;bool&gt;</p>
 <p class="paramdesc">Whether to use VDI screen mode</p>
-<p class="parameter">&minus;&minus;vdi&minus;planes
+<p class="parameter">--vdi-planes
 &lt;x&gt;</p>
 <p class="paramdesc">Use extended VDI resolution with bit
 depth &lt;x&gt; (x = 1, 2 or 4)</p>
-<p class="parameter">&minus;&minus;vdi&minus;width
+<p class="parameter">--vdi-width
 &lt;w&gt;</p>
 <p class="paramdesc">Use extended VDI resolution with width
 &lt;w&gt; (320 &lt; w &lt;= 1280)</p>
-<p class="parameter">&minus;&minus;vdi&minus;height
+<p class="parameter">--vdi-height
 &lt;h&gt;</p>
 <p class="paramdesc">Use extended VDI resolution with height
 &lt;h&gt; (200 &lt; h &lt;= 960)</p>
 
 <h3>Screen capture options</h3>
-<p class="parameter">&minus;&minus;crop
+<p class="parameter">--crop
 &lt;bool&gt;</p>
 <p class="paramdesc">Remove statusbar from the screen
 captures</p>
-<p class="parameter">&minus;&minus;avirecord</p>
-<p class="paramdesc">Start AVI recording</p>
-<p class="parameter">&minus;&minus;avi-vcodec
-&lt;x&gt;</p>
-<p class="paramdesc">Select avi video codec (x =
-bmp/png)</p>
-<p class="parameter">&minus;&minus;avi-fps
-&lt;x&gt;</p>
-<p class="paramdesc">Force avi frame rate (x =
-50/60/71/...)</p>
-<p class="parameter">&minus;&minus;avi-file
-&lt;file&gt;</p>
-<p class="paramdesc">Use &lt;file&gt; to record avi</p>
+<p class="parameter">--avirecord</p>
+<p class="paramdesc">Start AVI recording. Note: recording will
+automatically stop when emulation resolution changes.</p>
+<p class="parameter">--avi-vcodec &lt;x&gt;</p>
+<p class="paramdesc">Select AVI video codec (x = bmp/png).
+PNG compression can be <em>much</em> slower than using the uncompressed BMP
+format, but uncompressed video content takes huge amount of space.</p>
+<p class="parameter">--png-level &lt;x&gt;</p>
+<p class="paramdesc">Select PNG compression level for AVI video (x = 0-9).
+Both compression efficiency and speed depend on the compressed
+screen content. Highest compression level (9) can be <em>really</em>
+slow with some content. Levels 3-6 should compress nearly as well
+with clearly smaller CPU overhead.</p>
+<p class="parameter">--avi-fps &lt;x&gt;</p>
+<p class="paramdesc">Force AVI frame rate (x = 50/60/71/...)</p>
+<p class="parameter">--avi-file &lt;file&gt;</p>
+<p class="paramdesc">Use &lt;file&gt; to record AVI</p>
 
 <h3>Devices options</h3>
-<p class="parameter">&minus;j,
-&minus;&minus;joystick &lt;port&gt;</p>
+<p class="parameter">-j,
+--joystick &lt;port&gt;</p>
 <p class="paramdesc">Emulate joystick with cursor keys in
 given port (0-5)</p>
-<p class="parameter">&minus;&minus;joy&lt;port&gt;
+<p class="parameter">--joy&lt;port&gt;
 &lt;type&gt;</p>
 <p class="paramdesc">Set joystick type (none/keys/real) for
 given port</p>
-<p class="parameter">&minus;&minus;printer
+<p class="parameter">--printer
 &lt;file&gt;</p>
 <p class="paramdesc">Enable printer support and write data
 to &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;midi-in
+<p class="parameter">--midi-in
 &lt;filename&gt;</p>
 <p class="paramdesc">Enable MIDI support and write MIDI data
 to &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;midi-out
+<p class="parameter">--midi-out
 &lt;filename&gt;</p>
 <p class="paramdesc">Enable MIDI support and read MIDI data
 from &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;rs232-in
+<p class="parameter">--rs232-in
 &lt;filename&gt;</p>
 <p class="paramdesc">Enable serial port support and use
 &lt;file&gt; as the input device</p>
-<p class="parameter">&minus;&minus;rs232-out
+<p class="parameter">--rs232-out
 &lt;filename&gt;</p>
 <p class="paramdesc">Enable serial port support and use
 &lt;file&gt; as the output device</p>
 
 <h3>Disk options</h3>
-<p class="parameter">&minus;&minus;disk-a
+<p class="parameter">--drive-a
+&lt;bool&gt;</p>
+<p class="paramdesc">Enable/disable drive A (default is on)</p>
+<p class="parameter">--drive-b
+&lt;bool&gt;</p>
+<p class="paramdesc">Enable/disable drive B (default is on)</p>
+<p class="parameter">--drive-a-heads
+&lt;x&gt;</p>
+<p class="paramdesc">Set number of heads for drive A (1=single sided, 2=double sided)</p>
+<p class="parameter">--drive-b-heads
+&lt;x&gt;</p>
+<p class="paramdesc">Set number of heads for drive B (1=single sided, 2=double sided)</p>
+<p class="parameter">--disk-a
 &lt;file&gt;</p>
 <p class="paramdesc">Set disk image for floppy drive A</p>
-<p class="parameter">&minus;&minus;disk-b
+<p class="parameter">--disk-b
 &lt;file&gt;</p>
 <p class="paramdesc">Set disk image for floppy drive B</p>
-<p class="parameter">&minus;&minus;protect-floppy
+<p class="parameter">--protect-floppy
 &lt;x&gt;</p>
 <p class="paramdesc">Write protect floppy image contents
 (on/off/auto). With "auto" option write protection is according to
-the disk image file attributes.</p>
-<p class="parameter">&minus;&minus;protect-hd
+the disk image file attributes</p>
+<p class="parameter">--protect-hd
 &lt;x&gt;</p>
-<p class="paramdesc">Write protect harddrive &lt;dir&gt;
+<p class="paramdesc">Write protect hard drive &lt;dir&gt;
 contents (on/off/auto). With "auto" option the protection can be
 controlled by setting individual files attributes as it disables
-the file attribute modifications for the GEMDOS hard disk
-emulation.</p>
-<p class="parameter">&minus;&minus;gemdos-case &lt;x&gt;</p>
+the file attribute modifications for the GEMDOS HD
+emulation</p>
+<p class="parameter">--gemdos-case &lt;x&gt;</p>
 <p class="paramdesc">Specify whether new dir/filenames are forced to be
-in upper or lower case with the GEMDOS HD emulation. Off by default.
+in upper or lower case with the GEMDOS HD emulation. Off/upper/lower, off by default
 </p>
-<p class="parameter">&minus;d, &minus;&minus;harddrive
+<p class="parameter">-d, --harddrive
 &lt;dir&gt;</p>
-<p class="paramdesc">Emulate harddrive partition(s) with
+<p class="paramdesc">Emulate hard disk partition(s) with
 &lt;dir&gt; contents. If directory contains only single letter
 (C-Z) subdirectories, each of these subdirectories will be treated
 as a separate partition, otherwise the given directory itself will
 be assigned to drive "C:". In the multiple partition case, the
 letters used as the subdirectory names will determine to which
-drives/partitions they&rsquo;re assigned.</p>
-<p class="parameter">&minus;&minus;acsi
+drives/partitions they&rsquo;re assigned. If &lt;dir&gt; is
+an empty string, then harddrive's emulation is disabled</p>
+<p class="parameter">--acsi
 &lt;file&gt;</p>
-<p class="paramdesc">Emulate an ACSI hard disk with an image
+<p class="paramdesc">Emulate an ACSI hard drive with an image
 &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;ide&minus;master
+<p class="parameter">--ide-master
 &lt;file&gt;</p>
-<p class="paramdesc">Emulate an IDE master hard disk with an
+<p class="paramdesc">Emulate an IDE master hard drive with an
 image &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;ide&minus;slave
+<p class="parameter">--ide-slave
 &lt;file&gt;</p>
-<p class="paramdesc">Emulate an IDE slave hard disk with an
+<p class="paramdesc">Emulate an IDE slave hard drive with an
 image &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;fastfdc
+<p class="parameter">--fastfdc
 &lt;bool&gt;</p>
-<p class="paramdesc">speed up FDC emulation (can cause
+<p class="paramdesc">Speed up FDC emulation (can cause
 incompatibilities)</p>
 
 <h3>Memory options</h3>
 <p class="parameter">
-&minus;&minus;memstate &lt;file&gt;</p>
+--memstate &lt;file&gt;</p>
 <p class="paramdesc">Load memory snap-shot &lt;file&gt;</p>
-<p class="parameter">&minus;s, &minus;&minus;memsize
+<p class="parameter">-s, --memsize
 &lt;x&gt;</p>
 <p class="paramdesc">Set amount of emulated RAM, x = 1 to 14
 MiB, or 0 for 512 KiB</p>
 
 <h3>ROM options</h3>
-<p class="parameter">&minus;t,
-&minus;&minus;tos &lt;imagefile&gt;</p>
+<p class="parameter">-t,
+--tos &lt;imagefile&gt;</p>
 <p class="paramdesc">Specify TOS ROM image to use</p>
-<p class="parameter">&minus;&minus;patch-tos
+<p class="parameter">--patch-tos
 &lt;bool&gt;</p>
 <p class="paramdesc">Use this option to enable/disable TOS
 ROM patching. Experts only! Leave this enabled unless you know what
 you are doing!</p>
-<p class="parameter">&minus;&minus;cartridge
+<p class="parameter">--cartridge
 &lt;imagefile&gt;</p>
 <p class="paramdesc">Use ROM cartridge image &lt;file&gt;
 (only works if GEMDOS HD emulation and extended VDI resolution are
@@ -652,49 +677,49 @@ disabled)</p>
 
 <h3>CPU options</h3>
 <p class="parameter">
-&minus;&minus;cpulevel &lt;x&gt;</p>
+--cpulevel &lt;x&gt;</p>
 <p class="paramdesc">Specify CPU (680x0) to use (use x &gt;=
 1 with EmuTOS or TOS &gt;= 2.06 only!)</p>
-<p class="parameter">&minus;&minus;cpuclock
+<p class="parameter">--cpuclock
 &lt;x&gt;</p>
 <p class="paramdesc">Set the CPU clock (8, 16 or 32 Mhz)</p>
-<p class="parameter">&minus;&minus;compatible
+<p class="parameter">--compatible
 &lt;bool&gt;</p>
 <p class="paramdesc">Use a more compatible, but slower 68000
 CPU mode with better prefetch accuracy and cycle counting</p>
 
 <h3>Misc system options</h3>
 <p class="parameter">
-&minus;&minus;machine &lt;x&gt;</p>
+--machine &lt;x&gt;</p>
 <p class="paramdesc">Select machine type (x = st, ste, tt or
 falcon)</p>
-<p class="parameter">&minus;&minus;blitter
+<p class="parameter">--blitter
 &lt;bool&gt;</p>
 <p class="paramdesc">Enable blitter emulation (ST only)</p>
-<p class="parameter">&minus;&minus;dsp &lt;x&gt;</p>
+<p class="parameter">--dsp &lt;x&gt;</p>
 <p class="paramdesc">Falcon DSP emulation (x = none, dummy
 or emu, Falcon only)</p>
-<p class="parameter">&minus;&minus;timer-d
+<p class="parameter">--timer-d
 &lt;bool&gt;</p>
 <p class="paramdesc">Patch redundantly high Timer-D
 frequency set by TOS. This about doubles Hatari speed (for ST/e
 emulation) as the original Timer-D frequency causes most of the
 interrupts.</p>
-<p class="parameter">&minus;&minus;fast-boot
+<p class="parameter">--fast-boot
 &lt;bool&gt;</p>
 <p class="paramdesc">Patch TOS and initialize the so-called
 "memvalid" system variables to by-pass the memory test of TOS, so
 that the system boots faster.</p>
-<p class="parameter">&minus;&minus;rtc
+<p class="parameter">--rtc
 &lt;bool&gt;</p>
 <p class="paramdesc">Enable real-time clock</p>
 
 <h3>Sound options</h3>
-<p class="parameter">&minus;&minus;mic
+<p class="parameter">--mic
 &lt;bool&gt;</p>
 <p class="paramdesc">Enable/disable (Falcon only)
 microphone</p>
-<p class="parameter">&minus;&minus;sound
+<p class="parameter">--sound
 &lt;x&gt;</p>
 <p class="paramdesc">Sound frequency: 6000-50066. "off"
 disables the sound and speeds up the emulation. To prevent extra
@@ -702,7 +727,7 @@ sound artifacts, the frequency should be selected so that it either
 matches evenly with the STE/TT/Falcon sound DMA (6258, 12517,
 250033, 50066 Hz) or your sound card frequencies (11025, 22050,
 44100 or 6000...48000 Hz). Check what your sound card supports.</p>
-<p class="parameter">&minus;&minus;sound-buffer-size
+<p class="parameter">--sound-buffer-size
 &lt;x&gt;</p>
 <p class="paramdesc">SDL&rsquo;s sound buffer size: 10-100,
 or 0 to use default buffer size. By default Hatari uses an SDL
@@ -714,7 +739,7 @@ you can use this option to force the size of the sound buffer to a
 fixed number of milliseconds of sound (using 20 is often a good
 choice if you have such problems). Most users will not need this
 option.</p>
-<p class="parameter">&minus;&minus;sound-sync
+<p class="parameter">--sound-sync
 &lt;bool&gt;</p>
 <p class="paramdesc">The emulation rate is nudged by +100 or
 0 or -100 micro-seconds on occasion. This prevents the sound buffer
@@ -724,7 +749,7 @@ deviates by a maximum of 0.58% until synchronized, while the
 emulator continuously generates every sound sample and the crystal
 controlled sound system consumes every sample.<br />
 (on|off, off=default)</p>
-<p class="parameter">&minus;&minus;ym-mixing
+<p class="parameter">--ym-mixing
 &lt;x&gt;</p>
 <p class="paramdesc">Select a method for mixing the three
 YM2149 voice volumes together. "model" uses a mathematical model of
@@ -733,65 +758,72 @@ values measured on STF and "linear" just averages the 3 YM
 voices.</p>
 
 <h3>Debug options</h3>
-<p class="parameter">&minus;D,
-&minus;&minus;debug</p>
+<p class="parameter">-W, --wincon</p>
+<p class="paramdesc">Open console window (Windows only)</p>
+<p class="parameter">-D,
+--debug</p>
 <p class="paramdesc">Toggle whether CPU exceptions invoke
 the debugger</p>
-<p class="parameter">&minus;&minus;bios-intercept</p>
-<p class="paramdesc">Toggle Bios/XBios call interception needed for
-Bios/XBios call tracing.  Allows Atari programs to modify Hatari state
-through XBios 255 calls which are processed as Hatari commandline
-arguments.  Atari printscreen call takes also Hatari screenshot.</p>
-<p class="parameter">&minus;&minus;conout &lt;device&gt;</p>
+<p class="parameter">--debug-except &lt;flags&gt;</p>
+<p class="paramdesc">Specify which exceptions invoke debugger, see
+"--debug-except help" for available (comma separated) exception
+flags.</p>
+<p class="parameter">--bios-intercept</p>
+<p class="paramdesc">
+Toggle XBios command parsing. Allows Atari programs to use all Hatari
+functionality and change Hatari state through Hatari specifit
+XBios(255) calls. XBios(20) printscreen calls produce also Hatari
+screenshots.</p>
+<p class="parameter">--conout &lt;device&gt;</p>
 <p class="paramdesc">Enable console (xconout vector functions) output
 redirection for given &lt;device&gt; to host terminal.  Device 2 is for
 the (CON:) VT52 console, which vector function catches also EmuTOS panic
 messages and MiNT console output, not just normal BIOS console output.</p>
-<p class="parameter">&minus;&minus;disasm &lt;x&gt;</p>
+<p class="parameter">--disasm &lt;x&gt;</p>
 <p class="paramdesc">Set disassembly options.  'uae' and 'ext' select
 the dissasembly engine to use, bitmask sets output options for the
 external disassembly engine and 'help' lists them.</p>
-<p class="parameter">&minus;&minus;natfeats &lt;bool&gt;</p>
+<p class="parameter">--natfeats &lt;bool&gt;</p>
 <p class="paramdesc">Enable/disable (basic) Native Features support.
 E.g. EmuTOS uses it for debug output.</p>
-<p class="parameter">&minus;&minus;trace
-&lt;trace1,...&gt;</p>
+<p class="parameter">--trace
+&lt;flags&gt;</p>
 <p class="paramdesc">Activate debug traces, see
-&minus;&minus;trace help for available tracing options</p>
-<p class="parameter">&minus;&minus;trace-file
+"--trace help" for available tracing flags</p>
+<p class="parameter">--trace-file
 &lt;file&gt;</p>
 <p class="paramdesc">Save trace output to &lt;file&gt;
 (default=stderr)</p>
-<p class="parameter">&minus;&minus;parse
+<p class="parameter">--parse
 &lt;file&gt;</p>
 <p class="paramdesc">Parse/execute debugger commands from
 &lt;file&gt;</p>
-<p class="parameter">&minus;&minus;saveconfig</p>
+<p class="parameter">--saveconfig</p>
 <p class="paramdesc">Save Hatari configuration and exit.
 Hatari UI needs Hatari configuration file to start, this can be
 used to create it automatically.</p>
-<p class="parameter">&minus;&minus;no-parachute</p>
+<p class="parameter">--no-parachute</p>
 <p class="paramdesc">Disable SDL parachute to get Hatari
 core dumps. SDL parachute is enabled by default to restore video
 mode in case Hatari terminates abnormally while using non-standard
 screen resolution.</p>
-<p class="parameter">&minus;&minus;control-socket
+<p class="parameter">--control-socket
 &lt;file&gt;</p>
 <p class="paramdesc">Hatari reads options from given socket
 at run-time</p>
-<p class="parameter">&minus;&minus;log-file
+<p class="parameter">--log-file
 &lt;file&gt;</p>
 <p class="paramdesc">Save log output to &lt;file&gt;
 (default=stderr)</p>
-<p class="parameter">&minus;&minus;log-level
+<p class="parameter">--log-level
 &lt;x&gt;</p>
 <p class="paramdesc">Log output level
 (x=debug/todo/info/warn/error/fatal)</p>
-<p class="parameter">&minus;&minus;alert-level
+<p class="parameter">--alert-level
 &lt;x&gt;</p>
 <p class="paramdesc">Show dialog for log messages above
 given level</p>
-<p class="parameter">&minus;&minus;run-vbls
+<p class="parameter">--run-vbls
 &lt;x&gt;</p>
 <p class="paramdesc">Exit after X VBLs</p>
 
@@ -801,7 +833,7 @@ the command line options supported by a given version of Hatari.</p>
 
 <h2>Using the emulated system</h2>
 
-<p> Once you've started Hatari succesfully, you can use the emulator as
+<p> Once you've started Hatari successfully, you can use the emulator as
 an almost complete Atari ST computer system. </p>
 
 <h3>The GUI</h3>
@@ -849,7 +881,7 @@ changes that you have made.
 <h4 class="gui">The File Selector Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/fileselector.png" width="640" height="399"
+  <img src="images/fileselector.png" width="640" height="400"
        alt="Hatari's GUI - the fileselector" />
 </div>
 
@@ -875,90 +907,153 @@ changes that you have made.
 <h4 class="gui">The System Dialog</h4>
 
 <div class="floatimage">
-  <img src="images/system.png" width="360" height="384"
+  <img src="images/system.png" width="600" height="400"
        alt="Hatari's GUI - the system dialog" />
 </div>
 
 <p>
- First you can select the CPU type here. Here are some important hints for
- choosing the correct CPU type:
+ The system dialog can be used to define the basic hardware attributes of
+ the machine that should be emulated.
 </p>
-<ul>
- <li>
-  Atari ST and STE have only been shipped with a 68000 CPU, so for best
-  compatibility with old programs, choose this CPU type.
- </li>
- <li>
-  Atari TT and Falcon computers were using the 68030 CPU, so you should switch
-  use 68EC030+FPU (Hatari doesn't support 030 with MMU and some programs don't
-  work with 68020 so this is the best choice).
- </li>
- <li>
-  TOS 1.0x only works with 68000, while TOS 3.0x and 4.0x work only with a CPU
-  &gt;= 68020.
- </li>
- <li>
-  68010 and 68040 have never been used in official Atari computers, so don't
-  use these CPU types unless you've got some good reasons.
- </li>
-</ul>
-
 <p>
- Beside the CPU type, you can also choose the machine type to emulate.
- The ST was the very first 16/32-bit computer from Atari. Most older games
- and demos require an ST. The STE was introduced some years later and had
- some more advanced hardware features. There are not that many demos or
- games that really require an STE but since most normal ST games/demos also
- work with an STE, it's normally safe to always work in STE mode.
+ The machine type option is used to select the type of Atari computer to
+ be emulated. The ST was the very first 16/32-bit computer from Atari.
+ Most older games and demos require an ST. The STE was introduced some years
+ later and had some more advanced hardware features. There are not that many
+ demos or games that really require an STE but since most normal ST games/demos
+ also work with an STE, it's normally safe to always work in STE mode.
  <br />
  TT and Falcon are more advanced, but they are not as compatible to the ST as
  the STE was. Therefore many old games and demos do not work with these machine
  types anymore. There were only very few programs that were made for the TT
  exclusively, while there were some interesting games and demos specially made
  for the Falcon.
- <em>Note:</em> TT and Falcon emulation are incomplete. They may not work
- very well.
+ <br />
+ <em>Note:</em> Falcon and especially TT emulation are still considered as
+ experimental and incomplete.
+ Quite a bunch of programs do not work very well yet.
 </p>
 <p>
  For STE emulation a STE compatible TOS image, e.q. version 1.06, 1.62 or
  2.x, is strongly recommended. For TT emulation you need TOS 3.0x and for Falcon
  emulation you need TOS 4.0x. EmuTOS can be used on all machine types.
 </p>
+
 <p>
- Select the CPU clock you want to use. 8Mhz is ST standard and the most
- compatible. Use 16MHz for Mega STE and Falcon emulation.
+ The CPU type option can be used to select the level of the central processing
+ unit. If you are not sure what to use, simply select 68000 for ST and STE
+ machines and 68030 for TT and Falcon emulation, since this were the original
+ configurations used in the Atari computers. In case you want to vary
+ the CPU type, you have got to be aware of some constraints:
+</p>
+<ul>
+ <li>
+  Atari ST and STE have only been shipped with a 68000 CPU, so for best
+  compatibility with old programs, you should choose this CPU type.
+ </li>
+ <li>
+  If you are going to use TOS 1.0x, you also have to select the 68000 CPU,
+  since these TOS versions are not aware of the higher CPU levels yet.
+  If you want to use a higher CPU level with the ST or STE machine type,
+  you've got to use TOS 2.0x instead.
+ </li>
+ <li>
+  Atari TT and Falcon computers were using the 68030 CPU, so you should select
+  the 68030 CPU type for these machines.
+ </li>
+ <li>
+  TOS 3.0x and 4.0x also only work with a CPU &gt;= 68020.
+ </li>
+ <li>
+  68010 and 68040, 68060 have never been used in official Atari computers,
+  so don't use these CPU types unless you've got some good reasons.
+ </li>
+ <li>
+  The 68060 option is only available in the &quot;WinUAE&quot; builds of
+  Hatari, and is currently also considered as experimental, so do not use
+  this option unless you know what you are doing.
+ </li>
+</ul>
+
+<p>
+ The CPU clock option can be used to select the frequency that is used
+ to clock the CPU. 8 Mhz is the standard for ST and STE and the most
+ compatible frequency for old software.
+ Use 16 MHz for Mega STE and Falcon emulation.
  The CPU in the TT was clocked with 32 MHz.
 </p>
-<p>With the "Slower but more compatible CPU" option, you can enable
- the emulation of 68k address errors and the CPU prefetch buffer. This is needed
- for best compatibility, but it slows down emulation a little bit so you can
- disable it if you don't need it.</p>
 <p>
- For Falcon mode, you can choose whether you want to enable DSP emulation,
- fake it or completely disable it. Most Falcon programs only play sound or work
+ For Falcon mode, you can choose whether you want to disable DSP emulation,
+ fake it or enable full emulation. Most Falcon programs only play sound or work
  correctly when you enable the DSP emulation, but it needs a lot of host CPU
- power (more than 2 GHz). So if you have a slow host CPU, you can try if your
- Falcon program also runs with DSP disabled or in "dummy" mode.
+ power (more than 2 GHz) for full emulation. So if you have a slow host CPU,
+ you can try if your Falcon program also runs with DSP disabled or in
+ the &quot;dummy&quot; fake mode.
  Note that you can not change this option while the DSP based program already
  runs.
 </p>
-<p>You can also enable/disable Blitter emulation here. The Blitter is a custom
- chip that accelerates some graphical operations. This switch only toggles the
- Blitter in plain ST mode. In STE mode, the Blitter is always enabled (since all
- STEs have been sold with a Blitter chip).</p>
-<p>If you enable the "Real time clock emulation" switch, a RTC will
- be emulated based on the time of the host computer. Note that you need at least
- TOS 1.02 for proper RTC emulation, TOS 1.00 does not support this.</p>
-<p>The Timer-D patch changes the Timer-D initialization from TOS. TOS uses
- the MFP timer D as a baudrate generator for RS232. However, the TOS default
- value slows down the emulation. The patch gives you a better performance.
- It is normally safe to enable the patch, but if you encounter a program that
- does not work, you can try to disable the patch to see if it works then.</p>
-<p><em>NOTE:</em> The emulated Atari is very very sensitive to these options
- and it is strongly recommended to reset the emulation after changing
- them (for most things that's done automatically).   The correct
- CPU type and clock are automatically selected when one uses the
- <span class="commandline">--machine</span> command line option.</p>
+<p>
+ The check boxes in the &quot;CPU and system parameters&quot; section can
+ be used to fine-tune the machine and CPU types.
+</p>
+<p>
+ If you enable the "Real time clock emulation" switch, a RTC (like the ones
+ that could be found in the Mega-ST and Mega-STE computers) will be emulated
+ based on the time of the host computer.
+ This option is only affects the emulation of ST and STE machines. TT and
+ Falcon used a different kind of RTC (which is not optional and thus always
+ enabled in Hatari).
+ Note: You need at least TOS 1.02 for proper RTC emulation, TOS 1.00 does
+ not support this.
+</p>
+<p>
+ The next check box can be used to enable/disable Blitter emulation.
+ The Blitter is a custom chip that accelerates some graphical operations.
+ This switch only toggles the Blitter in plain ST mode. In STE and Falcon mode,
+ the Blitter is always enabled (since these machines have always been sold
+ with a Blitter chip). The TT was always shipped without the Blitter chip.
+</p>
+<p>
+ The &quot;Patch Timer-D&quot; option changes the Timer-D initialization from
+ TOS. TOS uses the MFP timer D as a baudrate generator for RS232. However, the
+ TOS default value slows down the emulation. The patch gives you a better
+ performance.  It is normally safe to enable the patch, but if you encounter a
+ program that does not work, you can try to disable the patch to see if it
+ works better.
+</p>
+<p>
+ With the &quot;Boot faster&quot; option, Hatari patches the TOS ROM and some
+ system variables, to speed up the boot process of the emulated system, e.g.
+ by simulating a warm reset. This is a convenient option, but some very few old
+ programs rely on an unmodified boot process, so in rare cases this option has
+ to be switched off to get those programs running.
+</p>
+<p>
+ The &quot;Prefetch mode&quot; option is used to enable the emulation of 68k
+ address errors and the so-called CPU prefetch buffer. This is needed for best
+ compatibility, but it slows down emulation a little bit so you can disable it
+ if you don't need it and if you have a slow host system.
+</p>
+<p>
+ The &quot;Cycle exact&quot;, the &quot;MMU emulation&quot; and
+ &quot;24-bit addressing&quot; option are only available in the
+ &quot;WinUAE&quot; builds
+ of Hatari. They are considered as experimental and should be switched off
+ unless you know what you are doing.
+</p>
+<p>
+ The FPU settings are also only available with the &quot;WinUAE&quot; builds
+ of Hatari. They can be used to select the type of floating point unit of CPUs
+ &gt;= 68020. In the normal builds of Hatari, the FPU is always enabled for
+ 68030 and 68040 CPUs.
+</p>
+<p>
+ <em>NOTE:</em> The emulated Atari system is very very sensitive to all of
+ these options and it is strongly recommended to reset the emulation after
+ changing them (for most things that's done automatically).
+ The correct CPU type and clock are automatically selected when one uses the
+ <span class="commandline">--machine</span> command line option.
+</p>
 
 
 <h4 class="gui">The Floppy Disks Dialog</h4>
@@ -973,6 +1068,12 @@ changes that you have made.
  in the disk drives. You can use most standard Atari ST disk image files.
  You may select and browse also zipped disk images. See the chapter
  <a href="#Floppy_disk_images">"Floppy disk images"</a> for details.
+</p>
+<p>
+ Each drive can be enabled or disabled (as if it was not connected or turned
+ off). You can also choose to emulate a single sided drive instead of a double
+ sided one (some games or demos will have a different behaviour in single sided
+ mode).
 </p>
 <p>
  Click on the button <span class="button">Browse</span> next to the
@@ -997,15 +1098,18 @@ ends with a 'b'.
 </p>
 <p>
  Select if you want to use fast FDC (Floppy Disk Controller) emulation.
- "Fast floppy access" will speed up disk accesses, but this could give
-  some incompatibilities with some programs that expect correct delays.
-  (some games/demos don't expect data to be read too fast from the disk)
+
+ "Fast floppy access" option will speed up disk accesses, but this can
+ cause incompatibilities with programs that expect correct delays
+ (some games/demos don't expect data to be read too fast from the
+ disk). For example, when using STX images, most protections will fail
+ if fast floppy access is enabled.
 </p>
 <p>
- You can choose if you want Hatari to write-protect your disks. Atari ST virii
- can spread on disk images too so it might be a good idea to enable the write
- protection option. However you can't save highscores or games to your disk
- images in that case.
+ If you want, you can set Hatari to write-protect your disks. Atari ST
+ virii can spread on disk images, so that can be a good idea. However,
+ note that some programs won't work correctly (or at all) with write
+ protected disks, and things like saving highscores in games will fail.
 </p>
 
 <div class="floatimage">
@@ -1016,9 +1120,10 @@ ends with a 'b'.
 <p>
  If you need to create a new blank disk image, click on
  <span class="button">Create&nbsp;blank&nbsp;image</span>.
- Parameters for the new image can be set in the following dialog.
- HD and ED disk sector counts are for non-Atari disk sizes, but such
- disks are useful for programs that don't work with GEMDOS emulation.
+ Parameters for the new image can be set in the following dialog. HD
+ and ED disk sector counts are for larger, non-Atari disk sizes, they
+ can be useful with programs that don't work from hard drive, or with
+ with GEMDOS HD emulation.
  Click on <span class="button">Create</span> to save the new image or on
  <span class="button">Back</span> to return to the disk dialog.
 </p>
@@ -1043,27 +1148,26 @@ ends with a 'b'.
 </div>
 
 <p>
- This dialog can be used to change the harddisk settings.
+ This dialog can be used to change the hard disk settings.
 </p>
 <p>
- You can select a harddrive image for ACSI, IDE master or slave hard drive
- emulation via image file here or you may select a directory of your local
- filesystem to be emulated as the harddrive of the emulated system.
+ Here you can select a hard disk image file for ACSI, IDE master or
+ slave hard drive emulation, or you can select a host directory to be
+ emulated as the Atari hard drive.
 </p>
 <p>
- Check "Boot from HD" if you want Hatari to execute the AUTO folder
- on the harddrive.
- This option is checked by default if you specify a harddrive image or
- a directory via the command line.
+ Check "Boot from HD" if you want Hatari to execute the AUTO folder on
+ the hard disk. This option is checked by default if you specify a
+ hard disk image or a directory via the command line.
 </p>
 <p>
  Removing the check from the "Allow GEMDOS drive modification" option
- will prevent Atari programs from modifying the files in GEMDOS HDD
+ will prevent Atari programs from modifying the files in GEMDOS HD
  emulation directory or creating new files under it.
 </p>
 <p>
- Note that for IDE hard disk emulation you also need a TOS version &gt;= 2.05.
- And ACSI hard disk emulation does not work with TOS 4.0x in Falcon mode.
+ Note that you need TOS version &gt;= 2.05 to boot from IDE hard drive.
+ And ACSI hard drive emulation does not work with TOS 4.0x in Falcon mode.
 </p>
 
 
@@ -1114,7 +1218,7 @@ real Falcon), you have to specify it directly in the TOS ROM setup dialog here.
 </p>
 <p>
 Keep in mind that any custom cartridge image will not work together with
-GEMDOS hard disk emulation or the VDI extended resolution emulation
+GEMDOS HD emulation or the VDI extended resolution emulation
 since some additional driver code will be used in the cartridge memory
 space for these emulations.
 </p>
@@ -1182,25 +1286,40 @@ certain games. In some other games, it gets worse if you enable this option.</p>
  In TT mode, you can only choose between TT-high resolution ("Mono")
  and normal modes (select one of the other monitor types).
  Finally the Falcon mode supports all four types of monitors. Note that most
- Falcon demos/games require a RGB or TV mode and do not work with VGA.
+ Falcon demos/games require a RGB or TV mode, and do not work with
+ VGA, although there are also few VGA-only games and demos.
 </p>
 <p>
  "Show ST/STE borders" toggles the displaying of the borders around the ST /
- STE screen. Some demos and games use the screen borders for displaying
+ STE. Some demos and games use the screen borders for displaying
  additional graphics. As enabling this option increases CPU computing time,
  don't enable it if you have a very slow computer.
- This option affects only the ST and STE modes, TT and Falcon modes are
- always displayed without borders.
+ Borders are shown also in Falcon emulation, but Videl emulation doesn't
+ yet support palette effects.
+ This option doesn't affect TT screen mode or extended VDI resolutions.
 </p>
 <p>
-Extended VDI resolutions will emulate a sort of extended graphics
-card in the emulated ST which give you larger resolutions with a higher
-colordepth for GEM. Select a resolution and color depth. Check to
-activate. It will disable all other video options mentioned above.
-Uncheck to get back to a normal ST behaviour.<br />
-<em>Note:</em> Using an extended resolution will only work with GEM
-conformant applications. 99% of all games and demos will not run if you
-activate any extended resolution here.
+Extended VDI resolutions will emulate a sort of extended graphics card
+in the emulated machine, which gives you larger (2-16 color)
+resolutions for GEM. Select a resolution and color depth. Check to
+activate. This mode isn't affect by the other video options mentioned
+above. Uncheck to get back to a normal ST behaviour.<br />
+</p>
+<p><em>Note that there are several gotches with extended VDI
+resolutions:</em></p>
+<ul>
+<li>Only GEM conformant applications work with them, 99% of all games
+and demos don't.</li>
+<li>Several GEM programs accessing screen directly (like NVDI) crash
+with large enough screen sizes.</li>
+<li>Memory reserved for (larger) extended resolutions breaks TOS v3 memory
+detection, so you need to interrupt boot up memory detection.</li>
+<li>TOS v4 isn't compatible with them. In Falcon emulation you need to
+use EmuTOS with extended resolutions.</li>
+</ul>
+<p>
+Because TT and Falcon support natively larger resolutions,
+VDI mode is most useful with ST / STE emulation.
 </p>
 
 
@@ -1239,7 +1358,7 @@ The statusbar shows the floppy drive LEDs, the current frameskip value,
 the machine type including TOS version and memory size, and whether
 recording is currently active.</li>
 <li>"Drive led" is a colored rectangle shown on top of the Hatari window
-contents. It will show any disk (floppy or hard disk) activity.</li>
+contents. It will show any disk (floppy or hard drive) activity.</li>
 <li>"None" turns both of above options off.</li>
 </ul>
 <p>
@@ -1394,12 +1513,37 @@ Hatari instances.
 </p>
 
 
-<h3 class="clearboth">Keyboard shortcuts</h3>
+<h3 class="clearboth">Keyboard shortcuts for the SDL GUI</h3>
+
+<p>There are multiple ways to interact with the SDL GUI.</p>
+
+<p>TAB and cursor keys change focus between UI elements.  Additionally
+Home key moves focus to first item, End key to last one.  Initially
+focus is on default UI element, but focus changes are remembered
+between dialog invocations. Enter and Space invoke focused item. UI
+elements with underlined characters can be invoked directly with Alt +
+key with that character.  Alt + arrow keys will act on arrow
+buttons.</p>
+
+<p>Most importantly:</p>
+<ul>
+<li><em>Options GUI main view</em>: Enter accepts configuration, ESC
+cancels it.</li>
+<li><em>Options GUI dialogs</em>: Enter (or End+Enter if focus was moved)
+returns back to main view.</li>
+<li><em>Fileselector</em>: Page up and down keys scroll the file list.
+Enter on focused file name selects it.  Enter on OK button accepts
+the selected file. ESC cancels the dialog/selection.</li>
+<li><em>Alert dialogs</em>: Enter accepts and ESC cancels the dialog.</li>
+</ul>
+
+
+<h3>Keyboard shortcuts during emulation</h3>
 
 <p> While the emulator is running, you can activate or toggle various
 features via Hatari keyboard shortcuts. Below are listed the default
 shortcut key bindings:</p>
-<table border="1" class="keytable">
+<table class="keytable">
   <thead>
     <tr class="backdropped">
       <th>Shortcut</th>
@@ -1419,11 +1563,6 @@ shortcut key bindings:</p>
       <td><span class="key">ALTGR+i</span></td>
       <td>boss key: leave full screen mode, pause Hatari
           and iconify its window</td>
-    </tr>
-    <tr>
-      <td><span class="key">ALTGR+j</span></td>
-      <td>toggle joystick emulation via cursor keys
-          on/off between ports 0 and 1</td>
     </tr>
     <tr>
       <td><span class="key">ALTGR+m</span></td>
@@ -1466,6 +1605,27 @@ shortcut key bindings:</p>
       <td>load memory snapshot</td>
     </tr>
     <tr>
+      <td><span class="key">ALTGR+j</span></td>
+      <td>toggle joystick emulation via cursor keys
+          on/off between ports 0 and 1</td>
+    </tr>
+    <tr>
+      <td><span class="key">ALTGR+F1</span></td>
+      <td>switch joystick type on joy port 0</td>
+    </tr>
+    <tr>
+      <td><span class="key">ALTGR+F2</span></td>
+      <td>switch joystick type on joy port 1</td>
+    </tr>
+    <tr>
+      <td><span class="key">ALTGR+F3</span></td>
+      <td>switch joystick type for joypad A</td>
+    </tr>
+    <tr>
+      <td><span class="key">ALTGR+F4</span></td>
+      <td>switch joystick type for joypad B</td>
+    </tr>
+    <tr>
       <td><span class="key">ALTGR+f or F11</span></td>
       <td>toggle between fullscreen and windowed mode</td>
     </tr>
@@ -1485,8 +1645,7 @@ shortcut key bindings:</p>
 </table>
 
 <p>You can change the key bindings from the Hatari configuration file.
-The required key values can be seen in the SDL_keysym.h include file
-(usually in /usr/include/SDL/).</p>
+See keymap-sample.txt file for instructions.</p>
 
 
 <h3>Emulated Atari ST keyboard</h3>
@@ -1557,6 +1716,9 @@ Press the shortcut key (again) to go back to normal mouse behaviour
 which allows you to move mouse outside outside the Hatari window while
 Hatari is up and running. Note: pausing the emulation will also
 (temporarily) release the mouse grab.</p>
+<p>Middle button click emulates double click, which is very useful
+in Fast Forward mode (where normal double clicking is nearly
+impossible).</p>
 <p>Mouse scrollwheel will act as cursor up and down keys. </p>
 
 <h3>Emulated joystick</h3>
@@ -1564,8 +1726,8 @@ Hatari is up and running. Note: pausing the emulation will also
 <p>The Atari ST joysticks are emulated ofcourse allowing you to play
 your favourite games with Hatari. </p>
 <p>The default mode is to use a connected PC joystick. You can use any
-joystick that is supported by your kernel. If your joystick works with
-other applications, it will likely work with Hatari as well. Make sure
+joystick that is supported by your kernel / SDL library. If your joystick works
+with other applications, it will likely work with Hatari as well. Make sure
 it is calibrated and then off you go. Move the stick to point into the
 desired direction. Please note that Hatari will not detect analogue
 movement as the Atari ST only had digital joysticks. The first
@@ -1635,9 +1797,31 @@ the serial input and output for you.</p>
 
 <p>Hatari does not use floppy disks directly but disk images due to
 differences between the floppy disk controllers of the ST and the PC.
-Three types of disk images are currently supported: The raw "ST" type,
-the similar "DIM" type and
-the compressed "MSA" (Magic-Shadow-Archiver) type. </p>
+Several types of disk images are currently supported :
+</p>
+
+<ul>
+<li>
+the raw "ST" type
+</li>
+<li>
+the similar "DIM" type (not widely used)
+</li>
+<li>
+the compressed "MSA" (Magic-Shadow-Archiver) type
+</li>
+<li>
+the "STX" type that can store low level disk layout. This format is mainly
+used to dump original games with their protection. Those images are created
+on a real ST using pasti.prg
+</li>
+<li>
+the "IPF", "RAW" and "CTR" types require the caps library. Similar to STX, they
+record disk layout, but at a much precise level by storing MFM data. Most of
+these dumps are made with the Kryoflux board
+</li>
+</ul>
+
 <p> The raw type (file suffix should be "*.st") is simply a sector by
 sector image of a real floppy disk. You can easily create such an image
 with the <span class="commandline">dd</span> program which should
@@ -1652,7 +1836,7 @@ or
 doesn't use a MSDOS compatible file system, this might fail. So be very
 careful if you are not sure about the disk format. </p>
 <p> The other possibility is to image the disk on a real Atari ST.
-There
+For non-protected disk, there
 are programs like the Magic Shadow Archiver for this task. Hatari
 supports this slightly compressed MSA disk images, too. Note that
 Hatari
@@ -1663,8 +1847,15 @@ Hatari-incompatible disk images. However, if you have got such a MSA
 disk and want to use it with Hatari, you can still run the
 corresponding
 MSA program within Hatari to extract the incompatible disk image to a
-normal floppy disk image. </p>
-<p> While *.ST and *.MSA are more or less the "standard" types of Atari
+normal floppy disk image.
+<p>
+For protected disk, the most widely used method is to run pasti.prg on
+a real Atari ST and get a .STX image.
+<br>
+For more complex protections or altered disk, one can use *.IPF or *.CTR
+which include tools to check MFM data and possible problems when dumping a disk.
+</p>
+<p> While *.ST, *.MSA and *.STX are more or less the "standard" types of Atari
 disk images, you might sometimes also find STT or ADF images on the
 internet. These currently do not work with Hatari. </p>
 <p>Hatari can now also utilize *.DIM images just as *.ST ones without
@@ -1705,29 +1896,41 @@ a zipped disk image.</p>
 <h2>Hard disk support</h2>
 
 <p>
-Hatari supports three ways of emulating Atari hard drives: The low-level
-ACSI and IDE hard disk emulation and a GEMDOS based drive emulation.
-In most cases the GEMDOS based hard disk emulation is best as it allows
+Hatari supports three ways of emulating Atari hard drives: The
+low-level ACSI and IDE hard drive emulation and a GEMDOS based HD
+emulation. In most cases the GEMDOS HD emulation is best as it allows
 exchanging files easily between the emulated and the host environment.
 </p>
 <p>
 Please note that changing the HD-image or the GEMDOS HD-folder will reset
-the emulated Atari since it is not possible to switch the hard disk
+the emulated Atari since it is not possible to switch the hard drive
 while the emulator is running.
 </p>
 <p>
 On a 32-bit host system, the size of a hard disk image is limited to 2 GB.
 On 64-bit host systems, bigger images might be possible but the support
-for bigger images is not tested very well yet.  How large partition sizes
-are supported inside the hard disk (images) depends on the TOS version.
-TOS 1.0x supports up to 256MB partitions and TOS 4.0x up to 1GB ones.
+for bigger images is not tested very well yet.
+</p>
+<p>
+The maximum size of partitions inside the hard disk (images) depends on the
+TOS version. TOS 1.00 and 1.02 support up to 256 MB, TOS 1.04 to 3.06 up to
+512 MB and TOS 4.0x supports up to 1 GB partitions.
+</p>
+<p>
+NOTE: you need to be careful when mounting device files.  Depending on
+the system setup (e.g. udev settings) partitions on memory cards etc.
+can be mounted automatically. When Hatari is started and uses a device
+file with partitions that are already mounted, data can be destroyed
+(when several programs independently write to the same device).
+Disable your desktop automount, or remember to manually unmount
+devices before giving them to Hatari.
 </p>
 
 
-<h3>GEMDOS based hard disk emulation</h3>
+<h3>GEMDOS based hard drive emulation</h3>
 <p>
-With the GEMDOS based drive emulation, you can easily "mount" a
-folder from the host file system to a drive of the emulated Atari.
+With the GEMDOS HD emulation, you can easily "mount" a folder from the
+host file system to a drive of the emulated Atari.
 </p>
 <p>
 If you provide Hatari a directory containing only single letter (C-Z)
@@ -1735,12 +1938,22 @@ subdirectories, each of these subdirectories will be treated as a
 separate partition, otherwise the given directory itself will be
 assigned to drive "C:". In the multiple partition case, the letters
 used as the subdirectory names will determine to which
-drives/partitions they're assigned.
+drives/partitions they're assigned.  For example following
+directory setup:
+</p>
+<pre>
+partitions/
+  + C/
+  + D/
+</pre>
+<p>
+That is given to Hatari as "hatari -d partitions", will give you
+GEMDOS HD emulated C: and D: drives.
 </p>
 <p>
-GEMDOS drive emulation is an easy way to share files between the
+GEMDOS HD emulation is an easy way to share files between the
 host system and the emulated Atari, but there are also some known
-limitations which are due to the way the GEMDOS drive emulation is
+limitations which are due to the way the GEMDOS HD emulation is
 implemented:
 </p>
 <ul>
@@ -1752,34 +1965,58 @@ that order. You need to rename the files.</li>
 to a valid format.  If there are multiple files which converted
 names are identical in TOS-format, you see only one of those.</li>
 <li>It is not possible to use a cartridge image at the same time
-with the GEMDOS drive emulation (Hatari has it's own cartridge code
-that is used for GEMDOS emulation).</li>
+with the GEMDOS HD emulation (Hatari has its own cartridge code
+that is used for GEMDOS HD emulation).</li>
 <li>Anything that installs its own GEMDOS handler, like MiNT, doesn't work
-with the GEMDOS drive emulation.  Such things need to be run from a real
+with the GEMDOS HD emulation.  Such things need to be run from a real
 hard disk image.</li>
-<li>GEMDOS drive emulation conflicts with the ACSI and IDE harddisk images.
-If you want to use GEMDOS HD emulation and ACSI/IDE disk images together,
-use a multiple partition GEMDOS emulation setup and select the partition
-subdirectories (letters) so that they don't conflict with the ACSI/IDE
-drive partitions (letters).  With HD Driver you have also another option,
+<li>GEMDOS HD C: drive conflicts with the ACSI and IDE hard drives.
+If you want to use GEMDOS HD directory and ACSI/IDE disk images together,
+either use the GEMDOS HD option for skipping ACSI & IDE partitions, or
+use a multiple partition GEMDOS HD emulation setup and select the partition
+subdirectories (see above) so that they don't conflict with the ACSI/IDE
+partitions (drive letters).  With HD Driver you have also another option,
 see <a href="#Using_HD_Driver_with_GEMDOS_partitions">Using HD Driver
-with GEMDOS partitions</a>.</li>
-<li><em>The GEMDOS drive emulation does not work (very well) with TOS
-1.00 and 1.02</em>.  Use at least TOS 1.04 if you want the GEMDOS drive
+with GEMDOS HD partitions</a>.</li>
+<li><em>The GEMDOS HD emulation does not work (very well) with TOS
+1.00 and 1.02</em>.  Use at least TOS 1.04 if you want the GEMDOS HD
 emulation to work properly.</li>
 </ul>
 <p>
-So, if your programs complain that they could not find/read/write
-files on the GEMDOS emulated drive, you should try to copy them to a
-floppy disk image or a real hard disk image!
+If your programs complain that they could not find/read/write
+files on the GEMDOS emulated drive, you can copy and use them
+from a floppy disk image or a real hard disk image instead.
 </p>
 
-<h3 id="ACSI_hard_disk_emulation">ACSI hard disk emulation</h3>
+
+<h3>ACSI &amp; IDE hard drive emulation with EmuTOS</h3>
+
 <p>
-To use the ACSI hard disk emulation, you need a hard disk image file
+Accessing HD image files is easiest with EmuTOS.  It supports both
+ASCI and IDE interfaces, regardless of emulated machine type, and
+understands DOS partition tables without additional drivers.
+<span class="commandline">atari-hd-image.sh</span> script coming
+with Hatari can be used to create such image files and to copy
+initial data to them.
+</p>
+<p>
+If you have an hard drive (image) with Atari format partition table,
+that should already have hard disk driver on it and work fine.
+Partitioning/formatting them is the problem.  Creating such images
+from scratch is described in following sections.
+</p>
+
+
+<h3 id="ACSI_hard_drive_emulation">ACSI hard drive emulation</h3>
+<p>
+To use the ACSI hard drive emulation, you need a hard disk image file
 with a pre-installed HD driver in it. You can try to get an image of
 your old ST hard disk or grab one from the internet (e.g. from the
 Hatari website).
+Please note that the size of ACSI hard drive is normally limited to 1 GB
+due to some addressing constraints of the ACSI bus. Bigger disks were only
+possible with certain host adapters &ndash; this behaviour is emulated by
+Hatari, too, but you need a hard disk driver that supports these extensions.
 </p>
 <p>
 To create a <em>new</em> ACSI hard disk image, you can start with an empty
@@ -1800,13 +2037,19 @@ the hard disk image from the emulated Atari and then run HINSTALL.PRG.
 After installing the hard disk driver to the fresh HD image with
 HINSTALL.PRG, you can boot directly from the hard disk image.
 </p>
+<p>
+HD Driver (v9) partitioning is also compatible with Hatari ACSI
+emulation. CBHD and ICDPro AdSCSI drivers work on images which have
+been partitioned elsewhere.
+</p>
 
-<h3>IDE hard disk emulation</h3>
+
+<h3>IDE hard drive emulation</h3>
 <p>
 <p>
 As the IDE disk format (little endian) differs from the ACSI disk format
 (big endian), you need separate disk images for them.  Hatari doesn't
-currently support formatting IDE disks with AHDI, but you can do it with
+currently support partitioning IDE disks with AHDI, but you can do it with
 <em>Cecile</em>.
 </p>
 <p>
@@ -1832,9 +2075,9 @@ If you only want to use your HD image in Falcon mode, you can install
 the Cecile hard disk driver to the image from the Cecile CC_TOOLS.APP:
 Click the "Installer" button and save the Cecile driver to the
 1st partition on "Hatari IDE disk". If you want to also use your HD
-image in ST/STE mode, you need to get and install AHDI 6 driver on it
-instead (see <a href="#ACSI_hard_disk_emulation">ASCI hard disk
-emulation</a> section).
+image in ST/STE mode, you need to get and install either HD Driver or
+AHDI 6 driver on it instead (see <a href="#ACSI_hard_drive_emulation">ASCI
+hard drive emulation</a> section).
 </p>
 <p>
 Then you can boot from your hard disk image by simply specifying it
@@ -1845,56 +2088,63 @@ with the <span class="commandline">--ide-master</span> parameter.
 <h2>Moving files to/from hard disk images</h2>
 
 <p>Moving files to and from Atari hard disk images can be done
-either through GEMDOS partitions (host directories mounted inside
+either through GEMDOS HD partitions (host directories mounted inside
 Hatari emulation) or accessing the images directly on the host
 (outside the emulation).  Both have their own limitations.</p>
 
-<p>If it's fine for the IDE/ACSI partitions to be first, you can use
-hard disk images with AHDI or Cecile driver and a multipartition
-GEMDOS setup as described in above sections. If you want to boot from
-a GEMDOS partition i.e. such to be before hard disk image partitions,
-and still to be able to access all the IDE/ACSI partitions, you need to
-use HD Driver.</p>
+<p>If it's fine for the IDE/ACSI partitions to be first, you can
+either use ACSI/IDE partition skip option, or a multipartition GEMDOS
+HD setup as described in above sections.
+</p>
+
+<p>If you want to boot from a GEMDOS HD partition i.e. such to be
+before hard disk image partitions, and still to be able to access all
+the IDE/ACSI partitions, you need to use HD Driver.  Note: this is the
+preferred method with EmuTOS (v0.9.x), because it doesn't run/use
+driver installed to the IDE/ACSI image directly although its own
+partition table/type support is very limited.</p>
 
 <h3 id="Using_HD_Driver_with_GEMDOS_partitions">Using HD Driver with GEMDOS partitions</h3>
 
 <p>Uwe Seimet's <a href="http://www.seimet.de/atari/en/hddriver.html">HD
-Driver</a> works fine with both the Hatari GEMDOS partitions and normal
-hard disk images.  However, it doesn't work with EmuTOS so you need
-real TOS (at least version v1.04).
+Driver</a> works fine with both the Hatari GEMDOS HD partitions and normal
+hard disk images.
 </p>
 
-<p>First copy the HDDRIVER.PRG binary into your GEMDOS drive emulation
+<p>First copy the HDDRIVER.PRG binary into your GEMDOS HD emulation
 directory AUTO folder. Then start the HDDRUTIL.APP configuration utility,
 locate HDDRIVER.PRG, open the
 <a href="http://www.seimet.de/atari/en/hddriverscreenshots.html">"Devices
 and Partitions" dialog</a> and select the "Preserve Existing Partitions"
 option.  Then you can just start Hatari with your hard disk image and
-this GEMDOS directory, for example like this:
-"<span class="commandline">hatari --harddisk gemdos-hd/ --ide-master
+this GEMDOS HD directory, for example like this:
+"<span class="commandline">hatari --harddrive gemdos-hd/ --ide-master
 ide-hd.image</span>".</p>
 
-<p>If you're using the <em>demo</em> version of HD Driver, you can
-write files only to the C: partition, i.e. in above case only copy
-files from the hard disk image partition to the GEMDOS partition (with
-some write slowndowns included into the demo version). If you want to
-copy files to the hard disk image with the <em>demo</em> version of
-the HD Driver, you need to set the hard disk image as drive C:.</p>
+<p>If you're using
+the <a href="http://hddriver.seimet.de/en/downloads.html">demo version
+of HD Driver</a>, you can write files only to the C: partition, i.e. in
+above case only copy files from the hard disk image partition to the
+GEMDOS HD partition (with some write slowndowns included into the demo
+version). If you want to copy files to the hard disk image with
+the <em>demo</em> version of the HD Driver, you need to set the hard disk
+image as drive C:.</p>
 
-<p>To accomplish this, set the GEMDOS partitions to be from D: forward,
+<p>To accomplish this, set the GEMDOS HD partitions to be from D: forward,
 i.e. have a directory which contains only single letter subdirectories,
 starting from "D" like in "<span class="commandline">mkdir gemdos-hd;
 mkdir gemdos-hd/D</span>". Then give Hatari (as the last parameter)
 a boot floppy image containing the demo version of HDDRIVER.PRG in
 its AUTO folder, like this: "<span class="commandline">hatari
---ide-master ide-hd.image --harddisk gemdos-hd/ hd-driver-floppy.st</span>".
-</p>
+--ide-master ide-hd.image --harddrive gemdos-hd/ hd-driver-floppy.st</span>".
+You can convert HD Driver ZIP package to floppy image with the
+<span class="commandline">zip2st</span> utility.</p>
 
 
 <h3>Accessing HDD image partitions outside of Hatari</h3>
 
 <p>
-If you want to access the harddisk image partitions also outside
+If you want to access the hard disk image partitions also outside
 the emulation, the disk image needs to have a DOS partition table.
 The <span class="commandline">atari-hd-image</span> script included
 with Hatari can be used to create such an image.
@@ -1904,14 +2154,12 @@ Inside the Hatari emulator, EmuTOS can access partition(s) on these
 kind of images directly without any driver software.  Of the Atari HD
 drivers mentioned above, Centek's Cecile and Uwe Seimet's HD Driver
 (demo) work fine with these partitions. E.g. AHDI and CBHD don't.
+Cecile works only with TT or Falcon.
 </p>
 <p>
-Note that plain EmuTOS supports only ACSI and the listed HD drivers
-support only IDE (emulation). Cecile needs TT or Falcon and HD Driver
-doesn't work with EmuTOS.  To summarise; if ASCI emulation and
-EmuTOS are enough, use those. Otherwise, if you want to use TT or
-Falcon emulation, use Cecile (or full HD Driver version if you have
-it), otherwise use HD Driver (demo).
+To summarise; if EmuTOS is enough, use that. Otherwise, if you want to
+use TT or Falcon emulation, use Cecile (or full HD Driver version if
+you have it), otherwise use HD Driver (demo).
 </p>
 <p>
 To access the content of the partitions on Linux host, there are two
@@ -1978,17 +2226,20 @@ the disk image from Hatari:
 
 <p>
 Hatari has a built-in debugging interface which can be used for
-analyzing code that runs in the emulated system. To invoke the
-debugger, press the <span class="key">AltGr + Pause</span>
-key combination.
+analyzing code that runs in the emulated system.
 </p>
 
 <p>
-If you start Hatari with the "-D" command line option, certain m68k
-exceptions will automatically drop Hatari into the debugger. You can
-toggle this also later from the debugger with the "setopt -D"
-command.
+On Unix (Linux / OSX) debugger uses Hatari's parent console window, so
+make sure you run Hatari from the command line when you want to use
+the debugger.  On Windows you need to use "-W" option to get console
+window.  You can add an icon to your desktop that does it.  On Linux
+it should do something like this (replace "xterm" with your favorite
+terminal program):
 </p>
+<pre>
+xterm -T "Hatari debug window" -e hatari
+</pre>
 
 <p>
 To run debugger commands at Hatari startup, one can use the "--parse
@@ -1997,16 +2248,33 @@ TOS or some demo startup code, or if you always want to use some
 specific debugger setup (breakpoints etc).
 </p>
 
+
+<h3>Invoking the debugger</h3>
+
 <p>
-The debugger uses Hatari's parent console window, so make sure you run
-Hatari from the command line when you want to use the debugger. On
-Linux you can add for example an icon to your desktop that does it
-with something like this (replace "xterm" with your favorite terminal
-program):
+You can invoke the debugger manually by pressing the
+<span class="key">AltGr + Pause</span> key combination.
 </p>
-<pre>
-xterm -T "Hatari debug window" -e hatari
-</pre>
+
+<p>
+With the "-D" command line option, you can toggle whether m68k
+exceptions will also invoke the debugger.  Which exceptions cause
+this, can be controlled with the "--debug-except" option.  
+</p>
+
+<p>
+Giving "-D" option at Hatari startup is not advised because TOS HW
+checks generate some exceptions at every TOS boot.  It's better to
+toggle exception catching later from the debugger with the "setopt -D"
+command. 
+</p>
+
+<p>
+Alternatively, you can give "--debug-except" option "autostart" flag
+(e.g. "--debug-except all,autostart").  This will enable catching of
+(specified) exceptions after TOS boot, when Atari program given on
+Hatari command line is <em>autostarted</em>.
+</p>
 
 
 <h3>General debugger use</h3>
@@ -2155,7 +2423,7 @@ Both commands accept in addition to numeric addresses also register
 and symbol names, like in above example.  If you don't specify an
 address, the commands continue showing from an address that comes
 after the previously shown data.  "disasm" command default address
-will be reseted to PC address everytime you re-enter the debugger.
+will be reset to PC address every time you re-enter the debugger.
 </p>
 
 <p>
@@ -2215,11 +2483,17 @@ dsp_symbols").
 <h4>For a program under GEMDOS HD emulation</h4>
 
 <p>
-If you're using GEMDOS HD emulation, and your program contains symbol
-table in DRI/GST format, you can load its symbol names/addresses to
-the debugger with the following command, after program has been loaded
-to the memory by TOS (see <a href="#Breakpoint_variables">setting
-breakpoint at program startup</a>):
+If currently running program contains symbol table in DRI/GST format,
+and it's started from GEMDOS HD emulated drive, its symbol names /
+addresses are automatically loaded when debugger is entered, and
+removed when program terminates.</p>
+
+<p>
+Above happens only if there are no symbols loaded when the program
+starts. If there are, you can load program symbol data manually with
+the following command, after program has been loaded to the memory by
+TOS (see <a href="#Breakpoint_variables">setting breakpoint at program
+startup</a>):
 </p>
 <pre>
 symbols prg
@@ -2277,7 +2551,7 @@ cannot re-compile it to have them, you have two options:
     Writing converters for other ASCII formats is easy, and Hatari already
     contains covertors for DSP LOD files, <span class="commandline">nm</span>
     output for MiNT/a.out binaries and AHCC map files.
-<li>Create the ASCII symbols file by hand as you're debugging a program.
+<li>Create the ASCII symbols file by hand while you're debugging a program.
 </ul>
 
 <p>ASCII symbols file format is following:</p>
@@ -2547,7 +2821,7 @@ example the Busy bit for the internal Blitter control register is
 (internally) cleared when Blitter activity stops, but the actual IO
 address for that control register gets updated only when something
 actually writes or reads that IO address.  Many HW registers behave
-(status registers in FDC, ACIA, MFP, Blitter...).
+like this (status registers in FDC, ACIA, MFP, Blitter...).
 <br>
 For breakpoints that track just a single IO register memory address, or
 multiple ones of which <strong>none</strong> are modified by Hatari,
@@ -2585,7 +2859,7 @@ a variable given to address breakpoint is evaluated when it's set, not
 at run-time, so it cannot get the new value that the TEXT variable
 gets when you start a program.
 </li>
-<li>To find out current program DATA and BSS segment contents,
+<li>To view current program DATA and BSS segment contents,
     use the corresponding variables:
 <pre>
 m  DATA
@@ -2633,19 +2907,19 @@ another one is set.
 <ul>
 <li>"break.ini":
 <pre>
-b GemdosOpcode = 0x3D :trace :file program.ini
+b GemdosOpcode = 0x3D :trace :once :file program.ini
 </pre>
 </li>
 <li>"program.ini":
 <pre>
-b pc = TEXT :trace :file trace.ini
+b pc = TEXT :trace :once :file trace.ini
 </pre>
 </li>
 <li>"trace.ini":
 <pre>
 symbols prg
 trace gemdos,cpu_symbols
-b VBL = "VBL+4" :trace :file disable.ini
+b VBL = "VBL+4" :trace :once :file disable.ini
 </pre>
 </li>
 <li>"disable.ini":
@@ -2658,7 +2932,7 @@ b all
 
 <p>
 And then start Hatari with the first debugger input file and a GEMDOS
-harddisk directory containing "desktop.inf" file:
+HD directory containing "desktop.inf" file:
 </p>
 <pre>
 hatari --parse break.ini /path/to/your/program.tos
@@ -2679,11 +2953,16 @@ hatari --parse break.ini /path/to/your/program.tos
     all (remaining) breakpoints
 </ol>
 
-<p>
-<em>Note:</em> because debugger input files cannot "continue"
+<p><em>Note:</em></p>
+<ul>
+<li>Because debugger input files cannot "continue"
 emulation, ":trace" option needs to be used for the breakpoint(s)
-if you want emulation to continue after the breakpoint action(s).
-</p>
+if you want emulation to continue after the breakpoint action(s).</li>
+<li>In simpler breakpoint chain (like above), new breakpoint just
+replaces the previous one, ":once" option tells that breakpoint
+isn't needed after it's hit.
+</li>
+</ul>
 
 <p>
 Hint: It's better to test each input file separate before testing the
@@ -2693,8 +2972,7 @@ command "file" option and with the Hatari "--parse" command line
 option.
 </p>
 
-
-<h3>Tracing</h3>
+<h3>Stepping through code</h3>
 
 <p>
 After analyzing the emulation state and/or setting new breakpoints,
@@ -2707,13 +2985,38 @@ triggers) if you omit the instruction count.
 <p>
 If you want to continue just to the next instruction, use "s" (step)
 command to continue for exactly one instruction, or "n" (next), if you
-want to skip subroutine calls.
+want to skip subroutine and exception calls.  "ds" and "dn" commands
+do the same for DSP.
 </p>
 
 <p>
-If you want to continue with real-time disassembling, you can enable
-it with "trace cpu_disasm" (or "trace dsp_disasm" for DSP) at the
-debugger prompt before continuing.
+You can also continue with the "n" until instruction of certain
+type is encountered, by giving it the instruction type:
+<ul>
+<li>"branch" matches branch instructions: BCC, BRA, DBCC, JMP</li>
+<li>"subcall" matches subroutine calls: BSR, JSR</li>
+<li>"subreturn" matches return from subroutine: RTD, RTR, RTS</li>
+<li>"exception" matches exceptions: BKPT, ILLG, STOP, TRAP, TRAPV</li>
+<li>"exreturn" matches return from exception: RTE</li>
+<li>"return" matches both subroutine and exception returns</li>
+</ul>
+
+<p>
+For example: "n branch", or "dn branch".
+</p>
+
+<p>
+(Note: CHK, CHK2, FBCC, FDBCC, &amp; FTRAPCC exception / branch CPU
+instructions aren't supported currently.)
+</p>
+
+
+<h3>Tracing</h3>
+
+<p>
+If you want e.g. to continue with real-time disassembling, you can
+enable it with "trace cpu_disasm" (or "trace dsp_disasm" for DSP) at
+the debugger prompt before continuing.
 </p>
 <p>
 Disable tracing with "trace none" when you enter the debugger again.
@@ -2721,34 +3024,37 @@ Disable tracing with "trace none" when you enter the debugger again.
 traceable things, from HW events to OS functions.
 </p>
 <p>
-Because Hatari normally emulates things at the hardware level, tracing
-certain Atari OS Traps requires setting additional Hatari options
-which tell it to intercept this higher level functionality:
-<ul>
-<li>BIOS and XBIOS tracing require enabling of the BIOS intercepting with
-    the "--bios-intercept" option (which has also some other side-effects)
-</li>
-<li>GEMDOS tracing requires enabling the GEMDOS harddisk emulation
-    (which doesn't work under MiNT because it re-implements GEMDOS)</li>
-</ul>
-<p>
-Unlike with VDI tracing, AES, BIOS, GEMDOS and XBIOS traces show arguments
-for most of the calls.
+Notes:
 </p>
-<p>
+<ul>
+<li>
+If GEMDOS HD emulation isn't enabled, GEMDOS call tracing needs to be
+enabled at Hatari command line, it's not possible to enable it after
+TOS has initialized GEMDOS.
+</li>
+<li>
+AES, BIOS, GEMDOS and XBIOS traces show arguments for (most of) the
+calls, VDI trace shows only function calls (parsing the arguments
+would be too complicated).
+</li>
+<li>
 Tracing options can be set even from a program within the emulation,
 if you enable the Hatari "--bios-intercept" option and call XBios 255
-from the program with a suitable Hatari command line string.
-</p>
-<p>
+from the program with a suitable trace options string.
+</li>
+<li>
 Note that the trace output file can be set only when Hatari starts,
 it cannot be changed from within the debugger (or emulation).
-</p>
+</li>
+</ul>
 <p>
-If tracing isn't possible for the things you'd like to track, you can
-use the OS call opcode breakpoints explained above with the ":trace"
-breakpoint option.
+If there isn't a trace option for something you'd like to track,
+you may be able to use tracing breakpoints, explained above.
+For example, following tracks Line-A calls:
 </p>
+<pre>
+b  LineAOpcode ! LineAOpcode  &amp;&amp;  LineAOpcode &lt; 0xffff  :trace
+</pre>
 
 
 <h3>Profiling</h3>
@@ -2812,26 +3118,47 @@ When you're back in debugger, you can inspect the collected profile data:
 <pre>
 &gt; h profile
 'profile' - profile CPU code
-Usage:  profile &lt;on|off|stats|counts|cycles|misses|symbols|callers|stack|addresses|save&gt; [count|address|file]
+Usage:  profile &lt;subcommand&gt; [parameter]
+
+        Subcommands:
+	        - on
+		- off
+		- counts [count]
+		- cycles [count]
+		- misses [count]
+		- symbols [count]
+		- addresses [address]
+		- callers
+		- stack
+		- stats
+		- save &lt;file&gt;
+		- loops &lt;file&gt; [CPU limit] [DSP limit]
+
         'on' & 'off' enable and disable profiling.  Data is collected
 	until debugger is entered again at which point you get profiling
-        statistics ('stats') summary.
+	statistics ('stats') summary.
 
 	Then you can ask for list of the PC addresses, sorted either by
-        execution 'counts', used 'cycles' or cache 'misses'.  First can
+	execution 'counts', used 'cycles' or cache 'misses'. First can
 	be limited just to named addresses with 'symbols'.  Optional
 	count will limit how many items will be shown.
 
 	'addresses' lists the profiled addresses in order, with the
-        instructions (currently) residing at them.  By default this
+	instructions (currently) residing at them.  By default this
 	starts from the first executed instruction, or you can
 	specify the starting address.
 
-        'callers' shows (raw) caller information for addresses which
-	had symbol(s) associated with them.  'stack' shows the currect
-	profile stack, this is useful only with :noinit breakpoints.
+	'callers' shows (raw) caller information for addresses which
+	had symbol(s) associated with them.  'stack' shows the current
+	profile stack (this is useful only with :noinit breakpoints).
 
-	Profile information can be saved with 'save'.
+	Profile address and callers information can be saved with
+	'save' command.
+
+	Detailed (spin) looping information can be collected by
+	specifying to which file it should be saved, with optional
+	limit(s) on how many bytes first and last instruction
+	address of the loop can differ (0 = no limit).
 </pre>
 
 <p>For example, to see which memory addresses were executed most
@@ -2996,7 +3323,7 @@ automatically, by the profiler data post-processor (documented below).
 
 <p>Everything about profile data accuracy applies also to caller costs,
 but there are additional things to take into account, mainly because
-profiler cannot determine when exceptions are being handling:</p>
+profiler cannot determine when exceptions are being handled:</p>
 <ul>
 <li>If there are exception(s) during a subroutine call, costs for
     the exception handling will also be accounted for that subroutine.
@@ -3043,7 +3370,7 @@ installed by Hatari, to:</p>
 <ul>
 <li>Get lists of functions/symbols with highest costs.</li>
 <li>Get callgraphs of what functions/symbols cause those
-    costs and what kind of call hiearchy the profiled code
+    costs and what kind of call hierarchy the profiled code
     has.</li>
 <li>Export profile data in Valgrind's
     <a href="http://valgrind.org/docs/manual/cl-format.html">Callgrind format</a>
@@ -3086,8 +3413,11 @@ but e.g. loop labels, you can either remove them manually
 from the ASCII *.sym file, or filter them out with grep:
 </p>
 <pre>
-$ gst2ascii -l -o program.prg | grep -v -e useless1 -e useless2 | &gt; program.sym
+$ gst2ascii -l -o program.prg | grep -v -e useless1 -e useless2 &gt; program.sym
 </pre>
+
+
+<h4>Post-processor provided statistics</h4>
 
 <p>Above post-processor examples just parse + verify the given data
 and produce output like this:</p>
@@ -3105,9 +3435,6 @@ Parsing profile information from program-profile.txt...
 CPU profile information from 'program-profile.txt':
 - Hatari v1.6.2+ (May  4 2013), WinUAE CPU core
 </pre>
-
-
-<h4>Post-processor provided statistics</h4>
 
 <p>To get statistics (-s) and list of top (-t) CPU users in profile,
 add "-st" option:</p>
@@ -3224,8 +3551,8 @@ Instruction cache misses:
 [...]
 </pre>
 
-<p>Now there's a message telling that some of the calls were ignored as
-based on "call type" they were determined to be actually returns from
+<p>Now there's a message telling that some of the calls were ignored
+because according to their "call type", they were actually returns from
 exceptions, not real calls (this is mainly important for callgraph
 generation, discussed below).</p>
 
@@ -3243,7 +3570,7 @@ the indicated symbol's address and the address of the next symbol</em>
 <p><strong>NOTE:</strong> If your symbol file doesn't contain addresses
 for all the relevant symbols, results from this can be misleading because
 instructions costs get assigned to <em>whatever</em> symbol's address
-happened to preceed those instructions.  And you don't see which
+happened to precede those instructions.  And you don't see which
 caller is causing it from caller info or callgraph either, as entry
 point for that time sink lacking a symbol means profiler hadn't
 tracked calls to it...</p>
@@ -3254,7 +3581,7 @@ i.e. including costs for further subroutine calls.  Values are based on
 caller information documented above.</p>
 
 <p>Reasons why between-symbol costs, and subroutine call costs can
-differ are following:</p>
+differ, are following:</p>
 <ul>
 <li>Subroutine terminates before next symbol address: exclusive
     cost is smaller than in-between cost <em>because of missing
@@ -3274,7 +3601,8 @@ differ are following:</p>
 <p>In the first case, you should check the profile data to find out
 whether there are missing symbols for executed function entry points.
 You can notice function entry points as address gap and/or code
-retrieving arguments from stack, and exit points from RTS instruction.</p>
+retrieving arguments from stack. Exit points can be seen from RTS
+instructions.</p>
 
 <p>Second case can also be seen from the profile data.  Call count
 is same as count for how many times first instruction is executed
@@ -3295,9 +3623,10 @@ sure your optimization efforts can actually help the performance.</p>
 
 <h4>Generating and viewing callgraphs</h4>
 
-<p>Callgraphs require saved profile data to contain caller information,
-i.e. symbols should have been loaded before starting profiling (normally
-done with "symbols prg" command in Hatari debugger).</p>
+<p>Callgraphs require that saved profile data contains caller
+function address information, i.e. symbols for the code should
+be loaded before starting profiling it (see
+<a href="#Debug_symbols">loading symbol data</a>).</p>
 
 <p>Separate callgraphs will be created for each of the costs
 (0=calls, 1=instructions, 2=cycles) with the -g option:</p>
@@ -3352,18 +3681,17 @@ $ dot -Tsvg program-profile-1.dot &gt; program-profile-1.svg
 <li>Nodes which exclusive (own) or between-symbols costs
     exceed default or explicitly given threshold value,
     have gray background.</li>
-<li>Both nodes which inclusive or between-symbols cost exceeds
-    the threshold value, and the arrows to &amp; from them
+<li>Both nodes, which inclusive or between-symbols cost exceeds
+    the threshold value, and the arrows to &amp; from them,
     are marked red.
 <li>Arrow types indicate call types; normal arrows subroutine
     calls, circles branches/jumps, backarrows returns.
     Exception calls and returns are indicated with dashed lines,
     unknown calls with dotted lines.</li>
-<li>Arrow text tells from which address the call orignated
-    (inside the calling function).  If symbol had multiple
-    callers, text includes count of calls from that particular
-    address, and its percentage of all calls done to that
-    symbol.</li>
+<li>Arrow text tells from which address (within the caller)
+    the call originated.  If symbol had multiple callers, text
+    includes count of calls from that particular address, and its
+    percentage is of all calls done to that symbol.</li>
 </ul>
 
 
@@ -3384,10 +3712,10 @@ $ hatari_profile.py -p -g <b>--ignore-to handler1,handler2</b> -r program.sym pr
 <p>In large callgraph most of the functions aren't really interesting,
 because their contribution to the cost is insignificant. You can
 remove large number of them with --no-leafs and --no-intermediate
-options, they act <em>only</em> on on nodes which costs are below
+options, those options act <em>only</em> on on nodes which costs are below
 given threshold.  Leaf nodes are ones which don't have any parents
-and/or children and intermediate ones which have only single parent
-and children (node calling itself is not taken into account).
+and/or children. Intermediate ones have only single parent and
+children (node calling itself is not taken into account).
 
 <p>Threshold for this is given with the --limit (-l) option.  With
 that it typically makes also sense to change the node emphasis
@@ -3407,8 +3735,8 @@ $ hatari_profile.py -p -g -l 1.0 -e 2.0 <b>--no-leafs --no-intermediate --compac
 
 <p>If even this doesn't help, you can remove all nodes below
 the given cost threshold limit with --no-limited option, but this
-often doesn't leave much of a call hiararchy.  Instead you may
-consider removing all nodes except for subroutine call ones with
+often doesn't leave much of a call hierarchy.  Instead you may
+consider removing all nodes except for subroutine call ones, with the
 --only-subroutines option.</p>
 
 <p>If you have trouble locating nodes you're specially interested
@@ -3420,7 +3748,7 @@ $ hatari_profile.py -p -g <b>--only func1,func2</b> -r program.sym program-profi
 </pre>
 
 <p>Last option for reading the callgraph is using -k option to
-export the data for use in (Linux) Kcachegrind UI.  It generates
+export the data for use in (Linux) Kcachegrind UI. Kcachegrind generates
 callgraphs on the fly, and just for the area around the function
 you selected, so navigating in callgraph may be easier.  It also
 shows the related profile disassembly, which can make verifying
@@ -3484,7 +3812,7 @@ After bus error invokes debugger, 'history' command can then be used
 to see (executed memory addresses with their current) instructions
 leading to the error.  The most interesting vector addresses are:
 $8 (Bus error), $C (Address error), $10 (Illegal instruction),
-$14 (Division by zero).
+$14 (Division by zero).  See also --debug-except option.
 </dd>
 
 <dt><em>Stopping when register has a specific value</em></dt>

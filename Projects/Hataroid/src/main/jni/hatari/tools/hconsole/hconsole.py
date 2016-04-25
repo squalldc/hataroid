@@ -5,7 +5,7 @@
 # devices and changing Hatari command line options (even for things you
 # cannot change from the UI) from the console while Hatari is running.
 #
-# Copyright (C) 2008-2012 by Eero Tamminen
+# Copyright (C) 2008-2014 by Eero Tamminen
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -100,7 +100,15 @@ class Hatari:
     controlpath = "/tmp/hatari-console-" + str(os.getpid()) + ".socket"
     hataribin = "hatari"
 
-    def __init__(self, args = None):
+    def __init__(self, args):
+        # member defaults
+        self.pid = 0
+        self.interval = 0.2
+        self.shiftdown = False
+        self.verbose = False
+        self.control = None
+        self.paused = False
+        self.winuae = False
         # collect hatari process zombies without waitpid()
         signal.signal(signal.SIGCHLD, signal.SIG_IGN)
         self._assert_hatari_compatibility()
@@ -109,21 +117,17 @@ class Hatari:
             os.unlink(self.controlpath)
         self.server.bind(self.controlpath)
         self.server.listen(1)
-        self.control = None
-        self.paused = False
-        self.interval = 0.2
-        self.pid = 0
         if not self.run_hatari(args):
             print("ERROR: failed to run Hatari")
             sys.exit(1)
-        self.shiftdown = False
-        self.verbose = False
 
     def _assert_hatari_compatibility(self):
         "check Hatari compatibility and return error string if it's not"
         error = True
         pipe = os.popen(self.hataribin + " -h")
         for line in pipe.readlines():
+            if line.find("--addr24") >= 0:
+                self.winuae = True
             if line.find("--control-socket") >= 0:
                 error = False
                 break
@@ -446,7 +450,7 @@ class Tokens:
     "trace"
     ]
 
-    def __init__(self, hatari):
+    def __init__(self, hatari, do_exit = True):
         self.process_tokens = {
             "kill": hatari.kill_hatari,
             "pause": hatari.toggle_pause
@@ -460,6 +464,8 @@ class Tokens:
             "verbose": hatari.toggle_verbose
         }
         self.hatari = hatari
+        # whether to exit when Hatari disappears
+        self.do_exit = do_exit
 
     def get_tokens(self):
         tokens = []
@@ -537,10 +543,13 @@ give help when you give them invalid input.
 
     def process_command(self, line):
         if not self.hatari.is_running():
-            print("Exiting as there's no Hatari (anymore)...")
+            print("There's no Hatari (anymore)!")
+            if not self.do_exit:
+                return False
+            print("Exiting...")
             sys.exit(0)
         if not line:
-            return
+            return False
 
         first = line.split()[0]
         # multiple items
@@ -565,13 +574,14 @@ give help when you give them invalid input.
             self.help_tokens[line]()
         else:
             print("ERROR: unknown hatari-console command:", line)
-
+            return False
+        return True
 
 class Main:
-    def __init__(self):
-        args, self.file, self.exit = self.parse_args(sys.argv)
+    def __init__(self, options, do_exit=True):
+        args, self.file, self.exit = self.parse_args(options)
         hatari = Hatari(args)
-        self.tokens = Tokens(hatari)
+        self.tokens = Tokens(hatari, do_exit)
         self.command = CommandInput(self.tokens.get_tokens())
 
     def parse_args(self, args):
@@ -638,9 +648,9 @@ For example:
         self.tokens.do_script("script " + filename)
 
     def run(self, line):
-        "helper method for scripts using hatari-console"
-        self.tokens.process_command(line)
+        "helper method for running Hatari commands with hatari-console, returns False on error"
+        return self.tokens.process_command(line)
 
 
 if __name__ == "__main__":
-    Main().loop()
+    Main(sys.argv).loop()

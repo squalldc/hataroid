@@ -45,10 +45,10 @@
     chipset address : 10
     command : 
 	000 XXX XDD Mixing
-		00 : DMA and (YM2149 - 12dB) mixing
-		01 : DMA and YM2149 mixing
-		10 : DMA only
-		11 : Reserved
+		00 : DMA sound only
+		01 : DMA sound + input 1 (YM2149 + AUDIOI, full frequency range)
+		10 : DMA sound + input 2 (YM2149 + AUDIOI, Low Pass Filter) -> DMA sound only
+		11 : DMA sound + input 3 (not connected) -> DMA sound only
 
 	001 XXD DDD Bass
 		0 000 : -12 dB
@@ -150,8 +150,8 @@ struct dma_s {
 	Sint16 FrameRight;
 };
 
-Sint64	frameCounter_float = 0;
-bool	DmaInitSample = false;
+static Sint64	frameCounter_float = 0;
+static bool	DmaInitSample = false;
 
 
 struct microwire_s {
@@ -493,18 +493,16 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 			switch (microwire.mixing) {
 				case 1:
-					/* DMA and (YM2149 0 dB) mixing */
-					MixBuffer[nBufIdx][1]  = MixBuffer[nBufIdx][0] + dma.FrameRight * -((256*3/4)/4)/4;	
-					MixBuffer[nBufIdx][0] += dma.FrameLeft * -((256*3/4)/4)/4;	
+					/* DMA and YM2149 mixing */
+					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + dma.FrameLeft * -((256*3/4)/4)/4;
+					MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][1] + dma.FrameRight * -((256*3/4)/4)/4;
 					break;
-				case 2:
-					/* DMA only (but DMA is off in that case) */
-					MixBuffer[nBufIdx][0]  = MixBuffer[nBufIdx][1] = 0;
 				default:
-					/* DMA and (YM2149 -12 dB) mixing */
-					MixBuffer[nBufIdx][0] /= 4;
-					MixBuffer[nBufIdx][1]  = MixBuffer[nBufIdx][0] + dma.FrameRight * -((256*3/4)/4)/4;	
-					MixBuffer[nBufIdx][0] += dma.FrameLeft * -((256*3/4)/4)/4;	
+					/* mixing=0 DMA only */
+					/* mixing=2 DMA and input 2 (YM2149 LPF) -> DMA */
+					/* mixing=3 DMA and input 3 -> DMA */
+					MixBuffer[nBufIdx][0] = dma.FrameLeft * -((256*3/4)/4)/4;
+					MixBuffer[nBufIdx][1] = dma.FrameRight * -((256*3/4)/4)/4;
 					break;
 			}
 		}
@@ -539,18 +537,14 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 			switch (microwire.mixing) {
 				case 1:
-					/* DMA and (YM2149 0 dB) mixing */
+					/* DMA and YM2149 mixing */
 					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + dma.FrameLeft * -((256*3/4)/4)/4;
 					break;
-				case 2:
-					/* DMA only */
-					MixBuffer[nBufIdx][0] = dma.FrameLeft * -((256*3/4)/4)/4;
-					break;
 				default:
-					/* DMA and (YM2149 -12 dB) mixing */
-					/* instead of 16462 (-12 dB), we approximate by 16384 */
-					MixBuffer[nBufIdx][0] = (dma.FrameLeft * -((256*3/4)/4)/4) +
-								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
+					/* mixing=0 DMA only */
+					/* mixing=2 DMA and input 2 (YM2149 LPF) -> DMA */
+					/* mixing=3 DMA and input 3 -> DMA */
+					MixBuffer[nBufIdx][0] = dma.FrameLeft * -((256*3/4)/4)/4;
 					break;
 			}
 
@@ -587,22 +581,16 @@ void DmaSnd_GenerateSamples(int nMixBufIdx, int nSamplesToGenerate)
 
 			switch (microwire.mixing) {
 				case 1:
-					/* DMA and (YM2149 0 dB) mixing */
+					/* DMA and YM2149 mixing */
 					MixBuffer[nBufIdx][0] = MixBuffer[nBufIdx][0] + dma.FrameLeft * -((256*3/4)/4)/4;
 					MixBuffer[nBufIdx][1] = MixBuffer[nBufIdx][1] + dma.FrameRight * -((256*3/4)/4)/4;
 					break;
-				case 2:
-					/* DMA only */
+				default:
+					/* mixing=0 DMA only */
+					/* mixing=2 DMA and input 2 (YM2149 LPF) -> DMA */
+					/* mixing=3 DMA and input 3 -> DMA */
 					MixBuffer[nBufIdx][0] = dma.FrameLeft * -((256*3/4)/4)/4;
 					MixBuffer[nBufIdx][1] = dma.FrameRight * -((256*3/4)/4)/4;
-					break;
-				default:
-					/* DMA and (YM2149 -12 dB) mixing */
-					/* instead of 16462 (-12 dB), we approximate by 16384 */
-					MixBuffer[nBufIdx][0] = (dma.FrameLeft * -((256*3/4)/4)/4) +
-								(((Sint32)MixBuffer[nBufIdx][0] * 16384)/65536);
-					MixBuffer[nBufIdx][1] = (dma.FrameRight * -((256*3/4)/4)/4) +
-								(((Sint32)MixBuffer[nBufIdx][1] * 16384)/65536);
 					break;
 			}
 
@@ -964,11 +952,13 @@ void DmaSnd_SoundModeCtrl_WriteByte(void)
  * Handle the shifting/rotating of the microwire registers
  * The microwire regs should be done after 16 usec = 32 NOPs = 128 cycles.
  * That means we have to shift 16 times with a delay of 8 cycles.
+ * Microwire uses the MWK clock signal at 1 Mhz
  */
 void DmaSnd_InterruptHandler_Microwire(void)
 {
-	Uint8 i, bit;
-	Uint16 saveData;
+	int	i;
+	Uint16	cmd;
+	int	cmd_len;
 
 	/* If emulated computer is the Falcon, let's the crossbar Microwire code do the job. */
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
@@ -1005,62 +995,96 @@ void DmaSnd_InterruptHandler_Microwire(void)
 	else 
 	{
 		/* Yes : decode the address + command word according to the binary mask */
-		bit = 0;
-		saveData = microwire.data;
-		microwire.data = 0;
-		for (i=0; i<16; i++) {
-			if ((microwire.mask >> i) & 1) {
-				microwire.data += ((saveData >> i) & 1) << bit;
-				bit ++;
+		/* According to LMC1992 doc, command starts with the first '1' bit in the mask */
+		/* and ends when a '0' bits is received in the mask */
+		/* If we get a bad command, we must scan the rest of the mask in case there's a valid */
+		/* command in the remaining bits */
+		/* TODO [NP] : to be really cycle accurate, we should decode the command at the same */
+		/* time as we rotate mask/data, instead of doing it when 16 rotations were made. */
+		/* But this would not be noticeable, so leave it like this for now */
+		cmd = 0;
+		cmd_len = 0;
+		for ( i=15 ; i>=0 ; i-- )
+			if ( microwire.mask & ( 1 << i ) )
+			{
+				/* Start of command found, wait for next '0' bit or end of mask */
+				do
+				{
+					cmd <<= 1;
+					cmd_len++;
+					if ( microwire.data & ( 1 << i ) )
+						cmd |= 1;
+					i--;
+				}
+				while ( ( i >= 0 ) && ( microwire.mask & ( 1 << i ) ) );
+
+				if ( ( cmd_len >= 11 )
+				  && ( ( cmd >> ( cmd_len-2 ) ) & 0x03 ) == 0x02 )
+					break;				/* We found a valid command */
+
+				LOG_TRACE ( TRACE_DMASND, "Microwire bad command=0x%x len=%d ignored mask=0x%x data=0x%x\n", cmd , cmd_len , microwire.mask , microwire.data );
+				if ( i < 0 )
+					return;				/* All bits were tested, stop here */
+
+				/* Check remaining bits for a possible command */
+				cmd = 0;
+				cmd_len = 0;
 			}
+//fprintf ( stderr , "mwire cmd=%x len=%d mask=%x data=%x\n" , cmd , cmd_len , microwire.mask , microwire.data );
+
+		/* The LMC 1992 address (first 2 bits) should be "10", else we ignore the command */
+		/* The address should be followed by at least 9 bits ; if more bits were received, */
+		/* then only the latest 9 ones should be kept */
+		if ( ( cmd_len < 11 )
+		  || ( ( cmd >> ( cmd_len-2 ) ) & 0x03 ) != 0x02 )
+		{
+			LOG_TRACE ( TRACE_DMASND, "Microwire bad command=0x%x len=%d ignored mask=0x%x data=0x%x\n", cmd , cmd_len , microwire.mask , microwire.data );
+			return;
 		}
 
-		/* The LMC 1992 address should be 10 xxx xxx xxx */
-		if ((microwire.data & 0x600) != 0x400)
-			return;
-
 		/* Update the LMC 1992 commands */
-		switch ((microwire.data >> 6) & 0x7) {
+		switch ( ( cmd >> 6 ) & 0x7 ) {
 			case 0:
 				/* Mixing command */
-				LOG_TRACE ( TRACE_DMASND, "Microwire new mixing=0x%x\n", microwire.data & 0x3 );
-				microwire.mixing = microwire.data & 0x3;
+				LOG_TRACE ( TRACE_DMASND, "Microwire new mixing=0x%x\n", cmd & 0x3 );
+				microwire.mixing = cmd & 0x3;
 				break;
 			case 1:
 				/* Bass command */
-				LOG_TRACE ( TRACE_DMASND, "Microwire new bass=0x%x\n", microwire.data & 0xf );
-				microwire.bass = microwire.data & 0xf;
+				LOG_TRACE ( TRACE_DMASND, "Microwire new bass=0x%x\n", cmd & 0xf );
+				microwire.bass = cmd & 0xf;
 				DmaSnd_Set_Tone_Level(LMC1992_Bass_Treble_Table[microwire.bass], 
 						      LMC1992_Bass_Treble_Table[microwire.treble]);
 				break;
 			case 2: 
 				/* Treble command */
-				LOG_TRACE ( TRACE_DMASND, "Microwire new trebble=0x%x\n", microwire.data & 0xf );
-				microwire.treble = microwire.data & 0xf;
+				LOG_TRACE ( TRACE_DMASND, "Microwire new trebble=0x%x\n", cmd & 0xf );
+				microwire.treble = cmd & 0xf;
 				DmaSnd_Set_Tone_Level(LMC1992_Bass_Treble_Table[microwire.bass], 
 						      LMC1992_Bass_Treble_Table[microwire.treble]);
 				break;
 			case 3:
 				/* Master volume command */
-				LOG_TRACE ( TRACE_DMASND, "Microwire new master volume=0x%x\n", microwire.data & 0x3f );
-				microwire.masterVolume = LMC1992_Master_Volume_Table[microwire.data & 0x3f];
+				LOG_TRACE ( TRACE_DMASND, "Microwire new master volume=0x%x\n", cmd & 0x3f );
+				microwire.masterVolume = LMC1992_Master_Volume_Table[ cmd & 0x3f ];
 				lmc1992.left_gain = (microwire.leftVolume * (Uint32)microwire.masterVolume) * (2.0/(65536.0*65536.0));
 				lmc1992.right_gain = (microwire.rightVolume * (Uint32)microwire.masterVolume) * (2.0/(65536.0*65536.0));
 				break;
 			case 4:
 				/* Right channel volume */
-				LOG_TRACE ( TRACE_DMASND, "Microwire new right volume=0x%x\n", microwire.data & 0x1f );
-				microwire.rightVolume = LMC1992_LeftRight_Volume_Table[microwire.data & 0x1f];
+				LOG_TRACE ( TRACE_DMASND, "Microwire new right volume=0x%x\n", cmd & 0x1f );
+				microwire.rightVolume = LMC1992_LeftRight_Volume_Table[ cmd & 0x1f ];
 				lmc1992.right_gain = (microwire.rightVolume * (Uint32)microwire.masterVolume) * (2.0/(65536.0*65536.0));
 				break;
 			case 5:
 				/* Left channel volume */
-				LOG_TRACE ( TRACE_DMASND, "Microwire new left volume=0x%x\n", microwire.data & 0x1f );
-				microwire.leftVolume = LMC1992_LeftRight_Volume_Table[microwire.data & 0x1f];
+				LOG_TRACE ( TRACE_DMASND, "Microwire new left volume=0x%x\n", cmd & 0x1f );
+				microwire.leftVolume = LMC1992_LeftRight_Volume_Table[ cmd & 0x1f ];
 				lmc1992.left_gain = (microwire.leftVolume * (Uint32)microwire.masterVolume) * (2.0/(65536.0*65536.0));
 				break;
 			default:
 				/* Do nothing */
+				LOG_TRACE ( TRACE_DMASND, "Microwire unknown command=0x%x len=%d ignored mask=0x%x data=0x%x\n", cmd , cmd_len , microwire.mask , microwire.data );
 				break;
 		}
 	}

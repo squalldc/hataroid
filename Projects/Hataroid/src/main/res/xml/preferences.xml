@@ -305,6 +305,13 @@
 	    <PreferenceCategory 
 	        android:title="@string/pref_system_rom_category"
 	        android:key="pref_system_rom_category">
+			<CheckBoxPreference
+				android:persistent="true"
+				android:key="pref_system_tos_emutos"
+				android:title="@string/emutos"
+				android:summaryOn="@string/emutos_summary"
+				android:summaryOff="@string/emutos_summary"
+				android:defaultValue="false" />
 			<Preference
 				android:persistent="true"
 				android:key="pref_system_tos"

@@ -48,7 +48,9 @@
 const char CycInt_fileid[] = "Hatari cycInt.c : " __DATE__ " " __TIME__;
 
 #include <stdint.h>
+#include <inttypes.h>
 #include <assert.h>
+
 #include "main.h"
 #include "blitter.h"
 #include "dmaSnd.h"
@@ -157,8 +159,10 @@ static int CycInt_HandlerFunctionToID(void (*pHandlerFunction)(void))
 /*-----------------------------------------------------------------------*/
 /**
  * Convert ID back into interrupt handler function, used for restoring
+ * We return a function pointer :  void (*f)(void)
+ * (we could use typedef for better readability)
  */
-static void *CycInt_IDToHandlerFunction(int ID)
+static void ( *CycInt_IDToHandlerFunction(int ID) )( void )
 {
 	/* Get function pointer */
 	return pIntHandlerFunctions[ID];
@@ -277,9 +281,8 @@ static void CycInt_UpdateInterrupt(void)
 			InterruptHandlers[i].Cycles -= CycleSubtract;
 	}
 
-	LOG_TRACE(TRACE_INT, "int upd video_cyc=%d cycle_over=%d cycle_sub=%lld\n",
-	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), nCyclesOver,
-	          (long long)CycleSubtract);
+	LOG_TRACE(TRACE_INT, "int upd video_cyc=%d cycle_over=%d cycle_sub=%"PRId64"\n",
+	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), nCyclesOver, CycleSubtract);
 }
 
 
@@ -323,9 +326,9 @@ void CycInt_AddAbsoluteInterrupt(int CycleTime, int CycleType, interrupt_id Hand
 	/* Set new active int and compute a new value for PendingInterruptCount*/
 	CycInt_SetNewInterrupt();
 
-	LOG_TRACE(TRACE_INT, "int add abs video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int add abs video_cyc=%d handler=%d handler_cyc=%"PRId64" pending_count=%d\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
-	          (long long)InterruptHandlers[Handler].Cycles, PendingInterruptCount );
+	          InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 
 
@@ -358,7 +361,7 @@ void CycInt_AddRelativeInterruptNoOffset(int CycleTime, int CycleType, interrupt
 	/* Set new */
 	CycInt_SetNewInterrupt();
 
-	LOG_TRACE(TRACE_INT, "int add rel no_off video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int add rel no_off video_cyc=%d handler=%d handler_cyc=%"PRId64" pending_count=%d\n",
 	               Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler, InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 #endif
@@ -388,9 +391,34 @@ void CycInt_AddRelativeInterruptWithOffset(int CycleTime, int CycleType, interru
 	/* Set new active int and compute a new value for PendingInterruptCount*/
 	CycInt_SetNewInterrupt();
 
-	LOG_TRACE(TRACE_INT, "int add rel offset video_cyc=%d handler=%d handler_cyc=%lld offset_cyc=%d pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int add rel offset video_cyc=%d handler=%d handler_cyc=%"PRId64" offset_cyc=%d pending_count=%d\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
-	          (long long)InterruptHandlers[Handler].Cycles, CycleOffset, PendingInterruptCount);
+	          InterruptHandlers[Handler].Cycles, CycleOffset, PendingInterruptCount);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Modify interrupt's Cycles to make it happen earlier or later.
+ * This will not restart the interrupt, but add CycleTime cycles to the
+ * current value of the counter.
+ * CycleTime can be <0 or >0
+ */
+void CycInt_ModifyInterrupt(int CycleTime, int CycleType, interrupt_id Handler)
+{
+	/* Update list cycle counts with current PendingInterruptCount before adding a new int, */
+	/* because CycInt_SetNewInterrupt can change the active int / PendingInterruptCount */
+	if ( ActiveInterrupt > 0 )
+		CycInt_UpdateInterrupt();
+
+	InterruptHandlers[Handler].Cycles += INT_CONVERT_TO_INTERNAL((Sint64)CycleTime , CycleType);
+
+	/* Set new active int and compute a new value for PendingInterruptCount*/
+	CycInt_SetNewInterrupt();
+
+	LOG_TRACE(TRACE_INT, "int modify video_cyc=%d handler=%d handler_cyc=%"PRId64" pending_count=%d\n",
+	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
+	          InterruptHandlers[Handler].Cycles, PendingInterruptCount );
 }
 
 
@@ -410,9 +438,9 @@ void CycInt_RemovePendingInterrupt(interrupt_id Handler)
 	/* Set new */
 	CycInt_SetNewInterrupt();
 
-	LOG_TRACE(TRACE_INT, "int remove pending video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int remove pending video_cyc=%d handler=%d handler_cyc=%"PRId64" pending_count=%d\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
-	          (long long)InterruptHandlers[Handler].Cycles, PendingInterruptCount);
+	          InterruptHandlers[Handler].Cycles, PendingInterruptCount);
 }
 
 
@@ -430,9 +458,9 @@ void CycInt_ResumeStoppedInterrupt(interrupt_id Handler)
 	/* Set new */
 	CycInt_SetNewInterrupt();
 
-	LOG_TRACE(TRACE_INT, "int resume stopped video_cyc=%d handler=%d handler_cyc=%lld pending_count=%d\n",
+	LOG_TRACE(TRACE_INT, "int resume stopped video_cyc=%d handler=%d handler_cyc=%"PRId64" pending_count=%d\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
-	          (long long)InterruptHandlers[Handler].Cycles, PendingInterruptCount);
+	          InterruptHandlers[Handler].Cycles, PendingInterruptCount);
 }
 
 
@@ -461,9 +489,9 @@ int CycInt_FindCyclesPassed(interrupt_id Handler, int CycleType)
 	CyclesFromLastInterrupt = InterruptHandlers[ActiveInterrupt].Cycles - PendingInterruptCount;
 	CyclesPassed = InterruptHandlers[Handler].Cycles - CyclesFromLastInterrupt;
 
-	LOG_TRACE(TRACE_INT, "int find passed cyc video_cyc=%d handler=%d last_cyc=%lld passed_cyc=%lld\n",
+	LOG_TRACE(TRACE_INT, "int find passed cyc video_cyc=%d handler=%d last_cyc=%"PRId64" passed_cyc=%"PRId64"\n",
 	          Cycles_GetCounter(CYCLES_COUNTER_VIDEO), Handler,
-	          (long long)CyclesFromLastInterrupt, (long long)CyclesPassed);
+	          CyclesFromLastInterrupt, CyclesPassed);
 
 	return INT_CONVERT_FROM_INTERNAL ( CyclesPassed , CycleType ) ;
 }

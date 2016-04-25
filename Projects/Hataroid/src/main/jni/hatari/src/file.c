@@ -28,7 +28,10 @@ const char File_fileid[] = "Hatari file.c : " __DATE__ " " __TIME__;
 #include "str.h"
 #include "zip.h"
 
-#if defined(WIN32)
+#if HAVE_FLOCK
+# include <sys/file.h>
+#endif
+#if! HAVE_FTELLO
 #define ftello ftell
 #endif
 
@@ -72,7 +75,7 @@ void File_AddSlashToEndFileName(char *pszFileName)
 
 /*-----------------------------------------------------------------------*/
 /**
- * Does filename extension match? If so, return TRUE
+ * Does filename's extension match? If so, return TRUE
  */
 bool File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtension)
 {
@@ -83,6 +86,31 @@ bool File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtensi
 		return true;
 
 	/* No */
+	return false;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * If filename's extension matches, replace it with a new extension and
+ * copy the result in the new filename.
+ * Return TRUE if OK
+ */
+bool File_ChangeFileExtension(const char *Filename_old, const char *Extension_old , char *Filename_new , const char *Extension_new)
+{
+	if ( strlen ( Filename_old ) >= FILENAME_MAX - strlen ( Extension_new ) )
+		return false;					/* file name is already too long */
+
+	if ( strlen ( Filename_old ) < strlen ( Extension_old ) )
+		return false;
+
+	if ( !strcasecmp ( Filename_old + strlen(Filename_old) - strlen(Extension_old) , Extension_old ) )
+	{
+		strcpy ( Filename_new , Filename_old );
+		strcpy ( Filename_new + strlen ( Filename_new ) - strlen ( Extension_old ) , Extension_new );
+		return true;
+	}
+
 	return false;
 }
 
@@ -172,6 +200,7 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
 	if (!filepath)
 		filepath = strdup(pszFileName);
 
+#if HAVE_LIBZ
 	/* Is it a gzipped file? */
 	if (File_DoesFileExtensionMatch(filepath, ".gz"))
 	{
@@ -188,6 +217,7 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
 				if (gzread(hGzFile, tmp, sizeof(tmp)) < 0)
 				{
 					fprintf(stderr, "Failed to read gzip file!\n");
+					free(filepath);
 					return NULL;
 				}
 			}
@@ -208,6 +238,7 @@ Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const pp
 		pFile = ZIP_ReadFirstFile(filepath, &FileSize, ppszExts);
 	}
 	else          /* It is a normal file */
+#endif  /* HAVE_LIBZ */
 	{
 		FILE *hDiskFile;
 		/* Open and read normal file */
@@ -252,6 +283,7 @@ bool File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, bool
 			return false;
 	}
 
+#if HAVE_LIBZ
 	/* Normal file or gzipped file? */
 	if (File_DoesFileExtensionMatch(pszFileName, ".gz"))
 	{
@@ -268,6 +300,7 @@ bool File_Save(const char *pszFileName, const Uint8 *pAddress, size_t Size, bool
 		}
 	}
 	else
+#endif  /* HAVE_LIBZ */
 	{
 		FILE *hDiskFile;
 		/* Create a normal file: */
@@ -318,7 +351,7 @@ bool File_Exists(const char *filename)
 {
 	struct stat buf;
 	if (stat(filename, &buf) == 0 &&
-	    (buf.st_mode & (S_IRUSR|S_IROTH|S_IRGRP|S_IWUSR|S_IWOTH|S_IWGRP)) && !(buf.st_mode & S_IFDIR))
+	    (buf.st_mode & (S_IRUSR|S_IROTH|S_IRGRP|S_IWUSR|S_IWOTH|S_IWGRP)) && !S_ISDIR(buf.st_mode))
 	{
 		/* file points to user readable regular file */
 		return true;
@@ -379,7 +412,7 @@ char * File_FindPossibleExtFileName(const char *pszFileName, const char * const 
 	if (!szSrcDir)
 	{
 		perror("File_FindPossibleExtFileName");
-		return false;
+		return NULL;
 	}
 	szSrcName = szSrcDir + FILENAME_MAX;
 	szSrcExt = szSrcName + FILENAME_MAX;
@@ -578,6 +611,56 @@ FILE *File_Close(FILE *fp)
 		fclose(fp);
 	}
 	return NULL;
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Internal lock function for File_Lock() / File_UnLock().
+ * Returns true on success, otherwise false.
+ */
+static bool lock_operation(FILE *fp, int cmd)
+{
+#if !HAVE_FLOCK
+# define DO_LOCK	0
+# define DO_UNLOCK	0
+	return true;
+#else
+# define DO_LOCK	(LOCK_EX|LOCK_NB)
+# define DO_UNLOCK	(LOCK_UN)
+	/* Advantage of locking is only small bit of extra safety if
+	 * one runs (e.g. accidentally) multiple Hatari instances at
+	 * same time, so replacing it with no-op is no big deal.
+	 *
+	 * NOTE: this uses BSD file locking as it's a bit more usable than POSIX one:
+	 *	http://0pointer.de/blog/projects/locking.html
+	 */
+	int ret, fd = fileno(fp);
+	if (fd < 0)
+		return false;
+	ret = flock(fd, cmd);
+	return (ret >= 0);
+#endif
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Takes advisory, exclusive lock on given file (FILE *).
+ * Returns false if locking fails (e.g. another Hatari
+ * instance has already file open for writing).
+ */
+bool File_Lock(FILE *fp)
+{
+	return lock_operation(fp, DO_LOCK);
+}
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Releases advisory, exclusive lock on given file (FILE *).
+ */
+void File_UnLock(FILE *fp)
+{
+	lock_operation(fp, DO_UNLOCK);
 }
 
 

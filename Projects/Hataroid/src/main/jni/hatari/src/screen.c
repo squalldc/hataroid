@@ -31,10 +31,12 @@ const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"
+#include "avi_record.h"
 #include "ikbd.h"
 #include "log.h"
 #include "m68000.h"
 #include "paths.h"
+#include "options.h"
 #include "screen.h"
 #include "control.h"
 #include "convert/routines.h"
@@ -47,12 +49,19 @@ const char Screen_fileid[] = "Hatari screen.c : " __DATE__ " " __TIME__;
 #include "falcon/videl.h"
 #include "falcon/hostscreen.h"
 
+#define DEBUG 0
+
+#if DEBUG
+# define DEBUGPRINT(x) printf x
+#else
+# define DEBUGPRINT(x)
+#endif
 
 /* extern for several purposes */
 SDL_Surface *sdlscrn = NULL;                /* The SDL screen surface */
 int nScreenZoomX, nScreenZoomY;             /* Zooming factors, used for scaling mouse motions */
 int nBorderPixelsLeft, nBorderPixelsRight;  /* Pixels in left and right border */
-int nBorderPixelsTop, nBorderPixelsBottom;  /* Lines in top and bottom border */
+static int nBorderPixelsTop, nBorderPixelsBottom;  /* Lines in top and bottom border */
 
 /* extern for shortcuts and falcon/hostscreen.c */
 bool bGrabMouse = false;      /* Grab the mouse cursor in the window */
@@ -96,6 +105,41 @@ static int ScrUpdateFlag;               /* Bit mask of how to update screen */
 
 static bool Screen_DrawFrame(bool bForceFlip);
 
+#if WITH_SDL2
+
+SDL_Window *sdlWindow;
+static SDL_Renderer *sdlRenderer;
+static SDL_Texture *sdlTexture;
+
+void SDL_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects)
+{
+	if (sdlscrn->format->BitsPerPixel == 8)
+	{
+		sdlTexture = SDL_CreateTextureFromSurface(sdlRenderer, screen);
+	}
+	else
+	{
+		SDL_UpdateTexture(sdlTexture, NULL, screen->pixels, screen->pitch);
+	}
+
+	SDL_RenderClear(sdlRenderer);
+	SDL_RenderCopy(sdlRenderer, sdlTexture, NULL, NULL);
+	SDL_RenderPresent(sdlRenderer);
+
+	if (sdlscrn->format->BitsPerPixel == 8)
+	{
+		SDL_DestroyTexture(sdlTexture);
+		sdlTexture = NULL;
+	}
+}
+
+void SDL_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h)
+{
+	SDL_Rect rect = { x, y, w, h };
+	SDL_UpdateRects(screen, 1, &rect);
+}
+
+#endif
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -283,12 +327,8 @@ static void Screen_SetDrawFunctions(int nBitCount, bool bDoubleLowRes)
  */
 static void Screen_SetBorderPixels(int leftX, int leftY)
 {
-	/* All screen widths need to be aligned to 16-bits.
-	 * 
-	 * TODO: Change VDI_Limit() to generic function and check
-	 * the limits when config values are set or changed
-	 */
-	nBorderPixelsLeft = VDI_Limit(leftX/2, 16, 0, 48);
+	/* All screen widths need to be aligned to 16-bits */
+	nBorderPixelsLeft = Opt_ValueAlignMinMax(leftX/2, 16, 0, 48);
 	nBorderPixelsRight = nBorderPixelsLeft;
 
 	/* assertain assumption of code below */
@@ -329,15 +369,221 @@ static void Screen_SetSTScreenOffsets(void)
 	}
 }
 
+#if WITH_SDL2
+static void Screen_FreeSDL2Resources(void)
+{
+	if (sdlTexture)
+	{
+		SDL_DestroyTexture(sdlTexture);
+		sdlTexture = NULL;
+	}
+	if (sdlscrn)
+	{
+		SDL_FreeSurface(sdlscrn);
+		sdlscrn = NULL;
+	}
+	if (sdlRenderer)
+	{
+		SDL_DestroyRenderer(sdlRenderer);
+		sdlRenderer = NULL;
+	}
+	if (sdlWindow)
+	{
+		SDL_DestroyWindow(sdlWindow);
+		sdlWindow = NULL;
+	}
+}
+#endif
+
+/**
+ * Change the SDL video mode.
+ * @return true if mode has been changed, false if change was not necessary
+ */
+bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChange)
+{
+	Uint32 sdlVideoFlags;
+#if WITH_SDL2
+	static int nPrevRenderScaleQuality = 0;
+	static bool bPrevUseVsync = false;
+
+	if (bitdepth == 0 || bitdepth == 24)
+		bitdepth = 32;
+#endif
+
+	/* Check if we really have to change the video mode: */
+	if (sdlscrn != NULL && sdlscrn->w == width && sdlscrn->h == height
+	    && sdlscrn->format->BitsPerPixel == bitdepth && !bForceChange)
+		return false;
+
+	/* We can not continue recording with a different resolution */
+	if (Avi_AreWeRecording())
+		Avi_StopRecording();
+
+#ifdef _MUDFLAP
+	if (sdlscrn)
+	{
+		__mf_unregister(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS);
+	}
+#endif
+	if (bInFullScreen)
+	{
+		/* unhide the Hatari WM window for fullscreen */
+		Control_ReparentWindow(width, height, bInFullScreen);
+	}
+
+#if WITH_SDL2
+
+	/* SDL Video attributes: */
+	if (bInFullScreen)
+	{
+		sdlVideoFlags  = SDL_WINDOW_FULLSCREEN_DESKTOP;
+	}
+	else
+	{
+		sdlVideoFlags  = 0;
+	}
+
+	Screen_FreeSDL2Resources();
+
+	/* Set SDL2 video hints */
+	if (nPrevRenderScaleQuality != ConfigureParams.Screen.nRenderScaleQuality)
+	{
+		char hint[2] = { '0' + ConfigureParams.Screen.nRenderScaleQuality, 0 };
+		SDL_SetHintWithPriority(SDL_HINT_RENDER_SCALE_QUALITY, hint, SDL_HINT_OVERRIDE);
+		nPrevRenderScaleQuality = ConfigureParams.Screen.nRenderScaleQuality;
+	}
+	if (bPrevUseVsync != ConfigureParams.Screen.bUseVsync)
+	{
+		char hint[2] = { '0' + ConfigureParams.Screen.bUseVsync, 0 };
+		SDL_SetHintWithPriority(SDL_HINT_RENDER_VSYNC, hint, SDL_HINT_OVERRIDE);
+		bPrevUseVsync = ConfigureParams.Screen.bUseVsync;
+	}
+
+	/* Set new video mode */
+	DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s)\n", width, height,
+	        bitdepth, bInFullScreen?"fullscreen":"windowed"));
+
+	sdlWindow = SDL_CreateWindow("Hatari", SDL_WINDOWPOS_UNDEFINED,
+	                             SDL_WINDOWPOS_UNDEFINED, width, height,
+	                             sdlVideoFlags);
+	sdlRenderer = SDL_CreateRenderer(sdlWindow, -1, 0);
+	if (!sdlWindow || !sdlRenderer)
+	{
+		fprintf(stderr,"Failed to create window or renderer!\n");
+		exit(-1);
+	}
+	SDL_RenderSetLogicalSize(sdlRenderer, width, height);
+	if (bitdepth == 8)
+	{
+		SDL_Color cols[] = {	/* Colors for the sdl-gui */
+			{ 0, 0, 0, 255 }, { 64, 64, 64, 255 },
+			{ 128, 128, 128, 255 }, { 160, 160, 160, 255 },
+			{ 196, 196, 196, 255 }, { 255, 255, 255, 255 },
+			{ 0x00, 0x40, 0x00, 255 }, { 0x00, 0xc0, 0x00, 255 },
+			{ 0x00, 0xe0, 0x00, 255 }
+		};
+		sdlscrn = SDL_CreateRGBSurface(0, width, height, bitdepth,
+		                               0, 0, 0, 0);
+		if (sdlscrn)
+			SDL_SetPaletteColors(sdlscrn->format->palette, cols,
+			                     128, ARRAYSIZE(cols));
+	}
+	else
+	{
+		int rm, bm, gm, pfmt;
+		if (bitdepth == 16)
+		{
+			rm = 0xF800;
+			gm = 0x07E0;
+			bm = 0x001F;
+			pfmt = SDL_PIXELFORMAT_RGB565;
+		}
+		else
+		{
+			rm = 0x00FF0000;
+			gm = 0x0000FF00;
+			bm = 0x000000FF;
+			pfmt = SDL_PIXELFORMAT_RGB888;
+		}
+		sdlscrn = SDL_CreateRGBSurface(0, width, height, bitdepth,
+		                               rm, gm, bm, 0);
+		sdlTexture = SDL_CreateTexture(sdlRenderer, pfmt,
+		                               SDL_TEXTUREACCESS_STREAMING,
+		                               width, height);
+		if (!sdlTexture)
+		{
+			fprintf(stderr,"Failed to create texture!\n");
+			exit(-3);
+		}
+	}
+
+#else	/* WITH_SDL2 */
+
+	/* SDL Video attributes: */
+	if (bInFullScreen)
+	{
+		sdlVideoFlags  = SDL_HWSURFACE|SDL_FULLSCREEN/*|SDL_DOUBLEBUF*/;
+		/* SDL_DOUBLEBUF helps avoiding tearing and can be faster on suitable HW,
+		 * but it doesn't work with partial screen updates done by the ST screen
+		 * update code or the Hatari GUI, so double buffering is disabled. */
+	}
+	else
+	{
+		sdlVideoFlags  = SDL_SWSURFACE;
+	}
+	if (bitdepth <= 8)
+	{
+		sdlVideoFlags |= SDL_HWPALETTE;
+	}
+
+	/* Set new video mode */
+	DEBUGPRINT(("SDL screen request: %d x %d @ %d (%s)\n", width, h, bitdepth, bInFullScreen?"fullscreen":"windowed"));
+	sdlscrn = SDL_SetVideoMode(width, height, bitdepth, sdlVideoFlags);
+
+	/* By default ConfigureParams.Screen.nForceBpp and therefore
+	 * BitCount is zero which means "SDL color depth autodetection".
+	 * In this case the SDL_SetVideoMode() call might return
+	 * a 24 bpp resolution
+	 */
+	if (sdlscrn && sdlscrn->format->BitsPerPixel == 24)
+	{
+		fprintf(stderr, "Unsupported color depth 24, trying 32 bpp instead...\n");
+		sdlscrn = SDL_SetVideoMode(width, height, 32, sdlVideoFlags);
+	}
+
+#endif	/* WITH_SDL2 */
+
+	/* Exit if we can not open a screen */
+	if (!sdlscrn)
+	{
+		fprintf(stderr, "Could not set video mode:\n %s\n", SDL_GetError() );
+		SDL_Quit();
+		exit(-2);
+	}
+
+	DEBUGPRINT(("SDL screen granted: %d x %d @ %d\n", sdlscrn->w, sdlscrn->h,
+	            sdlscrn->format->BitsPerPixel));
+
+#ifdef _MUDFLAP
+	__mf_register(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS, "SDL pixels");
+#endif
+
+	if (!bInFullScreen)
+	{
+		/* re-embed the new Hatari SDL window */
+		Control_ReparentWindow(width, height, bInFullScreen);
+	}
+
+	return true;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
  * Initialize SDL screen surface / set resolution.
  */
-static void Screen_SetResolution(void)
+static void Screen_SetResolution(bool bForceChange)
 {
 	int Width, Height, nZoom, SBarHeight, BitCount, maxW, maxH;
-	Uint32 sdlVideoFlags;
 	bool bDoubleLowRes = false;
 
 	/* Bits per pixel */
@@ -411,93 +657,39 @@ static void Screen_SetResolution(void)
 			int leftY = maxH - (Height + Statusbar_GetHeightForSize(Width, Height));
 
 			Screen_SetBorderPixels(leftX/nZoom, leftY/nZoom);
+			DEBUGPRINT(("resolution limit:\n\t%d x %d\nlimited resolution:\n\t", maxW, maxH));
+			DEBUGPRINT(("%d * (%d + %d + %d) x (%d + %d + %d)\n", nZoom,
+				    nBorderPixelsLeft, Width/nZoom, nBorderPixelsRight,
+				    nBorderPixelsTop, Height/nZoom, nBorderPixelsBottom));
 			Width += (nBorderPixelsRight + nBorderPixelsLeft)*nZoom;
 			Height += (nBorderPixelsTop + nBorderPixelsBottom)*nZoom;
+			DEBUGPRINT(("\t= %d x %d (+ statusbar)\n", Width, Height));
 		}
 	}
-	
+
 	Screen_SetSTScreenOffsets();  
 	Height += Statusbar_SetHeight(Width, Height);
 
 	PCScreenOffsetX = PCScreenOffsetY = 0;
 
-	/* SDL Video attributes: */
-	if (bInFullScreen)
+	/* Video attributes: */
+	if (bInFullScreen && ConfigureParams.Screen.bKeepResolutionST)
 	{
-		if (ConfigureParams.Screen.bKeepResolutionST)
-		{
-			/* use desktop resolution */
-			Resolution_GetDesktopSize(&maxW, &maxH);
-			SBarHeight = Statusbar_GetHeightForSize(maxW, maxH);
-			/* re-calculate statusbar height for this resolution */
-			Statusbar_SetHeight(maxW, maxH-SBarHeight);
-			/* center Atari screen to resolution */
-			PCScreenOffsetY = (maxH - Height)/2;
-			PCScreenOffsetX = (maxW - Width)/2;
-			/* and select desktop resolution */
-			Height = maxH;
-			Width = maxW;
-		}
-		sdlVideoFlags  = SDL_HWSURFACE|SDL_FULLSCREEN|SDL_HWPALETTE/*|SDL_DOUBLEBUF*/;
-		/* SDL_DOUBLEBUF helps avoiding tearing and can be faster on suitable HW,
-		 * but it doesn't work with partial screen updates done by the ST screen
-		 * update code or the Hatari GUI, so double buffering is disabled.
-		 */
-	}
-	else
-	{
-		sdlVideoFlags  = SDL_SWSURFACE|SDL_HWPALETTE;
+		/* use desktop resolution */
+		Resolution_GetDesktopSize(&maxW, &maxH);
+		SBarHeight = Statusbar_GetHeightForSize(maxW, maxH);
+		/* re-calculate statusbar height for this resolution */
+		Statusbar_SetHeight(maxW, maxH-SBarHeight);
+		/* center Atari screen to resolution */
+		PCScreenOffsetY = (maxH - Height)/2;
+		PCScreenOffsetX = (maxW - Width)/2;
+		/* and select desktop resolution */
+		Height = maxH;
+		Width = maxW;
 	}
 
-	/* Check if we really have to change the video mode: */
-	if (!sdlscrn || sdlscrn->w != Width || sdlscrn->h != Height
-	    || (BitCount && sdlscrn->format->BitsPerPixel != BitCount)
-	    || (sdlscrn->flags&SDL_FULLSCREEN) != (sdlVideoFlags&SDL_FULLSCREEN))
+	if (Screen_SetSDLVideoSize(Width, Height, BitCount, bForceChange))
 	{
-#ifdef _MUDFLAP
-		if (sdlscrn) {
-			__mf_unregister(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS);
-		}
-#endif
-		if (bInFullScreen)
-		{
-			/* unhide the Hatari WM window for fullscreen */
-			Control_ReparentWindow(Width, Height, bInFullScreen);
-		}
-		
-		/* Set new video mode */
-		//fprintf(stderr,"Requesting video mode %i %i %i\n", Width, Height, BitCount);
-		sdlscrn = SDL_SetVideoMode(Width, Height, BitCount, sdlVideoFlags);
-		//fprintf(stderr,"Got video mode %i %i %i\n", sdlscrn->w, sdlscrn->h, sdlscrn->format->BitsPerPixel);
-
-		/* By default ConfigureParams.Screen.nForceBpp and therefore
-		 * BitCount is zero which means "SDL color depth autodetection".
-		 * In this case the SDL_SetVideoMode() call might return
-		 * a 24 bpp resolution
-		 */
-		if (sdlscrn && sdlscrn->format->BitsPerPixel == 24)
-		{
-			fprintf(stderr, "Unsupported color depth 24, trying 32 bpp instead...\n");
-			sdlscrn = SDL_SetVideoMode(Width, Height, 32, sdlVideoFlags);
-		}
-
-		/* Exit if we can not open a screen */
-		if (!sdlscrn)
-		{
-			fprintf(stderr, "Could not set video mode:\n %s\n", SDL_GetError() );
-			SDL_Quit();
-			exit(-2);
-		}
-#ifdef _MUDFLAP
-		__mf_register(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS, "SDL pixels");
-#endif
-
-		if (!bInFullScreen)
-		{
-			/* re-embed the new Hatari SDL window */
-			Control_ReparentWindow(Width, Height, bInFullScreen);
-		}
-		
 		/* Re-init screen palette: */
 		if (sdlscrn->format->BitsPerPixel == 8)
 			Screen_Handle8BitPalettes();    /* Initialize new 8 bit palette */
@@ -505,7 +697,7 @@ static void Screen_SetResolution(void)
 			Screen_SetupRGBTable();         /* Create color conversion table */
 
 		Statusbar_Init(sdlscrn);
-		
+
 		/* screen area without the statusbar */
 		STScreenRect.x = 0;
 		STScreenRect.y = 0;
@@ -552,14 +744,19 @@ void Screen_Init(void)
 	pIconSurf = SDL_LoadBMP(sIconFileName);
 	if (pIconSurf)
 	{
+#if WITH_SDL2
+		SDL_SetColorKey(pIconSurf, SDL_TRUE, SDL_MapRGB(pIconSurf->format, 255, 255, 255));
+		SDL_SetWindowIcon(sdlWindow, pIconSurf);
+#else
 		SDL_SetColorKey(pIconSurf, SDL_SRCCOLORKEY, SDL_MapRGB(pIconSurf->format, 255, 255, 255));
 		SDL_WM_SetIcon(pIconSurf, NULL);
+#endif
 		SDL_FreeSurface(pIconSurf);
 	}
 
 	/* Set initial window resolution */
 	bInFullScreen = ConfigureParams.Screen.bFullScreen;
-	Screen_SetResolution();
+	Screen_SetResolution(false);
 
 	if (bGrabMouse)
 		SDL_WM_GrabInput(SDL_GRAB_ON);
@@ -585,6 +782,10 @@ void Screen_UnInit(void)
 		free(FrameBuffers[i].pSTScreen);
 		free(FrameBuffers[i].pSTScreenCopy);
 	}
+
+#if WITH_SDL2
+	Screen_FreeSDL2Resources();
+#endif
 }
 
 
@@ -613,7 +814,7 @@ void Screen_Reset(void)
 		}
 	}
 	/* Cause full update */
-	Screen_ModeChanged();
+	Screen_ModeChanged(false);
 }
 
 
@@ -699,7 +900,7 @@ void Screen_EnterFullScreen(void)
 		}
 		else
 		{
-			Screen_SetResolution();
+			Screen_SetResolution(true);
 			Screen_ClearScreen();       /* Black out screen bitmap as will be invalid when return */
 		}
 
@@ -739,7 +940,7 @@ void Screen_ReturnFromFullScreen(void)
 		}
 		else
 		{
-			Screen_SetResolution();
+			Screen_SetResolution(true);
 		}
 		SDL_Delay(20);                /* To give monitor time to switch resolution */
 
@@ -771,7 +972,7 @@ static void Screen_DidResolutionChange(int new_res)
 	if (new_res != STRes)
 	{
 		STRes = new_res;
-		Screen_ModeChanged();
+		Screen_ModeChanged(false);
 	}
 	else
 	{
@@ -786,7 +987,7 @@ static void Screen_DidResolutionChange(int new_res)
 /**
  * Force things associated with changing between low/medium/high res.
  */
-void Screen_ModeChanged(void)
+void Screen_ModeChanged(bool bForceChange)
 {
 	if (!sdlscrn)
 	{
@@ -796,18 +997,18 @@ void Screen_ModeChanged(void)
 	/* Don't run this function if Videl emulation is running! */
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON && !bUseVDIRes)
 	{
-		VIDEL_ZoomModeChanged();
+		VIDEL_ZoomModeChanged(bForceChange);
 	}
 	else if (ConfigureParams.System.nMachineType == MACHINE_TT && !bUseVDIRes)
 	{
 		int width, height, bpp;
 		Video_GetTTRes(&width, &height, &bpp);
-		HostScreen_setWindowSize(width, height, 8);
+		HostScreen_setWindowSize(width, height, 8, bForceChange);
 	}
 	else
 	{
 		/* Set new display mode, if differs from current */
-		Screen_SetResolution();
+		Screen_SetResolution(bForceChange);
 		Screen_SetFullUpdate();
 	}
 	if (bInFullScreen || bGrabMouse)
@@ -1070,8 +1271,7 @@ static void Screen_UnLock(void)
 /**
  * Blit our converted ST screen to window/full-screen
  */
-
-static void Screen_Blit(void)
+static void Screen_Blit(SDL_Rect *sbar_rect)
 {
 	unsigned char *pTmpScreen;
 
@@ -1090,7 +1290,15 @@ static void Screen_Blit(void)
 # endif
 #endif
 	{
-		SDL_UpdateRects(sdlscrn, 1, &STScreenRect);
+		int count = 1;
+		SDL_Rect rects[2];
+		rects[0] = STScreenRect;
+		if (sbar_rect)
+		{
+			rects[1] = *sbar_rect;
+			count = 2;
+		}
+		SDL_UpdateRects(sdlscrn, count, rects);
 	}
 
 	/* Swap copy/raster buffers in screen. */
@@ -1111,6 +1319,7 @@ static bool Screen_DrawFrame(bool bForceFlip)
 	int new_res;
 	void (*pDrawFunction)(void);
 	static bool bPrevFrameWasSpec512 = false;
+	SDL_Rect *sbar_rect;
 
 	/* Scan palette/resolution masks for each line and build up palette/difference tables */
 	new_res = Screen_ComparePaletteMask(STRes);
@@ -1126,8 +1335,8 @@ static bool Screen_DrawFrame(bool bForceFlip)
 	 * and saved by Statusbar_OverlayBackup()
 	 */
 	Statusbar_OverlayRestore(sdlscrn);
-	
-	/* Lock screen ready for drawing */
+
+	/* Lock screen for direct screen surface format writes */
 	if (Screen_Lock())
 	{
 		bScreenContentsChanged = false;      /* Did change (ie needs blit?) */
@@ -1181,18 +1390,18 @@ static bool Screen_DrawFrame(bool bForceFlip)
 		/* Unlock screen */
 		Screen_UnLock();
 
-		/* draw statusbar or overlay led(s) after unlock */
+		/* draw overlay led(s) or statusbar after unlock */
 		Statusbar_OverlayBackup(sdlscrn);
-		Statusbar_Update(sdlscrn);
+		sbar_rect = Statusbar_Update(sdlscrn, false);
 		
 		/* Clear flags, remember type of overscan as if change need screen full update */
 		pFrameBuffer->bFullUpdate = false;
 		pFrameBuffer->OverscanModeCopy = OverscanMode;
 
 		/* And show to user */
-		if (bScreenContentsChanged || bForceFlip)
+		if (bScreenContentsChanged || bForceFlip || sbar_rect)
 		{
-			Screen_Blit();
+			Screen_Blit(sbar_rect);
 		}
 
 		return bScreenContentsChanged;

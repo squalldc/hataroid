@@ -25,6 +25,8 @@ const char IoMemTabFalc_fileid[] = "Hatari ioMemTabFalcon.c : " __DATE__ " " __T
 #include "blitter.h"
 #include "crossbar.h"
 #include "falcon/videl.h"
+#include "configuration.h"
+#include "statusbar.h"
 #if ENABLE_DSP_EMU
 #include "falcon/dsp.h"
 #endif
@@ -117,14 +119,22 @@ static void IoMemTabFalcon_BusCtrl_WriteByte(void)
 		IoMem_Init_FalconInSTeBuscompatibilityMode(1);
 
 	/* 68030 Frequency changed ? */
-	if ((busCtrl & 0x1) == 1) {
-		/* 16 Mhz bus for 68030 */
-		nCpuFreqShift = 1;
+	/* We change freq only in 68030 mode for a normal Falcon, */
+	/* not if CPU is 68040 or 68060 is used */
+	if ( ConfigureParams.System.nCpuLevel == 3 )
+	{
+		if ((busCtrl & 0x1) == 1) {
+			/* 16 Mhz bus for 68030 */
+			nCpuFreqShift = 1;
+			ConfigureParams.System.nCpuFreq = 16;
+		}
+		else {
+			/* 8 Mhz bus for 68030 */
+			nCpuFreqShift = 0;
+			ConfigureParams.System.nCpuFreq = 8;
+		}
 	}
-	else {
-		/* 8 Mhz bus for 68030 */
-		nCpuFreqShift = 0;
-	}
+	Statusbar_UpdateInfo();							/* Update clock speed in the status bar */
 }
 
 
@@ -158,7 +168,24 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff820e, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_LineOffset_WriteWord },     /* Falcon line offset */
 	{ 0xff8210, SIZE_WORD, IoMem_ReadWithoutInterception, VIDEL_Line_Width_WriteWord },     /* Falcon line width */
 	{ 0xff8212, 46       , IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
-	{ 0xff8240, 32       , IoMem_ReadWithoutInterception, VIDEL_ColorRegsWrite },           /* ST color regs */
+
+	{ 0xff8240, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color0_WriteWord },		/* ST COLOR 0 */
+	{ 0xff8242, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color1_WriteWord },		/* ST COLOR 1 */
+	{ 0xff8244, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color2_WriteWord },		/* ST COLOR 2 */
+	{ 0xff8246, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color3_WriteWord },		/* ST COLOR 3 */
+	{ 0xff8248, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color4_WriteWord },		/* ST COLOR 4 */
+	{ 0xff824a, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color5_WriteWord },		/* ST COLOR 5 */
+	{ 0xff824c, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color6_WriteWord },		/* ST COLOR 6 */
+	{ 0xff824e, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color7_WriteWord },		/* ST COLOR 7 */
+	{ 0xff8250, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color8_WriteWord },		/* ST COLOR 8 */
+	{ 0xff8252, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color9_WriteWord },		/* ST COLOR 9 */
+	{ 0xff8254, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color10_WriteWord },	/* ST COLOR 10 */
+	{ 0xff8256, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color11_WriteWord },	/* ST COLOR 11 */
+	{ 0xff8258, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color12_WriteWord },	/* ST COLOR 12 */
+	{ 0xff825a, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color13_WriteWord },	/* ST COLOR 13 */
+	{ 0xff825c, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color14_WriteWord },	/* ST COLOR 14 */
+	{ 0xff825e, SIZE_WORD, IoMem_ReadWithoutInterception, Videl_Color15_WriteWord },	/* ST COLOR 15 */
+
 	{ 0xff8260, SIZE_BYTE, IoMem_ReadWithoutInterception, VIDEL_ST_ShiftModeWriteByte },
 	{ 0xff8261, 3        , IoMem_VoidRead_00, IoMem_VoidWrite },                            /* No bus errors here : return 0 not ff */
 	{ 0xff8264, SIZE_BYTE, IoMem_ReadWithoutInterception, VIDEL_HorScroll64_WriteByte },    /* Falcon horizontal fine scrolling high ? */
@@ -296,7 +323,7 @@ const INTERCEPT_ACCESS_FUNC IoMemTable_Falcon[] =
 	{ 0xff9220, SIZE_WORD, IoMem_VoidRead, IoMem_WriteWithoutInterception },          /* Lightpen X position */
 	{ 0xff9222, SIZE_WORD, IoMem_VoidRead, IoMem_WriteWithoutInterception },          /* Lightpen Y position */
 
-	{ 0xff9800, 0x400, IoMem_ReadWithoutInterception, VIDEL_ColorRegsWrite },            /* Falcon Videl palette */
+	{ 0xff9800, 0x400, IoMem_ReadWithoutInterception, VIDEL_FalconColorRegsWrite },   /* Falcon Videl palette */
 
 	{ 0xfffa00, SIZE_BYTE, IoMem_VoidRead, IoMem_VoidWrite },                               /* No bus error here */
 	{ 0xfffa01, SIZE_BYTE, MFP_GPIP_ReadByte, MFP_GPIP_WriteByte },

@@ -19,7 +19,7 @@
 uae_u32 get_copper_address (int copno);
 
 extern int custom_init (void);
-extern void customreset (void);
+extern void custom_reset (bool hardreset, bool keyboardreset);
 extern int intlev (void);
 extern void dumpcustom (void);
 extern void uae_reset (int hardreset);
@@ -30,7 +30,7 @@ extern void do_copper (void);
 extern void notice_new_xcolors (void);
 extern void notice_screen_contents_lost (void);
 extern void init_row_map (void);
-extern void init_hz (void);
+extern void init_hz_normal (void);
 extern void init_custom (void);
 
 extern bool picasso_requested_on;
@@ -74,6 +74,7 @@ STATIC_INLINE int dmaen (unsigned int dmamask)
 #ifdef JIT
 #define SPCFLAG_END_COMPILE 16384
 #endif
+#define SPCFLAG_CHECK 32768
 
 extern uae_u16 adkcon;
 
@@ -86,38 +87,6 @@ extern void INTREQ_f (uae_u16);
 extern void send_interrupt (int num, int delay);
 extern uae_u16 INTREQR (void);
 
-/* maximums for statically allocated tables */
-#ifdef UAE_MINI
-/* absolute minimums for basic A500/A1200-emulation */
-#define MAXHPOS 227
-#define MAXVPOS 312
-#else
-#define MAXHPOS 256
-#define MAXVPOS 592
-#endif
-
-/* PAL/NTSC values */
-
-#define MAXHPOS_PAL 227
-#define MAXHPOS_NTSC 227
-#define MAXVPOS_PAL 312
-#define MAXVPOS_NTSC 262
-#define VBLANK_ENDLINE_PAL 26
-#define VBLANK_ENDLINE_NTSC 21
-#define VBLANK_SPRITE_PAL 25
-#define VBLANK_SPRITE_NTSC 20
-#define VBLANK_HZ_PAL 50
-#define VBLANK_HZ_NTSC 60
-#define EQU_ENDLINE_PAL 9
-#define EQU_ENDLINE_NTSC 10
-
-extern int maxhpos, maxhpos_short;
-extern int maxvpos, maxvpos_nom;
-extern int hsyncstartpos;
-extern int minfirstline, vblank_endline, numscrlines;
-extern int vblank_hz, fake_vblank_hz, vblank_skip, doublescan;
-
-#define NUMSCRLINES (maxvpos + 1 - minfirstline + 1)
 
 #define DMA_AUD0      0x0001
 #define DMA_AUD1      0x0002
@@ -139,25 +108,6 @@ extern int vblank_hz, fake_vblank_hz, vblank_skip, doublescan;
 #define CYCLE_BLITTER	0x20
 #define CYCLE_CPU	0x40
 #define CYCLE_CPUNASTY	0x80
-
-extern unsigned long frametime, timeframes;
-extern int plfstrt, plfstop, plffirstline, plflastline;
-extern uae_u16 htotal, vtotal, beamcon0;
-
-/* 100 words give you 1600 horizontal pixels. Should be more than enough for
- * superhires. Don't forget to update the definition in genp2c.c as well.
- * needs to be larger for superhires support */
-#ifdef CUSTOM_SIMPLE
-#define MAX_WORDS_PER_LINE 50
-#else
-#define MAX_WORDS_PER_LINE 100
-#endif
-
-extern uae_u32 hirestab_h[256][2];
-extern uae_u32 lorestab_h[256][4];
-
-extern uae_u32 hirestab_l[256][1];
-extern uae_u32 lorestab_l[256][2];
 
 #ifdef AGA
 /* AGA mode color lookup tables */
@@ -220,7 +170,6 @@ extern void alloc_cycle_ext (int, int);
 extern bool ispal (void);
 extern int inprec_open(char *fname, int record);
 extern void sleep_millis (int ms);
-extern void mmu_do_hit (void);
 
 /* referred by prefetch.h */
 extern uae_u32 wait_cpu_cycle_read (uaecptr addr, int mode);
@@ -229,3 +178,4 @@ extern uae_u32 wait_cpu_cycle_read_ce020 (uaecptr addr, int mode);
 extern void wait_cpu_cycle_write_ce020 (uaecptr addr, int mode, uae_u32 v);
 
 #endif /* WINUAE_CUSTOM_H */
+

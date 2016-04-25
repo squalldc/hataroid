@@ -51,7 +51,7 @@
 
 
 /* List of the GPIP lines */
-#define	MFP_GPIP_LINE7			7
+#define	MFP_GPIP_LINE7			7			
 #define	MFP_GPIP_LINE6			6
 #define	MFP_GPIP_LINE5			5
 #define	MFP_GPIP_LINE4			4
@@ -78,6 +78,9 @@ extern bool  MFP_UpdateNeeded;
 
 extern void MFP_Reset(void);
 extern void MFP_MemorySnapShot_Capture(bool bSave);
+
+extern Uint8 MFP_GetIRQ_CPU ( void );
+extern void MFP_DelayIRQ ( void );
 extern int  MFP_ProcessIACK ( int OldVecNr );
 extern bool MFP_ProcessIRQ ( void );
 extern void MFP_UpdateIRQ ( Uint64 Event_Time );

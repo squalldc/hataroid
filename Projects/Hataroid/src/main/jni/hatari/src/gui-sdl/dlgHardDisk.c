@@ -26,47 +26,52 @@ const char DlgHardDisk_fileid[] = "Hatari dlgHardDisk.c : " __DATE__ " " __TIME_
 #define DISKDLG_GEMDOSEJECT       15
 #define DISKDLG_GEMDOSBROWSE      16
 #define DISKDLG_GEMDOSNAME        17
-#define DISKDLG_PROTOFF           19
-#define DISKDLG_PROTON            20
-#define DISKDLG_PROTAUTO          21
-#define DISKDLG_BOOTHD            22
-#define DISKDLG_EXIT              23
+#define DISKDLG_GEMDOSCONV        18
+#define DISKDLG_DRIVESKIP         19
+#define DISKDLG_PROTOFF           21
+#define DISKDLG_PROTON            22
+#define DISKDLG_PROTAUTO          23
+#define DISKDLG_BOOTHD            24
+#define DISKDLG_EXIT              25
 
 
 /* The disks dialog: */
 static SGOBJ diskdlg[] =
 {
-	{ SGBOX, 0, 0, 0,0, 64,19, NULL },
+	{ SGBOX, 0, 0, 0,0, 64,22, NULL },
 	{ SGTEXT, 0, 0, 27,1, 10,1, "Hard disks" },
 
 	{ SGTEXT, 0, 0, 2,3, 14,1, "ACSI HD image:" },
-	{ SGBUTTON, 0, 0, 46,3, 7,1, "Eject" },
-	{ SGBUTTON, 0, 0, 54,3, 8,1, "Browse" },
+	{ SGBUTTON, 0, 0, 46,3, 7,1, "Ejec_t" },
+	{ SGBUTTON, 0, 0, 54,3, 8,1, "Brow_se" },
 	{ SGTEXT, 0, 0, 3,4, 58,1, NULL },
 
 	{ SGTEXT, 0, 0, 2,5, 20,1, "IDE HD master image:" },
-	{ SGBUTTON, 0, 0, 46,5, 7,1, "Eject" },
-	{ SGBUTTON, 0, 0, 54,5, 8,1, "Browse" },
+	{ SGBUTTON, 0, 0, 46,5, 7,1, "Eje_ct" },
+	{ SGBUTTON, 0, 0, 54,5, 8,1, "Bro_wse" },
 	{ SGTEXT, 0, 0, 3,6, 58,1, NULL },
 
 	{ SGTEXT, 0, 0, 2,7, 19,1, "IDE HD slave image:" },
-	{ SGBUTTON, 0, 0, 46,7, 7,1, "Eject" },
-	{ SGBUTTON, 0, 0, 54,7, 8,1, "Browse" },
+	{ SGBUTTON, 0, 0, 46,7, 7,1, "E_ject" },
+	{ SGBUTTON, 0, 0, 54,7, 8,1, "Br_owse" },
 	{ SGTEXT, 0, 0, 3,8, 58,1, NULL },
 
 	{ SGTEXT, 0, 0, 2,9, 13,1, "GEMDOS drive:" },
-	{ SGBUTTON, 0, 0, 46,9, 7,1, "Eject" },
-	{ SGBUTTON, 0, 0, 54,9, 8,1, "Browse" },
+	{ SGBUTTON, 0, 0, 46,9, 7,1, "_Eject" },
+	{ SGBUTTON, 0, 0, 54,9, 8,1, "B_rowse" },
 	{ SGTEXT, 0, 0, 3,10, 58,1, NULL },
 
-	{ SGTEXT, 0, 0, 2,12, 31,1, "GEMDOS drive write protection:" },
-	{ SGRADIOBUT, 0, 0, 33,12, 5,1, "Off" },
-	{ SGRADIOBUT, 0, 0, 40,12, 5,1, "On" },
-	{ SGRADIOBUT, 0, 0, 46,12, 6,1, "Auto" },
+	{ SGCHECKBOX, 0, 0, 8,12, 42,1, "Atari <-> _host 8-bit file name conversion" },
+	{ SGCHECKBOX, 0, 0, 8,13, 42,1, "After ACSI/IDE _partitions (experimental)" },
 
-	{ SGCHECKBOX, 0, 0, 2,14, 14,1, "Boot from HD" },
+	{ SGTEXT, 0, 0, 8,15, 31,1, "Write protection:" },
+	{ SGRADIOBUT, 0, 0, 26,15, 5,1, "O_ff" },
+	{ SGRADIOBUT, 0, 0, 32,15, 4,1, "O_n" },
+	{ SGRADIOBUT, 0, 0, 37,15, 6,1, "_Auto" },
 
-	{ SGBUTTON, SG_DEFAULT, 0, 22,16, 20,1, "Back to main menu" },
+	{ SGCHECKBOX, 0, 0, 2,17, 16,1, "_Boot from HD" },
+
+	{ SGBUTTON, SG_DEFAULT, 0, 22,20, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -79,7 +84,7 @@ static bool DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
 {
 	char *str, *selname;
 
-	selname = SDLGui_FileSelect(confname, NULL, false);
+	selname = SDLGui_FileSelect("GEMDOS drive directory:", confname, NULL, false);
 	if (selname)
 	{
 		strcpy(confname, selname);
@@ -109,6 +114,18 @@ void DlgHardDisk_Main(void)
 
 	/* Set up dialog to actual values: */
 
+	/* Convert 8-bit GEMDOS file names? */
+	if (ConfigureParams.HardDisk.bFilenameConversion)
+		diskdlg[DISKDLG_GEMDOSCONV].state |= SG_SELECTED;
+	else
+		diskdlg[DISKDLG_GEMDOSCONV].state &= ~SG_SELECTED;
+
+	/* Skip ACSI/IDE partitions? */
+	if (ConfigureParams.HardDisk.nGemdosDrive == DRIVE_SKIP)
+		diskdlg[DISKDLG_DRIVESKIP].state |= SG_SELECTED;
+	else
+		diskdlg[DISKDLG_DRIVESKIP].state &= ~SG_SELECTED;
+
 	/* Boot from harddisk? */
 	if (ConfigureParams.HardDisk.bBootFromHardDisk)
 		diskdlg[DISKDLG_BOOTHD].state |= SG_SELECTED;
@@ -116,8 +133,8 @@ void DlgHardDisk_Main(void)
 		diskdlg[DISKDLG_BOOTHD].state &= ~SG_SELECTED;
 
 	/* ACSI hard disk image: */
-	if (ConfigureParams.HardDisk.bUseHardDiskImage)
-		File_ShrinkName(dlgname_acsi, ConfigureParams.HardDisk.szHardDiskImage,
+	if (ConfigureParams.Acsi[0].bUseDevice)
+		File_ShrinkName(dlgname_acsi, ConfigureParams.Acsi[0].sDeviceFile,
 		                diskdlg[DISKDLG_ACSINAME].w);
 	else
 		dlgname_acsi[0] = '\0';
@@ -157,25 +174,25 @@ void DlgHardDisk_Main(void)
 	/* Draw and process the dialog */
 	do
 	{
-		but = SDLGui_DoDialog(diskdlg, NULL);
+		but = SDLGui_DoDialog(diskdlg, NULL, false);
 		switch (but)
 		{
 		 case DISKDLG_ACSIEJECT:
-			ConfigureParams.HardDisk.bUseHardDiskImage = false;
+			ConfigureParams.Acsi[0].bUseDevice = false;
 			dlgname_acsi[0] = '\0';
 			break;
 		 case DISKDLG_ACSIBROWSE:
-			if (SDLGui_FileConfSelect(dlgname_acsi,
-			                          ConfigureParams.HardDisk.szHardDiskImage,
+			if (SDLGui_FileConfSelect("ACSI HD image:", dlgname_acsi,
+			                          ConfigureParams.Acsi[0].sDeviceFile,
 			                          diskdlg[DISKDLG_ACSINAME].w, false))
-				ConfigureParams.HardDisk.bUseHardDiskImage = true;
+				ConfigureParams.Acsi[0].bUseDevice = true;
 			break;
 		 case DISKDLG_IDEMASTEREJECT:
 			ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = false;
 			dlgname_ide_master[0] = '\0';
 			break;
 		 case DISKDLG_IDEMASTERBROWSE:
-			if (SDLGui_FileConfSelect(dlgname_ide_master,
+			if (SDLGui_FileConfSelect("IDE HD master image:", dlgname_ide_master,
 			                          ConfigureParams.HardDisk.szIdeMasterHardDiskImage,
 			                          diskdlg[DISKDLG_IDEMASTERNAME].w, false))
 				ConfigureParams.HardDisk.bUseIdeMasterHardDiskImage = true;
@@ -185,7 +202,7 @@ void DlgHardDisk_Main(void)
 			dlgname_ide_slave[0] = '\0';
 			break;
 		 case DISKDLG_IDESLAVEBROWSE:
-			if (SDLGui_FileConfSelect(dlgname_ide_slave,
+			if (SDLGui_FileConfSelect("IDE HD slave image:", dlgname_ide_slave,
 			                          ConfigureParams.HardDisk.szIdeSlaveHardDiskImage,
 			                          diskdlg[DISKDLG_IDESLAVENAME].w, false))
 				ConfigureParams.HardDisk.bUseIdeSlaveHardDiskImage = true;
@@ -215,4 +232,14 @@ void DlgHardDisk_Main(void)
 		}
 	}
 	ConfigureParams.HardDisk.bBootFromHardDisk = (diskdlg[DISKDLG_BOOTHD].state & SG_SELECTED);
+
+	if (diskdlg[DISKDLG_DRIVESKIP].state & SG_SELECTED)
+		ConfigureParams.HardDisk.nGemdosDrive = DRIVE_SKIP;
+	else if (ConfigureParams.HardDisk.nGemdosDrive == DRIVE_SKIP)
+		ConfigureParams.HardDisk.nGemdosDrive = DRIVE_C;
+
+	if (diskdlg[DISKDLG_GEMDOSCONV].state & SG_SELECTED)
+		ConfigureParams.HardDisk.bFilenameConversion = true;
+	else
+		ConfigureParams.HardDisk.bFilenameConversion = false;
 }

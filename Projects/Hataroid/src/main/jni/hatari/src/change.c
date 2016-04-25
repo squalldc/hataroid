@@ -19,6 +19,7 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
 #include "change.h"
 #include "dialog.h"
 #include "floppy.h"
+#include "fdc.h"
 #include "gemdos.h"
 #include "hdc.h"
 #include "ide.h"
@@ -44,9 +45,9 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
 
 #define DEBUG 0
 #if DEBUG
-#define Dprintf(a) printf(a)
+#define Dprintf(a...) printf(a)
 #else
-#define Dprintf(a)
+#define Dprintf(a...)
 #endif
 
 /*-----------------------------------------------------------------------*/
@@ -56,6 +57,8 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
  */
 bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 {
+	int i;
+
 	/* Did we change monitor type? If so, must reset */
 	if (current->Screen.nMonitorType != changed->Screen.nMonitorType
 	    && (changed->System.nMachineType == MACHINE_FALCON
@@ -78,11 +81,17 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	if (strcmp(changed->Rom.szTosImageFileName, current->Rom.szTosImageFileName))
 		return true;
 
+    if (changed->Hataroid.useEmuTOS != current->Hataroid.useEmuTOS)
+        return true;
+
 	/* Did change ACSI hard disk image? */
-	if (changed->HardDisk.bUseHardDiskImage != current->HardDisk.bUseHardDiskImage
-	    || (strcmp(changed->HardDisk.szHardDiskImage, current->HardDisk.szHardDiskImage)
-	        && changed->HardDisk.bUseHardDiskImage))
-		return true;
+	for (i = 0; i < MAX_ACSI_DEVS; i++)
+	{
+		if (changed->Acsi[i].bUseDevice != current->Acsi[i].bUseDevice
+		    || (strcmp(changed->Acsi[i].sDeviceFile, current->Acsi[i].sDeviceFile)
+		        && changed->Acsi[i].bUseDevice))
+			return true;
+	}
 
 	/* Did change IDE master hard disk image? */
 	if (changed->HardDisk.bUseIdeMasterHardDiskImage != current->HardDisk.bUseIdeMasterHardDiskImage
@@ -94,8 +103,9 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	    || strcmp(changed->HardDisk.szIdeSlaveHardDiskImage, current->HardDisk.szIdeSlaveHardDiskImage))
 		return true;
 
-	/* Did change GEMDOS drive? */
-	if (changed->HardDisk.bUseHardDiskDirectories != current->HardDisk.bUseHardDiskDirectories
+	/* Did change GEMDOS drive Atari/host location or enabling? */
+	if (changed->HardDisk.nGemdosDrive != current->HardDisk.nGemdosDrive
+	    || changed->HardDisk.bUseHardDiskDirectories != current->HardDisk.bUseHardDiskDirectories
 	    || (strcmp(changed->HardDisk.szHardDiskDirectories[0], current->HardDisk.szHardDiskDirectories[0])
 	        && changed->HardDisk.bUseHardDiskDirectories))
 		return true;
@@ -138,6 +148,10 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
  
 	/* Did change FPU? */
 	if (changed->System.n_FPUType != current->System.n_FPUType)
+		return true;
+
+	/* Did change size of TT-RAM? */
+	if (current->Memory.nTTRamSize != changed->Memory.nTTRamSize)
 		return true;
 #endif
 
@@ -186,7 +200,12 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	     || changed->Screen.nMaxWidth != current->Screen.nMaxWidth
 	     || changed->Screen.nMaxHeight != current->Screen.nMaxHeight
 	     || changed->Screen.bAllowOverscan != current->Screen.bAllowOverscan
-	     || changed->Screen.bShowStatusbar != current->Screen.bShowStatusbar))
+	     || changed->Screen.bShowStatusbar != current->Screen.bShowStatusbar
+#if WITH_SDL2
+	     || changed->Screen.nRenderScaleQuality != current->Screen.nRenderScaleQuality
+	     || changed->Screen.bUseVsync != current->Screen.bUseVsync
+#endif
+	    ))
 	{
 		Dprintf("- screenmode>\n");
 		bScreenModeChange = true;
@@ -237,8 +256,19 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 			bFloppyInsert[i] = false;
 	}
 
-	/* Did change GEMDOS drive? */
-	if (changed->HardDisk.bUseHardDiskDirectories != current->HardDisk.bUseHardDiskDirectories
+	if ( changed->DiskImage.EnableDriveA != current->DiskImage.EnableDriveA )
+		FDC_Drive_Set_Enable ( 0 , changed->DiskImage.EnableDriveA );
+	if ( changed->DiskImage.EnableDriveB != current->DiskImage.EnableDriveB )
+		FDC_Drive_Set_Enable ( 1 , changed->DiskImage.EnableDriveB );
+
+	if ( changed->DiskImage.DriveA_NumberOfHeads != current->DiskImage.DriveA_NumberOfHeads )
+		FDC_Drive_Set_NumberOfHeads ( 0 , changed->DiskImage.DriveA_NumberOfHeads );
+	if ( changed->DiskImage.DriveB_NumberOfHeads != current->DiskImage.DriveB_NumberOfHeads )
+		FDC_Drive_Set_NumberOfHeads ( 1 , changed->DiskImage.DriveB_NumberOfHeads );
+
+	/* Did change GEMDOS drive Atari/host location or enabling? */
+	if (changed->HardDisk.nGemdosDrive != current->HardDisk.nGemdosDrive
+	    || changed->HardDisk.bUseHardDiskDirectories != current->HardDisk.bUseHardDiskDirectories
 	    || (strcmp(changed->HardDisk.szHardDiskDirectories[0], current->HardDisk.szHardDiskDirectories[0])
 	        && changed->HardDisk.bUseHardDiskDirectories))
 	{
@@ -247,16 +277,20 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		bReInitGemdosDrive = true;
 	}
 
-	/* Did change HD image? */
-	if (changed->HardDisk.bUseHardDiskImage != current->HardDisk.bUseHardDiskImage
-	    || (strcmp(changed->HardDisk.szHardDiskImage, current->HardDisk.szHardDiskImage)
-	        && changed->HardDisk.bUseHardDiskImage))
+	/* Did change ACSI image? */
+	for (i = 0; i < MAX_ACSI_DEVS; i++)
 	{
-		Dprintf("- HD image>\n");
-		HDC_UnInit();
-		bReInitAcsiEmu = true;
+		if (changed->Acsi[i].bUseDevice != current->Acsi[i].bUseDevice
+		    || (strcmp(changed->Acsi[i].sDeviceFile, current->Acsi[i].sDeviceFile)
+		        && changed->Acsi[i].bUseDevice))
+		{
+			Dprintf("- ACSI image %i>\n", i);
+			bReInitAcsiEmu = true;
+		}
 	}
-	
+	if (bReInitAcsiEmu)
+		HDC_UnInit();
+
 	/* Did change IDE HD master image? */
 	if (changed->HardDisk.bUseIdeMasterHardDiskImage != current->HardDisk.bUseIdeMasterHardDiskImage
 	    || (strcmp(changed->HardDisk.szIdeMasterHardDiskImage, current->HardDisk.szIdeMasterHardDiskImage)
@@ -296,7 +330,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    changed->System.nDSPType != DSP_TYPE_EMU)
 	{
 		Dprintf("- DSP>\n");
-		DSP_UnInit();
+		DSP_Disable();
 	}
 #endif
 
@@ -327,7 +361,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	    changed->System.nDSPType == DSP_TYPE_EMU)
 	{
 		Dprintf("- DSP<\n");
-		DSP_Init();
+		DSP_Enable();
 	}
 #endif
 
@@ -339,7 +373,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	}
 
 	/* Mount a new HD image: */
-	if (bReInitAcsiEmu && ConfigureParams.HardDisk.bUseHardDiskImage)
+	if (bReInitAcsiEmu)
 	{
 		Dprintf("- HD<\n");
 		HDC_Init();
@@ -366,7 +400,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	if (bReInitGemdosDrive && ConfigureParams.HardDisk.bUseHardDiskDirectories)
 	{
 		Dprintf("- gemdos HD<\n");
-		GemDOS_InitDrives();
+		GemDOS_InitDrives(false);
 	}
 
 	/* Restart audio sub system if necessary: */
@@ -408,14 +442,14 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	if (bScreenModeChange)
 	{
 		Dprintf("- screenmode<\n");
-		Screen_ModeChanged();
+		Screen_ModeChanged(true);
 	}
 
 	/* Do we need to perform reset? */
 	if (NeedReset)
 	{
 		Dprintf("- reset\n");
-		Reset_Cold();
+		Reset_Cold(true);
 	}
 
 	/* Go into/return from full screen if flagged */
@@ -483,7 +517,7 @@ bool Change_ApplyCommandline(char *cmdline)
 	inarg = argc = 0;
 	for (i = 0; cmdline[i]; i++)
 	{
-		if (isspace(cmdline[i]) && cmdline[i-1] != '\\')
+		if (isspace((unsigned char)cmdline[i]) && cmdline[i-1] != '\\')
 		{
 			inarg = 0;
 			continue;
@@ -512,7 +546,7 @@ bool Change_ApplyCommandline(char *cmdline)
 	argv[argc++] = "hatari";
 	for (i = 0; cmdline[i]; i++)
 	{
-		if (isspace(cmdline[i]))
+		if (isspace((unsigned char)cmdline[i]))
 		{
 			if (cmdline[i-1] != '\\')
 			{

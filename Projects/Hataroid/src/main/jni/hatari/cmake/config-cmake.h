@@ -9,6 +9,10 @@
 /* Define if you have the PortAudio library */
 #cmakedefine HAVE_PORTAUDIO 1
 
+/* Define if you have the capsimage library */
+#cmakedefine HAVE_CAPSIMAGE 1
+#cmakedefine CAPSIMAGE_VERSION @CAPSIMAGE_VERSION@
+
 /* Define if you have a X11 environment */
 #cmakedefine HAVE_X11 1
 
@@ -27,8 +31,8 @@
 /* Define to 1 if you have the <strings.h> header file. */
 #cmakedefine HAVE_STRINGS_H 1
 
-/* Define to 1 if you have the <SDL/SDL_config.h> header file. */
-#cmakedefine HAVE_SDL_SDL_CONFIG_H 1
+/* Define to 1 if you have the <SDL_config.h> header file. */
+#cmakedefine HAVE_SDL_CONFIG_H 1
 
 /* Define to 1 if you have the <sys/times.h> header file. */
 #cmakedefine HAVE_SYS_TIMES_H 1
@@ -66,6 +70,20 @@
 /* Define to 1 if you have the 'statvfs' function. */
 #cmakedefine HAVE_STATVFS 1
 
+/* Define to 1 if you have the 'fseeko' function. */
+#cmakedefine HAVE_FSEEKO 1
+
+/* Define to 1 if you have the 'ftello' function. */
+#cmakedefine HAVE_FTELLO 1
+
+/* Define to 1 if you have the 'flock' function. */
+#cmakedefine HAVE_FLOCK 1
+
+/* Define to 1 if you have the 'strlcpy' function. */
+#cmakedefine HAVE_LIBC_STRLCPY 1
+
+/* Define to 1 if you have the 'd_type' member in the 'dirent' struct */
+#cmakedefine HAVE_DIRENT_D_TYPE 1
 
 /* Relative path from bindir to datadir */
 #define BIN2DATADIR "@BIN2DATADIR@"

@@ -45,11 +45,11 @@
 #define HD_REQSENS_OPCODE   0x20              /* Opcode not supported */
 #define HD_REQSENS_INVADDR  0x21              /* Invalid block address */
 #define HD_REQSENS_INVARG   0x24              /* Invalid argument */
-#define HD_REQSENS_NODRIVE  0x25              /* Invalid drive */
+#define HD_REQSENS_INVLUN   0x25              /* Invalid LUN */
 
 #define ACSI_EMU_ON        bAcsiEmuOn         /* Do we have HDC emulation? */
 
-extern int nPartitions;
+extern int nAcsiPartitions;
 extern bool bAcsiEmuOn;
 
 /**
@@ -58,8 +58,10 @@ extern bool bAcsiEmuOn;
 extern bool HDC_Init(void);
 extern void HDC_UnInit(void);
 extern void HDC_ResetCommandStatus(void);
-extern short int HDC_GetCommandStatus(void);
-extern short int HDC_GetSectorCount(void);
-extern void HDC_WriteCommandPacket(void);
+extern short int HDC_ReadCommandByte(int addr);
+extern void HDC_WriteCommandByte(int addr, Uint8 byte);
+extern int HDC_PartitionCount(FILE *fp, const Uint64 tracelevel);
+
+void Ncr5380_Reset(void);
 
 #endif /* HATARI_HDC_H */

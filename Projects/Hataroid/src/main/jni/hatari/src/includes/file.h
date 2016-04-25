@@ -8,9 +8,16 @@
 #ifndef HATARI_FILE_H
 #define HATARI_FILE_H
 
+#include "config.h"
+
+#if !HAVE_FSEEKO
+#define fseeko fseek
+#endif
+
 extern void File_CleanFileName(char *pszFileName);
 extern void File_AddSlashToEndFileName(char *pszFileName);
 extern bool File_DoesFileExtensionMatch(const char *pszFileName, const char *pszExtension);
+extern bool File_ChangeFileExtension(const char *Filename_old, const char *Extension_old , char *Filename_new , const char *Extension_new);
 extern const char *File_RemoveFileNameDrive(const char *pszFileName);
 extern bool File_DoesFileNameEndWithSlash(char *pszFileName);
 extern Uint8 *File_Read(const char *pszFileName, long *pFileSize, const char * const ppszExts[]);
@@ -25,6 +32,8 @@ extern char* File_MakePath(const char *pDir, const char *pName, const char *pExt
 extern void File_ShrinkName(char *pDestFileName, const char *pSrcFileName, int maxlen);
 extern FILE *File_Open(const char *path, const char *mode);
 extern FILE *File_Close(FILE *fp);
+extern bool File_Lock(FILE *fp);
+extern void File_UnLock(FILE *fp);
 extern bool File_InputAvailable(FILE *fp);
 extern void File_MakeAbsoluteSpecialName(char *pszFileName);
 extern void File_MakeAbsoluteName(char *pszFileName);

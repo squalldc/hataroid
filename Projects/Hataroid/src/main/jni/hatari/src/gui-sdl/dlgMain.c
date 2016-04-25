@@ -41,24 +41,24 @@ static SGOBJ maindlg[] =
 {
 	{ SGBOX, 0, 0, 0,0, 50,19, NULL },
 	{ SGTEXT, 0, 0, 17,1, 16,1, "Hatari main menu" },
-	{ SGBUTTON, 0, 0, 2,4, 13,1, "About" },
-	{ SGBUTTON, 0, 0, 2,6, 13,1, "System" },
-	{ SGBUTTON, 0, 0, 2,8, 13,1, "ROM" },
-	{ SGBUTTON, 0, 0, 2,10, 13,1, "Memory" },
-	{ SGBUTTON, 0, 0, 17,4, 16,1, "Floppy disks" },
-	{ SGBUTTON, 0, 0, 17,6, 16,1, "Hard disks" },
-	{ SGBUTTON, 0, 0, 17,8, 16,1, "Atari screen" },
-	{ SGBUTTON, 0, 0, 17,10, 16,1, "Hatari screen" },
-	{ SGBUTTON, 0, 0, 35,4, 13,1, "Joysticks" },
-	{ SGBUTTON, 0, 0, 35,6, 13,1, "Keyboard" },
-	{ SGBUTTON, 0, 0, 35,8, 13,1, "Devices" },
-	{ SGBUTTON, 0, 0, 35,10, 13,1, "Sound" },
-	{ SGBUTTON, 0, 0, 7,13, 16,1, "Load config." },
-	{ SGBUTTON, 0, 0, 27,13, 16,1, "Save config." },
-	{ SGRADIOBUT, 0, 0, 3,15, 15,1, "No Reset" },
-	{ SGRADIOBUT, 0, 0, 3,17, 15,1, "Reset machine" },
+	{ SGBUTTON, 0, 0,  2, 4, 13,1, "A_bout" },
+	{ SGBUTTON, 0, 0,  2, 6, 13,1, "S_ystem" },
+	{ SGBUTTON, 0, 0,  2, 8, 13,1, "_ROM" },
+	{ SGBUTTON, 0, 0,  2,10, 13,1, "_Memory" },
+	{ SGBUTTON, 0, 0, 17, 4, 16,1, "_Floppy disks" },
+	{ SGBUTTON, 0, 0, 17, 6, 16,1, "Hard _disks" },
+	{ SGBUTTON, 0, 0, 17, 8, 16,1, "_Atari screen" },
+	{ SGBUTTON, 0, 0, 17,10, 16,1, "_Hatari screen" },
+	{ SGBUTTON, 0, 0, 35, 4, 13,1, "_Joysticks" },
+	{ SGBUTTON, 0, 0, 35, 6, 13,1, "_Keyboard" },
+	{ SGBUTTON, 0, 0, 35, 8, 13,1, "D_evices" },
+	{ SGBUTTON, 0, 0, 35,10, 13,1, "S_ound" },
+	{ SGBUTTON, 0, 0,  7,13, 16,1, "_Load config." },
+	{ SGBUTTON, 0, 0, 27,13, 16,1, "_Save config." },
+	{ SGRADIOBUT, 0, 0, 3,15, 10,1, "_No Reset" },
+	{ SGRADIOBUT, 0, 0, 3,17, 15,1, "Reset ma_chine" },
 	{ SGBUTTON, SG_DEFAULT, 0, 21,15, 8,3, "OK" },
-	{ SGBUTTON, 0, 0, 36,15, 10,1, "Quit" },
+	{ SGBUTTON, 0, 0, 36,15, 10,1, "_Quit" },
 	{ SGBUTTON, SG_CANCEL, 0, 36,17, 10,1, "Cancel" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
@@ -91,7 +91,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 
 	do
 	{
-		retbut = SDLGui_DoDialog(maindlg, NULL);
+		retbut = SDLGui_DoDialog(maindlg, NULL, false);
 		switch (retbut)
 		{
 		 case MAINDLG_ABOUT:
@@ -121,7 +121,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 				/* Memory snapshot has been loaded - leave GUI immediately */
 				*bLoadedSnapshot = true;
 				SDL_ShowCursor(bOldMouseVisibility);
-				Main_WarpMouse(nOldMouseX, nOldMouseY);
+				Main_WarpMouse(nOldMouseX, nOldMouseY, true);
 				return true;
 			}
 			break;
@@ -138,7 +138,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 			Dialog_SoundDlg();
 			break;
 		 case MAINDLG_LOADCFG:
-			psNewCfg = SDLGui_FileSelect(sConfigFileName, NULL, false);
+			psNewCfg = SDLGui_FileSelect("Load configuration:", sConfigFileName, NULL, false);
 			if (psNewCfg)
 			{
 				strcpy(sConfigFileName, psNewCfg);
@@ -147,7 +147,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 			}
 			break;
 		 case MAINDLG_SAVECFG:
-			psNewCfg = SDLGui_FileSelect(sConfigFileName, NULL, true);
+			psNewCfg = SDLGui_FileSelect("Save configuration:", sConfigFileName, NULL, true);
 			if (psNewCfg)
 			{
 				strcpy(sConfigFileName, psNewCfg);
@@ -168,7 +168,7 @@ int Dialog_MainDlg(bool *bReset, bool *bLoadedSnapshot)
 		*bReset = true;
 
 	SDL_ShowCursor(bOldMouseVisibility);
-	Main_WarpMouse(nOldMouseX, nOldMouseY);
+	Main_WarpMouse(nOldMouseX, nOldMouseY, true);
 
 	return (retbut == MAINDLG_OK);
 }

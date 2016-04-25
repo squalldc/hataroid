@@ -16,6 +16,7 @@ const char ShortCut_fileid[] = "Hatari shortcut.c : " __DATE__ " " __TIME__;
 #include "file.h"
 #include "floppy.h"
 #include "joy.h"
+#include "keymap.h"
 #include "m68000.h"
 #include "memorySnapShot.h"
 #include "reset.h"
@@ -185,7 +186,11 @@ static void ShortCut_BossKey(void)
 	Main_PauseEmulation(true);
 
 	/* Minimize Window and give up processing to next one! */
+#if WITH_SDL2
+	SDL_MinimizeWindow(sdlWindow);
+#else
 	SDL_WM_IconifyWindow();
+#endif
 }
 
 
@@ -222,9 +227,15 @@ static void ShortCut_InsertDisk(int drive)
 {
 	char *selname, *zip_path = NULL;
 	const char *tmpname;
+	char FileNameB[ FILENAME_MAX ];
+	char ZipPathB[ FILENAME_MAX ];
 
 	if (SDLGui_SetScreen(sdlscrn))
 		return;
+
+	/* Save current names for drive 1 before checking autoinsert */
+	strcpy ( FileNameB , ConfigureParams.DiskImage.szDiskFileName[ 1 ] );
+	strcpy ( ZipPathB , ConfigureParams.DiskImage.szDiskZipPath[ 1 ] );
 
 	if (ConfigureParams.DiskImage.szDiskFileName[drive][0])
 		tmpname = ConfigureParams.DiskImage.szDiskFileName[drive];
@@ -232,7 +243,7 @@ static void ShortCut_InsertDisk(int drive)
 		tmpname = ConfigureParams.DiskImage.szDiskImageDirectory;
 
 	Main_PauseEmulation(true);
-	selname = SDLGui_FileSelect(tmpname, &zip_path, false);
+	selname = SDLGui_FileSelect("Floppy image:", tmpname, &zip_path, false);
 	if (selname)
 	{
 		if (File_Exists(selname))
@@ -245,6 +256,12 @@ static void ShortCut_InsertDisk(int drive)
 		free(selname);
 		
 		Floppy_InsertDiskIntoDrive(0);
+
+		/* Check if inserting into drive 0 also changed drive 1 with autoinsert */
+		if ( ( strcmp ( FileNameB , ConfigureParams.DiskImage.szDiskFileName[ 1 ] ) != 0 )
+		  || ( strcmp ( FileNameB , ConfigureParams.DiskImage.szDiskZipPath[ 1 ] ) != 0 ) )
+			Floppy_InsertDiskIntoDrive(1);
+
 	}
 	Main_UnPauseEmulation();
 }
@@ -272,7 +289,7 @@ void ShortCut_ActKey(void)
 		break;
 	 case SHORTCUT_COLDRESET:
 		Main_UnPauseEmulation();
-		Reset_Cold();                  /* Reset emulator with 'cold' (clear all) */
+		Reset_Cold(true);                  /* Reset emulator with 'cold' (clear all) */
 		break;
 	 case SHORTCUT_WARMRESET:
 		Main_UnPauseEmulation();
@@ -305,8 +322,20 @@ void ShortCut_ActKey(void)
 	 case SHORTCUT_PAUSE:
 		ShortCut_Pause();              /* Invoke Pause */
 		break;
+	 case SHORTCUT_JOY_0:
+		Joy_SwitchMode(0);
+		break;
+	 case SHORTCUT_JOY_1:
+		Joy_SwitchMode(1);
+		break;
+	 case SHORTCUT_PAD_A:
+		Joy_SwitchMode(2);
+		break;
+	 case SHORTCUT_PAD_B:
+		Joy_SwitchMode(3);
+		break;
 	 case SHORTCUT_QUIT:
-		Main_RequestQuit();
+		Main_RequestQuit(0);
 		break;
 	 case SHORTCUT_LOADMEM:
 		MemorySnapShot_Restore(ConfigureParams.Memory.szMemoryCaptureFileName, true);

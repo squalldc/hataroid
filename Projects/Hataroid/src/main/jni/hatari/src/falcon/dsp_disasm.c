@@ -26,6 +26,7 @@
 #include <string.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "dsp_core.h"
 #include "dsp_cpu.h"
@@ -676,6 +677,9 @@ static void opcode8h_0(void)
 			break;
 		case 0x00008c:
 			dsp_enddo();
+			break;
+		default:
+			dsp_undefined();
 			break;
 	}
 }

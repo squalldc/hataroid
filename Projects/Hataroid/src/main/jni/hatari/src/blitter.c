@@ -68,6 +68,11 @@ const char Blitter_fileid[] = "Hatari blitter.c : " __DATE__ " " __TIME__;
 #define REG_CONTROL 	0xff8a3c
 #define REG_SKEW		0xff8a3d
 
+
+#define	BLITTER_READ_WORD_BUS_ERR	0x0000	/* This value is returned when the blitter try to read a word */
+						/* in a region that would cause a bus error */
+						/* [NP] FIXME : for now we return a constant, but it should depend on the bus activity */
+
 /* Blitter registers */
 typedef struct
 {
@@ -140,6 +145,7 @@ static void Blitter_AddCycles(int cycles)
 	BlitterVars.op_cycles += all_cycles;
 
 	nCyclesMainCounter += all_cycles >> nCpuFreqShift;
+	CyclesGlobalClockCounter += all_cycles >> nCpuFreqShift;
 	nWaitStateCycles = 0;
 }
 
@@ -155,6 +161,60 @@ static void Blitter_FlushCycles(void)
 		CALL_VAR(PendingInterruptFunction);
 }
 
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Handle bus arbitration when switching between CPU and Blitter
+ * When a write is made to FF8A3C to start the blitter, it will take a few cycles
+ * before doing the bus arbitration. During this time the CPU will be able to
+ * partially execute the next instruction in parallel to the blitter
+ * (until an access to the BUS is needed by the CPU).
+ *
+ * NOTE [NP] : this is mostly handled with hardcoded cases for now, as it
+ * requires cycle exact emulation to exactly know when bus is accessed
+ * by the CPU to prefetch the next word.
+ * More tests are needed on a real STE to have a proper model of this.
+ *
+ * Based on several examples, possible sequence when starting the blitter seems to be :
+ *  - t+0 : write to FF8A3C
+ *  - t+0 : CPU can still run during 4 cycles and access bus
+ *  - t+4 : bus arbitration takes 4 cycles (no access for cpu and blitter during this time)
+ *  - t+8 : blitter owns the bus and starts tranferring data
+ *
+ * When blitter stops owning the bus in favor of the cpu, this seems to always take 4 cycles
+ */
+static void Blitter_BusArbitration ( int RequestBusMode )
+{
+	int	cycles;
+
+	if ( RequestBusMode == BUS_MODE_BLITTER )	/* Bus is requested by the blitter */
+	{
+//fprintf ( stderr , "blitter start pc %x %x\n" , M68000_GetPC() , M68000_InstrPC );
+		cycles = 4;				/* Default case : take 4 cycles when going from cpu to blitter */
+
+		/* Different timing for some specific cases */
+
+		/* 'Relapse - Graphix Sound 2' by Cybernetics (overscan plasma using blitter) */
+		/* $e764 : move.b  d5,(a4) + dbra d1,$fff2 : 4 cycles of the dbra can be executed while blitter starts */
+		if ( STMemory_ReadLong ( M68000_InstrPC ) == 0x188551c9 )	/* PC = E764 */
+			cycles = 4-4;			/* 4 cycles less than default case */
+	}
+
+	else						/* Bus is requested by the cpu */
+	{
+		cycles = 4;				/* Always 4 cycles ? */
+	}
+
+	/* Add arbitration cycles and update BusMode */
+	if ( cycles > 0 )
+	{
+		Blitter_AddCycles(cycles);
+		Blitter_FlushCycles();
+	}	
+	BusMode = RequestBusMode;
+}
+
+
 /*-----------------------------------------------------------------------*/
 /**
  * Read & Write operations
@@ -163,10 +223,12 @@ static Uint16 Blitter_ReadWord(Uint32 addr)
 {
 	Uint16 value;
 
-	if (addr < 0x00ff8000)
-		value = STMemory_ReadWord(addr);
+	/* When reading from a bus error region, just return a constant */
+	if ( STMemory_CheckRegionBusError ( addr ) )
+		value = BLITTER_READ_WORD_BUS_ERR;
 	else
-		value = (Uint16)(IoMem_wget(addr));
+		value = (Uint16)get_word ( addr );
+//fprintf ( stderr , "read %x %x %x\n" , addr , value , STMemory_CheckRegionBusError(addr) );
 
 	Blitter_AddCycles(4);
 
@@ -175,10 +237,10 @@ static Uint16 Blitter_ReadWord(Uint32 addr)
 
 static void Blitter_WriteWord(Uint32 addr, Uint16 value)
 {
-	if (addr < 0x00ff8000)
-		STMemory_WriteWord(addr, value);
-	else
-		IoMem_wput(addr, (Uint32)(value));
+	/* Call put_word only if the address doesn't point to a bus error region */
+	if ( STMemory_CheckRegionBusError ( addr ) == false )
+		put_word ( addr , (Uint32)(value) );
+//fprintf ( stderr , "write %x %x %x\n" , addr , value , STMemory_CheckRegionBusError(addr) );
 
 	Blitter_AddCycles(4);
 }
@@ -528,9 +590,7 @@ static void Blitter_Start(void)
 	BlitterVars.src_words_reset = BlitterVars.dst_words_reset + BlitterVars.fxsr - BlitterVars.nfsr;
 
 	/* bus arbitration */
-	BusMode = BUS_MODE_BLITTER;		/* bus is now owned by the blitter */
-	Blitter_AddCycles(4);
-	Blitter_FlushCycles();
+	Blitter_BusArbitration ( BUS_MODE_BLITTER );
 
 	/* Busy=1, set line to high/1 and clear interrupt */
 	MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_HIGH );
@@ -545,16 +605,14 @@ static void Blitter_Start(void)
 	       && (BlitterVars.hog || BlitterVars.pass_cycles < NONHOG_CYCLES));
 
 	/* bus arbitration */
-	Blitter_AddCycles(4);
-	Blitter_FlushCycles();
-	BusMode = BUS_MODE_CPU;			/* bus is now owned by the cpu again */
+	Blitter_BusArbitration ( BUS_MODE_CPU );
 
 	BlitterRegs.ctrl = (BlitterRegs.ctrl & 0xF0) | BlitterVars.line;
 
 	if (BlitterRegs.lines == 0)
 	{
-		/* We're done, clear busy bit */
-		BlitterRegs.ctrl &= ~0x80;
+		/* We're done, clear busy and hog bits */
+		BlitterRegs.ctrl &= ~(0x80|0x40);
 
 		/* Busy=0, set line to low/0 and request interrupt */
 		MFP_GPIP_Set_Line_Input ( MFP_GPIP_LINE_GPU_DONE , MFP_GPIP_STATE_LOW );
@@ -779,7 +837,10 @@ void Blitter_SourceYInc_WriteWord(void)
  */
 void Blitter_SourceAddr_WriteLong(void)
 {
-	BlitterRegs.src_addr = IoMem_ReadLong(REG_SRC_ADDR) & 0xFFFFFE;
+	if ( ConfigureParams.System.bAddressSpace24 == true )
+		BlitterRegs.src_addr = IoMem_ReadLong(REG_SRC_ADDR) & 0x00FFFFFE;	/* Normal STF/STE */
+	else
+		BlitterRegs.src_addr = IoMem_ReadLong(REG_SRC_ADDR) & 0xFFFFFFFE;	/* Falcon with extra TT RAM */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -833,7 +894,10 @@ void Blitter_DestYInc_WriteWord(void)
  */
 void Blitter_DestAddr_WriteLong(void)
 {
-	BlitterRegs.dst_addr = IoMem_ReadLong(REG_DST_ADDR) & 0xFFFFFE;
+	if ( ConfigureParams.System.bAddressSpace24 == true )
+		BlitterRegs.dst_addr = IoMem_ReadLong(REG_DST_ADDR) & 0x00FFFFFE;	/* Normal STF/STE */
+	else
+		BlitterRegs.dst_addr = IoMem_ReadLong(REG_DST_ADDR) & 0xFFFFFFFE;	/* Falcon with extra TT RAM */
 }
 
 /*-----------------------------------------------------------------------*/
@@ -932,8 +996,8 @@ void Blitter_Control_WriteByte(void)
 	{
 		if (BlitterRegs.lines == 0)
 		{
-			/* We're done, clear busy bit */
-			BlitterRegs.ctrl &= ~0x80;
+			/* We're done, clear busy and hog bits */
+			BlitterRegs.ctrl &= ~(0x80|0x40);
 		}
 		else
 		{
@@ -987,10 +1051,9 @@ void Blitter_MemorySnapShot_Capture(bool bSave)
 /**
  * Show Blitter register values.
  */
-void Blitter_Info(Uint32 dummy)
+void Blitter_Info(FILE *fp, Uint32 dummy)
 {
 	BLITTERREGS *regs = &BlitterRegs;
-	FILE *fp = stderr;
 
 	fprintf(fp, "src addr:  0x%06x\n", regs->src_addr);
 	fprintf(fp, "dst addr:  0x%06x\n", regs->dst_addr);
@@ -1007,5 +1070,5 @@ void Blitter_Info(Uint32 dummy)
 	fprintf(fp, "LOP:       0x%02x\n", regs->lop);
 	fprintf(fp, "control:   0x%02x\n", regs->ctrl);
 	fprintf(fp, "skew:      0x%02x\n", regs->skew);
-	fprintf(fp, "Note: internally changed register values aren't visible to breakpoints or in memdump output until emulated code reads or writes them!)\n");
+	fprintf(fp, "Note: internally changed register values aren't visible to breakpoints\nor in memdump output until emulated code reads or writes them!\n");
 }

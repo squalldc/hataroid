@@ -19,6 +19,14 @@ const char Joy_fileid[] = "Hatari joy.c : " __DATE__ " " __TIME__;
 #include "log.h"
 #include "screen.h"
 #include "video.h"
+#include "statusbar.h"
+
+#define JOY_DEBUG 0
+#if JOY_DEBUG
+#define Dprintf(a) printf a
+#else
+#define Dprintf(a)
+#endif
 
 #define JOY_BUTTON1  1
 #define JOY_BUTTON2  2
@@ -59,6 +67,46 @@ static Uint16 nSteJoySelect;
 static Uint8 nJoyCustomEmu[ JOYSTICK_COUNT ];
 static int UseCustomJoyEmu = false;
 
+/**
+ * Get joystick name
+ */
+const char *Joy_GetName(int id)
+{
+#if WITH_SDL2
+	return SDL_JoystickName(sdlJoystick[id]);
+#else
+	return SDL_JoystickName(id);
+#endif
+}
+
+/**
+ * Return maximum available real joystick ID
+ */
+int Joy_GetMaxId(void)
+{
+	int count = SDL_NumJoysticks();
+	if (count > JOYSTICK_COUNT)
+		count = JOYSTICK_COUNT;
+	return count - 1;
+}
+
+/**
+ * Make sure real Joystick ID is valid, and if not, disable it & return false
+ */
+bool Joy_ValidateJoyId(int i)
+{
+	/* Unavailable joystick ID -> disable it if necessary */
+	if (ConfigureParams.Joysticks.Joy[i].nJoystickMode == JOYSTICK_REALSTICK &&
+	    !bJoystickWorking[ConfigureParams.Joysticks.Joy[i].nJoyId])
+	{
+		Log_Printf(LOG_WARN, "Selected real Joystick %d unavailable, disabling ST joystick %d\n", ConfigureParams.Joysticks.Joy[i].nJoyId, i);
+		ConfigureParams.Joysticks.Joy[i].nJoystickMode = JOYSTICK_DISABLED;
+		ConfigureParams.Joysticks.Joy[i].nJoyId = 0;
+		return false;
+	}
+	return true;
+}
+
 /*-----------------------------------------------------------------------*/
 /**
  * This function initialises the (real) joysticks.
@@ -78,8 +126,9 @@ void Joy_Init(void)
 	/* FIXME: Read those settings from a configuration file and make them tunable from the GUI. */
 	static const JOYAXISMAPPING AxisMappingTable [] =
 	{
-       		/* USB game pad with ID ID 0079:0011, sold by Speedlink */
-		{"USB Gamepad" , 3, 4},
+		/* Example entry for mapping joystick axis for a certain device: */
+		/* USB game pad with ID ID 0079:0011, sold by Speedlink with axis 3 and 4 used */
+		/*{"USB Gamepad" , 3, 4}, */
 		/* Default entry used if no other SDL joystick name does match (should be last of this list) */
 		{"*DEFAULT*" , 0, 1},
 	};
@@ -104,11 +153,11 @@ void Joy_Init(void)
 		{
 			/* Set as working */
 			bJoystickWorking[i] = true;
-			Log_Printf(LOG_DEBUG, "Joystick %i: %s\n", i, SDL_JoystickName(i));
+			Log_Printf(LOG_DEBUG, "Joystick %i: %s\n", i, Joy_GetName(i));
 			/* determine joystick axis mapping for given SDL joystick name, last is default: */
 			for (j = 0; j < ARRAYSIZE(AxisMappingTable)-1; j++) {
 				/* check if ID string matches the one reported by SDL: */
-				if(strncmp(AxisMappingTable[j].SDLJoystickName, SDL_JoystickName(i), strlen(AxisMappingTable[j].SDLJoystickName)) == 0)
+				if(strncmp(AxisMappingTable[j].SDLJoystickName, Joy_GetName(i), strlen(AxisMappingTable[j].SDLJoystickName)) == 0)
 					break;
 			}
 
@@ -117,6 +166,9 @@ void Joy_Init(void)
 					sdlJoystickMapping[i]->SDLJoystickName );
 		}
 	}
+
+	for (i = 0; i < JOYSTICK_COUNT ; i++)
+		Joy_ValidateJoyId(i);
 
 	JoystickSpaceBar = false;
 }
@@ -318,10 +370,10 @@ static int Joy_GetFireButtons(int nStJoyId)
 bool Joy_SetCursorEmulation(int port)
 {
 	if (port < 0 || port >= JOYSTICK_COUNT) {
-		return 0;
+		return false;
 	}
 	ConfigureParams.Joysticks.Joy[port].nJoystickMode = JOYSTICK_KEYBOARD;
-	return 1;
+	return true;
 }
 
 
@@ -355,6 +407,24 @@ void Joy_ToggleCursorEmulation(void)
 	default:  /* neither in port 0 or 1, enable cursor emu to port 1 */
 		ConfigureParams.Joysticks.Joy[1].nJoystickMode = JOYSTICK_KEYBOARD;
 	}
+	Statusbar_UpdateInfo();
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Switch between joystick types in given joyport
+ */
+bool Joy_SwitchMode(int port)
+{
+	int mode;
+	if (port < 0 || port >= JOYSTICK_COUNT) {
+		return false;
+	}
+	mode = (ConfigureParams.Joysticks.Joy[port].nJoystickMode + 1) % JOYSTICK_MODES;
+	ConfigureParams.Joysticks.Joy[port].nJoystickMode = mode;
+	Statusbar_UpdateInfo();
+	return true;
 }
 
 
@@ -518,7 +588,7 @@ void Joy_StePadButtons_ReadWord(void)
 		}
 		else if (!(nSteJoySelect & 0x8))
 		{
-			if (nButtons & 0x01)  /* Fire button OPTION pressed? */
+			if (nButtons & 0x08)  /* Fire button OPTION pressed? */
 				nData &= ~2;
 		}
 	}
@@ -551,6 +621,7 @@ void Joy_StePadButtons_ReadWord(void)
 		}
 	}
 
+	Dprintf(("0xff9200 -> 0x%04x\n", nData));
 	IoMem_WriteWord(0xff9200, nData);
 }
 
@@ -558,10 +629,12 @@ void Joy_StePadButtons_ReadWord(void)
 /*-----------------------------------------------------------------------*/
 /**
  * Read from STE joypad direction/buttons register (0xff9202)
+ *
+ * This is used e.g. by Reservoir Gods' Tautology II
  */
 void Joy_StePadMulti_ReadWord(void)
 {
-	Uint8 nData = 0xff;
+	Uint16 nData = 0xff;
 
 	if (ConfigureParams.Joysticks.Joy[JOYID_STEPADA].nJoystickMode != JOYSTICK_DISABLED
 	    && (nSteJoySelect & 0x0f) != 0x0f)
@@ -595,19 +668,21 @@ void Joy_StePadMulti_ReadWord(void)
 		}
 		else if (!(nSteJoySelect & 0x20))
 		{
-			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> 13) & 0x0f;
+			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> (13-4)) & 0xf0;
 		}
 		else if (!(nSteJoySelect & 0x40))
 		{
-			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> 9) & 0x0f;
+			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> (9-4)) & 0xf0;
 		}
 		else if (!(nSteJoySelect & 0x80))
 		{
-			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> 5) & 0x0f;
+			nData |= ~(Joy_GetFireButtons(JOYID_STEPADB) >> (5-4)) & 0xf0;
 		}
 	}
 
-	IoMem_WriteWord(0xff9202, (nData << 8) | 0x0ff);
+	nData = (nData << 8) | 0x0ff;
+	Dprintf(("0xff9202 -> 0x%04x\n", nData));
+	IoMem_WriteWord(0xff9202, nData);
 }
 
 
@@ -618,4 +693,5 @@ void Joy_StePadMulti_ReadWord(void)
 void Joy_StePadMulti_WriteWord(void)
 {
 	nSteJoySelect = IoMem_ReadWord(0xff9202);
+	Dprintf(("0xff9202 <- 0x%04x\n", nSteJoySelect));
 }

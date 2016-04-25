@@ -618,11 +618,11 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 					isPastiFile = true;
 				}
 				
-				if (isPastiFile)
-				{
-					_showPastiAlert();
-				}
-				else
+				//if (isPastiFile)
+				//{
+				//	_showPastiAlert();
+				//}
+				//else
 				{
 					onFileClicked(item);
 				}
@@ -1133,26 +1133,6 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 		{
 			boolean showDBRefresh = _refreshDB && ((_curDir != null && _curDir.isDirectory()) || (_curZipFile != null));
 			_clearDBBtnView.setVisibility(showDBRefresh ? View.VISIBLE : View.INVISIBLE);
-		}
-	}
-}
-
-class SelectFolderClickListener implements OnClickListener
-{
-	FileBrowser _fb = null;
-	public SelectFolderClickListener(FileBrowser fb)
-	{
-		_fb = fb;
-	}
-	public void deinit()
-	{
-		_fb = null;
-	}
-	
-	public void onClick(View v) {
-		if (_fb != null)
-		{
-			_fb.onSelectButtonClicked();
 		}
 	}
 }

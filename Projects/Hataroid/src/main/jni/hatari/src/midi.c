@@ -5,9 +5,6 @@
   or at your option any later version. Read the file gpl.txt for details.
 
   MIDI communication.
-  Note that this code is far from being perfect. However, it is already
-  enough to let some ST programs (e.g. the game Pirates!) use the host's midi
-  system.
 
   TODO:
    - Most bits in the ACIA's status + control registers are currently ignored.
@@ -15,7 +12,7 @@
   NOTE [NP] :
     In all accuracy, we should use a complete emulation of the acia serial line,
     as for the ikbd. But as the MIDI's baudrate is rather high and could require
-    more ressource to emulate at the bit level, we handle transfer 1 byte a time
+    more resources to emulate at the bit level, we handle transfer 1 byte a time
     instead of sending each bit one after the other.
     This way, we only need a timer every 2560 cycles (instead of 256 cycles per bit).
 
@@ -51,12 +48,6 @@ const char Midi_fileid[] = "Hatari midi.c : " __DATE__ " " __TIME__;
 #define	MIDI_TRANSFER_BYTE_CYCLE	(MIDI_TRANSFER_BIT_CYCLE * 10)
 
 
-#define MIDI_DEBUG 0
-#if MIDI_DEBUG
-#define Dprintf(a) printf a
-#else
-#define Dprintf(a)
-#endif
 
 
 static FILE *pMidiFhIn  = NULL;        /* File handle used for Midi input */
@@ -89,8 +80,8 @@ void Midi_Init(void)
 			return;
 		}
 		setvbuf(pMidiFhOut, NULL, _IONBF, 0);    /* No output buffering! */
-		Dprintf(("Opened file '%s' for MIDI output.\n",
-			 ConfigureParams.Midi.sMidiOutFileName));
+		LOG_TRACE(TRACE_MIDI, "MIDI: Opened file '%s' for output\n",
+			 ConfigureParams.Midi.sMidiOutFileName);
 	}
 	if (ConfigureParams.Midi.sMidiInFileName[0])
 	{
@@ -103,8 +94,8 @@ void Midi_Init(void)
 			return;
 		}
 		setvbuf(pMidiFhIn, NULL, _IONBF, 0);    /* No input buffering! */
-		Dprintf(("Opened file '%s' for MIDI input.\n",
-			 ConfigureParams.Midi.sMidiInFileName));
+		LOG_TRACE(TRACE_MIDI, "MIDI: Opened file '%s' for input\n",
+			 ConfigureParams.Midi.sMidiInFileName);
 	}
 }
 
@@ -174,7 +165,7 @@ static void	MIDI_UpdateIRQ ( void )
 	if ( ( ( MidiControlRegister & 0x60) == 0x20 )			/* Check for TX causes of interrupt */
 	  && ( MidiStatusRegister & ACIA_SR_TX_EMPTY ) )
 	  irq_bit_new = ACIA_SR_INTERRUPT_REQUEST;
-
+	
 	/* Update SR and IRQ line if a change happened */
 	if ( ( MidiStatusRegister & ACIA_SR_INTERRUPT_REQUEST ) != irq_bit_new )
 	{
@@ -305,6 +296,7 @@ void Midi_Data_WriteByte(void)
 		/* If there was an error then stop the midi emulation */
 		if (ret == EOF)
 		{
+			LOG_TRACE(TRACE_MIDI, "MIDI: write error -> stop MIDI\n");
 			Midi_UnInit();
 			return;
 		}
@@ -365,7 +357,7 @@ void Midi_InterruptHandler_Update(void)
 
 		if (nInChar != EOF)
 		{
-			Dprintf(("Midi: Read character $%x\n", nInChar));
+			LOG_TRACE(TRACE_MIDI, "MIDI: Read character -> $%x\n", nInChar);
 			/* Copy into our internal queue */
 			nRxDataByte = nInChar;
 			MidiStatusRegister |= ACIA_SR_RX_FULL;
@@ -375,7 +367,7 @@ void Midi_InterruptHandler_Update(void)
 		}
 		else
 		{
-			Dprintf(("Midi: error during read!\n"));
+			LOG_TRACE(TRACE_MIDI, "MIDI: read error (doesn't stop MIDI)\n");
 			clearerr(pMidiFhIn);
 		}
 	}
@@ -383,3 +375,4 @@ void Midi_InterruptHandler_Update(void)
 	/* Set timer */
 	CycInt_AddRelativeInterrupt ( MIDI_TRANSFER_BYTE_CYCLE , INT_CPU_CYCLE , INTERRUPT_MIDI );
 }
+

@@ -11,6 +11,39 @@
 #include <SDL_types.h>
 
 
+/* Exception debugging
+ * -------------------
+ */
+
+/* CPU exception flags
+ * is catching needed also for: traps 0, 3-12, 15? (MonST catches them)
+ */
+#define	EXCEPT_BUS	 (1<<0)
+#define	EXCEPT_ADDRESS 	 (1<<1)
+#define	EXCEPT_ILLEGAL	 (1<<2)
+#define	EXCEPT_ZERODIV	 (1<<3)
+#define	EXCEPT_CHK	 (1<<4)
+#define	EXCEPT_TRAPV	 (1<<5)
+#define	EXCEPT_PRIVILEGE (1<<6)
+#define	EXCEPT_NOHANDLER (1<<7)
+
+/* DSP exception flags */
+#define EXCEPT_DSP	 (1<<8)
+
+/* whether to enable exception debugging on autostart */
+#define EXCEPT_AUTOSTART (1<<9)
+
+/* general flags */
+#define	EXCEPT_NONE	 (0)
+#define	EXCEPT_ALL	 (~EXCEPT_AUTOSTART)
+
+/* defaults are same as with earlier -D option */
+#define DEFAULT_EXCEPTIONS (EXCEPT_BUS|EXCEPT_ADDRESS|EXCEPT_DSP)
+
+extern int ExceptionDebugMask;
+extern const char* Log_SetExceptionDebugMask(const char *OptionsStr);
+
+
 /* Logging
  * -------
  * Is always enabled as it's information that can be useful
@@ -34,6 +67,7 @@ typedef enum
 #define __attribute__(foo)
 #endif
 
+extern void Log_Default(void);
 extern int Log_Init(void);
 extern int Log_SetAlertLevel(int level);
 extern void Log_UnInit(void);
@@ -126,6 +160,18 @@ extern char *Log_MatchTrace(const char *text, int state);
 
 #define TRACE_NVRAM		 (1ll<<45)
 
+#define TRACE_SCSI_CMD		 (1ll<<46)
+
+#define TRACE_NATFEATS		 (1ll<<47)
+
+#define TRACE_KEYMAP		 (1ll<<48)
+
+#define TRACE_MIDI		 (1ll<<49)
+
+#define TRACE_IDE		 (1ll<<50)
+
+#define TRACE_OS_BASE		 (1ll<<51)
+
 #define	TRACE_NONE		 (0)
 #define	TRACE_ALL		 (~0)
 
@@ -142,7 +188,7 @@ extern char *Log_MatchTrace(const char *text, int state);
 
 #define	TRACE_IKBD_ALL		( TRACE_IKBD_CMDS | TRACE_IKBD_ACIA | TRACE_IKBD_EXEC )
 
-#define	TRACE_OS_ALL		( TRACE_OS_BIOS | TRACE_OS_XBIOS | TRACE_OS_GEMDOS | TRACE_OS_AES | TRACE_OS_VDI )
+#define	TRACE_OS_ALL		( TRACE_OS_BASE | TRACE_OS_BIOS | TRACE_OS_XBIOS | TRACE_OS_GEMDOS | TRACE_OS_AES | TRACE_OS_VDI )
 
 #define	TRACE_IOMEM_ALL		( TRACE_IOMEM_RD | TRACE_IOMEM_WR )
 
@@ -156,9 +202,9 @@ extern Uint64 LogTraceFlags;
 
 #ifndef _VCWIN_
 #define	LOG_TRACE(level, args...) \
-	if (unlikely(LogTraceFlags & level)) { fprintf(TraceFile, args); fflush(TraceFile); }
+	if (unlikely(LogTraceFlags & (level))) { fprintf(TraceFile, args); fflush(TraceFile); }
 #endif
-#define LOG_TRACE_LEVEL( level )	(unlikely(LogTraceFlags & level))
+#define LOG_TRACE_LEVEL( level )	(unlikely(LogTraceFlags & (level)))
 
 #else		/* ENABLE_TRACING */
 

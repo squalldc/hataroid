@@ -75,14 +75,14 @@ int main(int argc, const char *argv[])
 		"20 = (a0.w)",
 		"()&=d0",
 		"d0=().w",
+		"&& pc = 2",
+		"pc = 2 &&",
 		"255 & 3 = (d0) & && 2 = 2",
 		/* missing options file */
 		"pc>pc :file no-such-file",		
 		/* size and mask mismatches with numbers */
 		"d0.w = $ffff0",
 		"(a0).b & 3 < 100",
-		/* more than BC_MAX_CONDITIONS_PER_BREAKPOINT conditions */
-		"1=1 && 2=2 && 3=3 && 4=4 && 5=5",
 		NULL
 	};
 	const char *parser_pass[] = {
@@ -182,12 +182,12 @@ int main(int argc, const char *argv[])
 
 	/* fail indirect equality checks with zerod regs */
 	memset(STRam, 0, sizeof(STRam));
-	STRam[0] = 1;
+	STMemory_WriteByte(0, 1);
 	/* !match: "( $200 ) > 200"
 	 *  match: "( $200 ) . w > ( 200 ) . b"
 	 */
-	STRam[0x200] = 100;
-	STRam[200] = 0x20;
+	STMemory_WriteByte(0x200, 100);
+	STMemory_WriteByte(200, 0x20);
 	/*  match: "d0 = d1" */
 	SetCpuRegister("d0", 4);
 	SetCpuRegister("d1", 4);
@@ -221,7 +221,7 @@ int main(int argc, const char *argv[])
 		testidx[0] = '0' + i;
 		BreakCond_Command(testidx, use_dsp); /* remove given */
 	}
-	remaining_matches = BreakCond_BreakPointCount(use_dsp);
+	remaining_matches = BreakCond_CpuBreakPointCount();
 	if (remaining_matches != FAILING_BC_TEST_MATCHES) {
 		fprintf(stderr, "ERROR: wrong number of breakpoints left (%d instead of %d)!\n",
 			remaining_matches, FAILING_BC_TEST_MATCHES);

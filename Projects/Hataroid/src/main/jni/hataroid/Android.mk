@@ -4,6 +4,7 @@ LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 LOCAL_MODULE    := libhataroid
 LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/SDL/include
+LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/hatari/cmake
 LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/hatari/src/gui-android
 LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/hatari/src/includes
 LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/fluidsynth/include

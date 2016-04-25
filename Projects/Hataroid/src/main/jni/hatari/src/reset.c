@@ -14,8 +14,10 @@ const char Reset_fileid[] = "Hatari reset.c : " __DATE__ " " __TIME__;
 #include "dmaSnd.h"
 #include "crossbar.h"
 #include "fdc.h"
+#include "fdc_compat.h"
 #include "floppy.h"
 #include "gemdos.h"
+#include "hdc.h"
 #include "acia.h"
 #include "ikbd.h"
 #include "cycInt.h"
@@ -58,6 +60,7 @@ static int Reset_ST(bool bCold)
 			return ret;               /* If we can not load a TOS image, return now! */
 
 		Cart_ResetImage();          /* Load cartridge program into ROM memory. */
+		Cart_Patch();
 	}
 	CycInt_Reset();               /* Reset interrupts */
 	MFP_Reset();                  /* Setup MFP chip */
@@ -68,11 +71,18 @@ static int Reset_ST(bool bCold)
 	GemDOS_Reset();               /* Reset GEMDOS emulation */
 	if (bCold)
 	{
-		FDC_Reset();                /* Reset FDC */
+		FDC_Reset( bCold );	/* Reset FDC */
 	}
 	Floppy_Reset();			/* Reset Floppy */
 
-	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON
+	    || ConfigureParams.System.nMachineType == MACHINE_TT)
+	{
+		Ncr5380_Reset();
+	}
+
+	if (ConfigureParams.System.nMachineType == MACHINE_FALCON)
+	{
 		DSP_Reset();                  /* Reset the DSP */
 		Crossbar_Reset(bCold);        /* Reset Crossbar sound */
 	}
@@ -105,9 +115,15 @@ static int Reset_ST(bool bCold)
 /**
  * Cold reset ST (reset memory, all registers and reboot)
  */
-int Reset_Cold(void)
+int Reset_Cold(bool resetFDCCompatMode)
 {
-	Main_WarpMouse(sdlscrn->w/2, sdlscrn->h/2);  /* Set mouse pointer to the middle of the screen */
+	/* Set mouse pointer to the middle of the screen */
+	Main_WarpMouse(sdlscrn->w/2, sdlscrn->h/2, false);
+
+    if (resetFDCCompatMode)
+    {
+        FDC_Compat_SetCompatMode(FDC_CompatMode_Default);
+    }
 
 	return Reset_ST(true);
 }

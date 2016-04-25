@@ -31,13 +31,13 @@ static SGOBJ keyboarddlg[] =
 	{ SGBOX, 0, 0, 0,0, 46,14, NULL },
 	{ SGTEXT, 0, 0, 16,1, 14,1, "Keyboard setup" },
 	{ SGTEXT, 0, 0, 2,3, 17,1, "Keyboard mapping:" },
-	{ SGRADIOBUT, 0, 0, 4,5, 10,1, "Symbolic" },
-	{ SGRADIOBUT, 0, 0, 17,5, 10,1, "Scancode" },
-	{ SGRADIOBUT, 0, 0, 30,5, 11,1, "From file" },
+	{ SGRADIOBUT, 0, 0,  4,5, 10,1, "_Symbolic" },
+	{ SGRADIOBUT, 0, 0, 17,5, 10,1, "S_cancode" },
+	{ SGRADIOBUT, 0, 0, 30,5, 11,1, "_From file" },
 	{ SGTEXT, 0, 0, 2,7, 13,1, "Mapping file:" },
 	{ SGTEXT, 0, 0, 2,8, 42,1, NULL },
-	{ SGBUTTON, 0, 0, 36,7, 8,1, "Browse" },
-	{ SGCHECKBOX, 0, 0, 2,10, 41,1, "Disable key repeat in fast forward mode" },
+	{ SGBUTTON,   0, 0, 36, 7,  8,1, "_Browse" },
+	{ SGCHECKBOX, 0, 0,  2,10, 41,1, "_Disable key repeat in fast forward mode" },
 	{ SGBUTTON, SG_DEFAULT, 0, 13,12, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
@@ -73,11 +73,11 @@ void Dialog_KeyboardDlg(void)
 	/* Show the dialog: */
 	do
 	{
-		but = SDLGui_DoDialog(keyboarddlg, NULL);
+		but = SDLGui_DoDialog(keyboarddlg, NULL, false);
 
 		if (but == DLGKEY_MAPBROWSE)
 		{
-			SDLGui_FileConfSelect(dlgmapfile,
+			SDLGui_FileConfSelect("Keyboard mapping file:", dlgmapfile,
 			                      ConfigureParams.Keyboard.szMappingFileName,
 			                      keyboarddlg[DLGKEY_MAPNAME].w, false);
 		}

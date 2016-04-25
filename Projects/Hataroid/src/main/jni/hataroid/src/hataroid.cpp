@@ -31,6 +31,7 @@ extern "C"
 	#include <gemdos.h>
 	#include <hdc.h>
 	#include <memorySnapShot.h>
+	#include <fdc_compat.h>
 
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_libExit(JNIEnv * env, jobject obj);
 
@@ -140,6 +141,12 @@ static char _saveDispName[FILENAME_MAX] = {0};
 
 static int _resetSynthOnSTReset = true;
 
+static const char* _emuTOSRomST = 0;
+static int _emuTOSRomSTLen = 0;
+static const char* _emuTOSRomSTE = 0;
+static int _emuTOSRomSTELen = 0;
+
+
 static void SetEmulatorOptions(JNIEnv * env, jobjectArray keyarray, jobjectArray valarray, bool apply, bool init, bool queueCommand);
 void _storeSaveState(const char *saveMetaFilePath);
 void _loadSaveState();
@@ -148,6 +155,8 @@ bool _findSaveStateMetaFile(int slotID, char *resultBuf);
 void _clearHataroidSaveCommands();
 void _hataroidRetrieveSaveExtraData();
 void _confirmSettings(JNIEnv* env);
+void _resetCold();
+static void _preloadEmuTOS(JNIEnv* curEnv);
 
 static void _initAssetDataItems();
 static void _deinitAssetDataItems();
@@ -366,6 +375,7 @@ static void _initEmulator()
 		}
 
 		fsMidi_init();
+		_preloadEmuTOS(g_jniMainInterface.android_mainEmuThreadEnv);
 
 		const char *argv[] = { "Hataroid" };
 		hatari_main_init(1, argv);
@@ -770,6 +780,16 @@ bool _optionValMachineType(const OptionSetting *setting, char *dstBuf, int dstBu
 	else if (ConfigureParams.System.nMachineType == MACHINE_TT)		{ strncpy(dstBuf, "TT", dstBufLen); return true; }
 	else if (ConfigureParams.System.nMachineType == MACHINE_ST)		{ strncpy(dstBuf, "ST", dstBufLen); return true; }
 	return false;
+}
+
+bool _optionValTOSEmuTOS(const OptionSetting *setting, char *dstBuf, int dstBufLen)
+{
+    strncpy(dstBuf, ConfigureParams.Hataroid.useEmuTOS?"true":"false", dstBufLen);
+    return true;
+}
+void _optionTOSEmuTOS(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+    ConfigureParams.Hataroid.useEmuTOS = _getBoolVal(val) ? 1 : 0;
 }
 
 bool _optionValTOSST(const OptionSetting *setting, char *dstBuf, int dstBufLen)
@@ -1253,13 +1273,13 @@ void _optionBootFromHD(const OptionSetting *setting, const char *val, EmuCommand
 
 bool _optionValACSIAttach(const OptionSetting *setting, char *dstBuf, int dstBufLen)
 {
-	strncpy(dstBuf, ConfigureParams.HardDisk.bUseHardDiskImage?"true":"false", dstBufLen);
+	strncpy(dstBuf, ConfigureParams.Acsi[0].bUseDevice?"true":"false", dstBufLen);
 	return true;
 }
 
 void _optionACSIAttach(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
-	ConfigureParams.HardDisk.bUseHardDiskImage = _getBoolVal(val);
+	ConfigureParams.Acsi[0].bUseDevice = _getBoolVal(val);
 }
 
 bool _optionValIDEMasterAttach(const OptionSetting *setting, char *dstBuf, int dstBufLen)
@@ -1297,14 +1317,14 @@ void _optionGEMDOSAttach(const OptionSetting *setting, const char *val, EmuComma
 
 bool _optionValACSIImage(const OptionSetting *setting, char *dstBuf, int dstBufLen)
 {
-	strncpy(dstBuf, ConfigureParams.HardDisk.szHardDiskImage, dstBufLen);
+	strncpy(dstBuf, ConfigureParams.Acsi[0].sDeviceFile, dstBufLen);
 	return true;
 }
 
 void _optionACSIImage(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
-	strncpy(ConfigureParams.HardDisk.szHardDiskImage, ((val==0)||strcmp(val,"none")==0) ? "" : val, FILENAME_MAX);
-	ConfigureParams.HardDisk.szHardDiskImage[FILENAME_MAX-1]=0;
+	strncpy(ConfigureParams.Acsi[0].sDeviceFile, ((val==0)||strcmp(val,"none")==0) ? "" : val, FILENAME_MAX);
+	ConfigureParams.Acsi[0].sDeviceFile[FILENAME_MAX-1]=0;
 }
 
 bool _optionValIDEMasterImage(const OptionSetting *setting, char *dstBuf, int dstBufLen)
@@ -1621,6 +1641,7 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_system_printeremulation", 0, 0 },
 	{ "pref_system_rs232emulation", 0, 0 },
 	{ "pref_system_rtc", _optionSetRTC, _optionValSetRTC },
+    { "pref_system_tos_emutos", _optionTOSEmuTOS, _optionValTOSEmuTOS },
 	{ "pref_system_tos", 0, _optionValTOSST },
 	{ "pref_system_tos_ste", 0, _optionValTOSSTE },
 	{ "pref_display_bilinearfilter", _optionSetBilinearFilter, 0 },
@@ -1854,12 +1875,17 @@ void EmuCommandResetCold_Run(EmuCommand *command)
 {
 	Debug_Printf("----> Cold Reset");
 	Main_PauseEmulation(false);
-	g_audioMute = 1;
-	setTurboSpeed(0);
-	setUserEmuPaused(0);
-	Reset_Cold();
-	fsMidi_reset(_resetSynthOnSTReset?1:0);
+    _resetCold();
 	Main_UnPauseEmulation();
+}
+
+void _resetCold()
+{
+    g_audioMute = 1;
+    setTurboSpeed(0);
+    setUserEmuPaused(0);
+    Reset_Cold(true);
+    fsMidi_reset(_resetSynthOnSTReset?1:0);
 }
 
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorResetCold(JNIEnv * env, jobject obj)
@@ -1926,6 +1952,16 @@ void EmuCommandInsertFloppy_Run(EmuCommand *command)
 	Main_PauseEmulation(false);
 
 	EmuCommandInsertFloppy_Data *data = (EmuCommandInsertFloppy_Data*)command->data;
+
+    // check if pasti disc inserted during legacy fdc emulation, then force reset
+    if ((FDC_Compat_GetCompatMode() == FDC_CompatMode_Old))
+    {
+        if (Floppy_IsPasti(data->floppyFileName, data->floppyZipPath))
+        {
+            FDC_Compat_SetCompatMode(FDC_CompatMode_Default);
+            _resetCold();
+        }
+    }
 
 	Floppy_SetDiskFileName(data->floppyID, data->floppyFileName, data->floppyZipPath);
 	Floppy_InsertDiskIntoDrive(data->floppyID);
@@ -3123,4 +3159,39 @@ extern "C" const char* hataroid_getAssetDataRef(JNIEnv *curEnv, const char* asse
 
 void _confirmSettings(JNIEnv* curEnv)
 {
+}
+
+static void _preloadEmuTOS(JNIEnv* curEnv)
+{
+    _emuTOSRomST = hataroid_getAssetDataDirect(curEnv, "tos/etos192uk.img", 0, &_emuTOSRomSTLen);
+    _emuTOSRomSTE = hataroid_getAssetDataDirect(curEnv, "tos/etos256uk.img", 0, &_emuTOSRomSTELen);
+}
+
+extern "C" char* hataroid_LoadEmuTOS(int machineType, long* fileSize)
+{
+    (*fileSize) = 0;
+
+    if (machineType == MACHINE_STE)
+    {
+        if (_emuTOSRomSTE != 0 && _emuTOSRomSTELen > 0)
+        {
+            (*fileSize) = _emuTOSRomSTELen;
+
+            char* buf = (char*)malloc(_emuTOSRomSTELen);
+            memcpy(buf, _emuTOSRomSTE, _emuTOSRomSTELen);
+            return buf;
+        }
+        return 0;
+    }
+
+    // default to MACHINE_ST
+    if (_emuTOSRomST != 0 && _emuTOSRomSTLen > 0)
+    {
+        (*fileSize) = _emuTOSRomSTLen;
+
+        char* buf = (char*)malloc(_emuTOSRomSTLen);
+        memcpy(buf, _emuTOSRomST, _emuTOSRomSTLen);
+        return buf;
+    }
+    return 0;
 }

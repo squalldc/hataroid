@@ -8,6 +8,8 @@
 #ifndef HATARI_CONFIGURATION_H
 #define HATARI_CONFIGURATION_H
 
+/* if header's struct contents depend on configuration options, header must include config.h */
+#include "config.h"
 #include "../../../hataroid/src/midi/fsmidi.h"
 
 /* Logging and tracing */
@@ -15,6 +17,7 @@ typedef struct
 {
   char sLogFileName[FILENAME_MAX];
   char sTraceFileName[FILENAME_MAX];
+  int nExceptionDebugMask;
   int nTextLogLevel;
   int nAlertDlgLogLevel;
   bool bConfirmQuit;
@@ -99,6 +102,10 @@ typedef enum {
   SHORTCUT_LOADMEM,
   SHORTCUT_SAVEMEM,
   SHORTCUT_INSERTDISKA,
+  SHORTCUT_JOY_0,
+  SHORTCUT_JOY_1,
+  SHORTCUT_PAD_A,
+  SHORTCUT_PAD_B,
   SHORTCUT_KEYS,  /* number of shortcuts */
   SHORTCUT_NONE
 } SHORTCUTKEYIDX;
@@ -113,6 +120,7 @@ typedef struct
 typedef struct
 {
   int nMemorySize;
+  int nTTRamSize;
   bool bAutoSave;
   char szMemoryCaptureFileName[FILENAME_MAX];
   char szAutoSaveFileName[FILENAME_MAX];
@@ -126,6 +134,7 @@ typedef enum
   JOYSTICK_REALSTICK,
   JOYSTICK_KEYBOARD
 } JOYSTICKMODE;
+#define JOYSTICK_MODES 3
 
 typedef struct
 {
@@ -136,7 +145,16 @@ typedef struct
   int nKeyCodeUp, nKeyCodeDown, nKeyCodeLeft, nKeyCodeRight, nKeyCodeFire;
 } JOYSTICK;
 
-#define JOYSTICK_COUNT 6
+enum
+{
+	JOYID_JOYSTICK0,
+	JOYID_JOYSTICK1,
+	JOYID_STEPADA,
+	JOYID_STEPADB,
+	JOYID_PARPORT1,
+	JOYID_PARPORT2,
+	JOYSTICK_COUNT
+};
 
 typedef struct
 {
@@ -159,6 +177,10 @@ typedef struct
 {
   bool bAutoInsertDiskB;
   bool FastFloppy;			/* true to speed up FDC emulation */
+  bool EnableDriveA;
+  bool EnableDriveB;
+  int  DriveA_NumberOfHeads;
+  int  DriveB_NumberOfHeads;
   WRITEPROTECTION nWriteProtection;
   char szDiskZipPath[MAX_FLOPPYDRIVES][FILENAME_MAX];
   char szDiskFileName[MAX_FLOPPYDRIVES][FILENAME_MAX];
@@ -169,6 +191,7 @@ typedef struct
 /* Hard drives configuration: C: - Z: */
 #define MAX_HARDDRIVES  24
 #define DRIVE_C 0
+#define DRIVE_SKIP -1
 
 typedef enum
 {
@@ -179,19 +202,28 @@ typedef enum
 
 typedef struct
 {
-  int nHardDiskDir;
+  int nGemdosDrive;
   bool bUseHardDiskDirectories;
-  bool bUseHardDiskImage;
   bool bUseIdeMasterHardDiskImage;
   bool bUseIdeSlaveHardDiskImage;
   WRITEPROTECTION nWriteProtection;
   GEMDOS_CHR_CONV nGemdosCase;
+  bool bFilenameConversion;
   bool bBootFromHardDisk;
   char szHardDiskDirectories[MAX_HARDDRIVES][FILENAME_MAX];
-  char szHardDiskImage[FILENAME_MAX];
   char szIdeMasterHardDiskImage[FILENAME_MAX];
   char szIdeSlaveHardDiskImage[FILENAME_MAX];
 } CNF_HARDDISK;
+
+/* SCSI/ACSI configuration */
+#define MAX_ACSI_DEVS 8
+#define MAX_SCSI_DEVS 8
+
+typedef struct
+{
+  bool bUseDevice;
+  char sDeviceFile[FILENAME_MAX];
+} CNF_SCSIDEV;
 
 /* Falcon register $FFFF8006 bits 6 & 7 (mirrored in $FFFF82C0 bits 0 & 1):
  * 00 Monochrome
@@ -228,12 +260,17 @@ typedef struct
   int nVdiColors;
   int nVdiWidth;
   int nVdiHeight;
+  bool bMouseWarp;
   bool bShowStatusbar;
   bool bShowDriveLed;
   bool bCrop;
   bool bForceMax;
   int nMaxWidth;
   int nMaxHeight;
+#if WITH_SDL2
+  int nRenderScaleQuality;
+  bool bUseVsync;
+#endif
 } CNF_SCREEN;
 
 
@@ -293,9 +330,9 @@ typedef struct
   bool bPatchTimerD;
   bool bFastBoot;                 /* Enable to patch TOS for fast boot */
   bool bFastForward;
+  bool bAddressSpace24;           /* Always set to true with old UAE cpu */
 
 #if ENABLE_WINUAE_CPU
-  bool bAddressSpace24;
   bool bCycleExactCpu;
   FPUTYPE n_FPUType;
   bool bCompatibleFPU;            /* More compatible FPU */
@@ -328,6 +365,8 @@ typedef struct
 	float kbdPanY;
 
 	bool mouseActive;
+
+	bool useEmuTOS;
 
 	char saveDispName[FILENAME_MAX];
 
@@ -370,6 +409,8 @@ typedef struct
   CNF_MEMORY Memory;
   CNF_DISKIMAGE DiskImage;
   CNF_HARDDISK HardDisk;
+  CNF_SCSIDEV Acsi[MAX_ACSI_DEVS];
+  CNF_SCSIDEV Scsi[MAX_SCSI_DEVS];
   CNF_ROM Rom;
   CNF_RS232 RS232;
   CNF_PRINTER Printer;

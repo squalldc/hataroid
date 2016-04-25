@@ -20,6 +20,8 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
+#include <ctype.h>
+
 #include "main.h"
 #include "sysdeps.h"
 #include "newcpu.h"
@@ -70,12 +72,53 @@ bool bDspHostInterruptPending = false;
  * Trigger HREQ interrupt at the host CPU.
  */
 #if ENABLE_DSP_EMU
-static void DSP_TriggerHostInterrupt(void)
+static void DSP_TriggerHostInterrupt(int hreq)
 {
-	bDspHostInterruptPending = true;
-	M68000_SetSpecial(SPCFLAG_DSP);
+//fprintf ( stderr, "DSP_TriggerHostInterrupt %d %x %x\n" , hreq , regs.sr , regs.intmask );
+	if ( hreq )
+	{
+		M68000_SetSpecial(SPCFLAG_DSP);			// TODO for old cpu core, remove, use level 6 instead and M68000_Update_intlev()
+		bDspHostInterruptPending = true;
+		M68000_Update_intlev ();
+	}
+	else
+	{
+		M68000_UnsetSpecial(SPCFLAG_DSP);		// TODO for old cpu core, remove, use level 6 instead and M68000_Update_intlev()
+		bDspHostInterruptPending = false;
+		M68000_Update_intlev ();
+	}
 }
 #endif
+
+
+/**
+ * Return the state of HREQ
+ */
+Uint8	DSP_GetHREQ ( void )
+{
+	if ( bDspHostInterruptPending )
+		return 1;
+	else
+		return 0;
+}
+
+
+/**
+ * Return the vector number associated to the HREQ interrupt.
+ * If this function is called when HREQ=0, then we return -1 to indicate
+ * a spurious interrupt.
+ */
+int	DSP_ProcessIACK ( void )
+{
+	int	VecNr;
+
+	if ( bDspHostInterruptPending )
+		VecNr = IoMem_ReadByte ( 0xffa203 );
+	else
+		VecNr = -1;
+	
+	return VecNr;
+}
 
 
 /**
@@ -88,9 +131,9 @@ bool	DSP_ProcessIRQ(void)
 {
 	if (bDspHostInterruptPending && regs.intmask < 6)
 	{
-		M68000_Exception(IoMem_ReadByte(0xffa203)*4, M68000_EXC_SRC_INT_DSP);
-		bDspHostInterruptPending = false;
-		M68000_UnsetSpecial(SPCFLAG_DSP);
+		M68000_Exception(IoMem_ReadByte(0xffa203), M68000_EXC_SRC_INT_DSP);
+		bDspHostInterruptPending = false;		// [NP] TODO : remove this line, should be cleared by DSP_TriggerHostInterrupt ?
+		M68000_UnsetSpecial(SPCFLAG_DSP);		// [NP] TODO : remove this line, should be cleared by DSP_TriggerHostInterrupt ?
 		return true;
 	}
 
@@ -100,29 +143,24 @@ bool	DSP_ProcessIRQ(void)
 
 
 /**
- * Initialize the DSP emulation
+ * Initialize the DSP emulation (should be called only once at start)
  */
 void DSP_Init(void)
 {
 #if ENABLE_DSP_EMU
-	if (bDspEnabled || ConfigureParams.System.nDSPType != DSP_TYPE_EMU)
-		return;
 	dsp_core_init(DSP_TriggerHostInterrupt);
 	dsp56k_init_cpu();
-	bDspEnabled = true;
 	save_cycles = 0;
 #endif
 }
 
 
 /**
- * Shut down the DSP emulation
+ * Shut down the DSP emulation (should be called only once at exit)
  */
 void DSP_UnInit(void)
 {
 #if ENABLE_DSP_EMU
-	if (!bDspEnabled)
-		return;
 	dsp_core_shutdown();
 	bDspEnabled = false;
 #endif
@@ -136,8 +174,30 @@ void DSP_Reset(void)
 {
 #if ENABLE_DSP_EMU
 	dsp_core_reset();
-	bDspHostInterruptPending = false;
+	DSP_TriggerHostInterrupt ( 0 );				/* Clear HREQ */
 	save_cycles = 0;
+#endif
+}
+
+
+/**
+ * Enable the DSP emulation
+ */
+void DSP_Enable(void)
+{
+#if ENABLE_DSP_EMU
+	bDspEnabled = true;
+#endif
+}
+
+
+/**
+ * Disable the DSP emulation
+ */
+void DSP_Disable(void)
+{
+#if ENABLE_DSP_EMU
+	bDspEnabled = false;
 #endif
 }
 
@@ -148,12 +208,14 @@ void DSP_Reset(void)
 void DSP_MemorySnapShot_Capture(bool bSave)
 {
 #if ENABLE_DSP_EMU
-	if (!bSave)
-		DSP_Reset();
-
 	MemorySnapShot_Store(&bDspEnabled, sizeof(bDspEnabled));
 	MemorySnapShot_Store(&dsp_core, sizeof(dsp_core));
 	MemorySnapShot_Store(&save_cycles, sizeof(save_cycles));
+
+	if ( bDspEnabled )
+		DSP_Enable();
+	else	
+		DSP_Disable();
 #endif
 }
 
@@ -410,39 +472,39 @@ Uint16 DSP_DisasmMemory(Uint16 dsp_memdump_addr, Uint16 dsp_memdump_upper, char 
  * Show information on DSP core state which isn't
  * shown by any of the other commands (dd, dm, dr).
  */
-void DSP_Info(Uint32 dummy)
+void DSP_Info(FILE *fp, Uint32 dummy)
 {
 #if ENABLE_DSP_EMU
 	int i, j;
 	const char *stackname[] = { "SSH", "SSL" };
 
-	fputs("DSP core information:\n", stderr);
+	fputs("DSP core information:\n", fp);
 
 	for (i = 0; i < ARRAYSIZE(stackname); i++) {
-		fprintf(stderr, "- %s stack:", stackname[i]);
+		fprintf(fp, "- %s stack:", stackname[i]);
 		for (j = 0; j < ARRAYSIZE(dsp_core.stack[0]); j++) {
-			fprintf(stderr, " %04hx", dsp_core.stack[i][j]);
+			fprintf(fp, " %04hx", dsp_core.stack[i][j]);
 		}
-		fputs("\n", stderr);
+		fputs("\n", fp);
 	}
 
-	fprintf(stderr, "- Interrupt IPL:");
+	fprintf(fp, "- Interrupt IPL:");
 	for (i = 0; i < ARRAYSIZE(dsp_core.interrupt_ipl); i++) {
-		fprintf(stderr, " %04hx", dsp_core.interrupt_ipl[i]);
+		fprintf(fp, " %04hx", dsp_core.interrupt_ipl[i]);
 	}
-	fputs("\n", stderr);
+	fputs("\n", fp);
 
-	fprintf(stderr, "- Pending ints: ");
+	fprintf(fp, "- Pending ints: ");
 	for (i = 0; i < ARRAYSIZE(dsp_core.interrupt_isPending); i++) {
-		fprintf(stderr, " %04hx", dsp_core.interrupt_isPending[i]);
+		fprintf(fp, " %04hx", dsp_core.interrupt_isPending[i]);
 	}
-	fputs("\n", stderr);
+	fputs("\n", fp);
 
-	fprintf(stderr, "- Hostport:");
+	fprintf(fp, "- Hostport:");
 	for (i = 0; i < ARRAYSIZE(dsp_core.hostport); i++) {
-		fprintf(stderr, " %02x", dsp_core.hostport[i]);
+		fprintf(fp, " %02x", dsp_core.hostport[i]);
 	}
-	fputs("\n", stderr);
+	fputs("\n", fp);
 #endif
 }
 
@@ -563,7 +625,7 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 		{ "Y1",  &dsp_core.registers[DSP_REG_Y1],  32, BITMASK(24) }
 	};
 	/* left, right, middle, direction */
-        int l, r, m, dir = 0;
+	int l, r, m, dir = 0;
 	unsigned int i, len;
 	char reg[MAX_REGNAME_LEN];
 
@@ -572,7 +634,7 @@ int DSP_GetRegisterAddress(const char *regname, Uint32 **addr, Uint32 *mask)
 	}
 
 	for (i = 0; i < sizeof(reg) && regname[i]; i++) {
-		reg[i] = toupper(regname[i]);
+		reg[i] = toupper((unsigned char)regname[i]);
 	}
 	if (i < 2 || regname[i]) {
 		/* too short or longer than any of the names */

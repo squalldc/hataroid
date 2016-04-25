@@ -50,8 +50,8 @@ const char HostScreen_fileid[] = "Hatari hostscreen.c : " __DATE__ " " __TIME__;
 
 
 /* TODO: put these hostscreen globals to some struct */
-static Uint32 sdl_videoparams;
-static int hs_width, hs_height, hs_width_req, hs_height_req, hs_bpp;
+static SDL_Rect hs_rect;
+static int hs_width_req, hs_height_req, hs_bpp;
 static bool   doUpdate; // the HW surface is available -> the SDL need not to update the surface after ->pixel access
 
 static void HostScreen_remapPalette(void);
@@ -88,18 +88,15 @@ void HostScreen_UnInit(void)
 
 void HostScreen_toggleFullScreen(void)
 {
-	sdl_videoparams ^= SDL_FULLSCREEN;
-	Dprintf(("Fullscreen = %s, width = %d, height = %d, bpp = %d\n",
-		 sdl_videoparams&SDL_FULLSCREEN?"true":"false", hs_width_req, hs_height_req, hs_bpp));
-
-	HostScreen_setWindowSize(hs_width_req, hs_height_req, hs_bpp);
+	HostScreen_setWindowSize(hs_width_req, hs_height_req, hs_bpp, true);
 	/* force screen redraw */
-	HostScreen_update1(true);
+	HostScreen_update1(NULL, true);
 }
 
 
-void HostScreen_setWindowSize(int width, int height, int bpp)
+void HostScreen_setWindowSize(int width, int height, int bpp, bool bForceChange)
 {
+	const bool keep = ConfigureParams.Screen.bKeepResolution;
 	int screenwidth, screenheight, maxw, maxh;
 	int scalex, scaley, sbarheight;
 
@@ -112,8 +109,8 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	while (width > maxw*scalex) {
 		scalex *= 2;
 	}
-	while (height > maxh*scalex) {
-		scalex *= 2;
+	while (height > maxh*scaley) {
+		scaley *= 2;
 	}
 	if (scalex * scaley > 1) {
 		fprintf(stderr, "WARNING: too large screen size %dx%d -> divided by %dx%d!\n",
@@ -122,7 +119,7 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 		height /= scaley;
 	}
 
-	Resolution_GetLimits(&maxw, &maxh, &bpp, ConfigureParams.Screen.bKeepResolution);
+	Resolution_GetLimits(&maxw, &maxh, &bpp, keep);
 	nScreenZoomX = nScreenZoomY = 1;
 	
 	if (ConfigureParams.Screen.bAspectCorrect) {
@@ -171,7 +168,7 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	screenwidth = width;
 
 	/* get resolution corresponding to these */
-	Resolution_Search(&screenwidth, &screenheight, &bpp);
+	Resolution_Search(&screenwidth, &screenheight, &bpp, keep);
 	/* re-calculate statusbar height for this resolution */
 	sbarheight = Statusbar_SetHeight(screenwidth, screenheight-sbarheight);
 
@@ -180,12 +177,12 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	 * in windowed mode because this uses screensize instead of using
 	 * the aspect scaled sizes directly, but it works better this way.
 	 */
-	hs_width = screenwidth;
-	hs_height = screenheight - sbarheight;
+	hs_rect.x = 0;
+	hs_rect.y = 0;
+	hs_rect.w = screenwidth;
+	hs_rect.h = screenheight - sbarheight;
 
-	if (sdlscrn && (!bpp || sdlscrn->format->BitsPerPixel == bpp) &&
-	    sdlscrn->w == (signed)screenwidth && sdlscrn->h == (signed)screenheight &&
-	    (sdlscrn->flags&SDL_FULLSCREEN) == (sdl_videoparams&SDL_FULLSCREEN))
+	if (!Screen_SetSDLVideoSize(screenwidth, screenheight, bpp, bForceChange))
 	{
 		/* same host screen size despite Atari resolution change,
 		 * -> no time consuming host video mode change needed
@@ -204,31 +201,13 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 			 */
 			Statusbar_Init(sdlscrn);
 		}
+#if WITH_SDL2
+		doUpdate = true;
+#else
 		// check in case switched from VDI to Hostscreen
 		doUpdate = ( sdlscrn->flags & SDL_HWSURFACE ) == 0;
+#endif
 		return;
-	}
-
-	if (bInFullScreen) {
-		/* un-embed the Hatari WM window for fullscreen */
-		Control_ReparentWindow(screenwidth, screenheight, bInFullScreen);
-
-		sdl_videoparams = SDL_SWSURFACE|SDL_HWPALETTE|SDL_FULLSCREEN;
-	} else {
-		sdl_videoparams = SDL_SWSURFACE|SDL_HWPALETTE;
-	}
-#ifdef _MUDFLAP
-	if (sdlscrn) {
-		__mf_unregister(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS);
-	}
-#endif
-	sdlscrn = SDL_SetVideoMode(screenwidth, screenheight, bpp, sdl_videoparams);
-#ifdef _MUDFLAP
-	__mf_register(sdlscrn->pixels, sdlscrn->pitch*sdlscrn->h, __MF_TYPE_GUESS, "SDL pixels");
-#endif
-	if (!bInFullScreen) {
-		/* re-embed the new Hatari SDL window */
-		Control_ReparentWindow(screenwidth, screenheight, bInFullScreen);
 	}
 
 	// In case surface format changed, update SDL palette & remap the native palette
@@ -241,8 +220,12 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 	Dprintf(("Surface Pitch = %d, width = %d, height = %d\n", sdlscrn->pitch, sdlscrn->w, sdlscrn->h));
 	Dprintf(("Must Lock? %s\n", SDL_MUSTLOCK(sdlscrn) ? "YES" : "NO"));
 
+#if WITH_SDL2
+	doUpdate = true;
+#else
 	// is the SDL_update needed?
 	doUpdate = ( sdlscrn->flags & SDL_HWSURFACE ) == 0;
+#endif
 
 	Dprintf(("Pixel format:bitspp=%d, tmasks r=%04x g=%04x b=%04x"
 			", tshifts r=%d g=%d b=%d"
@@ -252,16 +235,24 @@ void HostScreen_setWindowSize(int width, int height, int bpp)
 			sdlscrn->format->Rshift, sdlscrn->format->Gshift, sdlscrn->format->Bshift,
 			sdlscrn->format->Rloss, sdlscrn->format->Gloss, sdlscrn->format->Bloss));
 
-	Main_WarpMouse(sdlscrn->w/2,sdlscrn->h/2);
+	Main_WarpMouse(sdlscrn->w/2,sdlscrn->h/2, false);
 }
 
 
-void HostScreen_update1(bool forced)
+void HostScreen_update1(SDL_Rect *extra, bool forced)
 {
+	SDL_Rect rects[2];
+	int count = 1;
+
 	if ( !forced && !doUpdate ) // the HW surface is available
 		return;
 
-	SDL_UpdateRect( sdlscrn, 0, 0, hs_width, hs_height );
+	rects[0] = hs_rect;
+	if (extra) {
+		rects[1] = *extra;
+		count = 2;
+	}
+	SDL_UpdateRects(sdlscrn, count, rects);
 }
 
 
@@ -277,12 +268,12 @@ Uint32 HostScreen_getPitch(void)
 
 Uint32 HostScreen_getWidth(void)
 {
-	return hs_width;
+	return hs_rect.w;
 }
 
 Uint32 HostScreen_getHeight(void)
 {
-	return hs_height;
+	return hs_rect.h;
 }
 
 Uint8 *HostScreen_getVideoramAddress(void)
@@ -338,9 +329,14 @@ bool HostScreen_renderBegin(void)
 	return true;
 }
 
-void HostScreen_renderEnd(void)
+/**
+ * Direct surface writes done, so unlock screen,
+ * check for statusbar updates and if there were such,
+ * return which area needs update.
+ */
+SDL_Rect* HostScreen_renderEnd(void)
 {
 	if (SDL_MUSTLOCK(sdlscrn))
 		SDL_UnlockSurface(sdlscrn);
-	Statusbar_Update(sdlscrn);
+	return Statusbar_Update(sdlscrn, false);
 }

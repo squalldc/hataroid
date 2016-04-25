@@ -92,6 +92,8 @@
     <string name="tosimage">TOS image (ST)</string>
     <string name="tosimage_ste">TOS image (STE)</string>
     <string name="tosimage_falcon">TOS image (Falcon)</string>
+	<string name="emutos">Use built-in Emu-TOS</string>
+	<string name="emutos_summary">Use the open-source Atari OS replacement</string>
     <string name="compatiblecpu">Slower but more compatible CPU</string>
     <string name="compatiblecpu_summary">Enables 68k address errors and CPU prefetch buffer</string>
     <string name="blitteremulation">Blitter emulation</string>

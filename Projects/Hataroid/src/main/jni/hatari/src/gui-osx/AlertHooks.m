@@ -1,5 +1,5 @@
 /*
-  Hatari - AlertHooks.c
+  Hatari - AlertHooks.m
 
   This file is distributed under the GNU General Public License, version 2
   or at your option any later version. Read the file gpl.txt for details.
@@ -11,6 +11,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import "AlertHooks.h"
+#import "Shared.h"
 
 #ifdef ALERT_HOOKS 
 
@@ -20,7 +21,21 @@
 */
 int HookedAlertNotice(const char* szMessage)
 {
-	return (NSAlertDefaultReturn == NSRunInformationalAlertPanel(@"Hatari", [NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding], nil, nil, nil));
+	NSString *message ;
+	NSRange  cantTOS, firstPv, lastPv ;
+
+	message = [NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding] ;
+	//NSLog(@"Notice: %@", message ) ;
+	cantTOS = [message rangeOfString:@"Can not load TOS file:"] ;
+	firstPv = [message rangeOfString:@"'"] ;
+	lastPv = [message rangeOfString:@"'" options:NSBackwardsSearch] ;
+
+	if ((cantTOS.location == NSNotFound) || (firstPv.location==lastPv.location))                    // traitement normal
+		return ([NSApp myAlerte:NSInformationalAlertStyle Txt:nil firstB:localize(@"Ok") alternateB:localize(@"Cancel")
+												otherB:nil informativeTxt:message ] == NSAlertDefaultReturn );
+	else																							// traitement can not load
+		return ([NSApp myAlerte:NSCriticalAlertStyle Txt:nil firstB:localize(@"Ok") alternateB:nil otherB:nil
+									informativeTxt:localize(@"Can not load TOS file:") ]  == NSAlertDefaultReturn) ;
 }
 
 /*-----------------------------------------------------------------------*/
@@ -29,9 +44,11 @@ int HookedAlertNotice(const char* szMessage)
 */
 int HookedAlertQuery(const char* szMessage)
 {
-	return (NSAlertDefaultReturn == NSRunAlertPanel(@"Hatari", [NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding],
-													NSLocalizedStringFromTable(@"Ok",@"Localizable",@"comment"), 
-													NSLocalizedStringFromTable(@"Cancel",@"Localizable",@"comment"), nil));
+	NSString *message ;
+
+	message = localize([NSString stringWithCString:szMessage encoding:NSASCIIStringEncoding]) ;
+	return  [NSApp myAlerte:NSInformationalAlertStyle Txt:nil firstB:localize(@"Ok") alternateB:localize(@"Cancel")
+														otherB:nil informativeTxt:message ] ;
 }
 
 #endif

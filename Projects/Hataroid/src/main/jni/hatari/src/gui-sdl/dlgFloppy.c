@@ -15,21 +15,27 @@ const char DlgFloppy_fileid[] = "Hatari dlgFloppy.c : " __DATE__ " " __TIME__;
 #include "floppy.h"
 
 
-#define FLOPPYDLG_EJECTA      3
-#define FLOPPYDLG_BROWSEA     4
-#define FLOPPYDLG_DISKA       5
-#define FLOPPYDLG_EJECTB      7
-#define FLOPPYDLG_BROWSEB     8
-#define FLOPPYDLG_DISKB       9
-#define FLOPPYDLG_IMGDIR      11
-#define FLOPPYDLG_BROWSEIMG   12
-#define FLOPPYDLG_AUTOB       13
-#define FLOPPYDLG_FASTFLOPPY  14
-#define FLOPPYDLG_CREATEIMG   15
-#define FLOPPYDLG_PROTOFF     17
-#define FLOPPYDLG_PROTON      18
-#define FLOPPYDLG_PROTAUTO    19
-#define FLOPPYDLG_EXIT        20
+#define FLOPPYDLG_ENABLE_A    3
+#define FLOPPYDLG_HEADS_DS_A  4
+#define FLOPPYDLG_EJECTA      5
+#define FLOPPYDLG_BROWSEA     6
+#define FLOPPYDLG_DISKA       7
+
+#define FLOPPYDLG_ENABLE_B    9
+#define FLOPPYDLG_HEADS_DS_B  10
+#define FLOPPYDLG_EJECTB      11
+#define FLOPPYDLG_BROWSEB     12
+#define FLOPPYDLG_DISKB       13
+
+#define FLOPPYDLG_IMGDIR      15
+#define FLOPPYDLG_BROWSEIMG   16
+#define FLOPPYDLG_AUTOB       17
+#define FLOPPYDLG_FASTFLOPPY  18
+#define FLOPPYDLG_CREATEIMG   19
+#define FLOPPYDLG_PROTOFF     21
+#define FLOPPYDLG_PROTON      22
+#define FLOPPYDLG_PROTAUTO    23
+#define FLOPPYDLG_EXIT        24
 
 
 /* The floppy disks dialog: */
@@ -37,24 +43,31 @@ static SGOBJ floppydlg[] =
 {
 	{ SGBOX, 0, 0, 0,0, 64,20, NULL },
 	{ SGTEXT, 0, 0, 25,1, 12,1, "Floppy disks" },
+
 	{ SGTEXT, 0, 0, 2,3, 8,1, "Drive A:" },
-	{ SGBUTTON, 0, 0, 46,3, 7,1, "Eject" },
-	{ SGBUTTON, 0, 0, 54,3, 8,1, "Browse" },
+	{ SGCHECKBOX, 0, 0, 12,3,  9,1, "En_abled" },
+	{ SGCHECKBOX, 0, 0, 23,3, 14,1, "_Double Sided" },
+	{ SGBUTTON,   0, 0, 46,3,  7,1, "_Eject" },
+	{ SGBUTTON,   0, 0, 54,3,  8,1, "B_rowse" },
 	{ SGTEXT, 0, 0, 3,4, 58,1, NULL },
+
 	{ SGTEXT, 0, 0, 2,6, 8,1, "Drive B:" },
-	{ SGBUTTON, 0, 0, 46,6, 7,1, "Eject" },
-	{ SGBUTTON, 0, 0, 54,6, 8,1, "Browse" },
+	{ SGCHECKBOX, 0, 0, 12,6,  9,1, "Ena_bled" },
+	{ SGCHECKBOX, 0, 0, 23,6, 14,1, "Doub_le Sided" },
+	{ SGBUTTON,   0, 0, 46,6,  7,1, "E_ject" },
+	{ SGBUTTON,   0, 0, 54,6,  8,1, "Bro_wse" },
 	{ SGTEXT, 0, 0, 3,7, 58,1, NULL },
+
 	{ SGTEXT, 0, 0, 2,9, 32,1, "Default floppy images directory:" },
 	{ SGTEXT, 0, 0, 3,10, 58,1, NULL },
-	{ SGBUTTON, 0, 0, 54,9, 8,1, "Browse" },
-	{ SGCHECKBOX, 0, 0, 2,12, 16,1, "Auto insert B" },
-	{ SGCHECKBOX, 0, 0, 2,14, 21,1, "Fast floppy access" },
-	{ SGBUTTON, 0, 0, 42,14, 20,1, "Create blank image" },
+	{ SGBUTTON,   0, 0, 54, 9,  8,1, "Brow_se" },
+	{ SGCHECKBOX, 0, 0,  2,12, 15,1, "Auto _insert B" },
+	{ SGCHECKBOX, 0, 0,  2,14, 20,1, "_Fast floppy access" },
+	{ SGBUTTON,   0, 0, 42,14, 20,1, "_Create blank image" },
 	{ SGTEXT, 0, 0, 2,16, 17,1, "Write protection:" },
-	{ SGRADIOBUT, 0, 0, 21,16, 5,1, "Off" },
-	{ SGRADIOBUT, 0, 0, 28,16, 5,1, "On" },
-	{ SGRADIOBUT, 0, 0, 34,16, 6,1, "Auto" },
+	{ SGRADIOBUT, 0, 0, 21,16,  5,1, "_Off" },
+	{ SGRADIOBUT, 0, 0, 28,16,  4,1, "O_n" },
+	{ SGRADIOBUT, 0, 0, 34,16,  6,1, "A_uto" },
 	{ SGBUTTON, SG_DEFAULT, 0, 22,18, 20,1, "Back to main menu" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
@@ -69,9 +82,9 @@ static SGOBJ alertdlg[] =
 {
 	{ SGBOX, 0, 0, 0,0, 40,6, NULL },
 	{ SGTEXT, 0, 0, 3,1, 30,1, "Insert last created disk to?" },
-	{ SGBUTTON, 0, 0, 3,4, 10,1, "Drive A:" },
-	{ SGBUTTON, 0, 0, 15,4, 10,1, "Drive B:" },
-	{ SGBUTTON, SG_CANCEL, 0, 27,4, 10,1, "Cancel" },
+	{ SGBUTTON, 0, 0,  3,4, 10,1, "Drive _A:" },
+	{ SGBUTTON, 0, 0, 15,4, 10,1, "Drive _B:" },
+	{ SGBUTTON, SG_CANCEL, 0, 27,4, 10,1, "_Cancel" },
 	{ -1, 0, 0, 0,0, 0,0, NULL }
 };
 
@@ -90,7 +103,7 @@ static void DlgDisk_BrowseDisk(char *dlgname, int drive, int diskid)
 	else
 		tmpname = ConfigureParams.DiskImage.szDiskImageDirectory;
 
-	selname = SDLGui_FileSelect(tmpname, &zip_path, false);
+	selname = SDLGui_FileSelect("Floppy image:", tmpname, &zip_path, false);
 	if (!selname)
 		return;
 
@@ -118,7 +131,7 @@ static void DlgDisk_BrowseDir(char *dlgname, char *confname, int maxlen)
 {
 	char *str, *selname;
 
-	selname = SDLGui_FileSelect(confname, NULL, false);
+	selname = SDLGui_FileSelect("Floppy image directory:", confname, NULL, false);
 	if (!selname)
 		return;
 
@@ -143,7 +156,7 @@ static void DlgFloppy_QueryInsert(char *namea, int ida, char *nameb, int idb, co
 	char *dlgname;
 
 	SDLGui_CenterDlg(alertdlg);
-	switch (SDLGui_DoDialog(alertdlg, NULL))
+	switch (SDLGui_DoDialog(alertdlg, NULL, false))
 	{
 		case DLGMOUNT_A:
 			dlgname = namea;
@@ -218,10 +231,33 @@ void DlgFloppy_Main(void)
 	else
 		floppydlg[FLOPPYDLG_FASTFLOPPY].state &= ~SG_SELECTED;
 
+	/* Enable/disable drives A: and B: */
+	if (ConfigureParams.DiskImage.EnableDriveA)
+		floppydlg[FLOPPYDLG_ENABLE_A].state |= SG_SELECTED;
+	else
+		floppydlg[FLOPPYDLG_ENABLE_A].state &= ~SG_SELECTED;
+
+	if (ConfigureParams.DiskImage.EnableDriveB)
+		floppydlg[FLOPPYDLG_ENABLE_B].state |= SG_SELECTED;
+	else
+		floppydlg[FLOPPYDLG_ENABLE_B].state &= ~SG_SELECTED;
+
+	/* Set drives to single sided or double sided */
+	if (ConfigureParams.DiskImage.DriveA_NumberOfHeads == 2)
+		floppydlg[FLOPPYDLG_HEADS_DS_A].state |= SG_SELECTED;
+	else
+		floppydlg[FLOPPYDLG_HEADS_DS_A].state &= ~SG_SELECTED;
+
+	if (ConfigureParams.DiskImage.DriveB_NumberOfHeads == 2)
+		floppydlg[FLOPPYDLG_HEADS_DS_B].state |= SG_SELECTED;
+	else
+		floppydlg[FLOPPYDLG_HEADS_DS_B].state &= ~SG_SELECTED;
+
+
 	/* Draw and process the dialog */
 	do
 	{
-		but = SDLGui_DoDialog(floppydlg, NULL);
+		but = SDLGui_DoDialog(floppydlg, NULL, false);
 		switch (but)
 		{
 		 case FLOPPYDLG_EJECTA:                         /* Eject disk in drive A: */
@@ -271,4 +307,8 @@ void DlgFloppy_Main(void)
 
 	ConfigureParams.DiskImage.bAutoInsertDiskB = (floppydlg[FLOPPYDLG_AUTOB].state & SG_SELECTED);
 	ConfigureParams.DiskImage.FastFloppy = (floppydlg[FLOPPYDLG_FASTFLOPPY].state & SG_SELECTED);
+	ConfigureParams.DiskImage.EnableDriveA = (floppydlg[FLOPPYDLG_ENABLE_A].state & SG_SELECTED);
+	ConfigureParams.DiskImage.EnableDriveB = (floppydlg[FLOPPYDLG_ENABLE_B].state & SG_SELECTED);
+	ConfigureParams.DiskImage.DriveA_NumberOfHeads = ( (floppydlg[FLOPPYDLG_HEADS_DS_A].state & SG_SELECTED) ? 2 : 1 );
+	ConfigureParams.DiskImage.DriveB_NumberOfHeads = ( (floppydlg[FLOPPYDLG_HEADS_DS_B].state & SG_SELECTED) ? 2 : 1 );
 }

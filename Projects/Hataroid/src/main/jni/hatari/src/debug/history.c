@@ -1,7 +1,7 @@
 /*
  * Hatari - history.c
  * 
- * Copyright (C) 2011 by Eero Tamminen
+ * Copyright (C) 2011-2014 by Eero Tamminen
  *
  * This file is distributed under the GNU General Public License, version 2
  * or at your option any later version. Read the file gpl.txt for details.
@@ -11,21 +11,21 @@
 const char History_fileid[] = "Hatari history.c : " __DATE__ " " __TIME__;
 
 #include <assert.h>
-
+#include <errno.h>
 #include "main.h"
 #include "debugui.h"
 #include "debug_priv.h"
 #include "dsp.h"
 #include "dsp_core.h"
 #include "evaluate.h"
+#include "file.h"
 #include "history.h"
 #include "m68000.h"
 #include "68kDisass.h"
 
+#define HISTORY_ITEMS_MIN 64
 
 history_type_t HistoryTracking;
-
-#define HISTORY_ITEMS	256
 
 typedef struct {
 	bool shown:1;
@@ -40,9 +40,10 @@ typedef struct {
 } hist_item_t;
 
 static struct {
-	unsigned idx;     /* index to current history item */
-	unsigned count;   /* how many items of history are collected */
-	hist_item_t item[HISTORY_ITEMS];  /* ring-buffer */
+	unsigned idx;      /* index to current history item */
+	unsigned count;    /* how many items of history are collected */
+	unsigned limit;    /* ring-buffer size */
+	hist_item_t *item; /* ring-buffer */
 } History;
 
 
@@ -75,11 +76,17 @@ static const char* History_ReasonStr(debug_reason_t reason)
  * Clear history if tracking type changes as rest of
  * data wouldn't then be anymore valid.
  */
-static void History_Enable(history_type_t track)
+static void History_Enable(history_type_t track, unsigned limit)
 {
 	const char *msg;
-	if (track != HistoryTracking) {
+	if (track != HistoryTracking || limit != History.limit) {
+		fprintf(stderr, "Re-allocating & zeroing history due to type/limit change.\n");
+		if (History.item) {
+			free(History.item);
+		}
 		memset(&History, 0, sizeof(History));
+		History.item = calloc(limit, sizeof(History.item[0]));
+		History.limit = limit;
 	}
 	switch (track) {
 	case HISTORY_TRACK_NONE:
@@ -98,7 +105,7 @@ static void History_Enable(history_type_t track)
 		msg = "error";
 	}
 	HistoryTracking = track;
-	fprintf(stderr, "History tracking %s.\n", msg);
+	fprintf(stderr, "History tracking %s (max. %d instructions).\n", msg, limit);
 }
 
 /**
@@ -107,7 +114,7 @@ static void History_Enable(history_type_t track)
 static void History_Advance(void)
 {
 	History.idx++;
-	History.idx %= HISTORY_ITEMS;
+	History.idx %= History.limit;
 	History.item[History.idx].valid = true;
 	History.item[History.idx].shown = false;
 	History.item[History.idx].reason = REASON_NONE;
@@ -143,19 +150,22 @@ void History_AddDsp(void)
  */
 void History_Mark(debug_reason_t reason)
 {
-	History.item[History.idx].reason = reason;
+	if (History.item) {
+		History.item[History.idx].reason = reason;
+	}
 }
 
 /**
- * Show collected CPU/DSP debugger/breakpoint history
+ * Output collected CPU/DSP debugger/breakpoint history
  */
-void History_Show(Uint32 count)
+static Uint32 History_Output(Uint32 count, FILE *fp)
 {
 	bool show_all;
+	Uint32 retval;
 	int i;
 
-	if (History.count > HISTORY_ITEMS) {
-		History.count = HISTORY_ITEMS;
+	if (History.count > History.limit) {
+		History.count = History.limit;
 	}
 	if (count > History.count) {
 		count = History.count;
@@ -166,9 +176,10 @@ void History_Show(Uint32 count)
 		}
 	}
 	if (count <= 0) {
-		fprintf(stderr,  "No history items to show.\n");
-		return;
+		fprintf(stderr, "No history items to show.\n");
+		return 0;
 	}
+	retval = count;
 
 	i = History.idx;
 	show_all = false;
@@ -176,13 +187,13 @@ void History_Show(Uint32 count)
 		/* even last item already shown, show all again */
 		show_all = true;
 	}
-	i = (i + HISTORY_ITEMS - count) % HISTORY_ITEMS;
+	i = (i + History.limit - count) % History.limit;
 
 	while (count-- > 0) {
 		i++;
-		i %= HISTORY_ITEMS;
+		i %= History.limit;
 		if (!History.item[i].valid) {
-			fprintf(stderr, "ERROR: invalid history item %d!", count);
+			fprintf(fp, "ERROR: invalid history item %d!", count);
 		}
 		if (History.item[i].shown && !show_all) {
 			continue;
@@ -191,15 +202,51 @@ void History_Show(Uint32 count)
 
 		if (History.item[i].for_dsp) {
 			Uint16 pc = History.item[i].pc.dsp;
-			DSP_DisasmAddress(stderr, pc, pc);
+			DSP_DisasmAddress(fp, pc, pc);
 		} else {
 			Uint32 dummy;
-			Disasm(stderr, History.item[i].pc.cpu, &dummy, 1);
+			Disasm(fp, History.item[i].pc.cpu, &dummy, 1);
 		}
 		if (History.item[i].reason != REASON_NONE) {
-			fprintf(stderr, "Debugger: *%s*\n", History_ReasonStr(History.item[i].reason));
+			fprintf(fp, "Debugger: *%s*\n", History_ReasonStr(History.item[i].reason));
 		}
 	}
+	return retval;
+}
+
+/* History_Output() helper for "info" & "lock" commands */
+void History_Show(FILE *fp, Uint32 count)
+{
+	History_Output(count, fp);
+}
+
+/*
+ * save all history to given file
+ */
+static void History_Save(const char *name)
+{
+	Uint32 count;
+	FILE *fp;
+
+	if (File_Exists(name)) {
+		fprintf(stderr, "ERROR: file '%s' already exists!\n", name);
+
+	} else if ((fp = fopen(name, "w"))) {
+		count = History_Output(0, fp);
+		fprintf(stderr, "%d history items saved to '%s'.\n", count, name);
+		fclose(fp);
+	} else {
+		fprintf(stderr, "ERROR: opening '%s' failed (%d).\n", name, errno);
+	}
+}
+
+/*
+ * Readline callback
+ */
+char *History_Match(const char *text, int state)
+{
+	static const char* cmds[] = { "cpu", "dsp", "off", "save" };
+	return DebugUI_MatchHelper(cmds, ARRAYSIZE(cmds), text, state);
 }
 
 /**
@@ -207,37 +254,49 @@ void History_Show(Uint32 count)
  */
 int History_Parse(int nArgc, char *psArgs[])
 {
-	int count;
+	int count, limit = 0;
 
-	if (nArgc != 2) {
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+	if (nArgc < 2) {
+		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
-
+	if (nArgc > 2) {
+		limit = atoi(psArgs[2]);
+	}
+	/* make sure value is valid & positive */
+	if (!limit) {
+		limit = History.limit;
+	}
+	if (limit < HISTORY_ITEMS_MIN) {
+		limit = HISTORY_ITEMS_MIN;
+	}
 	count = atoi(psArgs[1]);
-	if (count <= 0 || count > HISTORY_ITEMS) {
+
+	if (count <= 0) {
 		/* no count -> enable or disable? */
 		if (strcmp(psArgs[1], "on") == 0) {
-			History_Enable(HISTORY_TRACK_ALL);
+			History_Enable(HISTORY_TRACK_ALL, limit);
 			return DEBUGGER_CMDDONE;
 		}
 		if (strcmp(psArgs[1], "off") == 0) {
-			History_Enable(HISTORY_TRACK_NONE);
+			History_Enable(HISTORY_TRACK_NONE, limit);
 			return DEBUGGER_CMDDONE;
 		}
 		if (strcmp(psArgs[1], "cpu") == 0) {
-			History_Enable(HISTORY_TRACK_CPU);
+			History_Enable(HISTORY_TRACK_CPU, limit);
 			return DEBUGGER_CMDDONE;
 		}
 		if (strcmp(psArgs[1], "dsp") == 0) {
-			History_Enable(HISTORY_TRACK_DSP);
+			History_Enable(HISTORY_TRACK_DSP, limit);
 			return DEBUGGER_CMDDONE;
 		}
-		fprintf(stderr,  "History range is 1-%d!\n", HISTORY_ITEMS);
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+		if (nArgc == 3 && strcmp(psArgs[1], "save") == 0) {
+			History_Save(psArgs[2]);
+			return DEBUGGER_CMDDONE;
+		}
+		fprintf(stderr,  "History range is 1-<limit>\n");
+		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
-	History_Show(count);
+	History_Show(stderr, count);
 	return DEBUGGER_CMDDONE;
 }

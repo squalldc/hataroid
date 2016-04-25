@@ -9,11 +9,15 @@
 /* Define if you have the PortAudio library */
 #define HAVE_PORTAUDIO 0
 
+/* Define if you have the capsimage library */
+//#define HAVE_CAPSIMAGE 0
+//#define CAPSIMAGE_VERSION 4
+
 /* Define if you have a X11 environment */
 #define HAVE_X11 0
 
 /* Define to 1 if you have the `z' library (-lz). */
-#define HAVE_LIBZ 0
+#define HAVE_LIBZ 1
 
 /* Define to 1 if you have the <zlib.h> header file. */
 #define HAVE_ZLIB_H 1
@@ -27,8 +31,8 @@
 /* Define to 1 if you have the <strings.h> header file. */
 #define HAVE_STRINGS_H 1
 
-/* Define to 1 if you have the <SDL/SDL_config.h> header file. */
-#define HAVE_SDL_SDL_CONFIG_H 0
+/* Define to 1 if you have the <SDL_config.h> header file. */
+#define HAVE_SDL_CONFIG_H 0
 
 /* Define to 1 if you have the <sys/times.h> header file. */
 #define HAVE_SYS_TIMES_H 1
@@ -55,10 +59,10 @@
 #define HAVE_GETTIMEOFDAY 0
 
 /* Define to 1 if you have the 'nanosleep' function. */
-#define HAVE_NANOSLEEP 0
+#define HAVE_NANOSLEEP 1
 
 /* Define to 1 if you have the 'alphasort' function. */
-#define HAVE_ALPHASORT 0
+#define HAVE_ALPHASORT 1
 
 /* Define to 1 if you have the 'scandir' function. */
 #define HAVE_SCANDIR 1
@@ -66,7 +70,22 @@
 /* Define to 1 if you have the 'statvfs' function. */
 #define HAVE_STATVFS 0
 
-#define ANDROID_USER_APP_DIR	"/sdcard/STDroid"
+/* Define to 1 if you have the 'fseeko' function. */
+#define HAVE_FSEEKO 0
+
+/* Define to 1 if you have the 'ftello' function. */
+#define HAVE_FTELLO 0
+
+/* Define to 1 if you have the 'flock' function. */
+#define HAVE_FLOCK 0
+
+/* Define to 1 if you have the 'strlcpy' function. */
+#define HAVE_LIBC_STRLCPY 0
+
+/* Define to 1 if you have the 'd_type' member in the 'dirent' struct */
+#define HAVE_DIRENT_D_TYPE 1
+
+#define ANDROID_USER_APP_DIR	"/sdcard/ST"
 
 /* Relative path from bindir to datadir */
 #define BIN2DATADIR ANDROID_USER_APP_DIR"/data"
@@ -83,5 +102,4 @@
 /* Define to 1 to enable trace logs - undefine to slightly increase speed */
 #define ENABLE_TRACING 0
 
-#define CONFDIR ANDROID_USER_APP_DIR
-
+//#define CONFDIR ANDROID_USER_APP_DIR

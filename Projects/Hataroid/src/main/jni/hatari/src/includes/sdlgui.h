@@ -28,13 +28,21 @@ enum
 /* Object flags: */
 #define SG_TOUCHEXIT   1   /* Exit immediately when mouse button is pressed down */
 #define SG_EXIT        2   /* Exit when mouse button has been pressed (and released) */
-#define SG_DEFAULT     4   /* Marks a default button, selectable with return key */
+#define SG_DEFAULT     4   /* Marks a default button, selectable with Enter & Return keys */
 #define SG_CANCEL      8   /* Marks a cancel button, selectable with ESC key */
+#define SG_SHORTCUT   16   /* Marks a shortcut button, selectable with masked letter */
 
 /* Object states: */
 #define SG_SELECTED    1
-#define SG_MOUSEDOWN   16
-#define SG_MOUSEUP     (((int)-1) - SG_MOUSEDOWN)
+#define SG_MOUSEDOWN   2
+#define SG_FOCUSED     4   /* Marks an object that has selection focus */
+#define SG_WASFOCUSED  8   /* Marks an object that had selection focus & its bg needs redraw */
+
+/* special shortcut keys, something that won't conflict with text shortcuts */
+#define SG_SHORTCUT_LEFT	'<'
+#define SG_SHORTCUT_RIGHT	'>'
+#define SG_SHORTCUT_UP  	'^'
+#define SG_SHORTCUT_DOWN	'|'
 
 /* Special characters: */
 #define SGRADIOBUTTON_NORMAL    12
@@ -59,6 +67,7 @@ typedef struct
   int x, y;             /* The offset to the upper left corner */
   int w, h;             /* Width and height (for scrollbar : height and position) */
   char *txt;            /* Text string */
+  int shortcut;         /* shortcut key */
 }  SGOBJ;
 
 extern int sdlgui_fontwidth;	/* Width of the actual font */
@@ -70,9 +79,9 @@ extern int SDLGui_SetScreen(SDL_Surface *pScrn);
 extern void SDLGui_GetFontSize(int *width, int *height);
 extern void SDLGui_Text(int x, int y, const char *txt);
 extern void SDLGui_DrawDialog(const SGOBJ *dlg);
-extern int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut);
+extern int SDLGui_DoDialog(SGOBJ *dlg, SDL_Event *pEventOut, bool KeepCurrentObject);
 extern void SDLGui_CenterDlg(SGOBJ *dlg);
-extern char* SDLGui_FileSelect(const char *path_and_name, char **zip_path, bool bAllowNew);
-extern bool SDLGui_FileConfSelect(char *dlgname, char *confname, int maxlen, bool bAllowNew);
+extern char* SDLGui_FileSelect(const char *title, const char *path_and_name, char **zip_path, bool bAllowNew);
+extern bool SDLGui_FileConfSelect(const char *title, char *dlgname, char *confname, int maxlen, bool bAllowNew);
 
 #endif

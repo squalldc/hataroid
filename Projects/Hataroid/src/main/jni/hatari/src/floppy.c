@@ -29,18 +29,21 @@ const char Floppy_fileid[] = "Hatari floppy.c : " __DATE__ " " __TIME__;
 
 #include "main.h"
 #include "configuration.h"
-#include "dim.h"
 #include "file.h"
 #include "floppy.h"
 #include "gemdos.h"
 #include "hdc.h"
 #include "log.h"
 #include "memorySnapShot.h"
-#include "msa.h"
 #include "st.h"
+#include "msa.h"
+#include "dim.h"
+#include "floppy_ipf.h"
+#include "floppy_stx.h"
 #include "zip.h"
 #include "screen.h"
 #include "video.h"
+#include "fdc.h"
 
 
 /* Emulation drive details, eg FileName, Inserted, Changed etc... */
@@ -55,6 +58,10 @@ static const char * const pszDiskImageNameExts[] =
 	".msa",
 	".st",
 	".dim",
+	".ipf",
+	".raw",
+	".ctr",
+	".stx",
 	NULL
 };
 
@@ -125,6 +132,10 @@ void Floppy_MemorySnapShot_Capture(bool bSave)
 	/* Save/Restore details */
 	for (i = 0; i < MAX_FLOPPYDRIVES; i++)
 	{
+	    if (gSaveVersion >= 1900)
+        {
+            MemorySnapShot_Store(&EmulationDrives[i].ImageType, sizeof(EmulationDrives[i].ImageType));
+        }
 		MemorySnapShot_Store(&EmulationDrives[i].bDiskInserted, sizeof(EmulationDrives[i].bDiskInserted));
 		MemorySnapShot_Store(&EmulationDrives[i].nImageBytes, sizeof(EmulationDrives[i].nImageBytes));
 		if (!bSave && EmulationDrives[i].bDiskInserted)
@@ -142,6 +153,33 @@ void Floppy_MemorySnapShot_Capture(bool bSave)
 		MemorySnapShot_Store(&EmulationDrives[i].TransitionState1_VBL,sizeof(EmulationDrives[i].TransitionState1_VBL));
 		MemorySnapShot_Store(&EmulationDrives[i].TransitionState2,sizeof(EmulationDrives[i].TransitionState2));
 		MemorySnapShot_Store(&EmulationDrives[i].TransitionState2_VBL,sizeof(EmulationDrives[i].TransitionState2_VBL));
+
+        if (!bSave && gSaveVersion < 1900)
+        {
+            if (EmulationDrives[i].bDiskInserted)
+            {
+                if (MSA_FileNameIsMSA(EmulationDrives[i].sFileName, true))
+                    EmulationDrives[i].ImageType = FLOPPY_IMAGE_TYPE_MSA;
+                else if (ST_FileNameIsST(EmulationDrives[i].sFileName, true))
+                    EmulationDrives[i].ImageType = FLOPPY_IMAGE_TYPE_ST;
+                else if (DIM_FileNameIsDIM(EmulationDrives[i].sFileName, true))
+                    EmulationDrives[i].ImageType = FLOPPY_IMAGE_TYPE_DIM;
+                else if (ZIP_FileNameIsZIP(EmulationDrives[i].sFileName))
+                {
+                    EmulationDrives[i].ImageType = FLOPPY_IMAGE_TYPE_ST;
+                }
+            }
+            else
+            {
+                EmulationDrives[i].ImageType = FLOPPY_IMAGE_TYPE_NONE;
+            }
+        }
+
+		/* Because Floppy_EjectBothDrives() was called above before restoring (which cleared */
+		/* FDC_DRIVES[].DiskInserted that was restored just before), we must call FDC_InsertFloppy */
+		/* for each restored drive with an inserted disk to set FDC_DRIVES[].DiskInserted=true */
+		if ( !bSave && ( EmulationDrives[i].bDiskInserted ) )
+			FDC_InsertFloppy ( i );
 	}
 }
 
@@ -258,7 +296,7 @@ static char* Floppy_CreateDiskBFileName(const char *pSrcFileName)
 	if (!szDir)
 	{
 		perror("Floppy_CreateDiskBFileName");
-		return false;
+		return NULL;
 	}
 	szName = szDir + FILENAME_MAX;
 	szExt = szName + FILENAME_MAX;
@@ -357,6 +395,7 @@ const char* Floppy_SetDiskFileName(int Drive, const char *pszFileName, const cha
 		 && (strcmp(pszZipPath, ConfigureParams.DiskImage.szDiskZipPath[i]) == 0))
 		{
 			Log_AlertDlg(LOG_ERROR, "ERROR: Cannot insert same floppy to multiple drives!");
+			free(filename);
 			return NULL;
 		}
 	}
@@ -488,8 +527,9 @@ int	Floppy_DriveTransitionUpdateState ( int Drive )
  */
 bool Floppy_InsertDiskIntoDrive(int Drive)
 {
-	long nImageBytes = 0;
-	char *filename;
+	long	nImageBytes = 0;
+	char	*filename;
+	int	ImageType = FLOPPY_IMAGE_TYPE_NONE;
 
 	/* Eject disk, if one is inserted (doesn't inform user) */
 	assert(Drive >= 0 && Drive < MAX_FLOPPYDRIVES);
@@ -508,31 +548,68 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 
 	/* Check disk image type and read the file: */
 	if (MSA_FileNameIsMSA(filename, true))
-		EmulationDrives[Drive].pBuffer = MSA_ReadDisk(filename, &nImageBytes);
+		EmulationDrives[Drive].pBuffer = MSA_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
 	else if (ST_FileNameIsST(filename, true))
-		EmulationDrives[Drive].pBuffer = ST_ReadDisk(filename, &nImageBytes);
+		EmulationDrives[Drive].pBuffer = ST_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
 	else if (DIM_FileNameIsDIM(filename, true))
-		EmulationDrives[Drive].pBuffer = DIM_ReadDisk(filename, &nImageBytes);
+		EmulationDrives[Drive].pBuffer = DIM_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
+	else if (IPF_FileNameIsIPF(filename, true))
+		EmulationDrives[Drive].pBuffer = IPF_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
+	else if (STX_FileNameIsSTX(filename, true))
+		EmulationDrives[Drive].pBuffer = STX_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
 	else if (ZIP_FileNameIsZIP(filename))
 	{
 		const char *zippath = ConfigureParams.DiskImage.szDiskZipPath[Drive];
-		EmulationDrives[Drive].pBuffer = ZIP_ReadDisk(filename, zippath, &nImageBytes);
+		EmulationDrives[Drive].pBuffer = ZIP_ReadDisk(Drive, filename, zippath, &nImageBytes, &ImageType);
 	}
 
-	if (EmulationDrives[Drive].pBuffer == NULL)
+	if ( (EmulationDrives[Drive].pBuffer == NULL) || ( ImageType == FLOPPY_IMAGE_TYPE_NONE ) )
 	{
 		return false;
+	}
+
+	/* For IPF, call specific function to handle the inserted image */
+	if ( ImageType == FLOPPY_IMAGE_TYPE_IPF )
+	{
+		if ( IPF_Insert ( Drive , EmulationDrives[Drive].pBuffer , nImageBytes ) == false )
+		{
+			free ( EmulationDrives[Drive].pBuffer );
+			return false;
+		}
+	}
+
+	/* For STX, call specific function to handle the inserted image */
+	else if ( ImageType == FLOPPY_IMAGE_TYPE_STX )
+	{
+		if ( STX_Insert ( Drive , filename , EmulationDrives[Drive].pBuffer , nImageBytes ) == false )
+		{
+			free ( EmulationDrives[Drive].pBuffer );
+			return false;
+		}
 	}
 
 	/* Store image filename (required for ejecting the disk later!) */
 	strcpy(EmulationDrives[Drive].sFileName, filename);
 
 	/* Store size and set drive states */
+	EmulationDrives[Drive].ImageType = ImageType;
 	EmulationDrives[Drive].nImageBytes = nImageBytes;
 	EmulationDrives[Drive].bDiskInserted = true;
 	EmulationDrives[Drive].bContentsChanged = false;
-	EmulationDrives[Drive].bOKToSave = Floppy_IsBootSectorOK(Drive);
+
+	if ( ( ImageType == FLOPPY_IMAGE_TYPE_ST ) || ( ImageType == FLOPPY_IMAGE_TYPE_MSA )
+	  || ( ImageType == FLOPPY_IMAGE_TYPE_DIM ) )
+		EmulationDrives[Drive].bOKToSave = Floppy_IsBootSectorOK(Drive);
+	else if ( ImageType == FLOPPY_IMAGE_TYPE_STX )
+		EmulationDrives[Drive].bOKToSave = true;
+	else if ( ImageType == FLOPPY_IMAGE_TYPE_IPF )
+		EmulationDrives[Drive].bOKToSave = false;
+	else
+		EmulationDrives[Drive].bOKToSave = false;
+
 	Floppy_DriveTransitionSetState ( Drive , FLOPPY_DRIVE_TRANSITION_STATE_INSERT );
+	FDC_InsertFloppy ( Drive );
+
 	Log_Printf(LOG_INFO, "Inserted disk '%s' to drive %c:.",
 		   filename, 'A'+Drive);
 	return true;
@@ -559,17 +636,21 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 		if (EmulationDrives[Drive].bContentsChanged)
 		{
 			/* Is OK to save image (if boot-sector is bad, don't allow a save) */
-			if (EmulationDrives[Drive].bOKToSave && !Floppy_IsWriteProtected(Drive))
+			if (EmulationDrives[Drive].bOKToSave)
 			{
-				/* Save as .MSA or .ST image? */
+				/* Save as .MSA, .ST, .DIM, .IPF or .STX image? */
 				if (MSA_FileNameIsMSA(psFileName, true))
-					bSaved = MSA_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+					bSaved = MSA_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (ST_FileNameIsST(psFileName, true))
-					bSaved = ST_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+					bSaved = ST_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (DIM_FileNameIsDIM(psFileName, true))
-					bSaved = DIM_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+					bSaved = DIM_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+				else if (IPF_FileNameIsIPF(psFileName, true))
+					bSaved = IPF_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+				else if (STX_FileNameIsSTX(psFileName, true))
+					bSaved = STX_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				else if (ZIP_FileNameIsZIP(psFileName))
-					bSaved = ZIP_WriteDisk(psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
+					bSaved = ZIP_WriteDisk(Drive, psFileName, EmulationDrives[Drive].pBuffer, EmulationDrives[Drive].nImageBytes);
 				if (bSaved)
 					Log_Printf(LOG_INFO, "Updated the contents of floppy image '%s'.", psFileName);
 				else
@@ -583,8 +664,17 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 			   'A'+Drive);
 
 		Floppy_DriveTransitionSetState ( Drive , FLOPPY_DRIVE_TRANSITION_STATE_EJECT );
+		FDC_EjectFloppy ( Drive );
 		bEjected = true;
 	}
+
+	/* Free data used by this IPF image */
+	if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_IPF )
+		IPF_Eject ( Drive );
+	/* Free data used by this STX image */
+	else if ( EmulationDrives[Drive].ImageType == FLOPPY_IMAGE_TYPE_STX )
+		STX_Eject ( Drive );
+
 
 	/* Drive is now empty */
 	if (EmulationDrives[Drive].pBuffer != NULL)
@@ -594,6 +684,7 @@ bool Floppy_EjectDiskFromDrive(int Drive)
 	}
 
 	EmulationDrives[Drive].sFileName[0] = '\0';
+	EmulationDrives[Drive].ImageType = FLOPPY_IMAGE_TYPE_NONE;
 	EmulationDrives[Drive].nImageBytes = 0;
 	EmulationDrives[Drive].bDiskInserted = false;
 	EmulationDrives[Drive].bContentsChanged = false;
@@ -718,7 +809,7 @@ void Floppy_FindDiskDetails(const Uint8 *pBuffer, int nImageBytes,
  * Read sectors from floppy disk image, return TRUE if all OK
  * NOTE Pass -ve as Count to read whole track
  */
-bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
+bool Floppy_ReadSectors(int Drive, Uint8 **pBuffer, Uint16 Sector,
                         Uint16 Track, Uint16 Side, short Count,
                         int *pnSectorsPerTrack, int *pSectorSize)
 {
@@ -785,8 +876,8 @@ bool Floppy_ReadSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
 		Offset += (nBytesPerTrack*nSides)*Track;      /* Then seek to track */
 		Offset += (NUMBYTESPERSECTOR*(Sector-1));     /* And finally to sector */
 
-		/* Read sectors (usually 512 bytes per sector) */
-		memcpy(pBuffer, pDiskBuffer+Offset, (int)Count*NUMBYTESPERSECTOR);
+		/* Return a pointer to the sectors data (usually 512 bytes per sector) */
+		*pBuffer = pDiskBuffer+Offset;
 
 		return true;
 	}
@@ -874,4 +965,28 @@ bool Floppy_WriteSectors(int Drive, Uint8 *pBuffer, Uint16 Sector,
 	}
 
 	return false;
+}
+
+bool Floppy_IsPasti(const char *pszFileName, const char *pszZipPath)
+{
+    if (pszFileName != 0 && pszFileName[0] != 0)
+    {
+        //if (IPF_FileNameIsIPF(filename, true))
+        //    EmulationDrives[Drive].pBuffer = IPF_ReadDisk(Drive, filename, &nImageBytes, &ImageType);
+        if (STX_FileNameIsSTX(pszFileName, true))
+        {
+            return true;
+        }
+
+        if (ZIP_FileNameIsZIP(pszFileName))
+        {
+            int imageType = ZIP_CheckImageType(pszFileName, pszZipPath);
+            if (imageType == FLOPPY_IMAGE_TYPE_STX)
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }

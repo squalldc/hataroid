@@ -2,7 +2,7 @@
 
                                     Hatari
 
-                             Version 1.7, June 2013
+                             Version 1.9, September 2015
 
                           http://hatari.tuxfamily.org/
 
@@ -13,8 +13,9 @@ Contents:
 2. What is Hatari?
 3. Compiling and installing
    3.1 WinUAE and "old" UAE CPU cores
-   3.2 Notes for Linux distribution packagers
-       3.2.1 Known distro problems
+   3.2 IPF support using capsimage library
+   3.3 Notes for Linux distribution packagers
+       3.3.1 Known distro problems
 4. Running Hatari
 5. Contact
 
@@ -36,6 +37,21 @@ this program; if not, write to the
  Free Software Foundation, Inc.,
  51 Franklin Street, Fifth Floor, Boston,
  MA  02110-1301, USA
+
+Linking Hatari statically or dynamically with other modules is making a
+combined work based on Hatari. Thus, the terms and conditions of the GNU
+General Public License cover the whole combination.
+
+In addition, as a special exception, the copyright holders of Hatari give you
+permission to combine Hatari with free software programs or libraries that are
+released under the GNU LGPL and with code included in the standard release
+of the IPF support library (a.k.a. libcapsimage, see http://www.softpres.org/
+for more information) under the Software Preservation Society Licence Agreement
+as it has been defined for IPF library version 4.2 and 5.1. Linking against modified
+versions of the IPF library is also allowed, as long as neither the license
+nor the purpose of the library (accessing .ipf or .ctr disk images) was changed.
+You may copy and distribute such a system following the terms of the GNU GPL
+for Hatari and the licenses of the other code concerned.
 
 
  2) What is Hatari?
@@ -66,6 +82,7 @@ Optional:
 - The Xlib library to support Hatari Python UI window embedding on
   systems with the X window system (Linux and other unixes) 
 - The portaudio library for Falcon microphone handling
+- The IPF support library (http://www.softpres.org/download)
 
 Don't forget to also install the header files of these libraries for compiling
 Hatari (some Linux distributions use separate development packages for these
@@ -130,7 +147,45 @@ And test also the old core if Falcon programs don't work with the new
 one...
 
 
- 3.2) Notes for Linux distribution packagers
+ 3.2) IPF support using capsimage library
+
+Hatari can use the optionnal capsimage library to access IPF and CTR
+files. Those files are created using the Kryoflux board and allow to
+record MFM exact copies of original games, including the protection.
+
+Version 4.2 of the library allows to access IPF files, while the more recent
+version 5.1 fixes some bugs, as well as adding support for CTR files.
+
+Since version 5.1 is not yet available for all OSes in binary form, Hatari
+still default to version 4.2 (but you can compile capsimage 5.1 sources
+to build your library). You can change this by modifying "SET(CAPSIMAGE_VERSION 4)"
+into cmake/FindCapsImage.cmake
+
+Refer to http://softpres.org/download and get the corresponding file
+from the "User Distribution" section that matches your OS.
+
+For version 4.2, you should have the following files in your include path :
+/usr/local/include/caps/
+	capsimage.h
+	fdc.h
+	form.h
+
+For version 5.1, you should have the following files in your include path :
+/usr/local/include/caps5/
+	CapsAPI.h
+	CapsFDC.h
+	CapsForm.h
+	CapsLibAll.h
+	CapsLib.h
+	CapsLibVersion.h
+	ComLib.h
+	CommonTypes.h
+
+You should also copy the libcapsimage.so* files in your library path,
+for example in /usr/local/lib/caps/ or /usr/local/lib/caps5/
+
+
+ 3.3) Notes for Linux distribution packagers
 
 TOS tester in tests/tosboot/ directory can be used to verify that
 Hatari was built fine enough that it's able to boot all tested TOS
@@ -152,7 +207,7 @@ Alternatively one could add a mime type for TOS binaries with xdg-mime:
 But registering handlers for mime-types seems desktop specific.
 
 
- 3.2.1) Known distro problems
+ 3.3.1) Known distro problems
 
 Old RHEL 5 and the derived CentOS v5.x Linux distributions ship
 with a broken readline library:

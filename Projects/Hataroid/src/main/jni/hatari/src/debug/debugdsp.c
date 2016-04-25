@@ -10,6 +10,7 @@
 const char DebugDsp_fileid[] = "Hatari debugdsp.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
+#include <ctype.h>
 
 #include "config.h"
 
@@ -44,7 +45,7 @@ static int nDspSteps = 0;         /* Amount of steps for DSP single-stepping */
  */
 static char *DebugDsp_MatchRegister(const char *text, int state)
 {
-	static const char regs[][4] = {
+	static const char* regs[] = {
 		"a0", "a1", "a2", "b0", "b1", "b2", "la", "lc",
 		"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7",
 		"n0", "n1", "n2", "n3", "n4", "n5", "n6", "n7",
@@ -52,22 +53,7 @@ static char *DebugDsp_MatchRegister(const char *text, int state)
 		"omr", "pc", "sp", "sr", "ssh", "ssl",
 		"x0", "x1", "y0", "y1",
 	};
-	static int i, len;
-	
-	if (!state)
-	{
-		/* first match */
-		i = 0;
-		len = strlen(text);
-		if (len > 2)
-			return NULL;
-	}
-	/* next match */
-	while (i < ARRAYSIZE(regs)) {
-		if (strncasecmp(regs[i++], text, len) == 0)
-			return (strdup(regs[i-1]));
-	}
-	return NULL;
+	return DebugUI_MatchHelper(regs, ARRAYSIZE(regs), text, state);
 }
 
 /**
@@ -202,22 +188,37 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 {
 	Uint32 lower, upper;
 	Uint16 dsp_memdump_upper = 0;
-	char space;
+	char *range, space;
 
 	if (!bDspEnabled)
 	{
 		fprintf(stderr, "DSP isn't present or initialized.\n");
 		return DEBUGGER_CMDDONE;
 	}
-	if (nArgc != 1 && nArgc != 3)
+
+	switch (nArgc)
 	{
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+		case 1:
+			break;
+		case 3:	/* "x $200" */
+			space = psArgs[1][0];
+			range = psArgs[2];
+			break;
+		case 2: /* "x:$200" */
+			if (psArgs[1][1] == ':')
+			{
+				space = psArgs[1][0];
+				range = psArgs[1] + 2;
+				break;
+			}
+			/* pass-through */
+		default:
+			return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
-	if (nArgc == 3)
+	if (nArgc > 1)
 	{
-		space = toupper(psArgs[1][0]);
+		space = toupper((unsigned char)space);
 		switch (space)
 		{
 		case 'X':
@@ -228,7 +229,7 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 			fprintf(stderr,"Invalid DSP address space '%c'!\n", space);
 			return DEBUGGER_CMDDONE;
 		}
-		switch (Eval_Range(psArgs[2], &lower, &upper, true))
+		switch (Eval_Range(range, &lower, &upper, true))
 		{
 		case -1:
 			/* invalid value(s) */
@@ -253,7 +254,7 @@ int DebugDsp_MemDump(int nArgc, char *psArgs[])
 		}
 		dsp_memdump_addr = lower;
 		dsp_mem_space = space;
-	} /* continue */
+	}
 
 	if (!dsp_memdump_upper)
 	{
@@ -302,20 +303,131 @@ static int DebugDsp_Step(int nArgc, char *psArgv[])
 	return DEBUGGER_END;
 }
 
+
+/**
+ * Readline match callback to list next command opcode types.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+static char *DebugDsp_MatchNext(const char *text, int state)
+{
+	static const char* ntypes[] = {
+		"branch", "exreturn", "return", "subcall", "subreturn"
+	};
+	return DebugUI_MatchHelper(ntypes, ARRAYSIZE(ntypes), text, state);
+}
+
 /**
  * Command: Step DSP, but proceed through subroutines
  * Does this by temporary conditional breakpoint
  */
 static int DebugDsp_Next(int nArgc, char *psArgv[])
 {
-	char command[32];
-	Uint16 nextpc = DSP_GetNextPC(DSP_GetPC());
-	sprintf(command, "pc=$%x :once :quiet\n", nextpc);
+	char command[40];
+	if (nArgc > 1)
+	{
+		int optype;
+		if(strcmp(psArgv[1], "branch") == 0)
+			optype = CALL_BRANCH;
+		else if(strcmp(psArgv[1], "exreturn") == 0)
+			optype = CALL_EXCRETURN;
+		else if(strcmp(psArgv[1], "subcall") == 0)
+			optype = CALL_SUBROUTINE;
+		else if (strcmp(psArgv[1], "subreturn") == 0)
+			optype = CALL_SUBRETURN;
+		else if (strcmp(psArgv[1], "return") == 0)
+			optype = CALL_SUBRETURN | CALL_EXCRETURN;
+		else
+		{
+			fprintf(stderr, "Unrecognized opcode type given!\n");
+			return DEBUGGER_CMDDONE;
+		}
+		sprintf(command, "DspOpcodeType & $%x > 0 :once :quiet\n", optype);
+	}
+	else
+	{
+		Uint32 optype;
+		Uint16 nextpc;
+
+		optype = DebugDsp_OpcodeType();
+		/* can this instruction be stepped normally? */
+		if (optype != CALL_SUBROUTINE && optype != CALL_EXCEPTION)
+		{
+			nDspSteps = 1;
+			return DEBUGGER_END;
+		}
+
+		nextpc = DSP_GetNextPC(DSP_GetPC());
+		sprintf(command, "pc=$%x :once :quiet\n", nextpc);
+	}
+	/* use breakpoint, not steps */
 	if (BreakCond_Command(command, true)) {
-		nDspSteps = 0;		/* using breakpoint, not steps */
+		nDspSteps = 0;
 		return DEBUGGER_END;
 	}
 	return DEBUGGER_CMDDONE;
+}
+
+/* helper to get instruction type, slightly simpler
+ * version from one in profiledsp.c
+ */
+Uint32 DebugDsp_OpcodeType(void)
+{
+	const char *dummy;
+	Uint32 opcode;
+
+	/* 24-bit instruction opcode */
+	opcode = DSP_ReadMemory(DSP_GetPC(), 'P', &dummy) & 0xFFFFFF;
+
+	/* subroutine returns */
+	if (opcode == 0xC) {	/* (just) RTS */
+		return CALL_SUBRETURN;
+	}
+	if (
+	    /* unconditional subroutine calls */
+	    (opcode & 0xFFF000) == 0xD0000 ||	/* JSR   00001101 0000aaaa aaaaaaaa */
+	    (opcode & 0xFFC0FF) == 0xBC080 ||	/* JSR   00001011 11MMMRRR 10000000 */
+	    /* conditional subroutine calls */
+	    (opcode & 0xFF0000) == 0xF0000 ||	/* JSCC  00001111 CCCCaaaa aaaaaaaa */
+	    (opcode & 0xFFC0F0) == 0xBC0A0 ||	/* JSCC  00001011 11MMMRRR 1010CCCC */
+	    (opcode & 0xFFC0A0) == 0xB4080 ||	/* JSCLR 00001011 01MMMRRR 1S0bbbbb */
+	    (opcode & 0xFFC0A0) == 0xB0080 ||	/* JSCLR 00001011 00aaaaaa 1S0bbbbb */
+	    (opcode & 0xFFC0A0) == 0xB8080 ||	/* JSCLR 00001011 10pppppp 1S0bbbbb */
+	    (opcode & 0xFFC0E0) == 0xBC000 ||	/* JSCLR 00001011 11DDDDDD 000bbbbb */
+	    (opcode & 0xFFC0A0) == 0xB40A0 ||	/* JSSET 00001011 01MMMRRR 1S1bbbbb */
+	    (opcode & 0xFFC0A0) == 0xB00A0 ||	/* JSSET 00001011 00aaaaaa 1S1bbbbb */
+	    (opcode & 0xFFC0A0) == 0xB80A0 ||	/* JSSET 00001011 10pppppp 1S1bbbbb */
+	    (opcode & 0xFFC0E0) == 0xBC020) {	/* JSSET 00001011 11DDDDDD 001bbbbb */
+		return CALL_SUBROUTINE;
+	}
+	/* exception handler returns */
+	if (opcode == 0x4) {	/* (just) RTI */
+		return CALL_EXCRETURN;
+	}
+	/* branches */
+	if ((opcode & 0xFFF000) == 0xC0000 ||	/* JMP  00001100 0000aaaa aaaaaaaa */
+	    (opcode & 0xFFC0FF) == 0xAC080 ||	/* JMP  00001010 11MMMRRR 10000000 */
+	    (opcode & 0xFF0000) == 0xE0000 ||	/* JCC  00001110 CCCCaaaa aaaaaaaa */
+	    (opcode & 0xFFC0F0) == 0xAC0A0 ||	/* JCC  00001010 11MMMRRR 1010CCCC */
+	    (opcode & 0xFFC0A0) == 0xA8080 ||	/* JCLR 00001010 10pppppp 1S0bbbbb */
+	    (opcode & 0xFFC0A0) == 0xA4080 ||	/* JCLR 00001010 01MMMRRR 1S0bbbbb */
+	    (opcode & 0xFFC0A0) == 0xA0080 ||	/* JCLR 00001010 00aaaaaa 1S0bbbbb */
+	    (opcode & 0xFFC0E0) == 0xAC000 ||	/* JCLR 00001010 11dddddd 000bbbbb */
+	    (opcode & 0xFFC0A0) == 0xA80A0 ||	/* JSET 00001010 10pppppp 1S1bbbbb */
+	    (opcode & 0xFFC0A0) == 0xA40A0 ||	/* JSET 00001010 01MMMRRR 1S1bbbbb */
+	    (opcode & 0xFFC0A0) == 0xA00A0 ||	/* JSET 00001010 00aaaaaa 1S1bbbbb */
+	    (opcode & 0xFFC0E0) == 0xAC020 ||	/* JSET 00001010 11dddddd 001bbbbb */
+	    (opcode & 0xFF00F0) == 0x600A0 ||	/* REP  00000110 iiiiiiii 1010hhhh */
+	    (opcode & 0xFFC0FF) == 0x6C020 ||	/* REP  00000110 11dddddd 00100000 */
+	    (opcode & 0xFFC0BF) == 0x64020 ||	/* REP  00000110 01MMMRRR 0s100000 */
+	    (opcode & 0xFFC0BF) == 0x60020 ||	/* REP  00000110 00aaaaaa 0s100000 */
+	    (opcode & 0xFF00F0) == 0x60080 ||	/* DO/ENDO 00000110 iiiiiiii 1000hhhh */
+	    (opcode & 0xFFC0FF) == 0x6C000 ||	/* DO/ENDO 00000110 11DDDDDD 00000000 */
+	    (opcode & 0xFFC0BF) == 0x64000 ||	/* DO/ENDO 00000110 01MMMRRR 0S000000 */
+	    (opcode & 0xFFC0BF) == 0x60000) {	/* DO/ENDO 00000110 00aaaaaa 0S000000 */
+		return CALL_BRANCH;
+	}
+	return CALL_UNKNOWN;
 }
 
 
@@ -347,10 +459,20 @@ static int DebugDsp_Profile(int nArgc, char *psArgs[])
 
 
 /**
+ * DSP instructions since continuing emulation
+ */
+static Uint32 nDspInstructions;
+Uint32 DebugDsp_InstrCount(void)
+{
+	return nDspInstructions;
+}
+
+/**
  * This function is called after each DSP instruction when debugging is enabled.
  */
 void DebugDsp_Check(void)
 {
+	nDspInstructions++;
 	if (bDspProfiling)
 	{
 		Profile_DspUpdate();
@@ -392,11 +514,14 @@ void DebugDsp_Check(void)
 void DebugDsp_SetDebugging(void)
 {
 	bDspProfiling = Profile_DspStart();
-	nDspActiveCBs = BreakCond_BreakPointCount(true);
+	nDspActiveCBs = BreakCond_DspBreakPointCount();
 
 	if (nDspActiveCBs || nDspSteps || bDspProfiling || History_TrackDsp()
 	    || LOG_TRACE_LEVEL((TRACE_DSP_DISASM|TRACE_DSP_SYMBOLS)))
+	{
 		DSP_SetDebugging(true);
+		nDspInstructions = 0;
+	}
 	else
 		DSP_SetDebugging(false);
 }
@@ -450,12 +575,14 @@ static const dbgcommand_t dspcommands[] =
 	  "\n"
 	  "\tExecute next DSP instruction (equals 'dc 1')",
 	  false },
-	{ DebugDsp_Next, NULL,
+	{ DebugDsp_Next, DebugDsp_MatchNext,
 	  "dspnext", "dn",
-	  "step DSP, proceeding through subroutine calls",
-	  "\n"
-	  "\tLike the 'dspstep' command as long as subroutine calls do not\n"
-          "\thappen. When they do, the call is treated as one instruction.",
+	  "step DSP through subroutine calls / to given instruction type",
+	  "[instruction type]\n"
+	  "\tSame as 'dspstep' command if there are no subroutine calls.\n"
+          "\tWhen there are, those calls are treated as one instruction.\n"
+	  "\tIf argument is given, continues until instruction of given\n"
+	  "\ttype is encountered.",
 	  false },
 	{ DebugDsp_Continue, NULL,
 	  "dspcont", "dc",

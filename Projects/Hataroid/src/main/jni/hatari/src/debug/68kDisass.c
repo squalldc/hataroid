@@ -15,6 +15,9 @@
 #include "main.h"
 #include "configuration.h"
 #include "newcpu.h"
+#ifdef WINUAE_FOR_HATARI
+#include "debug.h"
+#endif
 #include "paths.h"
 #include "profile.h"
 #include "tos.h"
@@ -27,7 +30,7 @@ typedef enum {
 	doptNoBrackets = 1,		// hide brackets around absolute addressing
 	doptOpcodesSmall = 2,	// opcodes are small letters
 	doptRegisterSmall = 4,	// register names are small letters
-	doptStackSP = 8,		// stack pointer is named "SP" instead of "A7" (except for MOVEM)
+	doptStackSP = 8		// stack pointer is named "SP" instead of "A7" (except for MOVEM)
 } Diss68kOptions;
 
 static Diss68kOptions	options = doptOpcodesSmall | doptRegisterSmall | doptStackSP | doptNoBrackets;
@@ -37,7 +40,7 @@ static const Diss68kOptions optionsMask = doptOpcodesSmall | doptRegisterSmall |
 
 // values <0 will hide the group
 static int			optionPosAddress = 0;	// current address
-static int			optionPosHexdump = 10;	// 16-bit words at this address
+static int			optionPosHexdump = 12;	// 16-bit words at this address
 static int			optionPosLabel = 35;	// label, if defined
 static int			optionPosOpcode = 47;	// opcode
 static int			optionPosOperand = 57;	// operands for the opcode
@@ -88,7 +91,7 @@ typedef enum {
 	dtASCString,		// a 0-byte terminated ASCII string
 	dtPointer,			// a generic 32-bit pointer
 	dtFunctionPointer,	// a 32-bit pointer to a function
-	dtStringArray,		// a specific number of ASCII bytes
+	dtStringArray		// a specific number of ASCII bytes
 } Disass68kDataType;
 
 typedef struct {
@@ -124,7 +127,14 @@ static disSymbolEntry	*disSymbolEntries;
 
 static inline unsigned short	Disass68kGetWord(long addr)
 {
+	if ( ! valid_address ( addr , 2 ) )
+		return 0;
+
+#ifndef WINUAE_FOR_HATARI
 	return get_word(addr);
+#else
+	return get_word_debug(addr);
+#endif
 }
 
 // Load a text file into memory, count the lines and replace the LF with 0-bytes.
@@ -132,28 +142,31 @@ static int			Disass68kLoadTextFile(const char *filename, char **filebuf)
 {
 	long	index;
 	long	fileLength;
-	int	lineCount;
+	int	lineCount = 0;
 	char	*fbuf;
 	FILE	*f;
 	
 	if(filebuf)
 		*filebuf = NULL;
 	f = fopen(filename, "r");
-	if(!f) return 0;
-	if(fseek(f, 0, SEEK_END))
+	if (!f)
 		return 0;
+	if (fseek(f, 0, SEEK_END))
+		goto out;
 	fileLength = ftell(f);
-	if(fileLength <= 0) return 0;
-	if(fseek(f, 0, SEEK_SET))
-		return 0;
+	if (fileLength <= 0)
+		goto out;
+	if (fseek(f, 0, SEEK_SET))
+		goto out;
 	fbuf = malloc(fileLength);
-	if(!fbuf) return 0;
+	if(!fbuf)
+		goto out;
 	if((size_t)fileLength != fread(fbuf, sizeof(char), fileLength, f))
 	{
 		free(fbuf);
-		return 0;
+		goto out;
 	}
-	lineCount = 0;
+
 	for(index=0; index<fileLength; ++index)
 	{
 		if(fbuf[index] == '\r')	// convert potential CR into a space (which we ignore at the end of the line anyway)
@@ -166,6 +179,8 @@ static int			Disass68kLoadTextFile(const char *filename, char **filebuf)
 	}
 	if(filebuf)
 		*filebuf = fbuf;
+out:
+	fclose(f);
 	return lineCount;
 }
 
@@ -193,7 +208,7 @@ static void			Disass68kLoadStructInfo(const char *filename)
 		while(*sp++)
 			;
 		nextLine = sp--;
-		while(isspace(*--sp))
+		while (isspace((unsigned char)*--sp))
 			*sp = 0;
 
 		if(line[0] == '{')
@@ -218,7 +233,7 @@ static void			Disass68kLoadStructInfo(const char *filename)
 			int index = 2;
 			if(line[1] == 'A' || line[1] == 'B')
 			{
-				for(; isdigit(line[index]); ++index)
+				for(; isdigit((unsigned char)line[index]); ++index)
 				{
 					val *= 10;
 					val += line[index] - '0';
@@ -274,7 +289,7 @@ static void			Disass68kLoadSymbols(const char *filename)
 		while(*sp++)
 			;
 		nextLine = sp--;
-		while(isspace(*--sp))
+		while(isspace((unsigned char)*--sp))
 			*sp = 0;
 
 		// ignore empty lines
@@ -291,10 +306,10 @@ static void			Disass68kLoadSymbols(const char *filename)
 			if(str)
 			{
 				char	*ep = str;
-				while(isspace(*--ep))
+				while(isspace((unsigned char)*--ep))
 					*ep = 0;
 				*str++ = 0;
-				while(*str && isspace(*str))
+				while(*str && isspace((unsigned char)*str))
 					++str;
 				parameterPtr[parameterCount++] = str;
 			}
@@ -485,10 +500,10 @@ static const char	*Disass68kNumber(int val)
 		sprintf(numString, "%d", val);
 	} else {
 		// 4 characters/numbers or underscore (e.g. for cookies)
-		char	c0 = (val >> 24) & 0xFF;
-		char	c1 = (val >> 16) & 0xFF;
-		char	c2 = (val >>  8) & 0xFF;
-		char	c3 = (val >>  0) & 0xFF;
+		unsigned char c0 = (val >> 24) & 0xFF;
+		unsigned char c1 = (val >> 16) & 0xFF;
+		unsigned char c2 = (val >>  8) & 0xFF;
+		unsigned char c3 = (val >>  0) & 0xFF;
 		if((isalnum(c0) || c0 == '_') && (isalnum(c1) || c1 == '_') && (isalnum(c2) || c2 == '_') && (isalnum(c3) || c3 == '_'))
 		{
 			sprintf(numString, "'%c%c%c%c'", c0, c1, c2, c3);
@@ -588,7 +603,7 @@ static const char *Disass68kSpecialRegister(int reg)
 		char	*bp;
 		strcpy(buf, sp);
 		for (bp = buf; *bp; ++bp)
-			*bp = tolower(*bp);
+			*bp = tolower((unsigned char)*bp);
 		return buf;
 	}
 	return sp;
@@ -632,8 +647,6 @@ static char		*Disass68kEA(char *disassbuf, char *commentBuffer, long *addr, long
 	long			val;
 	char	regName[3];
 	signed long	pcoffset;
-
-	val = 0;
 
 	disassbuf[0] = 0;
 	switch(ea)
@@ -1283,7 +1296,7 @@ typedef enum {
 	ofFPUMOVE,
 	ofFMOVECR,
 	ofFPU3Reg,
-	ofLineA,
+	ofLineA
 } Disass68kOpcodeFormat;
 
 
@@ -1301,7 +1314,7 @@ typedef const struct {
 	int				disassFlag;
 } OpcodeTableStruct;
 
-static const OpcodeTableStruct	OpcodeTable[] = {
+static OpcodeTableStruct	OpcodeTable[] = {
 	{ MC_ALL, {0xff00, 0x0000}, {-1,6,2,0}, {ofI,ofEa}, "ORI.?",{0,EA_Immed|EA_PCRel|EA_An}},
 	{ MC_ALL, {0xf1c0, 0x0100}, {4}, {ofDestDn,ofEa}, "BTST",{0,EA_An|EA_Immed} },
 	{ MC_ALL, {0xf1c0, 0x0140}, {4}, {ofDestDn,ofEa}, "BCHG",{0,EA_Immed|EA_PCRel|EA_An}},
@@ -1867,7 +1880,7 @@ static int	Disass68k(long addr, char *labelBuffer, char *opcodeBuffer, char *ope
 		if(sp)
 			sprintf(operandBuffer,"%s", sp);
 		else
-			sprintf(operandBuffer,"$%6.6x", val);
+			sprintf(operandBuffer,"$%8.8x", val);
 		return 4;
 	}
 
@@ -1895,6 +1908,7 @@ more:
 		char	sizeChar = 0;
 		char	*dbuf;
 		int	ea;
+		unsigned int	maxop;
 
 		if(ots->opcodeName == NULL)
 			break;
@@ -1996,7 +2010,7 @@ more:
 						strcpy(buf, sp);
 						sp = buf;
 						for (bp = buf; *bp; ++bp)
-							*bp = tolower(*bp);
+							*bp = tolower((unsigned char)*bp);
 					}
 					strcpy(dbuf, sp);
 					dbuf += strlen(sp);
@@ -2007,7 +2021,7 @@ more:
 			if(c == '?')	// size mask
 				c = sizeChar;
 			if(options & doptOpcodesSmall)
-				c = tolower(c);
+				c = tolower((unsigned char)c);
 			*dbuf++ = c;
 		}
 		*dbuf = 0;
@@ -2015,7 +2029,9 @@ more:
 		// Parse the EAs for all operands
 		ea = opcode[0] & 0x3F;
 		dbuf = operandBuffer;
-		for(i=0; i<(sizeof(ots->op)/sizeof(ots->op[0])); ++i)
+
+		maxop=(sizeof(ots->op)/sizeof(ots->op[0]));
+		for(i=0; i<maxop; ++i)
 		{
 			int reg;
 
@@ -2406,7 +2422,7 @@ more:
 			if(!dbuf) goto more;
 
 			// does another operand follow => add separator
-			if(ots->op[i+1] != ofNone)
+			if ( (i+1<maxop) && ( ots->op[i+1] != ofNone) )
 				*dbuf++ = ',';
 		}
 		return addr-baseAddr;
@@ -2442,7 +2458,7 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 	}
 
 	while (cnt-- > 0) {
-		const int	addrWidth = 6;		// 6 on an ST, 8 on a TT
+		const int	addrWidth = 8;		// 6 on an ST (24 bit addressing), 8 on a TT (32 bit addressing)
 		char	lineBuffer[1024];
 
 		char	addressBuffer[32];
@@ -2497,10 +2513,10 @@ static void Disass68k_loop (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 		if (optionPosComment >= 0)
 		{
 			float percentage;
-			Uint32 count, cycles, misses;
-			if (Profile_CpuAddressData(addr, &percentage, &count, &cycles, &misses))
+			Uint32 count, cycles, i_misses, d_hits;
+			if (Profile_CpuAddressData(addr, &percentage, &count, &cycles, &i_misses, &d_hits))
 			{
-				sprintf(commentBuffer, "%5.2f%% (%u, %u, %u)", percentage, count, cycles, misses);
+				sprintf(commentBuffer, "%5.2f%% (%u, %u, %u, %u)", percentage, count, cycles, i_misses, d_hits);
 				Disass68kComposeStr(lineBuffer, commentBuffer, optionPosComment+1, 0);
 			}
 			/* show comments only if profile data is missing */
@@ -2541,9 +2557,13 @@ Uint32 Disasm_GetNextPC(Uint32 pc)
 void Disasm (FILE *f, uaecptr addr, uaecptr *nextpc, int cnt)
 {
 	if (ConfigureParams.Debugger.bDisasmUAE)
-		return m68k_disasm (f, addr, nextpc, cnt);
+#ifdef WINUAE_FOR_HATARI
+		m68k_disasm_file (f, addr, nextpc, cnt);
+#else
+		m68k_disasm (f, addr, nextpc, cnt);
+#endif
 	else
-		return Disass68k_loop (f, addr, nextpc, cnt);
+		Disass68k_loop (f, addr, nextpc, cnt);
 }
 
 static void Disasm_CheckOptionEngine(void)
@@ -2619,6 +2639,27 @@ int Disasm_GetOptions(void)
 }
 
 /**
+ * Set CPU and FPU mask used for disassembly (when changed from the UI or the options)
+ */
+void Disasm_SetCPUType ( int CPU , int FPU )
+{
+	optionCPUTypeMask = 0;
+
+	if ( ( FPU == 68881 ) || ( FPU == 68882 ) )
+		optionCPUTypeMask |= MC_FPU;
+
+	switch ( CPU )
+	{
+		case 0 :	optionCPUTypeMask |= MC68000 ; break;
+		case 1 :	optionCPUTypeMask |= MC68010 ; break;
+		case 2 :	optionCPUTypeMask |= MC68020 ; break;
+		case 3 :	optionCPUTypeMask |= MC68030 ; break;
+		case 4 :	optionCPUTypeMask |= MC68040 ; break;
+		default :	optionCPUTypeMask |= MC68000 ; break;
+	}	
+}
+
+/**
  * Parse disasm command line option argument
  * @return	error string (""=silent 'error') or NULL for success.
  */
@@ -2666,7 +2707,7 @@ const char *Disasm_ParseOption(const char *arg)
 		ConfigureParams.Debugger.bDisasmUAE = false;
 		return NULL;
 	}
-	if (isdigit(*arg))
+	if (isdigit((unsigned char)*arg))
 	{
 		int newopt = atoi(arg);
 		if ((newopt|optionsMask) != optionsMask)

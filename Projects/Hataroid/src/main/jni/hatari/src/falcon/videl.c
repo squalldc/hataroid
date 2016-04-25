@@ -76,7 +76,8 @@ const char VIDEL_fileid[] = "Hatari videl.c : " __DATE__ " " __TIME__;
 #include "screen.h"
 #include "stMemory.h"
 #include "videl.h"
-
+#include "video.h"				/* for bUseHighRes variable, maybe unuseful (Laurent) */
+#include "vdi.h"				/* for bUseVDIRes variable,  maybe unuseful (Laurent) */
 
 #define Atari2HostAddr(a) (&STRam[a])
 #define VIDEL_COLOR_REGS_BEGIN	0xff9800
@@ -120,6 +121,7 @@ static void VIDEL_memset_uint32(Uint32 *addr, Uint32 color, int count);
 static void VIDEL_memset_uint16(Uint16 *addr, Uint16 color, int count);
 static void VIDEL_memset_uint8(Uint8 *addr, Uint8 color, int count);
 
+
 /**
  *  Called upon startup and when CPU encounters a RESET instruction.
  */
@@ -145,7 +147,7 @@ void VIDEL_reset(void)
 	videl.save_scrWidth = 640;
 	videl.save_scrHeight = 480;
 	videl.save_scrBpp = ConfigureParams.Screen.nForceBpp;
-	HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp);
+	HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp, false);
 
 	/* Reset IO register (some are not initialized by TOS) */
 	IoMem_WriteWord(0xff820e, 0);    /* Line offset */
@@ -166,10 +168,13 @@ void VIDEL_MemorySnapShot_Capture(bool bSave)
 }
 
 /**
- * Monitor write access to ST/E color palette registers
+ * Monitor write access to Falcon color palette registers
  */
-void VIDEL_ColorRegsWrite(void)
+void VIDEL_FalconColorRegsWrite(void)
 {
+	uint32_t color = IoMem_ReadLong(IoAccessBaseAddress & ~3);
+	color &= 0xfcfc00fc;	/* Unused bits have to be set to 0 */
+	IoMem_WriteLong(IoAccessBaseAddress & ~3, color);
 	videl.hostColorsSync = false;
 }
 
@@ -882,10 +887,12 @@ static void VIDEL_updateColors(void)
 }
 
 
-void VIDEL_ZoomModeChanged(void)
+void VIDEL_ZoomModeChanged(bool bForceChange)
 {
 	/* User selected another zoom mode, so set a new screen resolution now */
-	HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
+	HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight,
+	                         videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp,
+	                         bForceChange);
 }
 
 
@@ -921,7 +928,7 @@ bool VIDEL_renderScreen(void)
 	}
 	if (change) {
 		LOG_TRACE(TRACE_VIDEL, "Videl : video mode change to %dx%d@%d\n", videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp);
-		HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp);
+		HostScreen_setWindowSize(videl.save_scrWidth, videl.save_scrHeight, videl.save_scrBpp == 16 ? 16 : ConfigureParams.Screen.nForceBpp, false);
 	}
 
 	if (!HostScreen_renderBegin())
@@ -945,9 +952,10 @@ bool VIDEL_renderScreen(void)
 	*/
 	nextline = linewidth + lineoffset;
 
-	if ((vw<32) || (vh<32))
+	if ((vw < 32) || (vh < 32)) {
+		LOG_TRACE(TRACE_VIDEL, "Videl : %dx%d screen size, not drawing\n", vw, vh);
 		return false;
-
+	}
 	if (videl.save_scrBpp < 16 && videl.hostColorsSync == 0)
 		VIDEL_updateColors();
 
@@ -957,9 +965,7 @@ bool VIDEL_renderScreen(void)
 		VIDEL_ConvertScreenNoZoom(vw, vh, videl.save_scrBpp, nextline);
 	}
 
-
-	HostScreen_renderEnd();
-	HostScreen_update1(false);
+	HostScreen_update1(HostScreen_renderEnd(), false);
 
 	return true;
 }
@@ -1138,8 +1144,8 @@ void VIDEL_ConvertScreenNoZoom(int vw, int vh, int vbpp, int nextline)
 	if (vh>scrheight) vh_clip = scrheight;	
 
 	/* If emulated computer is the FALCON, we must take :
-	 * vw = X area display size and not all the X screen with the borders into account
-	 * vh = Y area display size and not all the Y screen with the borders into account
+	 * vw = display width without borders
+	 * vh = display height without borders
 	 */
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
 		vw = videl.XSize;
@@ -1582,9 +1588,15 @@ void VIDEL_ConvertScreenZoom(int vw, int vh, int vbpp, int nextline)
 	/* We reuse the following values to compute the display area size in zoom mode */
 	/* scrwidth must not change */
 	if (ConfigureParams.System.nMachineType == MACHINE_FALCON) {
+		/* get values without borders */
 		vw = videl.XSize;
 		vh = videl.YSize;
 		scrheight = vh * coefy;
+	}
+	if (vw < 16) {
+		Log_Printf(LOG_WARN, "ERROR: Videl <16 screen width (%dx%d without borders)\nIf this happens at TOS boot, remove hatari.nvram,\nNVRAM video settings in it are corrupted.\n", vw, vh);
+		/* prevent memory corruption */
+		return;
 	}
 
 	if (vbpp<16) {
@@ -2020,4 +2032,192 @@ static void VIDEL_memset_uint16(Uint16 *addr, Uint16 color, int count)
 static void VIDEL_memset_uint8(Uint8 *addr, Uint8 color, int count)
 {
 	memset(addr, color, count);
+}
+
+
+
+/**
+ * Write to videl ST palette registers (0xff8240-0xff825e)
+ *
+ * [Laurent]: The following note should be verified on Falcon before being applied.
+ * 
+ * Note that there's a special "strange" case when writing only to the upper byte
+ * of the color reg (instead of writing 16 bits at once with .W/.L).
+ * In that case, the byte written to address x is automatically written
+ * to address x+1 too (but we shouldn't copy x in x+1 after masking x ; we apply the mask at the end)
+ * Similarly, when writing a byte to address x+1, it's also written to address x
+ * So :	move.w #0,$ff8240	-> color 0 is now $000
+ *	move.b #7,$ff8240	-> color 0 is now $707 !
+ *	move.b #$55,$ff8241	-> color 0 is now $555 !
+ *	move.b #$71,$ff8240	-> color 0 is now $171 (bytes are first copied, then masked)
+ */
+static void Videl_ColorReg_WriteWord(void)
+{
+	Uint16 col;
+	Uint32 addr = IoAccessCurrentAddress;
+
+	videl.hostColorsSync = false;
+
+	if (bUseHighRes || bUseVDIRes)               /* Don't store if hi-res or VDI resolution */
+		return;
+
+	/* Note from laurent: The following special case should be verified on the real Falcon before uncommenting */
+	/* Handle special case when writing only to the upper byte of the color reg */
+//	if ( ( nIoMemAccessSize == SIZE_BYTE ) && ( ( IoAccessCurrentAddress & 1 ) == 0 ) )
+//		col = ( IoMem_ReadByte(addr) << 8 ) + IoMem_ReadByte(addr);		/* copy upper byte into lower byte */
+	/* Same when writing only to the lower byte of the color reg */
+//	else if ( ( nIoMemAccessSize == SIZE_BYTE ) && ( ( IoAccessCurrentAddress & 1 ) == 1 ) )
+//		col = ( IoMem_ReadByte(addr) << 8 ) + IoMem_ReadByte(addr);		/* copy lower byte into upper byte */
+	/* Usual case, writing a word or a long (2 words) */
+//	else
+		col = IoMem_ReadWord(addr);
+
+	col &= 0xfff;				/* Mask off to 4096 palette */
+
+	addr &= 0xfffffffe;			/* Ensure addr is even to store the 16 bit color */
+
+	IoMem_WriteWord(addr, col);
+}
+
+/*
+ * [NP] TODO : due to how .L accesses are handled in ioMem.c, we can't call directly
+ * Video_ColorReg_WriteWord from ioMemTabFalcon.c, we must use an intermediate
+ * function, else .L accesses will not change 2 .W color regs, but only one.
+ * This should be changed in ioMem.c to do 2 separate .W accesses, as would do a real 68000
+ */
+
+void Videl_Color0_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color1_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color2_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color3_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color4_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color5_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color6_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color7_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color8_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color9_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color10_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color11_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color12_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color13_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color14_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+void Videl_Color15_WriteWord(void)
+{
+	Videl_ColorReg_WriteWord();
+}
+
+/**
+ * display Videl registers values (for debugger info command)
+ */
+void Videl_Info(FILE *fp, Uint32 dummy)
+{
+	if (ConfigureParams.System.nMachineType != MACHINE_FALCON) {
+		fprintf(fp, "Not Falcon - no Videl!\n");
+		return;
+	}
+
+	fprintf(fp, "$FF8006.b : monitor type                     : %02x\n", IoMem_ReadByte(0xff8006));
+	fprintf(fp, "$FF8201.b : Video Base Hi                    : %02x\n", IoMem_ReadByte(0xff8201));
+	fprintf(fp, "$FF8203.b : Video Base Mi                    : %02x\n", IoMem_ReadByte(0xff8203));
+	fprintf(fp, "$FF8205.b : Video Count Hi                   : %02x\n", IoMem_ReadByte(0xff8205));
+	fprintf(fp, "$FF8207.b : Video Count Mi                   : %02x\n", IoMem_ReadByte(0xff8207));
+	fprintf(fp, "$FF8209.b : Video Count Lo                   : %02x\n", IoMem_ReadByte(0xff8209));
+	fprintf(fp, "$FF820A.b : Sync mode                        : %02x\n", IoMem_ReadByte(0xff820a));
+	fprintf(fp, "$FF820D.b : Video Base Lo                    : %02x\n", IoMem_ReadByte(0xff820d));
+	fprintf(fp, "$FF820E.w : offset to next line              : %04x\n", IoMem_ReadWord(0xff820e));
+	fprintf(fp, "$FF8210.w : VWRAP - line width               : %04x\n", IoMem_ReadWord(0xff8210));
+	fprintf(fp, "$FF8260.b : ST shift mode                    : %02x\n", IoMem_ReadByte(0xff8260));
+	fprintf(fp, "$FF8264.w : Horizontal scroll register       : %04x\n", IoMem_ReadWord(0xff8264));
+	fprintf(fp, "$FF8266.w : Falcon shift mode                : %04x\n", IoMem_ReadWord(0xff8266));
+	fprintf(fp, "\n");
+	fprintf(fp, "$FF8280.w : HHC - Horizontal Hold Counter    : %04x\n", IoMem_ReadWord(0xff8280));
+	fprintf(fp, "$FF8282.w : HHT - Horizontal Hold Timer      : %04x\n", IoMem_ReadWord(0xff8282));
+	fprintf(fp, "$FF8284.w : HBB - Horizontal Border Begin    : %04x\n", IoMem_ReadWord(0xff8284));
+	fprintf(fp, "$FF8286.w : HBE - Horizontal Border End      : %04x\n", IoMem_ReadWord(0xff8286));
+	fprintf(fp, "$FF8288.w : HDB - Horizontal Display Begin   : %04x\n", IoMem_ReadWord(0xff8288));
+	fprintf(fp, "$FF828A.w : HDE - Horizontal Display End     : %04x\n", IoMem_ReadWord(0xff828a));
+	fprintf(fp, "$FF828C.w : HSS - Horizontal SS              : %04x\n", IoMem_ReadWord(0xff828c));
+	fprintf(fp, "$FF828E.w : HFS - Horizontal FS              : %04x\n", IoMem_ReadWord(0xff828e));
+	fprintf(fp, "$FF8290.w : HEE - Horizontal EE              : %04x\n", IoMem_ReadWord(0xff8290));
+	fprintf(fp, "\n");
+	fprintf(fp, "$FF82A0.w : VFC - Vertical Frequency Counter : %04x\n", IoMem_ReadWord(0xff82a0));
+	fprintf(fp, "$FF82A2.w : VFT - Vertical Frequency Timer   : %04x\n", IoMem_ReadWord(0xff82a2));
+	fprintf(fp, "$FF82A4.w : VBB - Vertical Border Begin      : %04x\n", IoMem_ReadWord(0xff82a4));
+	fprintf(fp, "$FF82A6.w : VBE - Vertical Border End        : %04x\n", IoMem_ReadWord(0xff82a6));
+	fprintf(fp, "$FF82A8.w : VDB - Vertical Display Begin     : %04x\n", IoMem_ReadWord(0xff82a8));
+	fprintf(fp, "$FF82AA.w : VDE - Vertical Display End       : %04x\n", IoMem_ReadWord(0xff82aa));
+	fprintf(fp, "$FF82AC.w : VSS - Vertical SS                : %04x\n", IoMem_ReadWord(0xff82ac));
+	fprintf(fp, "\n");
+	fprintf(fp, "$FF82C0.w : VCO - Video control              : %04x\n", IoMem_ReadWord(0xff82c0));
+	fprintf(fp, "$FF82C2.w : VMD - Video mode                 : %04x\n", IoMem_ReadWord(0xff82c2));
+	fprintf(fp, "\n-------------------------\n");
+
+	fprintf(fp, "Video base  : %08x\n",
+		(IoMem_ReadByte(0xff8201)<<16) + 
+		(IoMem_ReadByte(0xff8203)<<8)  + 
+		 IoMem_ReadByte(0xff820d));
+	fprintf(fp, "Video count : %08x\n",
+		(IoMem_ReadByte(0xff8205)<<16) + 
+		(IoMem_ReadByte(0xff8207)<<8)  + 
+		 IoMem_ReadByte(0xff8209));
 }

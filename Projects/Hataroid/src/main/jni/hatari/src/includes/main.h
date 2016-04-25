@@ -27,6 +27,13 @@
 # define unlikely(x)    (x)
 #endif
 
+/* avoid warnings with variables used only in asserts */
+#ifdef NDEBUG
+# define ASSERT_VARIABLE(x) (void)(x)
+#else
+# define ASSERT_VARIABLE(x) assert(x)
+#endif
+
 #ifdef WIN32
 #define PATHSEP '\\'
 #else
@@ -35,7 +42,9 @@
 
 #define CALL_VAR(func)  { ((void(*)(void))func)(); }
 
+#ifndef ARRAYSIZE
 #define ARRAYSIZE(x) (int)(sizeof(x)/sizeof(x[0]))
+#endif
 
 /* 68000 operand sizes */
 #define SIZE_BYTE  1
@@ -49,10 +58,11 @@ extern bool bQuitProgram;
 
 extern bool Main_PauseEmulation(bool visualize);
 extern bool Main_UnPauseEmulation(void);
-extern void Main_RequestQuit(void);
+extern void Main_RequestQuit(int exitval);
 extern void Main_SetRunVBLs(Uint32 vbls);
+extern bool Main_SetVBLSlowdown(int factor);
 extern void Main_WaitOnVbl(void);
-extern void Main_WarpMouse(int x, int y);
+extern void Main_WarpMouse(int x, int y, bool restore);
 extern void Main_EventHandler(void);
 extern void Main_SetTitle(const char *title);
 

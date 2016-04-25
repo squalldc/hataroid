@@ -83,6 +83,8 @@ extern void hataroid_releaseAssetDataRef(int assetID);
 extern const char* hataroid_getAssetDataDirect(JNIEnv *curEnv, const char* assetPath, int nullTerm, int *len);
 extern const char* hataroid_getAssetDataRef(JNIEnv *curEnv, const char* assetPath, int persist, int *len, int *id);
 
+extern char* hataroid_LoadEmuTOS(int machineType, long* fileSize);
+
 #ifdef __cplusplus
 };  /* end of extern "C" */
 #endif /* __cplusplus */

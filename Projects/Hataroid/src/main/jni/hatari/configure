@@ -13,14 +13,16 @@ print_help()
 {
   echo "This is a simple configure script wrapper around cmake build system."
   echo "Parameters are:"
-  echo "  --prefix=<path>         Set the install prefix to path"
-  echo "  --enable-debug          Enable debug (non-optimized) build"
-  echo "  --enable-small-mem      Use less memory - at the expense of emulation speed"
-  echo "  --disable-dsp           Disable DSP emulation for Falcon mode."
-  echo "  --disable-tracing       Disable tracing messages for debugging"
-  echo "  --enable-winuae-cpu     Enable WinUAE CPU core (experimental!)"
-  echo "  --disable-osx-bundle    Disable application bundling on Mac OS X"
-  echo "  --cross-compile-win32   Build the Windows version under linux"
+  echo "  --prefix=<path>            Set the install prefix to path"
+  echo "  --enable-debug             Enable debug (non-optimized) build"
+  echo "  --enable-small-mem         Use less memory - at the expense of emulation speed"
+  echo "  --disable-dsp              Disable DSP emulation for Falcon mode."
+  echo "  --disable-tracing          Disable tracing messages for debugging"
+  echo "  --enable-winuae-cpu        Enable WinUAE CPU core (experimental!)"
+  echo "  --disable-osx-bundle       Disable application bundling on Mac OS X"
+  echo "  --enable-sdl2              Compile with libsdl 2.0 instead of 1.2"
+  echo "  --cross-compile-win64_32   Build the 32 bit Windows version under linux using mingw-w64"
+  echo "  --cross-compile-win64_64   Build the 64 bit Windows version under linux using mingw-w64"
   echo
   echo "Please run cmake directly for full control over the build."
   echo
@@ -80,8 +82,17 @@ do
     --disable-osx-bundle)
       cmake_args="$cmake_args -DENABLE_OSX_BUNDLE:BOOL=0"
     ;;
-    --cross-compile-win32)
-      cmake_args="$cmake_args -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32.cmake"
+    --enable-sdl2)
+      cmake_args="$cmake_args -DENABLE_SDL2:BOOL=1"
+    ;;
+    --disable-sdl2)
+      cmake_args="$cmake_args -DENABLE_SDL2:BOOL=0"
+    ;;
+    --cross-compile-win64_32)
+      cmake_args="$cmake_args -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32-win64_32.cmake"
+    ;;
+    --cross-compile-win64_64)
+      cmake_args="$cmake_args -DCMAKE_TOOLCHAIN_FILE=cmake/Toolchain-mingw32-win64_64.cmake"
     ;;
     *)
       echo "Invalid argument: $preq"
@@ -94,6 +105,7 @@ done
 
 # remove previous cmake's cache
 rm -f `dirname $0`/CMakeCache.txt
+rm -rf `dirname $0`/CMakeFiles/
 
 cmake `dirname $0` $cmake_args || exit 1
 

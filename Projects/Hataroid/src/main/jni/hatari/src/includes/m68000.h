@@ -71,23 +71,24 @@ enum {
 #define SR_CLEAR_TRACEMODE  0x7fff
 #define SR_CLEAR_SUPERMODE  0xdfff
 
-/* Exception vectors */
-#define  EXCEPTION_BUSERROR   0x00000008
-#define  EXCEPTION_ADDRERROR  0x0000000c
-#define  EXCEPTION_ILLEGALINS 0x00000010
-#define  EXCEPTION_DIVZERO    0x00000014
-#define  EXCEPTION_CHK        0x00000018
-#define  EXCEPTION_TRAPV      0x0000001c
-#define  EXCEPTION_TRACE      0x00000024
-#define  EXCEPTION_LINE_A     0x00000028
-#define  EXCEPTION_LINE_F     0x0000002c
-#define  EXCEPTION_HBLANK     0x00000068
-#define  EXCEPTION_VBLANK     0x00000070
-#define  EXCEPTION_TRAP0      0x00000080
-#define  EXCEPTION_TRAP1      0x00000084
-#define  EXCEPTION_TRAP2      0x00000088
-#define  EXCEPTION_TRAP13     0x000000B4
-#define  EXCEPTION_TRAP14     0x000000B8
+/* Exception numbers most commonly used in ST */
+#define  EXCEPTION_NR_BUSERROR		2
+#define  EXCEPTION_NR_ADDRERROR		3
+#define  EXCEPTION_NR_ILLEGALINS	4
+#define  EXCEPTION_NR_DIVZERO    	5
+#define  EXCEPTION_NR_CHK        	6
+#define  EXCEPTION_NR_TRAPV      	7
+#define  EXCEPTION_NR_TRACE      	9
+#define  EXCEPTION_NR_LINE_A		10
+#define  EXCEPTION_NR_LINE_F		11
+#define  EXCEPTION_NR_HBLANK		26		/* Level 2 interrupt */
+#define  EXCEPTION_NR_VBLANK		28		/* Level 4 interrupt */
+#define  EXCEPTION_NR_MFP_DSP		30		/* Level 6 interrupt */
+#define  EXCEPTION_NR_TRAP0		32
+#define  EXCEPTION_NR_TRAP1		33
+#define  EXCEPTION_NR_TRAP2		34
+#define  EXCEPTION_NR_TRAP13		45
+#define  EXCEPTION_NR_TRAP14		46
 
 
 /* Size of 68000 instructions */
@@ -114,6 +115,10 @@ enum {
 # define M68000_GetPC()     m68k_getpc()
 # define M68000_SetPC(val)  m68k_setpc(val)
 
+# define M68000_InstrPC		regs.instruction_pc
+# define M68000_CurrentOpcode	regs.opcode
+
+
 static inline Uint16 M68000_GetSR(void)
 {
 	MakeSR();
@@ -129,35 +134,75 @@ static inline void M68000_SetSR(Uint16 v)
 # define M68000_UnsetSpecial(flags) unset_special(flags)
 
 
-/* bus error mode */
-#define BUS_ERROR_WRITE 0
-#define BUS_ERROR_READ 1
+/* Some define's for bus error (see newcpu.c) */
+/* Bus error read/write mode */
+#define BUS_ERROR_WRITE		0
+#define BUS_ERROR_READ		1
+/* Bus error access size */
+#define BUS_ERROR_SIZE_BYTE	1
+#define BUS_ERROR_SIZE_WORD	2
+#define BUS_ERROR_SIZE_LONG	4
+/* Bus error access type */
+#define BUS_ERROR_ACCESS_INSTR	0
+#define BUS_ERROR_ACCESS_DATA	1
 
 
-/* bus access mode */
+/* Bus access mode */
 #define	BUS_MODE_CPU		0			/* bus is owned by the cpu */
 #define	BUS_MODE_BLITTER	1			/* bus is owned by the blitter */
 
 
-/* Notes on IACK :
+/* [NP] Notes on IACK :
  * When an interrupt happens, it's possible a similar interrupt happens again
  * between the start of the exception and the IACK sequence. In that case, we
  * might have to set pending bit twice and change the interrupt vector.
- * From the 68000's doc, IACK start after 12 cycles. Then in an Atari STF, it takes
- * 12 extra cycles to fetch the vector number.
- * This means we have at max 24 cycles at the start of the exception where some
- * changes can happen. The values we use were not measured on real hardware, they
- * were adjusted to get the correct behaviour in some games/demos relying on this.
+ *
+ * From the 68000's doc, IACK starts after 10 cycles (12 cycles on STF) and is
+ * supposed to take 4 cycles if the interrupt takes a total of 44 cycles.
+ *
+ * On Atari STF, interrupts take 56 cycles instead of 44, which means it takes
+ * 12 extra cycles to fetch the vector number and to handle non-aligned memory accesses.
+ * From WinUAE's CE mode, we have 2 non-aligned memory accesses to wait for (ie 2+2 cycles),
+ * which leaves a total of 12 cycles to fetch the vector.
+ * This means we have at max 12+12=24 cycles after the start of the exception where some
+ * changes can happen (maybe it's a little less, depending on when the interrupt
+ * vector is written on the bus).
+ *
+ * The values we use were not measured on real ST hardware, they were adjusted
+ * to get the correct behaviour in some games/demos relying on this ; since timings
+ * are rounded to 4 on ST, it's possible the interrupt takes 54 cycles and not 56.
+ *
+ * WinUAE cycles (measured on real A500 HW) :
+ *
+ *   6		idle cycles
+ *   2(*)	ST bus access penalty
+ *   4		write PC low word
+ *   12(*)	read exception number
+ *   4		idle cycles
+ *   4		write SR
+ *   4		write PC high word
+ *   4		read exception address high word
+ *   4		read exception address low word
+ *   4		prefetch
+ *   2		idle cycles
+ *   2(*)	ST bus access penalty
+ *   4		prefetch
+ *   TOTAL = 56
+ *
+ *   (*) ST specific timings
  */
+#define CPU_IACK_CYCLES_START	12			/* number of cycles before starting the IACK */
 #define CPU_IACK_CYCLES_MFP	12			/* vector sent by the MFP */
-#define CPU_IACK_CYCLES_VIDEO	20			/* auto vectored */
+#define CPU_IACK_CYCLES_VIDEO	12			/* auto vectored for HBL/VBL */
 
 
-/* information about current CPU instruction */
+/* Informations about current CPU instruction */
 typedef struct {
-	/* these are provided only by WinUAE CPU core */
-	int iCacheMisses;
-	int iSave_instr_tail;
+	/* These are provided only by WinUAE CPU core */
+	int	I_Cache_miss;				/* Instruction cache for 68020/30/40/60 */
+	int	I_Cache_hit;
+	int	D_Cache_miss;				/* Data cache for 68030/40/60 */
+	int	D_Cache_hit;
 
 	/* TODO: move other instruction specific Hatari variables here */
 } cpu_instruction_t;
@@ -165,7 +210,6 @@ typedef struct {
 extern cpu_instruction_t CpuInstruction;
 
 extern Uint32 BusErrorAddress;
-extern Uint32 BusErrorPC;
 extern bool bBusErrorReadWrite;
 extern int nCpuFreqShift;
 extern int nWaitStateCycles;
@@ -295,10 +339,14 @@ extern void M68000_Reset(bool bCold);
 extern void M68000_Start(void);
 extern void M68000_CheckCpuSettings(void);
 extern void M68000_MemorySnapShot_Capture(bool bSave);
-extern void M68000_BusError(Uint32 addr, bool bReadWrite);
-extern void M68000_Exception(Uint32 ExceptionVector , int ExceptionSource);
+extern void M68000_BusError ( Uint32 addr , int ReadWrite , int Size , int AccessType );
+extern void M68000_Exception(Uint32 ExceptionNr , int ExceptionSource);
+extern void M68000_Update_intlev ( void );
 extern void M68000_WaitState(int nCycles);
 extern int M68000_WaitEClock ( void );
+extern void M68000_Flush_Instr_Cache ( uaecptr addr , int size );
+extern void M68000_Flush_Data_Cache ( uaecptr addr , int size );
+extern void M68000_Flush_All_Caches ( uaecptr addr , int size );
 
 void M68000_restoreMemorySnapshot(void);
 void M68000_doFrameInit(void);

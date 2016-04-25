@@ -76,3 +76,9 @@ bool Dialog_DoProperty(void)
 
 	return 0;
 }
+
+void Dialog_HaltDlg(void)
+{
+    // TODO
+    hataroid_setDoubleBusError();
+}

@@ -15,10 +15,19 @@ const char Paths_fileid[] = "Hatari paths.c : " __DATE__ " " __TIME__;
 #include "main.h"
 #include "file.h"
 #include "paths.h"
+#include "str.h"
 
 #if defined(WIN32) && !defined(mkdir)
 #define mkdir(name,mode) mkdir(name)
 #endif  /* WIN32 */
+
+#if defined(__MACOSX__)
+	#define HATARI_HOME_DIR "Library/Application Support/Hatari"
+#elif defined (ANDROID)
+	#define HATARI_HOME_DIR "STDroid"
+#else
+	#define HATARI_HOME_DIR ".hatari"
+#endif
 
 static char sWorkingDir[FILENAME_MAX];    /* Working directory */
 static char sDataDir[FILENAME_MAX];       /* Directory where data files of Hatari can be found */
@@ -81,7 +90,11 @@ static void Paths_GetExecDirFromPATH(const char *argv0, char *pExecDir, int nMax
 
 	pTmpName = malloc(FILENAME_MAX);
 	if (!pTmpName)
+	{
+		perror("Paths_GetExecDirFromPATH");
+		free(pPathEnv);
 		return;
+	}
 
 	/* If there is a semicolon in the PATH, we assume it is the PATH
 	 * separator token (like on Windows), otherwise we use a colon. */
@@ -98,8 +111,7 @@ static void Paths_GetExecDirFromPATH(const char *argv0, char *pExecDir, int nMax
 		if (File_Exists(pTmpName))
 		{
 			/* Found the executable - so use the corresponding path: */
-			strncpy(pExecDir, pAct, nMaxLen);
-			pExecDir[nMaxLen-1] = 0;
+			strlcpy(pExecDir, pAct, nMaxLen);
 			break;
 		}
 		pAct = strtok (0, pToken);
@@ -134,7 +146,7 @@ static char *Paths_InitExecDir(const char *argv0)
 	{
 		int i;
 		/* On Linux, we can analyze the symlink /proc/self/exe */
-		i = readlink("/proc/self/exe", psExecDir, FILENAME_MAX);
+		i = readlink("/proc/self/exe", psExecDir, FILENAME_MAX-1);
 		if (i > 0)
 		{
 			char *p;
@@ -162,8 +174,7 @@ static char *Paths_InitExecDir(const char *argv0)
 			/* There was a path separator in argv[0], so let's assume a
 			 * relative or absolute path to the current directory in argv[0] */
 			char *p;
-			strncpy(psExecDir, argv0, FILENAME_MAX);
-			psExecDir[FILENAME_MAX-1] = 0;
+			strlcpy(psExecDir, argv0, FILENAME_MAX);
 			p = strrchr(psExecDir, PATHSEP);  /* Search last slash */
 			if (p)
 				*p = 0;                       /* Strip file name from path */
@@ -214,8 +225,8 @@ static void Paths_InitHomeDirs(void)
 		sUserHomeDir[FILENAME_MAX-1] = 0;
 
 		/* Try to use a .hatari directory in the users home directory */
-		snprintf(sHatariHomeDir, FILENAME_MAX, "%s%cSTDroid",
-		         sUserHomeDir, PATHSEP);
+		snprintf(sHatariHomeDir, FILENAME_MAX, "%s%c%s", sUserHomeDir,
+		         PATHSEP, HATARI_HOME_DIR);
 		if (!File_DirExists(sHatariHomeDir))
 		{
 			/* Hatari home directory does not exists yet...

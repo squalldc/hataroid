@@ -27,8 +27,11 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "debugui.h"
 #include "dmaSnd.h"
 #include "fdc.h"
+#include "fdc_compat.h"
 #include "file.h"
 #include "floppy.h"
+#include "floppy_ipf.h"
+#include "floppy_stx.h"
 #include "gemdos.h"
 #include "acia.h"
 #include "ikbd.h"
@@ -52,13 +55,19 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "falcon/crossbar.h"
 #include "falcon/videl.h"
 #include "statusbar.h"
+#include "cart.h"
 
+#define HATAROID_SAVE_ID        "HTSAV"
+#define HATAROID_VERSION        " 1.700 "
+#define HATAROID_LEGACY_VERSION " 1.609 "
+#define SAVE_VERSION_INT        1901
 
-#define HATAROID_SAVE_ID      "HTSAV"
-#define VERSION_STRING        "1.7.7"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
-#define VERSION_INT           1707
+#define VERSION_STRING      "1.9.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
+#define SNAPSHOT_MAGIC      0xDeadBeef
 
+#if HAVE_LIBZ
 #define COMPRESS_MEMORYSNAPSHOT       /* Compress snapshots to reduce disk space used */
+#endif
 
 #ifdef COMPRESS_MEMORYSNAPSHOT
 
@@ -77,7 +86,7 @@ typedef FILE* MSS_File;
 static MSS_File CaptureFile;
 static bool bCaptureSave, bCaptureError;
 static bool gConfirmOnOverwiteSave = true;
-int gSaveVersion = VERSION_INT;
+int gSaveVersion = SAVE_VERSION_INT;
 int gHasHataroidSaveExtra = 0;
 
 void MemorySnapShot_setConfirmOnOverwriteSave(bool set) { gConfirmOnOverwiteSave = set; }
@@ -140,14 +149,38 @@ static int MemorySnapShot_fwrite(MSS_File fhndl, const char *buf, int len)
 
 /*-----------------------------------------------------------------------*/
 /**
+ * Seek into file from current position
+ */
+static int MemorySnapShot_fseek(MSS_File fhndl, int pos)
+{
+#ifdef COMPRESS_MEMORYSNAPSHOT
+	return (int)gzseek(fhndl, pos, SEEK_CUR);	/* return -1 if error, new position >=0 if OK */
+#else
+	return fseek(fhndl, pos, SEEK_CUR);		/* return -1 if error, 0 if OK */
+#endif
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
  * Open/Create snapshot file, and set flag so 'MemorySnapShot_Store' knows
  * how to handle data.
  */
 static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 {
 	char VersionString[] = VERSION_STRING;
-	gSaveVersion = VERSION_INT;
+	char HataroidVersionString[] = HATAROID_VERSION;
+	gSaveVersion = SAVE_VERSION_INT;
 	gHasHataroidSaveExtra = 0;
+
+#if ENABLE_WINUAE_CPU
+# define CORE_VERSION 1
+#else
+# define CORE_VERSION 0
+#endif
+	Uint8 CpuCore;
+
+    Uint8 LegacyFDC = FDC_CompatMode_Default;
 
 	/* Set error */
 	bCaptureError = false;
@@ -177,6 +210,13 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
         MemorySnapShot_Store(HATAROID_SAVE_ID, sizeof(HATAROID_SAVE_ID));
         MemorySnapShot_Store(&gSaveVersion, sizeof(gSaveVersion));
 		MemorySnapShot_Store(VersionString, sizeof(VersionString));
+        MemorySnapShot_Store(HataroidVersionString, sizeof(HataroidVersionString));
+        /* Legacy FDC support */
+        LegacyFDC = (Uint8)FDC_Compat_GetCompatMode();
+        MemorySnapShot_Store(&LegacyFDC, sizeof(LegacyFDC));
+		/* Store CPU core version */
+		CpuCore = CORE_VERSION;
+		MemorySnapShot_Store(&CpuCore, sizeof(CpuCore));
 	}
 	else
 	{
@@ -197,11 +237,25 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
         {
             MemorySnapShot_Store(&gSaveVersion, sizeof(gSaveVersion));
             MemorySnapShot_Store(VersionString, sizeof(VersionString));
+            if (gSaveVersion >= 1900)
+            {
+                MemorySnapShot_Store(HataroidVersionString, sizeof(HataroidVersionString));
+                /* Legacy FDC support */
+                MemorySnapShot_Store(&LegacyFDC, sizeof(LegacyFDC));
+            }
+            else
+            {
+                strcpy(HataroidVersionString, HATAROID_LEGACY_VERSION);
+                LegacyFDC = (Uint8)FDC_CompatMode_Old;
+            }
         }
         else
         {
             // old save support
             gSaveVersion = 0;
+            strcpy(HataroidVersionString, HATAROID_LEGACY_VERSION);
+            LegacyFDC = (Uint8)FDC_CompatMode_Old;
+
             if (strcasecmp(VersionString, "1.7.6")==0)          { gSaveVersion = 1706; }
             else if (strcasecmp(VersionString, "1.7.5")==0)		{ gSaveVersion = 1705; }
             else if (strcasecmp(VersionString, "1.7.4")==0)		{ gSaveVersion = 1704; }
@@ -216,11 +270,28 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 		{
 			/* No, inform user and error */
 			Log_AlertDlg(LOG_ERROR, "Unable to restore Hataroid memory state. File\n"
-			                       "is compatible only with Hataroid version %s/%d.",
-				     VersionString);
+			                       "is compatible only with Hataroid version %s (Save version %s/%d).",
+                         HataroidVersionString, VersionString, gSaveVersion);
+
 			bCaptureError = true;
 			return false;
 		}
+		/* Check CPU core version */
+        if (gSaveVersion >= 1900)
+        {
+            MemorySnapShot_Store(&CpuCore, sizeof(CpuCore));
+            if (CpuCore != CORE_VERSION)
+            {
+                Log_AlertDlg(LOG_ERROR,
+                         "Unable to restore Hatari memory state.\n"
+                         "Given state file is for different Hatari\n"
+                         "CPU core version.");
+                bCaptureError = true;
+                return false;
+            }
+        }
+
+        FDC_Compat_SetCompatMode((int)LegacyFDC);
 	}
 
 	/* All OK */
@@ -235,6 +306,26 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
 static void MemorySnapShot_CloseFile(void)
 {
 	MemorySnapShot_fclose(CaptureFile);
+}
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Skip Nb bytes when reading from/writing to file.
+ */
+void MemorySnapShot_Skip(int Nb)
+{
+	int res;
+
+	/* Check no file errors */
+	if (CaptureFile != NULL)
+	{
+		res = MemorySnapShot_fseek(CaptureFile, Nb);
+
+		/* Did seek OK? */
+		if (res < 0)
+			bCaptureError = true;
+	}
 }
 
 
@@ -268,6 +359,8 @@ void MemorySnapShot_Store(void *pData, int Size)
  */
 void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 {
+	Uint32 magic = SNAPSHOT_MAGIC;
+
 	/* Set to 'saving' */
 	if (MemorySnapShot_OpenFile(pszFileName, true))
 	{
@@ -275,14 +368,20 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		Configuration_MemorySnapShot_Capture(true);
 		TOS_MemorySnapShot_Capture(true);
 		STMemory_MemorySnapShot_Capture(true);
+        Cycles_MemorySnapShot_Capture(true);			/* Before fdc (for CyclesGlobalClockCounter) */
 		FDC_MemorySnapShot_Capture(true);
 		Floppy_MemorySnapShot_Capture(true);
+
+		if ((FDC_Compat_GetCompatMode() == FDC_CompatMode_Default)) {
+            IPF_MemorySnapShot_Capture(true);            /* After fdc/floppy are saved */
+            STX_MemorySnapShot_Capture(true);            /* After fdc/floppy are saved */
+        }
+
 		GemDOS_MemorySnapShot_Capture(true);
 		ACIA_MemorySnapShot_Capture(true);
 		IKBD_MemorySnapShot_Capture(true);
 		MIDI_MemorySnapShot_Capture(true);
 		CycInt_MemorySnapShot_Capture(true);
-		Cycles_MemorySnapShot_Capture(true);
 		M68000_MemorySnapShot_Capture(true);
 		MFP_MemorySnapShot_Capture(true);
 		PSG_MemorySnapShot_Capture(true);
@@ -295,6 +394,8 @@ void MemorySnapShot_Capture(const char *pszFileName, bool bConfirm)
 		DSP_MemorySnapShot_Capture(true);
 		DebugUI_MemorySnapShot_Capture(pszFileName, true);
 		IoMem_MemorySnapShot_Capture(true);
+		/* end marker */
+		MemorySnapShot_Store(&magic, sizeof(magic));
 		/* And close */
 		MemorySnapShot_CloseFile();
 	} else {
@@ -319,6 +420,8 @@ int MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 {
 	int result = 0;
 
+	Uint32 magic;
+
 	/* Set to 'restore' */
 	if (MemorySnapShot_OpenFile(pszFileName, false))
 	{
@@ -327,18 +430,30 @@ int MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 
 		/* Reset emulator to get things running */
 		IoMem_UnInit();  IoMem_Init();
-		Reset_Cold();
+		Reset_Cold(false);
 
 		/* Capture each files details */
 		STMemory_MemorySnapShot_Capture(false);
+		if (gSaveVersion >= 1900)
+        {
+            Cycles_MemorySnapShot_Capture(false);			/* Before fdc (for CyclesGlobalClockCounter) */
+        }
 		FDC_MemorySnapShot_Capture(false);
 		Floppy_MemorySnapShot_Capture(false);
+        if (gSaveVersion >= 1900 && (FDC_Compat_GetCompatMode() == FDC_CompatMode_Default))
+        {
+            IPF_MemorySnapShot_Capture(false);			/* After fdc/floppy are restored, as IPF depends on them */
+            STX_MemorySnapShot_Capture(false);			/* After fdc/floppy are restored, as STX depends on them */
+        }
 		GemDOS_MemorySnapShot_Capture(false);
 		ACIA_MemorySnapShot_Capture(false);
 		IKBD_MemorySnapShot_Capture(false);			/* After ACIA */
 		MIDI_MemorySnapShot_Capture(false);
 		CycInt_MemorySnapShot_Capture(false);
-		Cycles_MemorySnapShot_Capture(false);
+		if (gSaveVersion < 1900)
+        {
+            Cycles_MemorySnapShot_Capture(false);
+        }
 		M68000_MemorySnapShot_Capture(false);
 		MFP_MemorySnapShot_Capture(false);
 		PSG_MemorySnapShot_Capture(false);
@@ -352,11 +467,32 @@ int MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 		DebugUI_MemorySnapShot_Capture(pszFileName, false);
 		IoMem_MemorySnapShot_Capture(false);
 
+		/* version string check catches release-to-release
+		 * state changes, bCaptureError catches too short
+		 * state file, this check a too long state file.
+		 */
+        if (gSaveVersion >= 1900)
+        {
+            MemorySnapShot_Store(&magic, sizeof(magic));
+            if (!bCaptureError && magic != SNAPSHOT_MAGIC)
+                bCaptureError = true;
+        }
+
 		/* And close */
 		MemorySnapShot_CloseFile();
 
+		/* Apply patches for gemdos HD if needed */
+		/* (we need to do it after cpu tables for all opcodes were rebuilt) */
+		Cart_Patch();
+
 		/* changes may affect also info shown in statusbar */
 		Statusbar_UpdateInfo();
+
+		if (bCaptureError)
+		{
+			Log_AlertDlg(LOG_ERROR, "Full memory state restore failed!\nPlease reboot emulation.");
+			return;
+		}
 	}
 
 	/* Did error? */
@@ -381,20 +517,41 @@ int MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
  */
 #include <savestate.h>
 
+void save_u64(uae_u64 data)
+{
+	MemorySnapShot_Store(&data, 8);
+}
+
 void save_u32(uae_u32 data)
 {
 	MemorySnapShot_Store(&data, 4);
+//printf ("s32 %x\n", data);
 }
 
 void save_u16(uae_u16 data)
 {
 	MemorySnapShot_Store(&data, 2);
+//printf ("s16 %x\n", data);
+}
+
+void save_u8(uae_u8 data)
+{
+	MemorySnapShot_Store(&data, 1);
+//printf ("s8 %x\n", data);
+}
+
+uae_u64 restore_u64(void)
+{
+	uae_u64 data;
+	MemorySnapShot_Store(&data, 8);
+	return data;
 }
 
 uae_u32 restore_u32(void)
 {
 	uae_u32 data;
 	MemorySnapShot_Store(&data, 4);
+//printf ("r32 %x\n", data);
 	return data;
 }
 
@@ -402,5 +559,15 @@ uae_u16 restore_u16(void)
 {
 	uae_u16 data;
 	MemorySnapShot_Store(&data, 2);
+//printf ("r16 %x\n", data);
 	return data;
 }
+
+uae_u8 restore_u8(void)
+{
+	uae_u8 data;
+	MemorySnapShot_Store(&data, 1);
+//printf ("r8 %x\n", data);
+	return data;
+}
+

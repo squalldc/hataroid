@@ -8,21 +8,19 @@
 #ifndef HATARI_PROFILE_PRIV_H
 #define HATARI_PROFILE_PRIV_H
 
-/* caller types */
-#define CALL_UNDEFINED	0	/* = call type information not supported */
-typedef enum {
-	CALL_UNKNOWN	= 1,
-	CALL_NEXT	= 2,
-	CALL_BRANCH	= 4,
-	CALL_SUBROUTINE	= 8,
-	CALL_SUBRETURN	= 16,
-	CALL_EXCEPTION	= 32,
-	CALL_EXCRETURN	= 64,
-	CALL_INTERRUPT	= 128
-} calltype_t;
+typedef struct {
+	char *filename;		/* where to write loop info */
+	FILE *fp;		/* pointer modified by CPU & DSP code */
+	Uint32 cpu_limit;	/* max limit for profiled CPU loop size */
+	Uint32 dsp_limit;	/* max limit for profiled DSP loop size */
+} profile_loop_t;
+
+extern profile_loop_t profile_loop;
 
 typedef struct {
-	Uint64 calls, count, cycles, misses;
+	Uint64 calls, count, cycles; /* common counters between CPU & DSP */
+	Uint64 i_misses, d_hits;     /* CPU specific counters */
+	Uint64 cycles_diffs;         /* DSP specific counter, not updated at run-time */
 } counters_t;
 
 typedef struct {
@@ -79,6 +77,7 @@ extern void Profile_FinalizeCalls(callinfo_t *callinfo, counters_t *totalcost, c
 extern Uint32 Profile_CallEnd(callinfo_t *callinfo, counters_t *totalcost);
 extern int  Profile_AllocCallinfo(callinfo_t *callinfo, int count, const char *info);
 extern void Profile_FreeCallinfo(callinfo_t *callinfo);
+extern bool Profile_LoopReset(void);
 
 /* parser helpers */
 extern void Profile_CpuGetPointers(bool **enabled, Uint32 **disasm_addr);
@@ -90,7 +89,9 @@ extern void Profile_DspGetCallinfo(callinfo_t **callinfo, const char* (**get_sym
 extern Uint32 Profile_CpuShowAddresses(Uint32 lower, Uint32 upper, FILE *out);
 extern void Profile_CpuShowCounts(int show, bool only_symbols);
 extern void Profile_CpuShowCycles(int show);
-extern void Profile_CpuShowMisses(int show);
+extern void Profile_CpuShowInstrMisses(int show);
+extern void Profile_CpuShowDataHits(int show);
+extern void Profile_CpuShowCaches(void);
 extern void Profile_CpuShowStats(void);
 extern void Profile_CpuShowCallers(FILE *fp);
 extern void Profile_CpuSave(FILE *out);

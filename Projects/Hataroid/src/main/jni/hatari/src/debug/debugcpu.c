@@ -10,6 +10,7 @@
 const char DebugCpu_fileid[] = "Hatari debugcpu.c : " __DATE__ " " __TIME__;
 
 #include <stdio.h>
+#include <ctype.h>
 
 #include "config.h"
 
@@ -57,8 +58,7 @@ static int DebugCpu_LoadBin(int nArgc, char *psArgs[])
 
 	if (nArgc < 3)
 	{
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
 	if (!Eval_Number(psArgs[2], &address))
@@ -66,7 +66,6 @@ static int DebugCpu_LoadBin(int nArgc, char *psArgs[])
 		fprintf(stderr, "Invalid address!\n");
 		return DEBUGGER_CMDDONE;
 	}
-	address &= 0x00FFFFFF;
 
 	if ((fp = fopen(psArgs[1], "rb")) == NULL)
 	{
@@ -74,6 +73,12 @@ static int DebugCpu_LoadBin(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 
+	/* TODO: more efficient would be to:
+	 * - check file size
+	 * - verify that it fits into valid memory area
+	 * - flush emulated CPU data cache
+	 * - read file contents directly into memory
+	 */
 	c = fgetc(fp);
 	while (!feof(fp))
 	{
@@ -100,8 +105,7 @@ static int DebugCpu_SaveBin(int nArgc, char *psArgs[])
 
 	if (nArgc < 4)
 	{
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
 	if (!Eval_Number(psArgs[2], &address))
@@ -109,7 +113,6 @@ static int DebugCpu_SaveBin(int nArgc, char *psArgs[])
 		fprintf(stderr, "  Invalid address!\n");
 		return DEBUGGER_CMDDONE;
 	}
-	address &= 0x00FFFFFF;
 
 	if (!Eval_Number(psArgs[3], &bytes))
 	{
@@ -168,7 +171,6 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 			break;
 		case 1:
 			/* range */
-			disasm_upper &= 0x00FFFFFF;
 			break;
 		}
 	}
@@ -178,7 +180,6 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 		if(!disasm_addr)
 			disasm_addr = M68000_GetPC();
 	}
-	disasm_addr &= 0x00FFFFFF;
 
 	/* limit is topmost address or instruction count */
 	if (disasm_upper)
@@ -187,7 +188,7 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
 	}
 	else
 	{
-		disasm_upper = 0x00FFFFFF;
+		disasm_upper = 0xFFFFFFFF;
 		max_insts = ConfigureParams.Debugger.nDisasmLines;
 	}
 
@@ -211,27 +212,12 @@ int DebugCpu_DisAsm(int nArgc, char *psArgs[])
  */
 static char *DebugCpu_MatchRegister(const char *text, int state)
 {
-	static const char regs[][3] = {
+	static const char* regs[] = {
 		"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
 		"d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7",
 		"pc", "sr"
 	};
-	static int i, len;
-	
-	if (!state)
-	{
-		/* first match */
-		i = 0;
-		len = strlen(text);
-		if (len > 2)
-			return NULL;
-	}
-	/* next match */
-	while (i < ARRAYSIZE(regs)) {
-		if (strncasecmp(regs[i++], text, len) == 0)
-			return (strdup(regs[i-1]));
-	}
-	return NULL;
+	return DebugUI_MatchHelper(regs, ARRAYSIZE(regs), text, state);
 }
 
 
@@ -247,8 +233,8 @@ int DebugCpu_GetRegisterAddress(const char *reg, Uint32 **addr)
 	if (!reg[0] || !reg[1] || reg[2])
 		return 0;
 	
-	r0 = toupper(reg[0]);
-	r1 = toupper(reg[1]);
+	r0 = toupper((unsigned char)reg[0]);
+	r1 = toupper((unsigned char)reg[1]);
 
 	if (r0 == 'D')  /* Data regs? */
 	{
@@ -288,7 +274,11 @@ int DebugCpu_Register(int nArgc, char *psArgs[])
 	{
 		uaecptr nextpc;
 		/* use the UAE function instead */
+#ifdef WINUAE_FOR_HATARI
+		m68k_dumpstate_file(debugOutput, &nextpc);
+#else
 		m68k_dumpstate(debugOutput, &nextpc);
+#endif
 		fflush(debugOutput);
 		return DEBUGGER_CMDDONE;
 	}
@@ -312,8 +302,8 @@ int DebugCpu_Register(int nArgc, char *psArgs[])
 	{
 		goto error_msg;
 	}
-	reg[0] = toupper(arg[0]);
-	reg[1] = toupper(arg[1]);
+	reg[0] = toupper((unsigned char)arg[0]);
+	reg[1] = toupper((unsigned char)arg[1]);
 	reg[2] = '\0';
 	
 	/* set SR and update conditional flags for the UAE CPU core. */
@@ -397,17 +387,15 @@ int DebugCpu_MemDump(int nArgc, char *psArgs[])
 			break;
 		}
 	} /* continue */
-	memdump_addr &= 0x00FFFFFF;
 
 	if (!memdump_upper)
 	{
 		memdump_upper = memdump_addr + MEMDUMP_COLS * ConfigureParams.Debugger.nMemdumpLines;
 	}
-	memdump_upper &= 0x00FFFFFF;
 
 	while (memdump_addr < memdump_upper)
 	{
-		fprintf(debugOutput, "%6.6X: ", memdump_addr); /* print address */
+		fprintf(debugOutput, "%8.8X: ", memdump_addr);	/* print address */
 		for (i = 0; i < MEMDUMP_COLS; i++)               /* print hex data */
 			fprintf(debugOutput, "%2.2x ", STMemory_ReadByte(memdump_addr++));
 		fprintf(debugOutput, "  ");                     /* print ASCII data */
@@ -437,8 +425,7 @@ static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 
 	if (nArgc < 3)
 	{
-		DebugUI_PrintCmdHelp(psArgs[0]);
-		return DEBUGGER_CMDDONE;
+		return DebugUI_PrintCmdHelp(psArgs[0]);
 	}
 
 	/* Read address */
@@ -448,7 +435,6 @@ static int DebugCpu_MemWrite(int nArgc, char *psArgs[])
 		return DEBUGGER_CMDDONE;
 	}
 
-	write_addr &= 0x00FFFFFF;
 	numBytes = 0;
 
 	/* get bytes data */
@@ -503,28 +489,128 @@ static int DebugCpu_Step(int nArgc, char *psArgv[])
 	return DEBUGGER_END;
 }
 
+
+/**
+ * Readline match callback to list next command opcode types.
+ * STATE = 0 -> different text from previous one.
+ * Return next match or NULL if no matches.
+ */
+static char *DebugCpu_MatchNext(const char *text, int state)
+{
+	static const char* ntypes[] = {
+		"branch", "exception", "exreturn", "return", "subcall", "subreturn"
+	};
+	return DebugUI_MatchHelper(ntypes, ARRAYSIZE(ntypes), text, state);
+}
+
 /**
  * Command: Step CPU, but proceed through subroutines
  * Does this by temporary conditional breakpoint
  */
 static int DebugCpu_Next(int nArgc, char *psArgv[])
 {
-	char command[32];
-	Uint32 nextpc = Disasm_GetNextPC(M68000_GetPC());
-	sprintf(command, "pc=$%x :once :quiet\n", nextpc);
-	if (BreakCond_Command(command, false)) {
-		nCpuSteps = 0;		/* using breakpoint, not steps */
+	char command[40];
+	if (nArgc > 1)
+	{
+		int optype;
+		if(strcmp(psArgv[1], "branch") == 0)
+			optype = CALL_BRANCH;
+		else if(strcmp(psArgv[1], "exception") == 0)
+			optype = CALL_EXCEPTION;
+		else if(strcmp(psArgv[1], "exreturn") == 0)
+			optype = CALL_EXCRETURN;
+		else if(strcmp(psArgv[1], "subcall") == 0)
+			optype = CALL_SUBROUTINE;
+		else if (strcmp(psArgv[1], "subreturn") == 0)
+			optype = CALL_SUBRETURN;
+		else if (strcmp(psArgv[1], "return") == 0)
+			optype = CALL_SUBRETURN | CALL_EXCRETURN;
+		else
+		{
+			fprintf(stderr, "Unrecognized opcode type given!\n");
+			return DEBUGGER_CMDDONE;
+		}
+		sprintf(command, "CpuOpcodeType & $%x > 0 :once :quiet\n", optype);
+	}
+	else
+	{
+		Uint32 optype, nextpc;
+
+		optype = DebugCpu_OpcodeType();
+		/* can this instruction be stepped normally? */
+		if (optype != CALL_SUBROUTINE && optype != CALL_EXCEPTION)
+		{
+			nCpuSteps = 1;
+			return DEBUGGER_END;
+		}
+
+		nextpc = Disasm_GetNextPC(M68000_GetPC());
+		sprintf(command, "pc=$%x :once :quiet\n", nextpc);
+	}
+	/* use breakpoint, not steps */
+	if (BreakCond_Command(command, false))
+	{
+		nCpuSteps = 0;
 		return DEBUGGER_END;
 	}
 	return DEBUGGER_CMDDONE;
 }
 
+/* helper to get instruction type */
+Uint32 DebugCpu_OpcodeType(void)
+{
+	/* cannot use OpcodeFamily like profiler does,
+	 * as that's for previous instructions
+	 */
+	Uint16 opcode = STMemory_ReadWord(M68000_GetPC());
+
+	if (opcode == 0x4e74 ||			/* RTD */
+	    opcode == 0x4e75 ||			/* RTS */
+	    opcode == 0x4e77)			/* RTR */
+		return CALL_SUBRETURN;
+
+	if (opcode == 0x4e73)			/* RTE */
+		return CALL_EXCRETURN;
+
+	/* NOTE: BSR needs to be matched before BRA/BCC! */
+	if ((opcode & 0xff00) == 0x6100 ||	/* BSR */
+	    (opcode & 0xffc0) == 0x4e80)	/* JSR */
+		return CALL_SUBROUTINE;
+
+	/* TODO: ftrapcc, chk2? */
+	if (opcode == 0x4e72 ||			/* STOP */
+	    opcode == 0x4afc ||			/* ILLEGAL */
+	    opcode == 0x4e76 ||			/* TRAPV */
+	    (opcode & 0xfff0) == 0x4e40 ||	/* TRAP */
+	    (opcode & 0xf1c0) == 0x4180 ||	/* CHK */
+	    (opcode & 0xfff8) == 0x4848)	/* BKPT */
+		return CALL_EXCEPTION;
+
+	/* TODO: fbcc, fdbcc */
+	if ((opcode & 0xf000) == 0x6000 ||	/* BRA / BCC */
+	    (opcode & 0xffc0) == 0x4ec0 ||	/* JMP */
+	    (opcode & 0xf0f8) == 0x50c8)	/* DBCC */
+		return CALL_BRANCH;
+
+	return CALL_UNKNOWN;
+}
+
+
+/**
+ * CPU instructions since continuing emulation
+ */
+static Uint32 nCpuInstructions;
+Uint32 DebugCpu_InstrCount(void)
+{
+	return nCpuInstructions;
+}
 
 /**
  * This function is called after each CPU instruction when debugging is enabled.
  */
 void DebugCpu_Check(void)
 {
+	nCpuInstructions++;
 	if (bCpuProfiling)
 	{
 		Profile_CpuUpdate();
@@ -569,12 +655,15 @@ void DebugCpu_Check(void)
 void DebugCpu_SetDebugging(void)
 {
 	bCpuProfiling = Profile_CpuStart();
-	nCpuActiveCBs = BreakCond_BreakPointCount(false);
+	nCpuActiveCBs = BreakCond_CpuBreakPointCount();
 
 	if (nCpuActiveCBs || nCpuSteps || bCpuProfiling || History_TrackCpu()
 	    || LOG_TRACE_LEVEL((TRACE_CPU_DISASM|TRACE_CPU_SYMBOLS))
 	    || ConOutDevice != CONOUT_DEVICE_NONE)
+	{
 		M68000_SetSpecial(SPCFLAG_DEBUGGER);
+		nCpuInstructions = 0;
+	}	
 	else
 		M68000_UnsetSpecial(SPCFLAG_DEBUGGER);
 }
@@ -639,7 +728,7 @@ static const dbgcommand_t cpucommands[] =
 	  "\tSave the memory block at <address> with given <length> to\n"
 	  "\tthe file <filename>.",
 	  false },
-	{ Symbols_Command, NULL,
+	{ Symbols_Command, Symbols_MatchCommand,
 	  "symbols", "",
 	  "load CPU symbols & their addresses",
 	  Symbols_Description,
@@ -650,12 +739,14 @@ static const dbgcommand_t cpucommands[] =
 	  "\n"
 	  "\tExecute next CPU instruction (equals 'c 1')",
 	  false },
-	{ DebugCpu_Next, NULL,
+	{ DebugCpu_Next, DebugCpu_MatchNext,
 	  "next", "n",
-	  "step CPU, proceeding through subroutine calls",
-	  "\n"
-	  "\tLike the 'step' command as long as subroutine calls do not\n"
-          "\thappen. When they do, the call is treated as one instruction.",
+	  "step CPU through subroutine calls / to given instruction type",
+	  "[instruction type]\n"
+	  "\tSame as 'step' command if there are no subroutine calls.\n"
+          "\tWhen there are, those calls are treated as one instruction.\n"
+	  "\tIf argument is given, continues until instruction of given\n"
+	  "\ttype is encountered.",
 	  false },
 	{ DebugCpu_Continue, NULL,
 	  "cont", "c",

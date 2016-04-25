@@ -133,6 +133,7 @@ const char MFP_fileid[] = "Hatari mfp.c : " __DATE__ " " __TIME__;
 #include "crossbar.h"
 #include "fdc.h"
 #include "ikbd.h"
+#include "hatari-glue.h"
 #include "cycInt.h"
 #include "ioMem.h"
 #include "joy.h"
@@ -175,7 +176,7 @@ Input -----/             |         ------------------------              |      
     for long ones like MOVEM or DIV). In that case, we should not choose the highest priority interrupt
     among all the interrupts, but we should keep only the interrupts that chronologically happened first
     during this CPU instruction (and ignore the other interrupts' requests for this CPU instruction).
-  - When the MFP's main IRQ signal goes from 0 to 1, the signal is not immediatly visible to the CPU, but only
+  - When the MFP's main IRQ signal goes from 0 to 1, the signal is not immediately visible to the CPU, but only
     4 cycles later. This 4 cycle delay should be taken into account, depending at what time the signal
     went to 1 in the corresponding CPU instruction (the 4 cycle delay can be "included" in the CPU instruction
     in some cases)
@@ -220,7 +221,7 @@ static bool TimerBCanResume = false;
 static bool TimerCCanResume = false;
 static bool TimerDCanResume = false;
 
-bool bAppliedTimerDPatch;           /* true if the Timer-D patch has been applied */
+static bool bAppliedTimerDPatch;    /* true if the Timer-D patch has been applied */
 static int nTimerDFakeValue;        /* Faked Timer-D data register for the Timer-D patch */
 
 static int PendingCyclesOver = 0;   /* >= 0 value, used to "loop" a timer when data counter reaches 0 */
@@ -231,6 +232,8 @@ static int PendingCyclesOver = 0;   /* >= 0 value, used to "loop" a timer when d
 static int	MFP_Current_Interrupt = -1;
 static Uint8	MFP_IRQ = 0;
 static Uint64	MFP_IRQ_Time = 0;
+static Uint8	MFP_IRQ_CPU = 0;			/* Value of MFP_IRQ as seen by the CPU. There's a 4 cycle delay */
+							/* between a change of MFP_IRQ and its visibility at the CPU side */
 bool		MFP_UpdateNeeded = false;		/* When set to true, main CPU loop should call MFP_UpdateIRQ() */
 static Uint64	MFP_Pending_Time_Min;			/* Clock value of the oldest pending int since last MFP_UpdateIRQ() */
 static Uint64	MFP_Pending_Time[ MFP_INT_MAX+1 ];	/* Clock value when pending is set to 1 for each non-masked int */
@@ -305,6 +308,7 @@ void MFP_Reset(void)
 	/* Clear IRQ */
 	MFP_Current_Interrupt = -1;
 	MFP_IRQ = 0;
+	MFP_IRQ_CPU = 0;
 	MFP_IRQ_Time = 0;
 	MFP_UpdateNeeded = false;
 	MFP_Pending_Time_Min = UINT64_MAX;
@@ -354,6 +358,14 @@ void MFP_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&MFP_Current_Interrupt, sizeof(MFP_Current_Interrupt));
 	MemorySnapShot_Store(&MFP_IRQ, sizeof(MFP_IRQ));
 	MemorySnapShot_Store(&MFP_IRQ_Time, sizeof(MFP_IRQ_Time));
+	if (gSaveVersion >= 1900)
+    {
+        MemorySnapShot_Store(&MFP_IRQ_CPU, sizeof(MFP_IRQ_CPU));
+    }
+    else if (!bSave)
+    {
+        MFP_IRQ_CPU = 0;
+    }
 	MemorySnapShot_Store(&MFP_UpdateNeeded, sizeof(MFP_UpdateNeeded));
 	MemorySnapShot_Store(&MFP_Pending_Time_Min, sizeof(MFP_Pending_Time_Min));
 	MemorySnapShot_Store(&MFP_Pending_Time, sizeof(MFP_Pending_Time));
@@ -416,7 +428,58 @@ static void MFP_Exception ( int Interrupt )
 			Interrupt, VecNr * 4, STMemory_ReadLong ( VecNr * 4 ), FrameCycles, LineCycles, HblCounterVideo );
 	}
 
-	M68000_Exception(VecNr * 4, M68000_EXC_SRC_INT_MFP);
+#ifndef WINUAE_FOR_HATARI
+	M68000_Exception(VecNr, M68000_EXC_SRC_INT_MFP);
+#else
+	M68000_Exception(EXCEPTION_NR_MFP_DSP, M68000_EXC_SRC_INT_MFP);
+#endif
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * Get the value of the MFP IRQ signal as seen from the CPU side.
+ * When MFP_IRQ is changed in the MFP, the new value is visible on the
+ * CPU side after MFP_IRQ_DELAY_TO_CPU.
+ * MFP_IRQ_CPU holds the value seen by the CPU, it's updated with the value
+ * of MFP_IRQ when MFP_IRQ_DELAY_TO_CPU cycles passed.
+ */
+Uint8	MFP_GetIRQ_CPU ( void )
+{
+	return MFP_IRQ_CPU;
+}
+
+
+
+
+/*-----------------------------------------------------------------------*/
+/**
+ * A change in MFP_IRQ is visible to the CPU only after MFP_IRQ_DELAY_TO_CPU
+ * cycles. This function will update MFP_IRQ_CPU if the delay has expired.
+ *
+ * This function is called from the CPU emulation part when SPCFLAG_MFP is set.
+ *
+ * TODO : for now, we check the delay only when MFP_IRQ goes to 1, but this should be
+ * handled too when MFP_IRQ goes to 0 (need to be measured on STF)
+ */
+void	MFP_DelayIRQ ( void )
+{
+	if ( MFP_IRQ == 1 )
+	{
+		if ( CyclesGlobalClockCounter - MFP_IRQ_Time >= MFP_IRQ_DELAY_TO_CPU )
+		{
+			MFP_IRQ_CPU = MFP_IRQ;
+			M68000_UnsetSpecial ( SPCFLAG_MFP );	/* Update done, unset special MFP flag */
+		}
+	}
+
+	else	/* MFP_IRQ == 0, no delay for now */
+	{
+		MFP_IRQ_CPU = MFP_IRQ;
+		M68000_UnsetSpecial ( SPCFLAG_MFP );		/* Update done, unset special MFP flag */
+	}
 }
 
 
@@ -557,13 +620,17 @@ void MFP_UpdateIRQ ( Uint64 Event_Time )
 		MFP_IRQ = 0;
 	}
 
-//fprintf ( stderr , "updirq1 %d - ipr %x %x imr %x %x isr %x %x\n" , MFP_IRQ , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
+//fprintf ( stderr , "updirq1 %d %lld - ipr %x %x imr %x %x isr %x %x\n" , MFP_IRQ , MFP_IRQ_Time , MFP_IPRA , MFP_IPRB , MFP_IMRA , MFP_IMRB , MFP_ISRA , MFP_ISRB );
+#ifndef WINUAE_FOR_HATARI
 	if ( MFP_IRQ == 1 )
 	{
 		M68000_SetSpecial(SPCFLAG_MFP);
 	}
 	else
 		M68000_UnsetSpecial(SPCFLAG_MFP);
+#else
+	M68000_SetSpecial(SPCFLAG_MFP);				/* CPU part should call MFP_Delay_IRQ() */
+#endif
 
 	/* Update IRQ is done, reset Time_Min and UpdateNeeded */
 	MFP_Pending_Time_Min = UINT64_MAX;
@@ -580,7 +647,7 @@ void MFP_UpdateIRQ ( Uint64 Event_Time )
  */
 static bool MFP_InterruptRequest ( int Int , Uint8 Bit , Uint8 IPRx , Uint8 IMRx , Uint8 PriorityMaskA , Uint8 PriorityMaskB )
 {
-//fprintf ( stderr , "mfp int req %d %x %x %X %x %x\n" , Int , Bit , IPRx , IMRx , PriorityMaskA , PriorityMaskB );
+//fprintf ( stderr , "mfp int req %d %x %x %X %x %x %x %x\n" , Int , Bit , IPRx , IMRx , PriorityMaskA , PriorityMaskB , MFP_ISRA , MFP_ISRB );
 
 	if ( ( IPRx & IMRx & Bit ) 					/* Interrupt is pending and not masked */
 	    && ( MFP_Pending_Time[ Int ] <= MFP_Pending_Time_Min ) )	/* Process pending requests in chronological time */
@@ -606,7 +673,7 @@ static int MFP_CheckPendingInterrupts ( void )
 	
 	if ( MFP_InterruptRequest ( MFP_INT_GPIP6 , MFP_GPIP6_BIT, MFP_IPRA, MFP_IMRA, 0xc0, 0x00 ) )		/* Check MFP GPIP6 interrupt (bit 6) */
 		return MFP_INT_GPIP6;
-
+	
 	if ( MFP_InterruptRequest ( MFP_INT_TIMER_A , MFP_TIMER_A_BIT, MFP_IPRA, MFP_IMRA, 0xe0, 0x00 ) )	/* Check Timer A (bit 5) */
 		return MFP_INT_TIMER_A;
 
@@ -715,7 +782,7 @@ void	MFP_InputOnChannel ( int Interrupt , int Interrupt_Delayed_Cycles )
  * Only lines defined as input in DDR can generate an interrupt.
  * Each input line is XORed with the corresponding AER bit to choose
  * if the interrupt should be triggered on 1->0 transition or 0->1.
- *
+ * 
  * NOTE : In most case, only the input line will change, but because input line
  * and AER are XORed, this means that an interrupt can trigger too
  * if AER is changed ! ('M' and 'Realtime' are doing bset #0,$fffa03
@@ -881,6 +948,15 @@ static int MFP_StartTimer_AB(Uint8 TimerControl, Uint16 TimerData, interrupt_id 
 		if (TimerData == 0)             /* Data=0 is actually Data=256 */
 			TimerData = 256;
 		TimerClockCycles = MFP_REG_TO_CYCLES ( TimerData, TimerControl );
+
+		/* [NP] FIXME : Temporary fix for Lethal Xcess calibration routine to remove top border : */
+		/* the routine expects that the delay is not always stable, there must be a small */
+		/* jitter due to the clock difference between CPU and MFP */
+		if ( ( M68000_GetPC() == 0x14d78 ) && ( STMemory_ReadLong ( 0x14d6c ) == 0x11faff75 ) )
+		{
+//			fprintf ( stderr , "mfp add jitter %d\n" , TimerClockCycles );
+			TimerClockCycles += rand()%5-2;		/* add jitter for wod2 */
+		}
 
 		if (LOG_TRACE_LEVEL(TRACE_MFP_START))
 		{
@@ -1344,7 +1420,7 @@ void MFP_GPIP_ReadByte(void)
 		gpip_new |= 0x80;	/* Color monitor -> set top bit */
 	else
 		gpip_new &= ~0x80;
-
+	
 	if (nDmaSoundControl & DMASNDCTRL_PLAY)
 		gpip_new ^= 0x80;	/* Top bit is XORed with DMA sound control play bit (Ste/TT emulation mode)*/
 	if (nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_PLAY || nCbar_DmaSoundControl & CROSSBAR_SNDCTRL_RECORD)
@@ -1738,6 +1814,7 @@ void MFP_ActiveEdge_WriteByte(void)
 			Video_AddInterruptTimerB ( LineTimerBCycle );
 	}
 }
+
 
 /*-----------------------------------------------------------------------*/
 /**

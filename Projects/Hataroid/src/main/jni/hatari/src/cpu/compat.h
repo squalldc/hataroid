@@ -20,6 +20,10 @@
 /* It results in ' #if 0 ' code in newcpu.c code */
 #define AMIGA_ONLY 0
 
+
+#define WINUAE_FOR_HATARI
+
+
 /* this defione is here for newcpu.c compatibility.
  * In WinUae, it's defined in debug.h" */
 #ifndef MAX_LINEWIDTH
@@ -31,11 +35,6 @@
 /* Laurent */
 /* here only to allow newcpu.c to compile */
 /* Should be removed when newcpu.c 'll be relooked for hatari only*/
-
-// Laurent : I don't know what to do with these variables, so, for now, I've put them here !!!
-// Nicolas : don't define variables in .h files, this gives warning when compiling. Only declare them.
-extern int kickstart_rom, cloanto_rom;
-extern int config_changed;
 extern int vpos;
 extern int quit_program;  // declared as "int quit_program = 0;" in main.c
 //WinUae ChangeLog: Improve quitting/resetting behaviour: Move quit_program from GUI
@@ -57,9 +56,9 @@ extern int quit_program;  // declared as "int quit_program = 0;" in main.c
 #define TCHAR char
 #endif
 
-#ifndef STATIC_INLINE
-#define STATIC_INLINE static inline
-#endif
+//#ifndef STATIC_INLINE
+//#define STATIC_INLINE static inline
+//#endif
 
 #define _vsnprintf vsnprintf
 #define _tcsncmp strncmp
@@ -71,9 +70,16 @@ extern int quit_program;  // declared as "int quit_program = 0;" in main.c
 #define _tcsncpy strncpy
 #define _tcscat strcat
 #define _stprintf sprintf
+#define strnicmp strncasecmp
+#define _T(x) x
 
 #define _vsntprintf printf
 
 #define f_out fprintf
+#define console_out printf
+//#define console_out_f printf
+#define console_out_f(...)	{ if ( console_out_FILE ) fprintf ( console_out_FILE , __VA_ARGS__ ); else printf ( __VA_ARGS__ ); }
+#define error_log printf
+#define gui_message console_out_f
 
 #endif

@@ -19,6 +19,7 @@ const char Control_fileid[] = "Hatari control.c : " __DATE__ " " __TIME__;
 #include <sys/time.h>
 #include <unistd.h>
 #include <ctype.h>
+#include <assert.h>
 
 #include "main.h"
 #include "change.h"
@@ -34,6 +35,7 @@ const char Control_fileid[] = "Hatari control.c : " __DATE__ " " __TIME__;
 #include "rs232.h"
 #include "shortcut.h"
 #include "str.h"
+#include "screen.h"
 
 typedef enum {
 	DO_DISABLE,
@@ -94,7 +96,7 @@ static bool Control_InsertKey(const char *event)
 			IKBD_PressSTKey(keycode, false);
 		}
 	} else {
-		if (!isalnum(key[0])) {
+		if (!isalnum((unsigned char)key[0])) {
 			fprintf(stderr, "ERROR: non-alphanumeric character '%c' needs to be given as keycode\n", key[0]);
 			return false;
 		}
@@ -270,7 +272,7 @@ static bool Control_SetPath(char *name)
  */
 static bool Control_Usage(const char *cmd)
 {
-	fprintf(stderr, "ERROR: unrecognized hatari command: '%s'", cmd);
+	fprintf(stderr, "ERROR: unrecognized hatari command: '%s'!\n", cmd);
 	fprintf(stderr,
 		"Supported commands are:\n"
 		"- hatari-debug <Debug UI command>\n"
@@ -292,13 +294,19 @@ static bool Control_Usage(const char *cmd)
 /*-----------------------------------------------------------------------*/
 /**
  * Parse Hatari debug/event/option/toggle/path/shortcut command buffer.
- * Given buffer is modified in-place.
  */
-void Control_ProcessBuffer(char *buffer)
+void Control_ProcessBuffer(const char *orig)
 {
-	char *cmd, *cmdend, *arg;
+	char *cmd, *cmdend, *arg, *buffer;
 	int ok = true;
-	
+
+	/* this is called from several different places,
+	 * so take a copy of the original buffer so
+	 * that it can be sliced & diced
+	 */
+	buffer = strdup(orig);
+	assert(buffer);
+
 	cmd = buffer;
 	do {
 		/* command terminator? */
@@ -350,6 +358,7 @@ void Control_ProcessBuffer(char *buffer)
 			cmd = cmdend + 1;
 		}
 	} while (ok && cmdend && *cmd);
+	free(buffer);
 }
 
 
@@ -483,13 +492,17 @@ const char *Control_SetSocket(const char *socketpath)
  * SDL_syswm.h automatically includes everything else needed.
  */
 
-#if HAVE_SDL_SDL_CONFIG_H
+#if HAVE_SDL_CONFIG_H
 #include <SDL_config.h>
 #endif
 
 /* X11 available and SDL_config.h states that SDL supports X11 */
 #if HAVE_X11 && SDL_VIDEO_DRIVER_X11
 #include <SDL_syswm.h>
+
+#if WITH_SDL2
+#define SDL_GetWMInfo(inf) SDL_GetWindowWMInfo(sdlWindow, inf)
+#endif
 
 /**
  * Reparent Hatari window if so requested.  Needs to be done inside
@@ -510,9 +523,12 @@ const char *Control_SetSocket(const char *socketpath)
 void Control_ReparentWindow(int width, int height, bool noembed)
 {
 	Display *display;
-	Window parent_win, sdl_win, wm_win;
+	Window parent_win, sdl_win;
 	const char *parent_win_id;
 	SDL_SysWMinfo info;
+#if !WITH_SDL2
+	Window wm_win;
+#endif
 
 	parent_win_id = getenv("PARENT_WIN_ID");
 	if (!parent_win_id) {
@@ -531,21 +547,31 @@ void Control_ReparentWindow(int width, int height, bool noembed)
 	}
 	display = info.info.x11.display;
 	sdl_win = info.info.x11.window;
+#if !WITH_SDL2
 	wm_win = info.info.x11.wmwindow;
 	info.info.x11.lock_func();
-	if (noembed) {
+#endif
+	if (noembed)
+	{
+#if !WITH_SDL2
 		/* show WM window again */
 		XMapWindow(display, wm_win);
-	} else {
+#endif
+	}
+	else
+	{
 		char buffer[12];  /* 32-bits in hex (+ '\r') + '\n' + '\0' */
 
+#if !WITH_SDL2
 		/* hide WM window for Hatari */
 		XUnmapWindow(display, wm_win);
+#endif
 		/* reparent main Hatari window to given parent */
 		XReparentWindow(display, sdl_win, parent_win, 0, 0);
 
 		/* whether to send new window size */
-		if (bSendEmbedInfo && ControlSocket) {
+		if (bSendEmbedInfo && ControlSocket)
+		{
 			fprintf(stderr, "New %dx%d SDL window with ID: %lx\n",
 				width, height, sdl_win);
 			sprintf(buffer, "%dx%d", width, height);
@@ -553,7 +579,9 @@ void Control_ReparentWindow(int width, int height, bool noembed)
 				perror("Control_ReparentWindow write");
 		}
 	}
+#if !WITH_SDL2
 	info.info.x11.unlock_func();
+#endif
 }
 
 /**

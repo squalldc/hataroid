@@ -29,6 +29,7 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 #include "debug_priv.h"
 #include "breakcond.h"
 #include "debugcpu.h"
+#include "debugdsp.h"
 #include "debugInfo.h"
 #include "debugui.h"
 #include "evaluate.h"
@@ -42,9 +43,6 @@ const char BreakCond_fileid[] = "Hatari breakcond.c : " __DATE__ " " __TIME__;
 
 /* needs to go through long long to handle x=32 */
 #define BITMASK(x)      ((Uint32)(((unsigned long long)1<<(x))-1))
-
-#define BC_MAX_CONDITION_BREAKPOINTS 16
-#define BC_MAX_CONDITIONS_PER_BREAKPOINT 4
 
 #define BC_DEFAULT_DSP_SPACE 'P'
 
@@ -98,24 +96,40 @@ typedef struct {
 	bool trace;	/* trace mode, don't break */
 	bool noinit;	/* prevent debugger inits on break */
 	bool lock;	/* tracing + show locked info */
+	bool deleted;   /* delayed delete flag */
 } bc_options_t;
 
 typedef struct {
 	char *expression;
 	bc_options_t options;
-	bc_condition_t conditions[BC_MAX_CONDITIONS_PER_BREAKPOINT];
+	bc_condition_t *conditions;
 	int ccount;	/* condition count */
 	int hits;	/* how many times breakpoint hit */
 } bc_breakpoint_t;
 
-static bc_breakpoint_t BreakPointsCpu[BC_MAX_CONDITION_BREAKPOINTS];
-static bc_breakpoint_t BreakPointsDsp[BC_MAX_CONDITION_BREAKPOINTS];
-static int BreakPointCpuCount;
-static int BreakPointDspCount;
+typedef struct {
+	bc_breakpoint_t *breakpoint;
+	bc_breakpoint_t *breakpoint2delete;	/* delayed delete of old alloc */
+	const char *name;
+	int count;
+	int allocated;
+	bool delayed_change;
+	const debug_reason_t reason;
+} bc_breakpoints_t;
+
+static bc_breakpoints_t CpuBreakPoints = {
+	.name = "CPU",
+	.reason = REASON_CPU_BREAKPOINT
+};
+static bc_breakpoints_t DspBreakPoints = {
+	.name = "DSP",
+	.reason = REASON_DSP_BREAKPOINT
+};
 
 
 /* forward declarations */
-static bool BreakCond_Remove(int position, bool bForDsp);
+static int BreakCond_DoDelayedActions(bc_breakpoints_t *bps, int triggered);
+static bool BreakCond_Remove(bc_breakpoints_t *bps, int position);
 static void BreakCond_Print(bc_breakpoint_t *bp);
 
 
@@ -128,7 +142,7 @@ bool BreakCond_Save(const char *filename)
 	FILE *fp;
 	int i;
 
-	if (!(BreakPointCpuCount || BreakPointDspCount)) {
+	if (!(CpuBreakPoints.count || DspBreakPoints.count)) {
 		if (File_Exists(filename)) {
 			if (remove(filename)) {
 				perror("ERROR");
@@ -145,11 +159,11 @@ bool BreakCond_Save(const char *filename)
 		return false;
 	}
 	/* save conditional breakpoints as debugger input file */
-	for (i = 0; i < BreakPointCpuCount; i++) {
-		fprintf(fp, "b %s\n", BreakPointsCpu[i].expression);
+	for (i = 0; i < CpuBreakPoints.count; i++) {
+		fprintf(fp, "b %s\n", CpuBreakPoints.breakpoint[i].expression);
 	}
-	for (i = 0; i < BreakPointDspCount; i++) {
-		fprintf(fp, "db %s\n", BreakPointsDsp[i].expression);
+	for (i = 0; i < DspBreakPoints.count; i++) {
+		fprintf(fp, "db %s\n", DspBreakPoints.breakpoint[i].expression);
 	}
 	fclose(fp);
 	return true;
@@ -192,11 +206,6 @@ static Uint32 BreakCond_ReadDspMemory(Uint32 addr, const bc_value_t *bc_value)
  */
 static Uint32 BreakCond_ReadSTMemory(Uint32 addr, const bc_value_t *bc_value)
 {
-	/* Mask to a 24 bit address. With this e.g. $ffff820a is also
-	 * recognized as IO mem $ff820a (which is the same in the 68000).
-	 */
-	addr &= 0x00ffffff;
-
 	switch (bc_value->bits) {
 	case 32:
 		return STMemory_ReadLong(addr);
@@ -295,17 +304,17 @@ static bool BreakCond_MatchConditions(bc_condition_t *condition, int count)
 			break;
 		case '!':
 			hit = (lvalue != rvalue);
-			if (hit && condition->track) {
-				BreakCond_UpdateTracked(condition, lvalue);
-			}
 			break;
 		default:
 			fprintf(stderr, "ERROR: Unknown breakpoint value comparison operator '%c'!\n",
 				condition->comparison);
 			abort();
 		}
-		if (!hit) {
+		if (likely(!hit)) {
 			return false;
+		}
+		if (condition->track) {
+			BreakCond_UpdateTracked(condition, lvalue);
 		}
 	}
 	/* all conditions matched */
@@ -318,15 +327,20 @@ static bool BreakCond_MatchConditions(bc_condition_t *condition, int count)
  * @return	index to last matching (non-tracing) breakpoint,
  *		or zero if none matched
  */
-static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char *name)
+static int BreakCond_MatchBreakPoints(bc_breakpoints_t *bps)
 {
+	bc_breakpoint_t *bp;
+	bool changes = false;
 	int i, ret = 0;
 
-	for (i = 0; i < count; bp++, i++) {
+	/* array should not be changed while it's being traversed */
+	assert(likely(!bps->delayed_change));
+	bps->delayed_change = true;
+
+	bp = bps->breakpoint;
+	for (i = 0; i < bps->count; bp++, i++) {
 
 		if (BreakCond_MatchConditions(bp->conditions, bp->ccount)) {
-			bool for_dsp;
-
 			bp->hits++;
 			if (bp->options.skip) {
 				if (bp->hits % bp->options.skip) {
@@ -336,15 +350,10 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 			}
 			if (!bp->options.quiet) {
 				fprintf(stderr, "%d. %s breakpoint condition(s) matched %d times.\n",
-					i+1, name, bp->hits);			
+					i+1, bps->name, bp->hits);			
 				BreakCond_Print(bp);
 			}
-			for_dsp = (bp-i == BreakPointsDsp);
-			if (for_dsp) {
-				History_Mark(REASON_DSP_BREAKPOINT);
-			} else {
-				History_Mark(REASON_CPU_BREAKPOINT);
-			}
+			History_Mark(bps->reason);
 
 			if (bp->options.lock || bp->options.filename) {
 				bool reinit = !bp->options.noinit;
@@ -359,18 +368,23 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
 				}
 				if (bp->options.filename) {
 					DebugUI_ParseFile(bp->options.filename, reinit);
+					changes = true;
 				}
 			}
 			if (bp->options.once) {
-				BreakCond_Remove(i+1, for_dsp);
-				count--;
+				BreakCond_Remove(bps, i+1);
+				changes = true;
 			}
 			if (!bp->options.trace) {
-				/* index for current hit (BreakCond_Remove() indexes start from 1) */
+				/* index for current hit, they start from 1 */
 				ret = i + 1;
 			}
 			/* continue checking breakpoints to make sure all relevant actions get performed */
 		}
+	}
+	bps->delayed_change = false;
+	if (unlikely(changes)) {
+		ret = BreakCond_DoDelayedActions(bps, ret);
 	}
 	return ret;
 }
@@ -382,7 +396,7 @@ static int BreakCond_MatchBreakPoints(bc_breakpoint_t *bp, int count, const char
  */
 int BreakCond_MatchCpu(void)
 {
-	return BreakCond_MatchBreakPoints(BreakPointsCpu, BreakPointCpuCount, "CPU");
+	return BreakCond_MatchBreakPoints(&CpuBreakPoints);
 }
 
 /**
@@ -390,19 +404,23 @@ int BreakCond_MatchCpu(void)
  */
 int BreakCond_MatchDsp(void)
 {
-	return BreakCond_MatchBreakPoints(BreakPointsDsp, BreakPointDspCount, "DSP");
+	return BreakCond_MatchBreakPoints(&DspBreakPoints);
 }
 
 /**
- * Return number of condition breakpoints
+ * Return number of CPU condition breakpoints
  */
-int BreakCond_BreakPointCount(bool bForDsp)
+int BreakCond_CpuBreakPointCount(void)
 {
-	if (bForDsp) {
-		return BreakPointDspCount;
-	} else {
-		return BreakPointCpuCount;
-	}
+	return CpuBreakPoints.count;
+}
+
+/**
+ * Return number of DSP condition breakpoints
+ */
+int BreakCond_DspBreakPointCount(void)
+{
+	return DspBreakPoints.count;
 }
 
 
@@ -538,9 +556,16 @@ static Uint32 GetNextPC(void)
 /* sorted by variable name so that this can be bisected */
 static const var_addr_t hatari_vars[] = {
 	{ "AesOpcode", (Uint32*)GetAesOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
+	{ "Basepage", (Uint32*)DebugInfo_GetBASEPAGE, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
 	{ "BiosOpcode", (Uint32*)GetBiosOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
 	{ "BSS", (Uint32*)DebugInfo_GetBSS, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
+	{ "CpuInstr", (Uint32*)DebugCpu_InstrCount, VALUE_TYPE_FUNCTION32, 0, "CPU instructions count" },
+	{ "CpuOpcodeType", (Uint32*)DebugCpu_OpcodeType, VALUE_TYPE_FUNCTION32, 0, "CPU instruction type" },
 	{ "DATA", (Uint32*)DebugInfo_GetDATA, VALUE_TYPE_FUNCTION32, 0, "invalid before Desktop is up" },
+#if ENABLE_DSP_EMU
+	{ "DspInstr", (Uint32*)DebugDsp_InstrCount, VALUE_TYPE_FUNCTION32, 0, "DSP instructions count" },
+	{ "DspOpcodeType", (Uint32*)DebugDsp_OpcodeType, VALUE_TYPE_FUNCTION32, 0, "DSP instruction type" },
+#endif
 	{ "FrameCycles", (Uint32*)GetFrameCycles, VALUE_TYPE_FUNCTION32, 0, NULL },
 	{ "GemdosOpcode", (Uint32*)GetGemdosOpcode, VALUE_TYPE_FUNCTION32, 16, "by default FFFF" },
 	{ "HBL", (Uint32*)&nHBL, VALUE_TYPE_VAR32, sizeof(nHBL)*8, NULL },
@@ -599,6 +624,7 @@ char *BreakCond_MatchDspVariable(const char *text, int state)
  */
 static bool BreakCond_ParseVariable(const char *name, bc_value_t *bc_value)
 {
+	const var_addr_t *hvar;
 	/* left, right, middle, direction */
         int l, r, m, dir;
 
@@ -608,11 +634,12 @@ static bool BreakCond_ParseVariable(const char *name, bc_value_t *bc_value)
 	r = ARRAYSIZE(hatari_vars) - 1;
 	do {
 		m = (l+r) >> 1;
-		dir = strcasecmp(name, hatari_vars[m].name);
+		hvar = hatari_vars + m;
+		dir = strcasecmp(name, hvar->name);
 		if (dir == 0) {
-			bc_value->value.reg32 = hatari_vars[m].addr;
-			bc_value->valuetype = hatari_vars[m].vtype;
-			bc_value->bits = hatari_vars[m].bits;
+			bc_value->value.reg32 = hvar->addr;
+			bc_value->valuetype = hvar->vtype;
+			bc_value->bits = hvar->bits;
 			assert(bc_value->bits == 32 || bc_value->valuetype !=  VALUE_TYPE_VAR32);
 			EXITFUNC(("-> true\n"));
 			return true;
@@ -720,7 +747,8 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
 					      &(bc_value->value.reg32),
 					      &(bc_value->mask));
 		if (regsize) {
-			if (bc_value->is_indirect && toupper(regname[0]) != 'R') {
+			if (bc_value->is_indirect
+			    && toupper((unsigned char)regname[0]) != 'R') {
 				fprintf(stderr, "ERROR: only R0-R7 DSP registers can be used for indirect addressing!\n");
 				EXITFUNC(("-> false (DSP)\n"));
 				return false;
@@ -768,28 +796,19 @@ static bool BreakCond_ParseRegister(const char *regname, bc_value_t *bc_value)
  */
 static bool BreakCond_CheckAddress(bc_value_t *bc_value)
 {
-	Uint32 highbyte, bit23, addr = bc_value->value.number;
+	Uint32 addr = bc_value->value.number;
+	int size = bc_value->bits >> 8;
 
 	ENTERFUNC(("BreakCond_CheckAddress(%x)\n", addr));
 	if (bc_value->dsp_space) {
-		if (addr > 0xFFFF) {
+		if (addr+size > 0xFFFF) {
 			EXITFUNC(("-> false (DSP)\n"));
 			return false;
 		}
 		EXITFUNC(("-> true (DSP)\n"));
 		return true;
 	}
-
-	bit23 = (addr >> 23) & 1;
-	highbyte = (addr >> 24) & 0xff;
-	if ((bit23 == 0 && highbyte != 0) ||
-	    (bit23 == 1 && highbyte != 0xff)) {
-		fprintf(stderr, "WARNING: address 0x%x 23th bit isn't extended to bits 24-31.\n", addr);
-	}
-	/* use a 24-bit address */
-	addr &= 0x00ffffff;
-	if ((addr > STRamEnd && addr < 0xe00000) ||
-	    (addr >= 0xff0000 && addr < 0xff8000)) {
+	if (!STMemory_CheckAreaType(addr, size, ABFLAG_RAM | ABFLAG_ROM | ABFLAG_IO)) {
 		EXITFUNC(("-> false (CPU)\n"));
 		return false;
 	}
@@ -829,7 +848,7 @@ static bool BreakCond_ParseAddressModifier(parser_state_t *pstate, bc_value_t *b
 		case 'p':
 		case 'x':
 		case 'y':
-			mode = toupper(pstate->argv[pstate->arg][0]);
+			mode = toupper((unsigned char)pstate->argv[pstate->arg][0]);
 			break;
 		default:
 			pstate->error = "invalid address space modifier";
@@ -933,7 +952,7 @@ static bool BreakCond_ParseValue(parser_state_t *pstate, bc_value_t *bc_value)
 	}
 	
 	str = pstate->argv[pstate->arg];
-	if (isalpha(*str) || *str == '_') {
+	if (isalpha((unsigned char)*str) || *str == '_') {
 		/* parse direct or indirect variable/register/symbol name */
 		if (bc_value->is_indirect) {
 			/* a valid register or data symbol name? */
@@ -1113,16 +1132,11 @@ static bool BreakCond_CrossCheckValues(parser_state_t *pstate,
  * Return number of added conditions or zero for failure.
  */
 static int BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
-				    bc_condition_t *conditions, int ccount)
+				    bc_breakpoint_t *bp, int ccount)
 {
 	bc_condition_t condition;
 
 	ENTERFUNC(("BreakCond_ParseCondition(...)\n"));
-	if (ccount >= BC_MAX_CONDITIONS_PER_BREAKPOINT) {
-		pstate->error = "max number of conditions exceeded";
-		EXITFUNC(("-> 0 (no conditions free)\n"));
-		return 0;
-	}
 
 	/* setup condition */
 	memset(&condition, 0, sizeof(bc_condition_t));
@@ -1151,12 +1165,19 @@ static int BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
 		EXITFUNC(("-> 0\n"));
 		return 0;
 	}
-	/* new condition */
-	conditions[ccount++] = condition;
+	/* copy new condition */
+	ccount += 1;
+	bp->conditions = realloc(bp->conditions, sizeof(bc_condition_t)*(ccount));
+	if (!bp->conditions) {
+		pstate->error = "failed to allocate space for breakpoint condition";
+		EXITFUNC(("-> 0\n"));
+		return 0;
+	}
+	bp->conditions[ccount-1] = condition;
 
 	/* continue with next condition? */
 	if (pstate->arg == pstate->argc) {
-		EXITFUNC(("-> %d (conditions)\n", ccount-1));
+		EXITFUNC(("-> %d conditions (all args parsed)\n", ccount));
 		return ccount;
 	}
 	if (strcmp(pstate->argv[pstate->arg], "&&") != 0) {
@@ -1167,12 +1188,12 @@ static int BreakCond_ParseCondition(parser_state_t *pstate, bool bForDsp,
 	pstate->arg++;
 
 	/* recurse conditions parsing */
-	ccount = BreakCond_ParseCondition(pstate, bForDsp, conditions, ccount);
+	ccount = BreakCond_ParseCondition(pstate, bForDsp, bp, ccount);
 	if (!ccount) {
 		EXITFUNC(("-> 0\n"));
 		return 0;
 	}
-	EXITFUNC(("-> %d (conditions)\n", ccount-1));
+	EXITFUNC(("-> %d conditions (recursed)\n", ccount));
 	return ccount;
 }
 
@@ -1212,7 +1233,7 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 	has_comparison = false;
 	for (src = expression; *src; src++) {
 		/* discard white space in source */
-		if (isspace(*src)) {
+		if (isspace((unsigned char)*src)) {
 			continue;
 		}
 		/* separate tokens with single space in destination */
@@ -1240,7 +1261,7 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 		/* validate & copy other characters */
 		if (!sep) {
 			/* variable/register/symbol or number prefix? */
-			if (!(isalnum(*src) || *src == '_' ||
+			if (!(isalnum((unsigned char)*src) || *src == '_' ||
 			      *src == '$' || *src == '#' || *src == '%')) {
 				pstate->error = "invalid character";
 				pstate->arg = src-expression;
@@ -1297,23 +1318,42 @@ static char *BreakCond_TokenizeExpression(const char *expression,
 
 
 /**
- * Helper to set corrent breakpoint list and type name to given variables.
- * Return pointer to breakpoint list count
+ * Select corrent breakpoints struct and provide name for it.
+ * Make sure there's always space for at least one additional breakpoint.
+ * Return pointer to the breakpoints struct
  */
-static int* BreakCond_GetListInfo(bc_breakpoint_t **bp,
-				  const char **name, bool bForDsp)
+static bc_breakpoints_t* BreakCond_GetListInfo(bool bForDsp)
 {
-	int *bcount;
+	bc_breakpoints_t *bps;
 	if (bForDsp) {
-		bcount = &BreakPointDspCount;
-		*bp = BreakPointsDsp;
-		*name = "DSP";
+		bps = &DspBreakPoints;
 	} else {
-		bcount = &BreakPointCpuCount;
-		*bp = BreakPointsCpu;
-		*name = "CPU";
+		bps = &CpuBreakPoints;
 	}
-	return bcount;
+	/* allocate (more) space for breakpoints when needed */
+	if (bps->count + 1 >= bps->allocated) {
+		if (!bps->allocated) {
+			/* initial count of available breakpoints */
+			bps->allocated = 16;
+		} else {
+			bps->allocated *= 2;
+		}
+		if (bps->delayed_change) {
+			if(bps->breakpoint2delete) {
+				/* getting second re-alloc within same breakpoint handler is really
+				 * unlikely, this would require adding dozens of new breakpoints.
+				 */
+				fprintf(stderr, "ERROR: too many new breakpoints added within single breakpoint hit!\n");
+				abort();
+			}
+			bps->breakpoint2delete = bps->breakpoint;
+			bps->breakpoint = malloc(bps->allocated * sizeof(bc_breakpoint_t));
+		} else {
+			bps->breakpoint = realloc(bps->breakpoint, bps->allocated * sizeof(bc_breakpoint_t));
+		}
+		assert(bps->breakpoint);
+	}
+	return bps;
 }
 
 
@@ -1342,8 +1382,8 @@ static void BreakCond_CheckTracking(bc_breakpoint_t *bp)
 			condition->rvalue.value.number = value;
 			condition->rvalue.valuetype = VALUE_TYPE_NUMBER;
 			condition->rvalue.is_indirect = false;
-			if (condition->comparison == '!') {
-				/* which changes will be traced */
+			/* track those changes */
+			if (condition->comparison != '=') {
 				condition->track = true;
 				track = true;
 			} else {
@@ -1365,25 +1405,29 @@ static void BreakCond_CheckTracking(bc_breakpoint_t *bp)
 static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool bForDsp)
 {
 	parser_state_t pstate;
+	bc_breakpoints_t *bps;
 	bc_breakpoint_t *bp;
-	const char *name;
 	char *normalized;
-	int *bcount;
 	int ccount;
 
-	bcount = BreakCond_GetListInfo(&bp, &name, bForDsp);
-	if (*bcount >= BC_MAX_CONDITION_BREAKPOINTS) {
-		fprintf(stderr, "ERROR: no free %s condition breakpoints left.\n", name);
-		return false;
-	}
-	bp += *bcount;
+	bps = BreakCond_GetListInfo(bForDsp);
+
+	bp = bps->breakpoint + bps->count;
 	memset(bp, 0, sizeof(bc_breakpoint_t));
 
 	normalized = BreakCond_TokenizeExpression(expression, &pstate);
 	if (normalized) {
 		bp->expression = normalized;
-		ccount = BreakCond_ParseCondition(&pstate, bForDsp,
-						  bp->conditions, 0);
+		ccount = BreakCond_ParseCondition(&pstate, bForDsp, bp, 0);
+		/* fail? */
+		if (!ccount) {
+			bp->expression = NULL;
+			if (bp->conditions) {
+				/* free what was allocated by ParseCondition */
+				free(bp->conditions);
+				bp->conditions = NULL;
+			}
+		}
 		bp->ccount = ccount;
 	} else {
 		ccount = 0;
@@ -1392,10 +1436,10 @@ static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool 
 		free(pstate.argv);
 	}
 	if (ccount > 0) {
-		(*bcount)++;
+		bps->count++;
 		if (!options->quiet) {
 			fprintf(stderr, "%s condition breakpoint %d with %d condition(s) added:\n\t%s\n",
-				name, *bcount, ccount, bp->expression);
+				bps->name, bps->count, ccount, bp->expression);
 			if (options->skip) {
 				fprintf(stderr, "-> Break only on every %d hit.\n", options->skip);
 			}
@@ -1442,7 +1486,6 @@ static bool BreakCond_Parse(const char *expression, bc_options_t *options, bool 
 			fprintf(stderr, "ERROR in tokenized string:\n'%s'\n%*c-%s\n",
 				normalized, offset+2, '^', pstate.error);
 			free(normalized);
-			bp->expression = NULL;
 		} else {
 			/* show original string and point out the character
 			 * where the error was encountered
@@ -1480,26 +1523,27 @@ static void BreakCond_Print(bc_breakpoint_t *bp)
 		if (bp->options.filename) {
 			fprintf(stderr, " :file %s", bp->options.filename);
 		}
+		if (bp->options.deleted) {
+			fprintf(stderr, " (deleted)");
+		}
 		fprintf(stderr, "\n");
 }
 
 /**
  * List condition breakpoints
  */
-static void BreakCond_List(bool bForDsp)
+static void BreakCond_List(bc_breakpoints_t *bps)
 {
-	const char *name;
 	bc_breakpoint_t *bp;
-	int i, bcount;
-	
-	bcount = *BreakCond_GetListInfo(&bp, &name, bForDsp);
-	if (!bcount) {
-		fprintf(stderr, "No conditional %s breakpoints.\n", name);
+	int i;
+
+	if (!bps->count) {
+		fprintf(stderr, "No conditional %s breakpoints.\n", bps->name);
 		return;
 	}
-
-	fprintf(stderr, "%d conditional %s breakpoints:\n", bcount, name);
-	for (i = 1; i <= bcount; bp++, i++) {
+	fprintf(stderr, "%d conditional %s breakpoints:\n", bps->count, bps->name);
+	bp = bps->breakpoint;
+	for (i = 1; i <= bps->count; bp++, i++) {
 		fprintf(stderr, "%4d:", i);
 		BreakCond_Print(bp);
 	}
@@ -1509,48 +1553,89 @@ static void BreakCond_List(bool bForDsp)
 /**
  * Remove condition breakpoint at given position
  */
-static bool BreakCond_Remove(int position, bool bForDsp)
+static bool BreakCond_Remove(bc_breakpoints_t *bps, int position)
 {
-	const char *name;
 	bc_breakpoint_t *bp;
-	int *bcount, offset;
 
-	bcount = BreakCond_GetListInfo(&bp, &name, bForDsp);
-	if (!*bcount) {
-		fprintf(stderr, "No (more) %s breakpoints to remove.\n", name);
+	if (!bps->count) {
+		fprintf(stderr, "No (more) %s breakpoints to remove.\n", bps->name);
 		return false;
 	}
-	if (position < 1 || position > *bcount) {
-		fprintf(stderr, "ERROR: No such %s breakpoint.\n", name);
+	if (position < 1 || position > bps->count) {
+		fprintf(stderr, "ERROR: No such %s breakpoint.\n", bps->name);
 		return false;
 	}
-	offset = position - 1;
-	if (!bp[offset].options.quiet) {
-		fprintf(stderr, "Removed %s breakpoint %d:\n", name, position);
-		BreakCond_Print(&(bp[offset]));
+	bp = bps->breakpoint + (position - 1);
+	if (bps->delayed_change) {
+		bp->options.deleted = true;
+		return true;
 	}
-	free(bp[offset].expression);
-	if (bp[offset].options.filename) {
-		free(bp[offset].options.filename);
+	if (!bp->options.quiet) {
+		fprintf(stderr, "Removed %s breakpoint %d:\n", bps->name, position);
+		BreakCond_Print(bp);
 	}
-	bp[offset].expression = NULL;
+	free(bp->expression);
+	free(bp->conditions);
+	bp->expression = NULL;
+	bp->conditions = NULL;
 
-	if (position < *bcount) {
-		memmove(bp+offset, bp+position,
-			(*bcount-position)*sizeof(bc_breakpoint_t));
+	if (bp->options.filename) {
+		free(bp->options.filename);
 	}
-	(*bcount)--;
+
+	if (position < bps->count) {
+		memmove(bp, bp + 1, (bps->count - position) * sizeof(bc_breakpoint_t));
+	}
+	bps->count--;
 	return true;
 }
 
 
 /**
- * Remove all condition breakpoints
+ * Remove all conditional breakpoints
  */
-static void BreakCond_RemoveAll(bool bForDsp)
+static void BreakCond_RemoveAll(bc_breakpoints_t *bps)
 {
-	while (BreakCond_Remove(1, bForDsp))
-		;
+	bool removed;
+	int i;
+
+	for (i = bps->count; i > 0; i--) {
+		removed = BreakCond_Remove(bps, i);
+		ASSERT_VARIABLE(removed);
+	}
+	fprintf(stderr, "%s breakpoints: %d\n", bps->name, bps->count);
+}
+
+/**
+ * Do delayed actions (remove breakpoints and old array alloc)
+ * 
+ * If those removals affect the triggered breakpoint index, update it.
+ * 
+ * Return updated breakpoint index.
+ */
+static int BreakCond_DoDelayedActions(bc_breakpoints_t *bps, int triggered)
+{
+	bc_options_t *options;
+	bool removed;
+	int i;
+
+	assert(!bps->delayed_change);
+	if (bps->breakpoint2delete) {
+		free(bps->breakpoint2delete);
+		bps->breakpoint2delete = NULL;
+	}
+	for (i = bps->count; i > 0; i--) {
+		options = &(bps->breakpoint[i-1].options);
+		if (options->deleted) {
+			options->deleted = false;
+			removed = BreakCond_Remove(bps, i);
+			ASSERT_VARIABLE(removed);
+			if (triggered >= i) {
+				triggered--;
+			}
+		}
+	}
+	return triggered;
 }
 
 
@@ -1560,10 +1645,10 @@ static void BreakCond_RemoveAll(bool bForDsp)
  */
 int BreakCond_MatchCpuExpression(int position, const char *expression)
 {
-	if (position < 1 || position > BreakPointCpuCount) {
+	if (position < 1 || position > CpuBreakPoints.count) {
 		return false;
 	}
-	if (strcmp(expression, BreakPointsCpu[position-1].expression)) {
+	if (strcmp(expression, CpuBreakPoints.breakpoint[position-1].expression)) {
 		return false;
 	}
 	return true;
@@ -1602,21 +1687,22 @@ static void BreakCond_Help(void)
 "\n"
 "  Valid Hatari variable names (and their current values) are:\n", stderr);
 	for (i = 0; i < ARRAYSIZE(hatari_vars); i++) {
-		switch (hatari_vars[i].vtype) {
+		const var_addr_t *hvar = hatari_vars + i;
+		switch (hvar->vtype) {
 		case VALUE_TYPE_FUNCTION32:
-			value = ((Uint32(*)(void))(hatari_vars[i].addr))();
+			value = ((Uint32(*)(void))(hvar->addr))();
 			break;
 		case VALUE_TYPE_VAR32:
-			value = *(hatari_vars[i].addr);
+			value = *(hvar->addr);
 			break;
 		default:
 			fprintf(stderr, "ERROR: variable '%s' has unsupported type '%d'\n",
-				hatari_vars[i].name, hatari_vars[i].vtype);
+				hvar->name, hvar->vtype);
 			continue;
 		}
-		fprintf(stderr, "  - %s ($%x)", hatari_vars[i].name, value);
-		if (hatari_vars[i].constraints) {
-			fprintf(stderr, ", %s\n", hatari_vars[i].constraints);
+		fprintf(stderr, "  - %s ($%x)", hvar->name, value);
+		if (hvar->constraints) {
+			fprintf(stderr, ", %s\n", hvar->constraints);
 		} else {
 			fprintf(stderr, "\n");
 		}
@@ -1696,7 +1782,7 @@ static bool BreakCond_Options(char *str, bc_options_t *options, char marker)
 				return false;
 			}
 			options->filename = filename;
-		} else if (isdigit(*option)) {
+		} else if (isdigit((unsigned char)*option)) {
 			/* :<value> */
 			skip = atoi(option);
 			if (skip < 2) {
@@ -1719,14 +1805,16 @@ static bool BreakCond_Options(char *str, bc_options_t *options, char marker)
  */
 bool BreakCond_Command(const char *args, bool bForDsp)
 {
+	bc_breakpoints_t *bps;
 	char *expression, *argscopy;
 	unsigned int position;
 	bc_options_t options;
 	const char *end;
 	bool ret = true;
-	
+
+	bps = BreakCond_GetListInfo(bForDsp);
 	if (!args) {
-		BreakCond_List(bForDsp);
+		BreakCond_List(bps);
 		return true;
 	}
 	argscopy = strdup(args);
@@ -1740,7 +1828,7 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 		goto cleanup;
 	}
 	if (strcmp(expression, "all") == 0) {
-		BreakCond_RemoveAll(bForDsp);
+		BreakCond_RemoveAll(bps);
 		goto cleanup;
 	}
 
@@ -1758,12 +1846,12 @@ bool BreakCond_Command(const char *args, bool bForDsp)
 
 	/* index (for breakcond removal)? */
 	end = expression;
-	while (isdigit(*end)) {
+	while (isdigit((unsigned char)*end)) {
 		end++;
 	}
 	if (end > expression && *end == '\0' &&
 	    sscanf(expression, "%u", &position) == 1) {
-		ret = BreakCond_Remove(position, bForDsp);
+		ret = BreakCond_Remove(bps, position);
 	} else {
 		/* add breakpoint? */
 		ret = BreakCond_Parse(expression, &options, bForDsp);

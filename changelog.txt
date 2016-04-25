@@ -1,3 +1,8 @@
+v1.700
+- Pasti STX support
+- Built in Emu-TOS option
+- Merge Hatari 1.90 code base (lots of bug fixes)
+
 v1.609
 - New Arcade-style Virtual Joystick
 	- Fixed or floating Joystick option

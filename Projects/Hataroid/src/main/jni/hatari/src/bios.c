@@ -6,7 +6,7 @@
 
   Bios Handler (Trap #13)
 
-  We intercept some Bios calls for debugging
+  Intercept some Bios calls for tracing/debugging
 */
 const char Bios__fileid[] = "Hatari bios.c : " __DATE__ " " __TIME__;
 
@@ -39,8 +39,9 @@ static void Bios_RWabs(Uint32 Params)
 	RecNo = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_WORD);
 	Dev = STMemory_ReadWord(Params+SIZE_WORD+SIZE_LONG+SIZE_WORD+SIZE_WORD);
 
-	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x04 Rwabs(%d,0x%lX,%d,%d,%i)\n",
-	          RWFlag, STRAM_ADDR(pBuffer), Number, RecNo, Dev);
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x04 Rwabs(%d,0x%x,%d,%d,%i) at PC 0x%X\n",
+	          RWFlag, pBuffer, Number, RecNo, Dev,
+		  M68000_GetPC());
 #endif
 }
 
@@ -73,7 +74,8 @@ static void Bios_Setexe(Uint32 Params)
 	};
 	for (vecname = &(vecnames[0]); vecname->vec && vec != vecname->vec; vecname++)
 		;
-	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x05 Setexc(0x%hX VEC_%s, 0x%X)\n", vec, vecname->name, addr);
+	LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x05 Setexc(0x%hX VEC_%s, 0x%X) at PC 0x%X\n", vec, vecname->name, addr,
+		  M68000_GetPC());
 #endif
 }
 
@@ -101,21 +103,21 @@ static const char* Bios_Call2Name(Uint16 opcode)
 	return "???";
 }
 
-void Bios_Info(Uint32 dummy)
+void Bios_Info(FILE *fp, Uint32 dummy)
 {
 	Uint16 opcode;
 	for (opcode = 0; opcode <= 0xB; ) {
-		fprintf(stderr, "%02x %-9s", opcode,
+		fprintf(fp, "%02x %-9s", opcode,
 			Bios_Call2Name(opcode));
 		if (++opcode % 6 == 0) {
-			fputs("\n", stderr);
+			fputs("\n", fp);
 		}
 	}
 }
 #else /* !ENABLE_TRACING */
-void Bios_Info(Uint32 bShowOpcodes)
+void Bios_Info(FILE *fp, Uint32 bShowOpcodes)
 {
-	        fputs("Hatari isn't configured with ENABLE_TRACING\n", stderr);
+	        fputs("Hatari isn't configured with ENABLE_TRACING\n", fp);
 }
 #endif /* !ENABLE_TRACING */
 
@@ -140,14 +142,16 @@ bool Bios(void)
 	switch(BiosCall)
 	{
 	case 0x0:
-		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x00 Getmpb(0x%X)\n",
-			  STMemory_ReadLong(Params));
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x00 Getmpb(0x%X) at PC 0x%X\n",
+			  STMemory_ReadLong(Params),
+			  M68000_GetPC());
 		break;
 
 	case 0x3:
-		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x03 Bconout(%i, 0x%02hX)\n",
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x03 Bconout(%i, 0x%02hX) at PC 0x%X\n",
 			  STMemory_ReadWord(Params),
-			  STMemory_ReadWord(Params+SIZE_WORD));
+			  STMemory_ReadWord(Params+SIZE_WORD),
+			  M68000_GetPC());
 		break;
 
 	case 0x4:
@@ -165,20 +169,23 @@ bool Bios(void)
 	case 0x9:
 	case 0xB:
 		/* commands taking a single word */
-		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x%02hX %s(0x%hX)\n",
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x%02hX %s(0x%hX) at PC 0x%X\n",
 			  BiosCall, Bios_Call2Name(BiosCall),
-			  STMemory_ReadWord(Params));
+			  STMemory_ReadWord(Params),
+			  M68000_GetPC());
 		break;
 
 	case 0x6:
 	case 0xA:
 		/* commands taking no args */
-		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x%02hX %s()\n",
-			  BiosCall, Bios_Call2Name(BiosCall));
+		LOG_TRACE(TRACE_OS_BIOS, "BIOS 0x%02hX %s() at PC 0x%X\n",
+			  BiosCall, Bios_Call2Name(BiosCall),
+			  M68000_GetPC());
 		break;
 
 	default:
-		Log_Printf(LOG_WARN, "Unknown BIOS call 0x%x!\n", BiosCall);
+		Log_Printf(LOG_WARN, "Unknown BIOS call 0x%x! at PC 0x%X\n", BiosCall,
+			   M68000_GetPC());
 		break;
 	}
 	return false;

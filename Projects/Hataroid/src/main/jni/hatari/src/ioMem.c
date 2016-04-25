@@ -267,7 +267,7 @@ uae_u32 IoMem_bget(uaecptr addr)
 	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_READ);
+		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 
@@ -281,13 +281,13 @@ uae_u32 IoMem_bget(uaecptr addr)
 	/* Check if we read from a bus-error region */
 	if (nBusErrorAccesses == 1)
 	{
-		M68000_BusError(addr, BUS_ERROR_READ);
+		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 
 	val = IoMem[addr];
 
-	LOG_TRACE(TRACE_IOMEM_RD, "IO read.b $%06x = $%02x\n", addr, val);
+	LOG_TRACE(TRACE_IOMEM_RD, "IO read.b $%06x = $%02x pc=%x\n", addr, val, M68000_GetPC());
 
 	return val;
 }
@@ -307,7 +307,7 @@ uae_u32 IoMem_wget(uaecptr addr)
 	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_READ);
+		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 	if (addr > 0xfffffe)
@@ -333,13 +333,13 @@ uae_u32 IoMem_wget(uaecptr addr)
 	/* Check if we completely read from a bus-error region */
 	if (nBusErrorAccesses == 2)
 	{
-		M68000_BusError(addr, BUS_ERROR_READ);
+		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 
 	val = IoMem_ReadWord(addr);
 
-	LOG_TRACE(TRACE_IOMEM_RD, "IO read.w $%06x = $%04x\n", addr, val);
+	LOG_TRACE(TRACE_IOMEM_RD, "IO read.w $%06x = $%04x pc=%x\n", addr, val, M68000_GetPC());
 
 	return val;
 }
@@ -353,13 +353,14 @@ uae_u32 IoMem_lget(uaecptr addr)
 {
 	Uint32 idx;
 	Uint32 val;
+	int n;
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
 	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_READ);
+		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 	if (addr > 0xfffffc)
@@ -376,34 +377,25 @@ uae_u32 IoMem_lget(uaecptr addr)
 	IoAccessCurrentAddress = addr;
 	pInterceptReadTable[idx]();                   /* Call 1st handler */
 
-	if (pInterceptReadTable[idx+1] != pInterceptReadTable[idx])
+	for (n = 1; n < nIoMemAccessSize; n++)
 	{
-		IoAccessCurrentAddress = addr + 1;
-		pInterceptReadTable[idx+1]();             /* Call 2nd handler */
-	}
-
-	if (pInterceptReadTable[idx+2] != pInterceptReadTable[idx+1])
-	{
-		IoAccessCurrentAddress = addr + 2;
-		pInterceptReadTable[idx+2]();             /* Call 3rd handler */
-	}
-
-	if (pInterceptReadTable[idx+3] != pInterceptReadTable[idx+2])
-	{
-		IoAccessCurrentAddress = addr + 3;
-		pInterceptReadTable[idx+3]();             /* Call 4th handler */
+		if (pInterceptReadTable[idx+n] != pInterceptReadTable[idx+n-1])
+		{
+			IoAccessCurrentAddress = addr + n;
+			pInterceptReadTable[idx+n]();     /* Call n-th handler */
+		}
 	}
 
 	/* Check if we completely read from a bus-error region */
 	if (nBusErrorAccesses == 4)
 	{
-		M68000_BusError(addr, BUS_ERROR_READ);
+		M68000_BusError(addr, BUS_ERROR_READ, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 		return -1;
 	}
 
 	val = IoMem_ReadLong(addr);
 
-	LOG_TRACE(TRACE_IOMEM_RD, "IO read.l $%06x = $%08x\n", addr, val);
+	LOG_TRACE(TRACE_IOMEM_RD, "IO read.l $%06x = $%08x pc=%x\n", addr, val, M68000_GetPC());
 
 	return val;
 }
@@ -417,12 +409,12 @@ void IoMem_bput(uaecptr addr, uae_u32 val)
 {
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	LOG_TRACE(TRACE_IOMEM_WR, "IO write.b $%06x = $%02x\n", addr, val&0x0ff);
+	LOG_TRACE(TRACE_IOMEM_WR, "IO write.b $%06x = $%02x pc=%x\n", addr, val&0x0ff, M68000_GetPC());
 
 	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_WRITE);
+		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 
@@ -438,7 +430,7 @@ void IoMem_bput(uaecptr addr, uae_u32 val)
 	/* Check if we wrote to a bus-error region */
 	if (nBusErrorAccesses == 1)
 	{
-		M68000_BusError(addr, BUS_ERROR_WRITE);
+		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_BYTE, BUS_ERROR_ACCESS_DATA);
 	}
 }
 
@@ -453,12 +445,12 @@ void IoMem_wput(uaecptr addr, uae_u32 val)
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	LOG_TRACE(TRACE_IOMEM_WR, "IO write.w $%06x = $%04x\n", addr, val&0x0ffff);
+	LOG_TRACE(TRACE_IOMEM_WR, "IO write.w $%06x = $%04x pc=%x\n", addr, val&0x0ffff, M68000_GetPC());
 
 	if (addr < 0x00ff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_WRITE);
+		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 	if (addr > 0xfffffe)
@@ -486,7 +478,7 @@ void IoMem_wput(uaecptr addr, uae_u32 val)
 	/* Check if we wrote to a bus-error region */
 	if (nBusErrorAccesses == 2)
 	{
-		M68000_BusError(addr, BUS_ERROR_WRITE);
+		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_WORD, BUS_ERROR_ACCESS_DATA);
 	}
 }
 
@@ -498,15 +490,16 @@ void IoMem_wput(uaecptr addr, uae_u32 val)
 void IoMem_lput(uaecptr addr, uae_u32 val)
 {
 	Uint32 idx;
+	int n;
 
 	addr &= 0x00ffffff;                           /* Use a 24 bit address */
 
-	LOG_TRACE(TRACE_IOMEM_WR, "IO write.l $%06x = $%08x\n", addr, val);
+	LOG_TRACE(TRACE_IOMEM_WR, "IO write.l $%06x = $%08x pc=%x\n", addr, val, M68000_GetPC());
 
 	if (addr < 0xff8000 || !regs.s)
 	{
 		/* invalid memory addressing --> bus error */
-		M68000_BusError(addr, BUS_ERROR_WRITE);
+		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 		return;
 	}
 	if (addr > 0xfffffc)
@@ -523,30 +516,21 @@ void IoMem_lput(uaecptr addr, uae_u32 val)
 	idx = addr - 0xff8000;
 
 	IoAccessCurrentAddress = addr;
-	pInterceptWriteTable[idx]();                  /* Call handler */
+	pInterceptWriteTable[idx]();                  /* Call first handler */
 
-	if (pInterceptWriteTable[idx+1] != pInterceptWriteTable[idx])
+	for (n = 1; n < nIoMemAccessSize; n++)
 	{
-		IoAccessCurrentAddress = addr + 1;
-		pInterceptWriteTable[idx+1]();            /* Call 2nd handler */
-	}
-
-	if (pInterceptWriteTable[idx+2] != pInterceptWriteTable[idx+1])
-	{
-		IoAccessCurrentAddress = addr + 2;
-		pInterceptWriteTable[idx+2]();            /* Call 3rd handler */
-	}
-
-	if (pInterceptWriteTable[idx+3] != pInterceptWriteTable[idx+2])
-	{
-		IoAccessCurrentAddress = addr + 3;
-		pInterceptWriteTable[idx+3]();            /* Call 4th handler */
+		if (pInterceptWriteTable[idx+n] != pInterceptWriteTable[idx+n-1])
+		{
+			IoAccessCurrentAddress = addr + n;
+			pInterceptWriteTable[idx+n]();   /* Call n-th handler */
+		}
 	}
 
 	/* Check if we wrote to a bus-error region */
 	if (nBusErrorAccesses == 4)
 	{
-		M68000_BusError(addr, BUS_ERROR_WRITE);
+		M68000_BusError(addr, BUS_ERROR_WRITE, BUS_ERROR_SIZE_LONG, BUS_ERROR_ACCESS_DATA);
 	}
 }
 

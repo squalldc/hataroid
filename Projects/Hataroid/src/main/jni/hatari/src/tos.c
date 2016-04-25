@@ -36,12 +36,14 @@ const char TOS_fileid[] = "Hatari tos.c : " __DATE__ " " __TIME__;
 #include "falcon/dsp.h"
 #include "clocks_timings.h"
 
+extern char* hataroid_LoadEmuTOS(int machineType, long* fileSize);
+
 bool bIsEmuTOS;
 Uint16 TosVersion;                      /* eg. 0x0100, 0x0102 */
 Uint32 TosAddress, TosSize;             /* Address in ST memory and size of TOS image */
 bool bTosImageLoaded = false;           /* Successfully loaded a TOS image? */
 bool bRamTosImage;                      /* true if we loaded a RAM TOS image */
-unsigned int ConnectedDriveMask = 0x03; /* Bit mask of connected drives, eg 0x7 is A,B,C */
+unsigned int ConnectedDriveMask = 0x00; /* Bit mask of connected drives, eg 0x7 is A,B,C */
 int nNumDrives = 2;                     /* Number of drives, default is 2 for A: and B: - Strictly, this is the highest mapped drive letter, in-between drives may not be allocated */
 
 /* Possible TOS file extensions to scan for */
@@ -109,7 +111,8 @@ enum
 	TP_ALWAYS,            /* Patch should alway be applied */
 	TP_HDIMAGE_OFF,       /* Apply patch only if HD emulation is off */
 	TP_ANTI_STE,          /* Apply patch only if running on plain ST */
-	TP_ANTI_PMMU          /* Apply patch only if no PMMU is available */
+	TP_ANTI_PMMU,         /* Apply patch only if no PMMU is available */
+	TP_FIX_060,           /* Apply patch only if CPU is 68060 */
 };
 
 /* This structure is used for patching the TOS ROMs */
@@ -131,6 +134,8 @@ static const char pszRomCheck[] = "ROM checksum";
 static const char pszNoSteHw[] = "disable STE hardware access";
 static const char pszNoPmmu[] = "disable PMMU access";
 static const char pszHwDisable[] = "disable hardware access";
+static const char pszFix060[] = "replace code for 68060";
+static const char pszFalconExtraRAM[] = "enable extra TT RAM on Falcon";
 
 //static Uint8 pRtsOpcode[] = { 0x4E, 0x75 };  /* 0x4E75 = RTS */
 static const Uint8 pNopOpcodes[] = { 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71, 0x4E, 0x71,
@@ -141,6 +146,52 @@ static const Uint8 pRomCheckOpcode206[] = { 0x60, 0x00, 0x00, 0x98 };  /* BRA $e
 static const Uint8 pRomCheckOpcode306[] = { 0x60, 0x00, 0x00, 0xB0 };  /* BRA $e00886 */
 static const Uint8 pRomCheckOpcode404[] = { 0x60, 0x00, 0x00, 0x94 };  /* BRA $e00746 */
 static const Uint8 pBraOpcode[] = { 0x60 };  /* 0x60XX = BRA */
+
+static const Uint8 p060Pmove1[] = {	/* replace PMOVE */
+	0x70, 0x0c,			/* moveq #12,d0 */
+	0x42, 0x30, 0x08, 0x00,		/* loop: clr.b 0,(d0,a0) */
+	0x55, 0x40,			/* subq  #2,d0 */
+	0x4a, 0x40,			/* tst.w d0 */
+	0x66, 0xf6,			/* bne.s loop */
+};
+static const Uint8 p060Pmove2[] = {		/* replace PMOVE */
+	0x41, 0xf8, 0xfa, 0x26,			/* lea    0xfffffa26.w,a0 */
+	0x20, 0xfc, 0x00, 0x00, 0x00, 0x88,	/* move.l #$00000088,(a0)+ */
+	0x20, 0xbc, 0x00, 0x01, 0x00, 0x05,	/* move.l #$00010005,(a0) */
+	0x4a, 0x38, 0x0a, 0x87			/* tst.b  $a87.w */
+};
+static const Uint8 p060Pmove3_1[] = {		/* replace PMOVE */
+	0x4e, 0xb9, 0x00, 0xe7, 0xf0, 0x00,	/* jsr     $e7f000 */
+	0x4e, 0x71				/* nop */
+};
+static const Uint8 p060Pmove3_2[] = {		/* replace PMOVE $28(a2),d7 */
+
+	0x00, 0x7c, 0x07, 0x00,			/* ori       #$700,sr */
+	0x1e, 0x2a, 0x00, 0x28,			/* move.b    $28(a2),d7 */
+	0xe1, 0x4f,				/* lsl.w     #8,d7 */
+	0x1e, 0x2a, 0x00, 0x2a,			/* move.b    $2a(a2),d7 */
+	0x48, 0x47,				/* swap      d7 */
+	0x1e, 0x2a, 0x00, 0x2c,			/* move.b    $2c(a2),d7 */
+	0xe1, 0x4f,				/* lsl.w     #8,d7 */
+	0x1e, 0x2a, 0x00, 0x2e,			/* move.b    $2e(a2),d7 */
+	0x4e, 0x75				/* rts */
+};
+
+static const Uint8 pFalconExtraRAM_1[] = {
+	0x4e, 0xb9, 0x00, 0xe7, 0xf1, 0x00	/* jsr       $e7f100 */
+};
+static const Uint8 pFalconExtraRAM_2[] = {	/* call maddalt() to declare the extra RAM */
+	0x20, 0x38, 0x05, 0xa4,			/* move.l    $05a4.w,d0 */
+	0x67, 0x18,				/* beq.s     $ba2d2 */
+	0x04, 0x80, 0x01, 0x00, 0x00, 0x00,	/* subi.l    #$1000000,d0 */
+	0x2f, 0x00,				/* move.l    d0,-(sp) */
+	0x2f, 0x3c, 0x01, 0x00, 0x00, 0x00,	/* move.l    #$1000000,-(sp) */
+	0x3f, 0x3c, 0x00, 0x14,			/* move.w    #$14,-(sp) */
+	0x4e, 0x41,				/* trap      #1 */
+	0x4f, 0xef, 0x00, 0x0a,			/* lea       $a(sp),sp */
+	0x70, 0x03,				/* moveq     #3,d0 */
+	0x4e, 0xf9, 0x00, 0xe0, 0x0b, 0xd2	/* jmp       $e00bd2 */
+};
 
 /* The patches for the TOS: */
 static const TOS_PATCH TosPatches[] =
@@ -187,28 +238,36 @@ static const TOS_PATCH TosPatches[] =
   { 0x206, -1, pszDmaBoot, TP_HDIMAGE_OFF, 0xE00898, 0x610000E0, 4, pNopOpcodes }, /* BSR.W $E0097A */
 
   { 0x306, -1, pszRomCheck, TP_ALWAYS, 0xE007D4, 0x2E3C0001, 4, pRomCheckOpcode306 },
-  { 0x306, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE00068, 0xF0394000, 24, pNopOpcodes },
-  { 0x306, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE01702, 0xF0394C00, 32, pNopOpcodes },
+  { 0x306, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE00068, 0xF0394000, 24, pNopOpcodes }, /* pmove : TC=0 TT0=0 TT1=0 -> disable MMU */
+  { 0x306, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE01702, 0xF0394C00, 32, pNopOpcodes }, /* pmove : CRP=80000002 00000700 TC=80f04445 TT0=017e8107 TT1=807e8507 -> */
 
-  { 0x400, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE00064, 0xF0394000, 24, pNopOpcodes },
+  { 0x400, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE00064, 0xF0394000, 24, pNopOpcodes }, /* pmove : TC=0 TT0=0 TT1=0 -> disable MMU */
   { 0x400, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE0148A, 0xF0394C00, 32, pNopOpcodes },
-  { 0x400, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE03948, 0xF0394000, 24, pNopOpcodes },
+  { 0x400, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE03948, 0xF0394000, 24, pNopOpcodes }, /* pmove : TC=0 TT0=0 TT1=0 -> disable MMU */
   { 0x400, -1, pszRomCheck, TP_ALWAYS, 0xE00686, 0x2E3C0007, 4, pRomCheckOpcode404 },
 
-  { 0x401, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE0006A, 0xF0394000, 24, pNopOpcodes },
+  { 0x401, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE0006A, 0xF0394000, 24, pNopOpcodes }, /* pmove : TC=0 TT0=0 TT1=0 -> disable MMU */
   { 0x401, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE014A8, 0xF0394C00, 32, pNopOpcodes },
-  { 0x401, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE03946, 0xF0394000, 24, pNopOpcodes },
+  { 0x401, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE03946, 0xF0394000, 24, pNopOpcodes }, /* pmove : TC=0 TT0=0 TT1=0 -> disable MMU */
   { 0x401, -1, pszRomCheck, TP_ALWAYS, 0xE006A6, 0x2E3C0007, 4, pRomCheckOpcode404 },
 
-  { 0x402, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE0006A, 0xF0394000, 24, pNopOpcodes },
+  { 0x402, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE0006A, 0xF0394000, 24, pNopOpcodes }, /* pmove : TC=0 TT0=0 TT1=0 -> disable MMU */
   { 0x402, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE014A8, 0xF0394C00, 32, pNopOpcodes },
-  { 0x402, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE03946, 0xF0394000, 24, pNopOpcodes },
+  { 0x402, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE03946, 0xF0394000, 24, pNopOpcodes }, /* pmove : TC=0 TT0=0 TT1=0 -> disable MMU */
   { 0x402, -1, pszRomCheck, TP_ALWAYS, 0xE006A6, 0x2E3C0007, 4, pRomCheckOpcode404 },
 
-  { 0x404, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE0006A, 0xF0394000, 24, pNopOpcodes },
-  { 0x404, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE014E6, 0xF0394C00, 32, pNopOpcodes },
-  { 0x404, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE039A0, 0xF0394000, 24, pNopOpcodes },
+  { 0x404, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE0006A, 0xF0394000, 24, pNopOpcodes }, /* pmove : TC=0 TT0=0 TT1=0 -> disable MMU */
+  { 0x404, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE014E6, 0xF0394C00, 32, pNopOpcodes }, /* pmove : CRP=80000002 00000700 TC=80f04445 TT0=017e8107 TT1=807e8507 -> */
+  { 0x404, -1, pszNoPmmu, TP_ANTI_PMMU, 0xE039A0, 0xF0394000, 24, pNopOpcodes }, /* pmove : TC=0 TT0=0 TT1=0 -> disable MMU */
   { 0x404, -1, pszRomCheck, TP_ALWAYS, 0xE006B0, 0x2E3C0007, 4, pRomCheckOpcode404 },
+  { 0x404, -1, pszDmaBoot, TP_ALWAYS, 0xE01C9E, 0x62FC31FC, 2, pNopOpcodes },  /* Just a delay */
+  { 0x404, -1, pszDmaBoot, TP_ALWAYS, 0xE01CB2, 0x62FC31FC, 2, pNopOpcodes },  /* Just a delay */
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE025E2, 0x01C80000, 12, p060Pmove1 },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE02632, 0x41F8FA01, 20, p060Pmove2 },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE02B1E, 0x007c0700, 8, p060Pmove3_1 },
+  { 0x404, -1, pszFix060, TP_FIX_060, 0xE7F000, 0xFFFFFFFF, sizeof( p060Pmove3_2 ), p060Pmove3_2 },
+  { 0x404, -1, pszFalconExtraRAM, TP_ALWAYS, 0xE0096E, 0x70036100, 6, pFalconExtraRAM_1 },
+  { 0x404, -1, pszFalconExtraRAM, TP_ALWAYS, 0xE7F100, 0xFFFFFFFF, sizeof( pFalconExtraRAM_2 ), pFalconExtraRAM_2 },
 
   { 0x492, -1, pszNoPmmu, TP_ANTI_PMMU, 0x00F946, 0xF0394000, 24, pNopOpcodes },
   { 0x492, -1, pszNoPmmu, TP_ANTI_PMMU, 0x01097A, 0xF0394C00, 32, pNopOpcodes },
@@ -282,6 +341,7 @@ static void TOS_FixRom(void)
 				    || (pPatch->Flags == TP_ANTI_STE
 				        && ConfigureParams.System.nMachineType == MACHINE_ST)
 				    || (pPatch->Flags == TP_ANTI_PMMU && !use_mmu)
+				    || (pPatch->Flags == TP_FIX_060 && ConfigureParams.System.nCpuLevel > 4)
 				   )
 				{
 					/* Now we can really apply the patch! */
@@ -401,6 +461,12 @@ FILE *TOS_AutoStartOpen(const char *filename)
 {
 	if (TosAutoStart.file && strcmp(filename, TosAutoStart.infname) == 0)
 	{
+		/* whether to "autostart" also exception debugging? */
+		if (ConfigureParams.Log.nExceptionDebugMask & EXCEPT_AUTOSTART)
+		{
+			ExceptionDebugMask = ConfigureParams.Log.nExceptionDebugMask & ~EXCEPT_AUTOSTART;
+			fprintf(stderr, "Exception debugging enabled (0x%x).\n", ExceptionDebugMask);
+		}
 		Log_Printf(LOG_WARN, "Autostart file '%s' for '%s' matched.\n", filename, TosAutoStart.prgname);
 		return TosAutoStart.file;
 	}
@@ -566,17 +632,32 @@ int TOS_LoadImage(void)
 
 	bTosImageLoaded = false;
 
+	/* Calculate end of RAM */
+	if (ConfigureParams.Memory.nMemorySize > 0
+	    && ConfigureParams.Memory.nMemorySize <= 14)
+		STRamEnd = ConfigureParams.Memory.nMemorySize * 0x100000;
+	else
+		STRamEnd = 0x80000;   /* 512 KiB */
+
 	/* Load TOS image into memory so that we can check its version */
 	TosVersion = 0;
-	pTosFile = File_Read(ConfigureParams.Rom.szTosImageFileName, &nFileSize, pszTosNameExts);
+	if (ConfigureParams.Hataroid.useEmuTOS)
+    {
+        pTosFile = hataroid_LoadEmuTOS(ConfigureParams.System.nMachineType, &nFileSize);
+    }
+    else
+    {
+    	pTosFile = File_Read(ConfigureParams.Rom.szTosImageFileName, &nFileSize, pszTosNameExts);
+    }
 
 	if (!pTosFile || nFileSize <= 0)
 	{
-		//Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'\n\nPlease configure one in System -> TOS image", ConfigureParams.Rom.szTosImageFileName);
+		//Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'", ConfigureParams.Rom.szTosImageFileName);
 		Log_AlertDlg(LOG_FATAL, "Atari ST emulators require a valid TOS rom image. These are still under copyright by Atari so can't be provided here.\n\n"
 				"1. Please search the net for one and place it anywhere on you device.\n"
 				"2. In the Settings screen, go to the System screen and then click on TOS image\n"
 				"3. Select the TOS image from the built-in file browser");
+		free(pTosFile);
 		return -1;
 	}
 
@@ -620,11 +701,14 @@ int TOS_LoadImage(void)
 		 * just for fun. */
 		TosAddress = 0xfc0000;
 	}
-	else if (TosVersion<0x100 || TosVersion>=0x500 || TosSize>1024*1024L
-	    || (!bRamTosImage && TosAddress!=0xe00000 && TosAddress!=0xfc0000))
+	else if (TosVersion < 0x100 || TosVersion >= 0x500 || TosSize > 1024*1024L
+	         || (TosAddress == 0xfc0000 && TosSize > 224*1024L)
+	         || (bRamTosImage && TosAddress + TosSize > STRamEnd)
+	         || (!bRamTosImage && TosAddress != 0xe00000 && TosAddress != 0xfc0000))
 	{
 		Log_AlertDlg(LOG_FATAL, "Your TOS image seems not to be a valid TOS ROM file!\n"
 		             "(TOS version %x, address $%x)", TosVersion, TosAddress);
+		free(pTosFile);
 		return -2;
 	}
 
@@ -633,22 +717,49 @@ int TOS_LoadImage(void)
 	if (!bIsEmuTOS)
 		TOS_CheckSysConfig();
 
-	/* Calculate end of RAM */
-	if (ConfigureParams.Memory.nMemorySize > 0
-	    && ConfigureParams.Memory.nMemorySize <= 14)
-		STRamEnd = ConfigureParams.Memory.nMemorySize * 0x100000;
-	else
-		STRamEnd = 0x80000;   /* 512 KiB */
+#if ENABLE_WINUAE_CPU
+	/* 32-bit addressing is supported only by 680x0, TOS v3, TOS v4 and EmuTOS */
+	if (ConfigureParams.System.nCpuLevel == 0 || (TosVersion < 0x0300 && !bIsEmuTOS))
+		ConfigureParams.System.bAddressSpace24 = true;
+
+	else if (ConfigureParams.Memory.nTTRamSize)
+	{
+		switch (ConfigureParams.System.nMachineType)
+		{
+		case MACHINE_TT:
+			if (ConfigureParams.System.bAddressSpace24)
+			{
+				/* Print a message and force 32 bit addressing (keeping 24 bit with TT RAM would crash TOS) */
+				Log_AlertDlg(LOG_ERROR, "Enabling 32-bit addressing for TT-RAM access.\nThis can cause issues in some programs!\n");
+				ConfigureParams.System.bAddressSpace24 = false;
+			}
+			break;
+		case MACHINE_FALCON:
+			if (ConfigureParams.System.bAddressSpace24)
+			{
+				/* Print a message, but don't force 32 bit addressing as 24 bit addressing is also possible under Falcon */
+				/* So, if Falcon is in 24 bit mode, we just don't add TT RAM */
+				Log_AlertDlg(LOG_ERROR, "You need to disable 24-bit addressing to use TT-RAM in Falcon mode.\n");
+			}
+			break;
+		default:
+			break;
+		}
+	}
+#endif
 
 	/* (Re-)Initialize the memory banks: */
 	memory_uninit();
-	memory_init(STRamEnd, 0, TosAddress);
+	memory_init(STRamEnd, ConfigureParams.Memory.nTTRamSize*1024*1024, TosAddress);
 
 	/* Clear Upper memory (ROM and IO memory) */
 	memset(&RomMem[0xe00000], 0, 0x200000);
 
-	/* Copy loaded image into ST memory */
-	memcpy(&RomMem[TosAddress], pTosFile, TosSize);
+	/* Copy loaded image into memory */
+	if (bRamTosImage)
+		memcpy(&STRam[TosAddress], pTosFile, TosSize);
+	else
+		memcpy(&RomMem[TosAddress], pTosFile, TosSize);
 
 	Log_Printf(LOG_DEBUG, "Loaded TOS version %i.%c%c, starting at $%x, "
 	           "country code = %i, %s\n", TosVersion>>8, '0'+((TosVersion>>4)&0x0f),

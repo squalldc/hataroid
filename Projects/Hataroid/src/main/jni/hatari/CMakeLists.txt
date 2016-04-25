@@ -1,6 +1,11 @@
 
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 
+if(POLICY CMP0026)
+	# Should be removed if cmake_minimum_required >= 2.8.8
+	cmake_policy(SET CMP0026 OLD)
+endif(POLICY CMP0026)
+
 project(Hatari C)
 
 SET(APP_NAME "Hatari")
@@ -9,6 +14,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 include(CheckIncludeFiles)
 include(CheckFunctionExists)
+include(CheckStructHasMember)
 include(CheckCCompilerFlag)
 include(DistClean)
 
@@ -24,6 +30,8 @@ endif(NOT CMAKE_BUILD_TYPE)
 # Conditional build features
 # ##########################
 
+set(ENABLE_SDL2 0
+    CACHE BOOL "Enable building with libSDL2 instead of v1.2")
 set(ENABLE_DSP_EMU 1
     CACHE BOOL "Enable DSP 56k emulator for Falcon mode")
 set(ENABLE_TRACING 1
@@ -77,26 +85,29 @@ endif(APPLE)
 # Check for libraries:
 # ####################
 
-find_package(SDL REQUIRED)
-if(NOT SDL_FOUND)
-	message(FATAL_ERROR "SDL library not found!")
-endif(NOT SDL_FOUND)
+if(ENABLE_SDL2)
+	find_package(SDL2 REQUIRED)
+	if(NOT SDL2_FOUND)
+		message(FATAL_ERROR "SDL2 library not found!")
+	endif(NOT SDL2_FOUND)
+	set(SDL_INCLUDE_DIR ${SDL2_INCLUDE_DIR})
+	set(SDL_LIBRARY ${SDL2_LIBRARY})
+	set(SDLMAIN_LIBRARY ${SDL2MAIN_LIBRARY})
+else(ENABLE_SDL2)
+	find_package(SDL REQUIRED)
+	if(NOT SDL_FOUND)
+		message(FATAL_ERROR "SDL library not found!")
+	endif(NOT SDL_FOUND)
+endif(ENABLE_SDL2)
 
 find_package(Math)
 
 find_package(Readline)
 if(READLINE_FOUND)
-	set(CMAKE_REQUIRED_LIBRARIES "readline")
-	check_function_exists(rl_filename_completion_function HAVE_RL_COMPLETION_FUNCTION)
-	if(HAVE_RL_COMPLETION_FUNCTION)
-		set(HAVE_LIBREADLINE 1)
-	else()
-		unset(READLINE_FOUND)
-	endif(HAVE_RL_COMPLETION_FUNCTION)
-	set(CMAKE_REQUIRED_LIBRARIES "")
+	set(HAVE_LIBREADLINE 1)
 endif(READLINE_FOUND)
 
-find_package(ZLIB REQUIRED)
+find_package(ZLIB)
 if(ZLIB_FOUND)
 	set(HAVE_LIBZ 1)
 	set(HAVE_ZLIB_H 1)
@@ -107,15 +118,22 @@ if(PNG_FOUND)
 	set(HAVE_LIBPNG 1)
 endif(PNG_FOUND)
 
-find_package(X11)
-if(X11_FOUND)
-	set(HAVE_X11 1)
-endif(X11_FOUND)
+if (NOT ENABLE_OSX_BUNDLE)
+	find_package(X11)
+	if(X11_FOUND)
+		set(HAVE_X11 1)
+	endif(X11_FOUND)
+endif()
 
 find_package(PortAudio)
 if(PORTAUDIO_FOUND)
 	set(HAVE_PORTAUDIO 1)
 endif(PORTAUDIO_FOUND)
+
+find_package(CapsImage)
+if(CAPSIMAGE_FOUND)
+	set(HAVE_CAPSIMAGE 1)
+endif(CAPSIMAGE_FOUND)
 
 # ################
 # CPP Definitions:
@@ -131,13 +149,29 @@ if(DETECTED_LFS_CFLAGS)
 endif(DETECTED_LFS_CFLAGS)
 
 # Additional CFLAGS suggested by the SDL library:
-execute_process(COMMAND pkg-config --cflags-only-other sdl
-                OUTPUT_VARIABLE DETECTED_SDL_CFLAGS
-                ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(ENABLE_SDL2)
+	add_definitions(-DWITH_SDL2)
+	execute_process(COMMAND pkg-config --cflags-only-other sdl2
+			OUTPUT_VARIABLE DETECTED_SDL_CFLAGS
+			ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+else(ENABLE_SDL2)
+	execute_process(COMMAND pkg-config --cflags-only-other sdl
+			OUTPUT_VARIABLE DETECTED_SDL_CFLAGS
+			ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
+endif(ENABLE_SDL2)
 if(DETECTED_SDL_CFLAGS)
 	add_definitions(${DETECTED_SDL_CFLAGS})
 	# message(STATUS "Additional CFLAGS of SDL: ${DETECTED_SDL_CFLAGS}")
 endif(DETECTED_SDL_CFLAGS)
+
+if(ENABLE_OSX_BUNDLE)
+	# Use OSX native alert windows
+	add_definitions(-DALERT_HOOKS=1)
+	if(ENABLE_SDL2)
+		# We still want to use our SDLMain.m with SDL2
+		add_definitions(-DSDL_MAIN_NEEDED=1)
+	endif(ENABLE_SDL2)
+endif(ENABLE_OSX_BUNDLE)
 
 # ###########################
 # Check for optional headers:
@@ -146,7 +180,7 @@ endif(DETECTED_SDL_CFLAGS)
 check_include_files(termios.h HAVE_TERMIOS_H)
 check_include_files(strings.h HAVE_STRINGS_H)
 check_include_files(malloc.h HAVE_MALLOC_H)
-check_include_files(SDL/SDL_config.h HAVE_SDL_SDL_CONFIG_H)
+check_include_files(${SDL_INCLUDE_DIR}/SDL_config.h HAVE_SDL_CONFIG_H)
 check_include_files(sys/times.h HAVE_SYS_TIMES_H)
 check_include_files("sys/socket.h;sys/un.h" HAVE_UNIX_DOMAIN_SOCKETS)
 
@@ -164,6 +198,11 @@ check_function_exists(nanosleep HAVE_NANOSLEEP)
 check_function_exists(alphasort HAVE_ALPHASORT)
 check_function_exists(scandir HAVE_SCANDIR)
 check_function_exists(statvfs HAVE_STATVFS)
+check_function_exists(fseeko HAVE_FSEEKO)
+check_function_exists(ftello HAVE_FTELLO)
+check_function_exists(flock HAVE_FLOCK)
+check_function_exists(strlcpy HAVE_LIBC_STRLCPY)
+check_struct_has_member("struct dirent" d_type dirent.h HAVE_DIRENT_D_TYPE)
 
 # #############
 # Other CFLAGS:
@@ -232,7 +271,17 @@ if(NOT ETCDIR)
 		set(ETCDIR /etc)
 	endif()
 endif()
-add_definitions(-DCONFDIR=\"${ETCDIR}\")
+
+if(NOT ICONDIR)
+	set(ICONDIR share/icons/hicolor)
+endif()
+
+if(ENABLE_OSX_BUNDLE)
+	# put the config files in the app's bundle
+	add_definitions(-DCONFDIR=\"../Resources\")
+else()
+	add_definitions(-DCONFDIR=\"${ETCDIR}\")
+endif()
 
 # #########################################
 # Create config.h and recurse into subdirs:
@@ -250,5 +299,63 @@ if(PYTHONINTERP_FOUND)
 	add_subdirectory(python-ui)
 endif(PYTHONINTERP_FOUND)
 
+if(UNIX AND NOT ENABLE_OSX_BUNDLE)
+	add_subdirectory(share)
+endif()
+
 add_custom_target(uninstall
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/cmake/Uninstall.cmake)
+
+
+# ###################################################################
+# Print a summary of the optional libraries with a short explanation:
+# ###################################################################
+
+message( "
+Libraries summary :
+-------------------
+")
+
+if(SDL2_FOUND)
+  message("  - sdl :\tusing SDL2 v${SDL2_VERSION_STRING}")
+else()
+  if(SDL_VERSION_STRING)
+    message("  - sdl :\tusing SDL v${SDL_VERSION_STRING}")
+  else()
+    message("  - sdl :\tusing SDL1")
+  endif(SDL_VERSION_STRING)
+endif(SDL2_FOUND)
+
+if(READLINE_FOUND)
+  message( "  - readline :\tfound, enables history/completion in the debugger" )
+else()
+  message( "  - readline :\tnot found, install it to enable debugger history/completion" )
+endif(READLINE_FOUND)
+
+if(ZLIB_FOUND)
+  message( "  - zlib :\tfound, allows to use zip/gz files directly" )
+else()
+  message( "  - zlib :\tnot found, install it to use zip/gz files" )
+endif(ZLIB_FOUND)
+
+if(PNG_FOUND)
+  message( "  - png :\tfound, allows to compress screenshot/avi files using png" )
+else()
+  message( "  - png :\tnot found, install it to compress screenshot/avi files using png" )
+endif(PNG_FOUND)
+
+if(PORTAUDIO_FOUND)
+  message( "  - portaudio :\tfound, enables the microphone input in Falcon mode" )
+else()
+  message( "  - portaudio :\tnot found, install it to enable the Falcon microphone input" )
+endif(PORTAUDIO_FOUND)
+
+if(CAPSIMAGE_FOUND)
+  message( "  - capsimage :\tv${CAPSIMAGE_VERSION} found, allow to use .IPF, .RAW and .CTR disk images" )
+else()
+  message( "  - capsimage :\tv${CAPSIMAGE_VERSION} not found, install it to use .IPF, .RAW and .CTR disk images" )
+endif(CAPSIMAGE_FOUND)
+
+message( "" )
+
+

@@ -10,6 +10,20 @@
 
 #include <SDL_video.h>    /* for SDL_Surface */
 
+#if WITH_SDL2
+extern SDL_Window *sdlWindow;
+static inline int SDL_SetColors(SDL_Surface *surface, SDL_Color *colors,
+                                int firstcolor, int ncolors)
+{
+	return SDL_SetPaletteColors(surface->format->palette, colors,
+	                            firstcolor, ncolors);
+}
+void SDL_UpdateRects(SDL_Surface *screen, int numrects, SDL_Rect *rects);
+void SDL_UpdateRect(SDL_Surface *screen, Sint32 x, Sint32 y, Sint32 w, Sint32 h);
+#define SDL_GRAB_OFF false
+#define SDL_GRAB_ON true
+#define SDL_WM_GrabInput SDL_SetRelativeMouseMode
+#endif
 
 /* The 'screen' is a representation of the ST video memory	*/
 /* taking into account all the border tricks. Data are stored	*/
@@ -32,6 +46,9 @@
 
 /* Number of visible screen lines including top/bottom borders */
 #define NUM_VISIBLE_LINES  (OVERSCAN_TOP+200+MAX_OVERSCAN_BOTTOM)
+
+/* Number of visible pixels on each screen line including left/right borders */
+#define NUM_VISIBLE_LINE_PIXELS (48+320+48)
 
 /* 1x16 colour palette per screen line, +1 line as may write after line 200 */
 #define HBL_PALETTE_LINES ((NUM_VISIBLE_LINES+1 +3 )*16)	/* [NP] FIXME we need to handle 313 hbl, not 310 ; palette code is a mess it should be removed */
@@ -101,8 +118,9 @@ extern void Screen_Reset(void);
 extern void Screen_SetFullUpdate(void);
 extern void Screen_EnterFullScreen(void);
 extern void Screen_ReturnFromFullScreen(void);
-extern void Screen_ModeChanged(void);
+extern void Screen_ModeChanged(bool bForceChange);
 extern bool Screen_Draw(void);
+extern bool Screen_SetSDLVideoSize(int width, int height, int bitdepth, bool bForceChange);
 
 extern bool bTTSampleHold;      /* TT special video mode */
 
