@@ -1,38 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:title="@string/About"
+    android:id="@+id/help_view"
     android:orientation="vertical" >
 
-    <LinearLayout
-        android:id="@+id/HelpLinearLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/gradient_drawable" >
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="48dp"
+		android:background="@drawable/header">
 
-        <TextView
-            android:id="@+id/helpTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_gravity="left|center_vertical"
-            android:layout_marginLeft="@dimen/padding_small"
-            android:layout_weight="0.9"
-            android:gravity="center_vertical"
-            android:text="@string/title_activity_help"
-            android:textColor="#ffffff"
-            android:textSize="@dimen/padding_medium" />
+		<ImageButton
+			android:layout_width="70dp"
+			android:layout_height="36dp"
+			android:id="@+id/nav_back"
+			android:src="@drawable/btn_navback"
+			android:layout_centerVertical="true"
+			android:padding="2dp"/>
 
-        <ImageButton
-            android:id="@+id/help_closeBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="right|center_vertical"
-            android:layout_margin="@dimen/padding_smallest"
-            android:background="#00000000"
-            android:scaleType="fitXY"
-            android:src="@drawable/btn_close" />
-
-    </LinearLayout>
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textAppearance="?android:attr/textAppearanceLarge"
+			android:id="@+id/ab_title"
+			android:layout_toRightOf="@+id/nav_back"
+			android:layout_alignParentLeft="false"
+			android:gravity="center_horizontal"
+			android:layout_centerVertical="true"
+			android:paddingLeft="8dp"
+			android:textColor="#000000"/>
+	</RelativeLayout>
 
 	<RelativeLayout
 	    android:layout_width="fill_parent"
@@ -43,15 +41,16 @@
 	        android:layout_width="wrap_content"
 	        android:layout_height="wrap_content"
 	        android:layout_gravity="center"
-	        />
+			android:background="#000000"/>
 
 	    <TextView
-	        android:id="@+id/helpTextView"
-	        android:layout_width="fill_parent"
-	        android:layout_height="fill_parent"
-	        android:scrollbars="vertical"
-	        android:linksClickable="true"
-	        android:text="TextView" />
+			android:id="@+id/helpTextView"
+			android:layout_width="fill_parent"
+			android:layout_height="fill_parent"
+			android:scrollbars="vertical"
+			android:linksClickable="true"
+			android:text="TextView"
+			android:textColor="#ffffff"/>
 	
 	</RelativeLayout>
 

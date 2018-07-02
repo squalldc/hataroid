@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+	android:key="device_category_key"
+	android:title="@string/device"
+	android:persistent="false"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:robobunny="http://robobunny.com">
+
+	<PreferenceCategory
+		android:title="@string/pref_device_category"
+		android:enabled="true"
+		android:key="pref_device_category">
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_device_force_android_tv"
+			android:title="@string/device_force_android_tv"
+			android:summaryOn="@string/device_force_android_tv_summary"
+			android:summaryOff="@string/device_force_android_tv_summary"
+			android:defaultValue="false" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_device_kitkat_immersive"
+			android:title="@string/device_kitkat_immersive"
+			android:summaryOn="@string/device_kitkat_immersive_summary"
+			android:summaryOff="@string/device_kitkat_immersive_summary"
+			android:defaultValue="false" />
+	</PreferenceCategory>
+	<PreferenceCategory
+		android:title="@string/pref_device_developer_category"
+		android:enabled="true"
+		android:key="pref_developer_category">
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_device_developer_options"
+			android:title="@string/device_developer_options"
+			android:summaryOn="@string/device_developer_options_summary"
+			android:summaryOff="@string/device_developer_options_summary"
+			android:defaultValue="false" />
+	</PreferenceCategory>
+</PreferenceScreen>

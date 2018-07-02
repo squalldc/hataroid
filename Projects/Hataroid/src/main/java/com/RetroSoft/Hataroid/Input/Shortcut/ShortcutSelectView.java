@@ -95,22 +95,22 @@ public class ShortcutSelectView extends ListActivity
 
 	void setupButtonListeners()
 	{
-		View vw = findViewById(R.id.ic_cancelBtn);
-		vw.setFocusable(false);
-		vw.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				sendFinish(RESULT_CANCELED);
-			}
-		});
+//		View vw = findViewById(R.id.ic_cancelBtn);
+//		vw.setFocusable(false);
+//		vw.setOnClickListener(new OnClickListener() {
+//			public void onClick(View v) {
+//				sendFinish(RESULT_CANCELED);
+//			}
+//		});
 		
-		vw = findViewById(R.id.ic_unmapBtn);
-		vw.setFocusable(false);
-		vw.setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				_retIntent.putExtra(RESULT_UNMAP, true);
-				sendFinish(RESULT_OK);
-			}
-		});
+//		vw = findViewById(R.id.ic_unmapBtn);
+//		vw.setFocusable(false);
+//		vw.setOnClickListener(new OnClickListener() {
+//			public void onClick(View v) {
+//				_retIntent.putExtra(RESULT_UNMAP, true);
+//				sendFinish(RESULT_OK);
+//			}
+//		});
 	}
 
 	private void sendFinish(int resultCode)

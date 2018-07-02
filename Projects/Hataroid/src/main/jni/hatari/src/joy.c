@@ -304,7 +304,12 @@ Uint8 Joy_GetStickData(int nStJoyId)
 	}
 
 	/* Ignore fire button every 8 frames if enabled autofire (for both cursor emulation and joystick) */
-	if (ConfigureParams.Joysticks.Joy[nStJoyId].bEnableAutoFire)
+	if (ConfigureParams.Joysticks.Joy[nStJoyId].bEnableAutoFireFast)
+	{
+		if ((nVBLs&0x3)<2)
+			nData &= ~ATARIJOY_BITMASK_FIRE;          /* Remove top bit! */
+	}
+	else if (ConfigureParams.Joysticks.Joy[nStJoyId].bEnableAutoFire)
 	{
 		if ((nVBLs&0x7)<4)
 			nData &= ~ATARIJOY_BITMASK_FIRE;          /* Remove top bit! */

@@ -13,24 +13,31 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+//import android.support.v7.app.ActionBar;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.RetroSoft.Hataroid.HataroidActivity;
 import com.RetroSoft.Hataroid.R;
 import com.RetroSoft.Hataroid.Input.Input;
 import com.RetroSoft.Hataroid.Input.RenameInputMapView;
 
+//public class MapSetConfigureView extends AppCompatListActivity implements OnItemSelectedListener
 public class MapSetConfigureView extends ListActivity implements OnItemSelectedListener
 {
-	public final static	String	CONFIG_MAPSETCLASSNAME = "Config_MapSetClassName";
+	public final static	String	CONFIG_MAPSETCLASSNAME	= "Config_MapSetClassName";
+	public final static	String	CONFIG_TITLE			= "Config_Title";
 
 	String					kPrefPrefix = null;
 	String					kPrefLastPresetIDKey = null;
@@ -39,6 +46,8 @@ public class MapSetConfigureView extends ListActivity implements OnItemSelectedL
 
 	int						MAPSET_SELECT_RESULT_KEYCODE = 1;
 	int						MAPSET_RENAME_RESULT_KEYCODE = 2;
+
+	private String			_title = "";
 
 	MapSetArrayAdapter		_adapter;
 	Intent					_retIntent;
@@ -94,6 +103,46 @@ public class MapSetConfigureView extends ListActivity implements OnItemSelectedL
 		MAPSET_RENAME_RESULT_KEYCODE = _IMapSet.get_RENAME_MAPSET_RESULT_KEYCODE();
 
 		_parseOptions(savedInstanceState);
+
+//		try
+//		{
+//			ActionBar actionBar = getSupportActionBar();
+//
+//			LayoutInflater mInflater = LayoutInflater.from(this);
+//			View customView = mInflater.inflate(R.layout.presetlist_actionbar, null);
+//
+//			actionBar.setCustomView(customView);
+//			actionBar.setDisplayShowCustomEnabled(true);
+//
+//			TextView tv = (TextView)customView.findViewById(R.id.ab_title);
+//			tv.setText(_title);
+//		}
+//		catch (Exception e)
+//		{
+//			e.printStackTrace();
+//		}
+
+		try
+		{
+			View mView = this.findViewById(_IMapSet.get_ViewLayoutID());
+
+			TextView title = (TextView)mView.findViewById(R.id.ab_title);
+			title.setText(_title);
+
+			ImageButton navBackBtn = (ImageButton)mView.findViewById(R.id.nav_back);
+			navBackBtn.setOnClickListener(new View.OnClickListener() {
+				public void onClick(View view) {
+					sendFinish(RESULT_OK);
+				}
+			});
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
+		getListView().setItemsCanFocus(true);
+
 		_setupButtonListeners();
 
 		_retIntent = new Intent();
@@ -109,6 +158,7 @@ public class MapSetConfigureView extends ListActivity implements OnItemSelectedL
 		try
 		{
 			outState.putString(CONFIG_MAPSETCLASSNAME, _mapSetClassName);
+			outState.putString(CONFIG_TITLE, _title);
 		}
 		catch (Exception e)
 		{
@@ -121,6 +171,7 @@ public class MapSetConfigureView extends ListActivity implements OnItemSelectedL
 		Bundle b = (savedInstanceState == null) ? getIntent().getExtras() : savedInstanceState;
 		if (b != null)
 		{
+			_title = b.getString(CONFIG_TITLE);
 		}
 	}
 	
@@ -290,40 +341,96 @@ public class MapSetConfigureView extends ListActivity implements OnItemSelectedL
 		return super.onKeyDown(keyCode, event);
 	}
 
+//	@Override
+//	public boolean onOptionsItemSelected(MenuItem item)
+//	{
+//		switch (item.getItemId())
+//		{
+//			case android.R.id.home:
+//			{
+//				sendFinish(RESULT_OK);
+//				return true;
+//			}
+//		}
+//
+//		return super.onOptionsItemSelected(item);
+//	}
+
 	void _setupButtonListeners()
 	{
-		findViewById(R.id.im_closeBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				sendFinish(RESULT_OK);
-			}
-		});
+//		findViewById(R.id.im_closeBtn).setOnClickListener(new OnClickListener() {
+//			public void onClick(View v) {
+//				sendFinish(RESULT_OK);
+//			}
+//		});
 
-		findViewById(R.id.im_deleteBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				_onDeleteClicked();
-			}
-		});
+//		ActionBar actionBar = null;
+//		View actionBarView = null;
+//		try
+//		{
+//			actionBar = getSupportActionBar();
+//			if (actionBar != null)
+//			{
+//				actionBarView = actionBar.getCustomView();
+//			}
+//		}
+//		catch (Exception e)
+//		{
+//			e.printStackTrace();
+//		}
+		View actionBarView = this.findViewById(_IMapSet.get_ViewLayoutID());
 
-		findViewById(R.id.im_renameBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				_onRenameClicked();
-			}
-		});
+		try
+		{
+			if (actionBarView != null)
+			{
+				View spinner = findViewById(R.id.im_presetSpinner);
+				spinner.setNextFocusUpId(R.id.im_showKeyboardBtn);
 
-		findViewById(R.id.im_newBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				_onNewClicked();
-			}
-		});
+				View vb = null;
 
-		findViewById(R.id.im_showKeyboardBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				// show input method selector
-				Input input = HataroidActivity.instance.getInput();
-				input.showInputMethodSelector();
+				vb = actionBarView.findViewById(R.id.im_deleteBtn);
+				vb.setNextFocusDownId(R.id.im_presetSpinner);
+				vb.setOnClickListener(new OnClickListener() {
+					public void onClick(View v) {
+						_onDeleteClicked();
+					}
+				});
+
+				vb = actionBarView.findViewById(R.id.im_renameBtn);
+				vb.setNextFocusDownId(R.id.im_presetSpinner);
+				vb.setOnClickListener(new OnClickListener() {
+					public void onClick(View v) {
+						_onRenameClicked();
+					}
+				});
+
+				vb = actionBarView.findViewById(R.id.im_newBtn);
+				vb.setNextFocusDownId(R.id.im_presetSpinner);
+				vb.setOnClickListener(new OnClickListener() {
+					public void onClick(View v) {
+						_onNewClicked();
+					}
+				});
+
+				vb = actionBarView.findViewById(R.id.im_showKeyboardBtn);
+				vb.setNextFocusDownId(R.id.im_presetSpinner);
+				vb.setNextFocusRightId(R.id.im_presetSpinner);
+				//vb.setNextFocusForwardId(R.id.im_presetSpinner);
+				vb.setOnClickListener(new OnClickListener() {
+					public void onClick(View v) {
+						// show input method selector
+						Input input = HataroidActivity.instance.getInput();
+						input.showInputMethodSelector();
+					}
+				});
 			}
-		});
-		
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
 		_IMapSet.setupButtonListeners(this);
 	}
 	
@@ -413,18 +520,48 @@ public class MapSetConfigureView extends ListActivity implements OnItemSelectedL
 	{
 		super.onListItemClick(l,  v, position, id);
 		
-		if (_IMapSet.isSystemPreset(_curPresetID))
+		IMapSetListItem item = _adapter.getItem(position);
+		onMapBtnClicked(item);
+	}
+
+	public void onMapBtnClicked(IMapSetListItem item)
+	{
+		if (!_verifyCanModifyCurPreset())
 		{
-    		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
-    		alertDialog.setTitle("Built-in PRESET");
-    		alertDialog.setMessage("This preset is read only. If you want to change the settings, please click the NEW button below or choose a different preset.");
-    		alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) {  } });
-    		alertDialog.show();
 			return;
 		}
-		
-		IMapSetListItem item = _adapter.getItem(position);
+
 		showMapSetSelectDialog(item);
+	}
+
+	public void onUnMapBtnClicked(IMapSetListItem item)
+	{
+		if (!_verifyCanModifyCurPreset())
+		{
+			return;
+		}
+
+		String mapId = _curPresetID;
+		IMapSetListItem srcItem = item;
+		IMapSetListItem newItemVal = null;
+		boolean unMap = true;
+
+		_updateMapSetItemEntry(mapId, srcItem, newItemVal, unMap);
+	}
+
+
+	boolean _verifyCanModifyCurPreset()
+	{
+		if (_IMapSet.isSystemPreset(_curPresetID))
+		{
+			AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+			alertDialog.setTitle("Built-in PRESET");
+			alertDialog.setMessage("This preset is read only. If you want to change the settings, please click the NEW button below or choose a different preset.");
+			alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) {  } });
+			alertDialog.show();
+			return false;
+		}
+		return true;
 	}
 
 	public void onItemSelected(AdapterView<?> parent, View view, int pos, long id)
@@ -485,39 +622,12 @@ public class MapSetConfigureView extends ListActivity implements OnItemSelectedL
 		{
 			if (resultCode == RESULT_OK)
 			{
-				if (_curMapSet == null || _adapter == null)
-				{
-					return;
-				}
-
 				String mapId = data.getStringExtra(MapSetSelectView.RESULT_MAPSETID);
 				IMapSetListItem srcItem = (IMapSetListItem)data.getSerializableExtra(MapSetSelectView.RESULT_MAPSET_SRCITEM);
-				if (mapId == null || mapId.compareTo(_curPresetID) != 0
-				 || srcItem == null)
-				{
-					return;
-				}
-
-				boolean unMap = data.getBooleanExtra(MapSetSelectView.RESULT_UNMAP, false);
 				IMapSetListItem newItemVal = (IMapSetListItem)data.getSerializableExtra(MapSetSelectView.RESULT_MAPSET_NEWITEMVAL);
-				
-				if (_curMapSet.updateEntry(unMap, srcItem, newItemVal))
-				{
-					// update list items
-					int numItems = _adapter.getCount();
-					for (int i = 0; i < numItems; ++i)
-					{
-						IMapSetListItem li = _adapter.getItem(i);
-						if (li.isSameItemKey(srcItem))
-						{
-							_curMapSet.updateListItem(li);
-							break;
-						}
-					}
+				boolean unMap = data.getBooleanExtra(MapSetSelectView.RESULT_UNMAP, false);
 
-					_adapter.notifyDataSetChanged();
-					_storeMapSet(_curPresetID);
-				}
+				_updateMapSetItemEntry(mapId, srcItem, newItemVal, unMap);
 			}
 		}
 		else if (requestCode == MAPSET_RENAME_RESULT_KEYCODE)
@@ -552,6 +662,42 @@ public class MapSetConfigureView extends ListActivity implements OnItemSelectedL
 				}
 			}
 		}
+	}
+
+	boolean _updateMapSetItemEntry(String mapId, IMapSetListItem srcItem, IMapSetListItem newItemVal, boolean unMap)
+	{
+		if (_curMapSet == null || _adapter == null)
+		{
+			return false;
+		}
+
+		if (mapId == null || mapId.compareTo(_curPresetID) != 0
+				|| srcItem == null)
+		{
+			return false;
+		}
+
+		if (_curMapSet.updateEntry(unMap, srcItem, newItemVal))
+		{
+			// update list items
+			int numItems = _adapter.getCount();
+			for (int i = 0; i < numItems; ++i)
+			{
+				IMapSetListItem li = _adapter.getItem(i);
+				if (li.isSameItemKey(srcItem))
+				{
+					_curMapSet.updateListItem(li);
+					break;
+				}
+			}
+
+			_adapter.notifyDataSetChanged();
+			_storeMapSet(_curPresetID);
+
+			return true;
+		}
+
+		return false;
 	}
 
 	boolean _showingDeleteConfirm = false;

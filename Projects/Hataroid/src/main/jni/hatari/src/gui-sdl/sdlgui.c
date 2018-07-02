@@ -21,6 +21,8 @@ const char SDLGui_fileid[] = "Hatari sdlgui.c : " __DATE__ " " __TIME__;
 #include "font5x8.h"
 #include "font10x16.h"
 
+#include <hataroid.h>
+
 #if WITH_SDL2
 #define SDL_SRCCOLORKEY SDL_TRUE
 #define SDLKey SDL_Keycode

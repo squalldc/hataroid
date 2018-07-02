@@ -15,6 +15,7 @@ public class BitFlags
 	public void clone(BitFlags src)				{ for(int i = 0; i < _flagSize32; ++i) _flags[i] = src._flags[i]; }
 	public void clearAll()						{ for(int i = 0; i < _flagSize32; ++i) _flags[i] = 0; }
 	public void xorAll(BitFlags a, BitFlags b)	{ for(int i = 0; i < _flagSize32; ++i) _flags[i] = a._flags[i] ^ b._flags[i]; }
+	public void orAll(BitFlags b)				{ for(int i = 0; i < _flagSize32; ++i) _flags[i] |= b._flags[i]; }
 
 	public boolean getBit(int bit)	{ return (((_flags[bit>>5] >> (bit&31)) & 1) != 0) ? true : false; }
 	public void setBit(int bit)		{ _flags[bit>>5] |= (1<<(bit&31)); }

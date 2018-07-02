@@ -51,6 +51,18 @@ static int	Cycles_GetInternalCycleOnReadAccess(void);
 static int	Cycles_GetInternalCycleOnWriteAccess(void);
 
 
+void Cycles_Reset(void)
+{
+	int i;
+	nCyclesMainCounter = 0;
+	for (i = 0; i < CYCLES_COUNTER_MAX; ++i)
+	{
+		nCyclesCounter[i] = 0;
+	}
+	CyclesGlobalClockCounter = 0;
+	CurrentInstrCycles = 0;
+	MovepByteNbr = 0;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -63,6 +75,7 @@ void Cycles_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(nCyclesCounter, sizeof(nCyclesCounter));
 	MemorySnapShot_Store(&CyclesGlobalClockCounter, sizeof(CyclesGlobalClockCounter));
 	MemorySnapShot_Store(&CurrentInstrCycles, sizeof(CurrentInstrCycles));
+	// required? MovepByteNbr
 }
 
 
@@ -73,6 +86,11 @@ void Cycles_MemorySnapShot_Capture(bool bSave)
 static void Cycles_UpdateCounters(void)
 {
 	int i;
+
+	if (nCyclesMainCounter == 0)
+	{
+		return;
+	}
 
 	for (i = 0; i < CYCLES_COUNTER_MAX; i++)
 	{

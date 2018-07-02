@@ -5,8 +5,11 @@ import java.util.Map;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.InputDevice;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 
@@ -14,10 +17,18 @@ import com.RetroSoft.Hataroid.Util.BitFlags;
 
 public class Input
 {
+	public final static int kAxis_X1			= 0;
+	public final static int kAxis_Y1			= 1;
+	public final static int kAxis_X2			= 2;
+	public final static int kAxis_Y2			= 3;
+	public final static int kNumAxis			= 4;
+
 	public final static int kPreset_Default		= 0;
 	public final static int kPreset_WiiMote		= 1;
 	public final static int kPreset_NumOf		= 2;
-	
+
+	public final static String kPrefInputEnableInputMethod = "pref_input_device_enable_inputmethod";
+
 	public final static String kPresetIDPrefix = "_preset";
 	final static String [] kPresetNames = { "Default", "WiiMote" };
 	final static String [] kPresetIDs = { kPresetIDPrefix+"Default", kPresetIDPrefix+"WiiMote" };
@@ -39,26 +50,46 @@ public class Input
 				36, VirtKeyDef.VKB_KEY_TOGGLEUI,	//home
 			}
 		};
-	
+
 	public final static int kNumSrcKeyCodes = 256;
 
 	boolean		_inputEnabled = false;
-	
+
 	InputMap	_curInputMap = null;
 	int []		_srcToDestMap = null;
 	int			_numSrcInputs = 0;
 
+	int[]       _sysKeysToDestMap = null;
+
 	BitFlags	_curPresses = new BitFlags(VirtKeyDef.VKB_KEY_NumOf);
-	
+	float[]		_curAxis = new float[kNumAxis];
+
+	boolean		_hasDirectPresses = false;
+	BitFlags	_directPresses = new BitFlags(VirtKeyDef.VKB_KEY_NumOf);
+
 	InputMouse	_inputMouse = null;
-	
+
 	Context		_appContext = null;
+	View		_rootView = null;
 	
 	public Input()
 	{
 		_curInputMap = new InputMap();
 		_curInputMap.init(kNumSrcKeyCodes);
 		_cacheInputMapValues();
+
+		{
+			// HACK: system keys (TODO: allow option for some src keys to map to multiple dest keys)
+			_sysKeysToDestMap = new int[Input.kNumSrcKeyCodes];
+			for (int i = 0; i < Input.kNumSrcKeyCodes; ++i) {
+				_sysKeysToDestMap[i] = -1;
+			}
+			_sysKeysToDestMap[KeyEvent.KEYCODE_DPAD_UP]     = VirtKeyDef.VKB_KEY_NAVUP;
+			_sysKeysToDestMap[KeyEvent.KEYCODE_DPAD_DOWN]   = VirtKeyDef.VKB_KEY_NAVDOWN;
+			_sysKeysToDestMap[KeyEvent.KEYCODE_DPAD_LEFT]   = VirtKeyDef.VKB_KEY_NAVLEFT;
+			_sysKeysToDestMap[KeyEvent.KEYCODE_DPAD_RIGHT]  = VirtKeyDef.VKB_KEY_NAVRIGHT;
+			_sysKeysToDestMap[KeyEvent.KEYCODE_DPAD_CENTER] = VirtKeyDef.VKB_KEY_NAVBTN;
+		}
 	}
 	
 	void _cacheInputMapValues()
@@ -74,6 +105,8 @@ public class Input
 	
 	public void initMouse(View rootView)
 	{
+		_rootView = rootView;
+
 		if (android.os.Build.VERSION.SDK_INT >= 12)
 		{
 			try
@@ -111,6 +144,8 @@ public class Input
 	
 	public InputMouse getInputMouse() { return _inputMouse; }
 
+	public InputMap getCurInputMap() { return _curInputMap; }
+
 	public void setupOptionsFromPrefs(SharedPreferences prefs)
 	{
     	Map<String,?> allPrefs = prefs.getAll();
@@ -120,7 +155,7 @@ public class Input
     	_curInputMap = new InputMap();
 		_curInputMap.init(kNumSrcKeyCodes);
 
-		Object val = allPrefs.get("pref_input_device_enable_inputmethod");
+		Object val = allPrefs.get(kPrefInputEnableInputMethod);
     	if (val != null)
     	{
     		String sval = val.toString();
@@ -162,11 +197,19 @@ public class Input
 		}
 
     	_curPresses.clearAll();
+
+		_hasDirectPresses = false;
+		_directPresses.clearAll();
+
+		clearAxis();
+
 		_cacheInputMapValues();
 	}
-	
-	public boolean dispatchKeyEvent(KeyEvent event)
+
+	public boolean dispatchKeyEvent(KeyEvent event, boolean[] softMenuRes)
 	{
+		softMenuRes[0] = false;
+
 		if (!_inputEnabled)
 		{
 			return false;
@@ -174,23 +217,51 @@ public class Input
 		
 		int action = event.getAction();
 		int c = event.getKeyCode();
+		if (c == KeyEvent.KEYCODE_MENU) // let parent handle
+		{
+			return false;
+		}
+
 		//Log.i("hataroid", "CONFIGURE keydown: " + String.valueOf(c) + ", sc: " + event.getScanCode() + ", id: " + event.getDeviceId());
 
-		if (action == KeyEvent.ACTION_DOWN)
+		if (action == KeyEvent.ACTION_DOWN || action == KeyEvent.ACTION_MULTIPLE)
 		{
-			if (c >= 0 && c < _numSrcInputs)
+			if (c >= 0)
 			{
-				//InputDevice idev = event.getDevice();
-				//if (idev != null)
-				//{
-				//	Log.i("hataroid", "id: " + idev.getId() + ", n: " + (idev.getName()!=null?idev.getName():""));
-				//}
-				
-				int im = _srcToDestMap[c];
-				if (im >= 0)
+				boolean handled = false;
+				if (c < _numSrcInputs)
 				{
-					_curPresses.setBit(im);
-					return (c != KeyEvent.KEYCODE_MENU); // yum yum
+					//InputDevice idev = event.getDevice();
+					//if (idev != null)
+					//{
+					//	Log.i("hataroid", "id: " + idev.getId() + ", n: " + (idev.getName()!=null?idev.getName():""));
+					//}
+
+					int im = _srcToDestMap[c];
+					if (im >= 0) {
+						if (im == VirtKeyDef.VKB_KEY_ANDROID_MENU) {
+							softMenuRes[0] = true;
+						} else {
+							_curPresses.setBit(im);
+						}
+						handled = true;
+					}
+				}
+				if (c < _sysKeysToDestMap.length)
+				{
+					int im = _sysKeysToDestMap[c];
+					if (im >= 0) {
+						if (im == VirtKeyDef.VKB_KEY_ANDROID_MENU) {
+							softMenuRes[0] = true;
+						} else {
+							_curPresses.setBit(im);
+						}
+						handled = true;
+					}
+				}
+
+				if (handled) {
+					return true;
 				}
 			}
 		}
@@ -201,16 +272,134 @@ public class Input
 			//{
 			//	Log.i("hataroid", "id: " + idev.getId() + ", n: " + (idev.getName()!=null?idev.getName():""));
 			//}
-	
-			int im = _srcToDestMap[c];
-			if (im >= 0)
+
+			if (c >= 0)
 			{
-				_curPresses.clearBit(im);
-				return (c != KeyEvent.KEYCODE_MENU); // yum yum
+				boolean handled = false;
+				if (c < _numSrcInputs)
+				{
+					int im = _srcToDestMap[c];
+					if (im >= 0) {
+						if (im == VirtKeyDef.VKB_KEY_ANDROID_MENU) {
+							softMenuRes[0] = true;
+						} else {
+							_curPresses.clearBit(im);
+						}
+						handled = true;
+					}
+				}
+
+				if (c < _sysKeysToDestMap.length)
+				{
+					int im = _sysKeysToDestMap[c];
+					if (im >= 0) {
+						if (im == VirtKeyDef.VKB_KEY_ANDROID_MENU) {
+							softMenuRes[0] = true;
+						} else {
+							_curPresses.clearBit(im);
+						}
+						handled = true;
+					}
+				}
+
+				if (handled) {
+					return true;
+				}
 			}
 		}
 		
 		return false;
+	}
+
+//	public void sendBackKeyEvent()
+//	{
+//		if (_rootView != null)
+//		{
+//			_rootView.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
+//			_rootView.dispatchKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_BACK));
+//		}
+//	}
+
+	public boolean dispatchGenericMotionEvent(MotionEvent event)
+	{
+		// Check that the event came from a game controller
+		if ((event.getSource() & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK)
+				//&& event.getAction() == MotionEvent.ACTION_MOVE)
+		{
+			// Process all historical movement samples in the batch
+			{
+				//final int historySize = event.getHistorySize();
+
+				// Process the movements starting from the earliest historical position in the batch
+				//for (int i = 0; i < historySize; i++) {
+				//	processJoystickInput(event, i); // Process the event at historical position i
+				//}
+			}
+
+			// Process the current movement sample in the batch (position -1)
+			processJoystickInput(event, -1);
+			//return true;
+			return false; // allow input to go through normal input as well
+		}
+
+		return false;
+	}
+
+	private static float getCenteredAxis(MotionEvent event, InputDevice device, int axis, int historyPos)
+	{
+		final InputDevice.MotionRange range = device.getMotionRange(axis, event.getSource());
+
+		// A joystick at rest does not always report an absolute position of (0,0).
+		// Use the getFlat() method to determine the range of values bounding the joystick axis center.
+		if (range != null)
+		{
+			final float kMinFlat = 0.2f; // TODO: user option
+			float flat = range.getFlat();
+			if (flat < kMinFlat) { flat = kMinFlat; }
+
+			final float value =  historyPos < 0 ? event.getAxisValue(axis) : event.getHistoricalAxisValue(axis, historyPos);
+
+			// Ignore axis values that are within the 'flat' region of the joystick axis center.
+			float maxVal = range.getMax();
+			float rangeVal = maxVal - flat;
+			if (rangeVal > 0.0f)
+			{
+				// return nomalized value
+				if (value > flat)
+				{
+					return (value - flat) / rangeVal;
+				}
+				else if (value < -flat)
+				{
+					return (value + flat) / rangeVal;
+				}
+			}
+		}
+		return 0;
+	}
+
+	private void processJoystickInput(MotionEvent event, int historyPos)
+	{
+		InputDevice mInputDevice = event.getDevice();
+		if (mInputDevice == null)
+		{
+			clearAxis();
+		}
+		else
+		{
+			_curAxis[kAxis_X1] = getCenteredAxis(event, mInputDevice, MotionEvent.AXIS_X, historyPos);
+			_curAxis[kAxis_Y1] = getCenteredAxis(event, mInputDevice, MotionEvent.AXIS_Y, historyPos);
+			_curAxis[kAxis_X2] = getCenteredAxis(event, mInputDevice, MotionEvent.AXIS_Z, historyPos);
+			_curAxis[kAxis_Y2] = getCenteredAxis(event, mInputDevice, MotionEvent.AXIS_RZ, historyPos);
+		}
+	}
+
+	public void clearAxis()
+	{
+		for (int i = 0; i < kNumAxis; ++i)
+		{
+			_curAxis[i] = 0;
+		}
 	}
 
 	/*
@@ -276,6 +465,19 @@ public class Input
 	public BitFlags getKeyPresses()
 	{
 		return _curPresses;
+	}
+	public float[] getCurAxis()
+	{
+		return _curAxis;
+	}
+
+	public boolean hasDirectPresses()	{ return _hasDirectPresses; }
+	public BitFlags getDirectPresses()	{ return _directPresses; }
+	public void clearDirectPresses()	{ _directPresses.clearAll(); _hasDirectPresses = false; }
+	public void setDirectPress(int virtKeyID)
+	{
+		_directPresses.setBit(virtKeyID);
+		_hasDirectPresses = true;
 	}
 	
 	public void showInputMethodSelector()
@@ -390,4 +592,12 @@ public class Input
 		return result;
 	}
 
+	public static void storeEnableInputMap(boolean enabled, Context ctx)
+	{
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+
+		SharedPreferences.Editor ed = prefs.edit();
+		ed.putBoolean(kPrefInputEnableInputMethod, enabled);
+		ed.commit();
+	}
 }

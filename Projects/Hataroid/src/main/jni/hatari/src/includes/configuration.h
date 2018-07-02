@@ -140,6 +140,7 @@ typedef struct
 {
   JOYSTICKMODE nJoystickMode;
   bool bEnableAutoFire;
+  bool bEnableAutoFireFast;
   bool bEnableJumpOnFire2;
   int nJoyId;
   int nKeyCodeUp, nKeyCodeDown, nKeyCodeLeft, nKeyCodeRight, nKeyCodeFire;
@@ -367,6 +368,8 @@ typedef struct
 	bool mouseActive;
 
 	bool useEmuTOS;
+
+	bool legacyFloppy;
 
 	char saveDispName[FILENAME_MAX];
 

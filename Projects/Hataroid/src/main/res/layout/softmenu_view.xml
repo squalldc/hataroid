@@ -35,7 +35,8 @@
             android:alpha="0.8"
             android:layout_gravity="center_horizontal"
             android:background="#00000000"
-            android:padding="8dp"/>
+            android:padding="8dp"
+			android:focusable="false"/>
 
         <ImageButton
             android:layout_width="wrap_content"
@@ -48,7 +49,8 @@
             android:alpha="0.8"
             android:layout_gravity="center_horizontal"
             android:background="#00000000"
-            android:padding="8dp"/>
+            android:padding="8dp"
+			android:focusable="false"/>
 
         <ImageButton
             android:layout_width="wrap_content"
@@ -61,7 +63,8 @@
             android:alpha="0.8"
             android:layout_gravity="center_horizontal"
             android:background="#00000000"
-            android:padding="8dp"/>
+            android:padding="8dp"
+			android:focusable="false"/>
 
         <ImageButton
             android:layout_width="wrap_content"
@@ -74,7 +77,8 @@
             android:alpha="0.8"
             android:layout_gravity="center_horizontal"
             android:background="#00000000"
-            android:padding="8dp"/>
+            android:padding="8dp"
+			android:focusable="false"/>
 
         <ImageButton
             android:layout_width="wrap_content"
@@ -87,7 +91,8 @@
             android:alpha="0.8"
             android:layout_gravity="center_horizontal"
             android:background="#00000000"
-            android:padding="8dp"/>
+            android:padding="8dp"
+			android:focusable="false"/>
 
         <ImageButton
             android:layout_width="wrap_content"
@@ -100,7 +105,8 @@
             android:alpha="0.8"
             android:layout_gravity="center_horizontal"
             android:background="#00000000"
-            android:padding="8dp"/>
+            android:padding="8dp"
+			android:focusable="false"/>
 
         <ImageButton
             android:layout_width="wrap_content"
@@ -113,7 +119,8 @@
             android:alpha="0.8"
             android:layout_gravity="center_horizontal"
             android:background="#00000000"
-            android:padding="8dp"/>
+            android:padding="8dp"
+			android:focusable="false"/>
 
     </LinearLayout>
 
@@ -136,6 +143,7 @@
             android:layout_weight="1"
             android:maxLines="2"
             android:textSize="14sp"
+            android:textColor="#ffffff"
             android:gravity="center_horizontal"/>
 
         <TextView
@@ -149,6 +157,7 @@
             android:layout_weight="1"
             android:maxLines="2"
             android:textSize="14sp"
+            android:textColor="#ffffff"
             android:gravity="center_horizontal"/>
 
         <TextView
@@ -162,6 +171,7 @@
             android:layout_weight="1"
             android:maxLines="2"
             android:textSize="14sp"
+            android:textColor="#ffffff"
             android:gravity="center_horizontal"/>
 
         <TextView
@@ -175,6 +185,7 @@
             android:layout_weight="1"
             android:maxLines="2"
             android:textSize="14sp"
+            android:textColor="#ffffff"
             android:gravity="center_horizontal"/>
 
         <TextView
@@ -188,6 +199,7 @@
             android:layout_weight="1"
             android:maxLines="2"
             android:textSize="14sp"
+            android:textColor="#ffffff"
             android:gravity="center_horizontal"/>
 
         <TextView
@@ -201,6 +213,7 @@
             android:layout_weight="1"
             android:maxLines="2"
             android:textSize="14sp"
+            android:textColor="#ffffff"
             android:gravity="center_horizontal"/>
 
         <TextView
@@ -214,6 +227,7 @@
             android:layout_weight="1"
             android:maxLines="2"
             android:textSize="14sp"
+            android:textColor="#ffffff"
             android:gravity="center_horizontal"/>
     </LinearLayout>
 

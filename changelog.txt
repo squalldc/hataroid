@@ -1,3 +1,23 @@
+v1.800
+- Experimental Leanback Launcher support (Android TV and other non-touch screen devices)
+	- I don't have an Android TV device so please let me know if there are any issues
+	- You can force this mode in the Device Settings options
+- Intent arguments for launching a disk from other Frontends
+- Mouse can be controlled through joysticks (min requirement: Android Honeycomb)
+	- Always mapped to right analogue stick
+	- Can toggle between joystick/mouse on left stick/d-pad
+- Legacy floppy emulation option for faster loading (but less compatibility)
+	- Will auto switch to new one when Pasti disc is detected or manually set
+- Support for disabling Floppy Drive A/B (some titles require this)
+- Fix hang on quit with autosave in some cases (kitkat option).
+	- Please toggle option again to reset it.
+- Update EmuTOS to 0.9.9.1
+- ACSI HD images will now open read-only if there is no write access on external sd card
+- AutoFire speed options
+- Tweak direct mouse buttons
+- Support for targeting Android API-26 as required by Google
+- Various bug fixes
+
 v1.700
 - Pasti STX support
 - Built in Emu-TOS option

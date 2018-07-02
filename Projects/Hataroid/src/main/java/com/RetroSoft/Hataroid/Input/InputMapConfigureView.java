@@ -9,25 +9,33 @@ import java.util.Map;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+//import android.support.v7.app.ActionBar;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.RetroSoft.Hataroid.HataroidActivity;
 import com.RetroSoft.Hataroid.R;
+//import com.RetroSoft.Hataroid.Util.AppCompatListActivity;
 
+//public class InputMapConfigureView extends AppCompatListActivity implements OnItemSelectedListener
 public class InputMapConfigureView extends ListActivity implements OnItemSelectedListener
 {
 	final static int INPUTCAPTURERESULT_KEYCODE		= 1;
@@ -58,6 +66,46 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 		setContentView(R.layout.configureinputmap_view);
 		
 		_parseOptions(savedInstanceState);
+
+//		try
+//		{
+//			ActionBar actionBar = getSupportActionBar();
+//
+//			LayoutInflater mInflater = LayoutInflater.from(this);
+//			View customView = mInflater.inflate(R.layout.presetlist_actionbar, null);
+//
+//			actionBar.setCustomView(customView);
+//			actionBar.setDisplayShowCustomEnabled(true);
+//
+//			TextView tv = (TextView)customView.findViewById(R.id.ab_title);
+//			tv.setText(getApplicationContext().getString(R.string.ab_title_inputmap_configure));
+//		}
+//		catch (Exception e)
+//		{
+//			e.printStackTrace();
+//		}
+
+		try
+		{
+			View mView = this.findViewById(R.id.inputmapconfigure_view);
+
+			TextView title = (TextView)mView.findViewById(R.id.ab_title);
+			title.setText(this.getTitle());
+
+			ImageButton navBackBtn = (ImageButton)mView.findViewById(R.id.nav_back);
+			navBackBtn.setOnClickListener(new View.OnClickListener() {
+				public void onClick(View view) {
+					sendFinish(RESULT_OK);
+				}
+			});
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
+		getListView().setItemsCanFocus(true);
+
 		_setupButtonListeners();
 
 		_retIntent = new Intent();
@@ -75,26 +123,35 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 		{
 		}
 	}
-	
+
+	static List<String> _loadUserPresetOrder(SharedPreferences prefs, String ignorePreset)
+	{
+		List<String> userPresetOrder = new LinkedList<String>();
+		String presetOrderStr = prefs.getString(kPrefUserPresetOrder, null);
+		if (presetOrderStr != null)
+		{
+			String [] data = presetOrderStr.split(",");
+			if (data != null && data.length > 0)
+			{
+				for (int i = 0; i < data.length; ++i)
+				{
+					if (ignorePreset == null || ignorePreset.compareTo(data[i]) != 0)
+					{
+						userPresetOrder.add(data[i]);
+					}
+				}
+			}
+		}
+		return userPresetOrder;
+	}
+
 	void _readSavedPrefs()
 	{
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 		
 		// order
 		{
-			_userPresetOrder.clear();
-			String presetOrderStr = prefs.getString(kPrefUserPresetOrder, null);
-			if (presetOrderStr != null)
-			{
-				String [] data = presetOrderStr.split(",");
-				if (data != null && data.length > 0)
-				{
-					for (int i = 0; i < data.length; ++i)
-					{
-						_userPresetOrder.add(data[i]);
-					}
-				}
-			}
+			_userPresetOrder = _loadUserPresetOrder(prefs, null);
 		}
 		
 		List<String> invalidEntries = new LinkedList<String>();
@@ -242,39 +299,96 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 		return super.onKeyDown(keyCode, event);
 	}
 
+//	@Override
+//	public boolean onOptionsItemSelected(MenuItem item)
+//	{
+//		switch (item.getItemId())
+//		{
+//			case android.R.id.home:
+//			{
+//				sendFinish(RESULT_OK);
+//				return true;
+//			}
+//		}
+//
+//		return super.onOptionsItemSelected(item);
+//	}
+
 	void _setupButtonListeners()
 	{
-		findViewById(R.id.im_closeBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				sendFinish(RESULT_OK);
-			}
-		});
+//		findViewById(R.id.im_closeBtn).setOnClickListener(new OnClickListener() {
+//			public void onClick(View v) {
+//				sendFinish(RESULT_OK);
+//			}
+//		});
 
-		findViewById(R.id.im_deleteBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				_onDeleteClicked();
-			}
-		});
+//		ActionBar actionBar = null;
+//		View actionBarView = null;
+//		try
+//		{
+//			actionBar = getSupportActionBar();
+//			if (actionBar != null)
+//			{
+//				actionBarView = actionBar.getCustomView();
+//			}
+//		}
+//		catch (Exception e)
+//		{
+//			e.printStackTrace();
+//		}
+		View actionBarView = this.findViewById(R.id.inputmapconfigure_view);
 
-		findViewById(R.id.im_renameBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				_onRenameClicked();
-			}
-		});
 
-		findViewById(R.id.im_newBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				_onNewClicked();
-			}
-		});
+		try
+		{
+			if (actionBarView != null)
+			{
+				View spinner = findViewById(R.id.im_presetSpinner);
+				spinner.setNextFocusUpId(R.id.im_showKeyboardBtn);
 
-		findViewById(R.id.im_showKeyboardBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				// show input method selector
-				Input input = HataroidActivity.instance.getInput();
-				input.showInputMethodSelector();
+				View vb = null;
+
+				vb = actionBarView.findViewById(R.id.im_deleteBtn);
+				vb.setNextFocusDownId(R.id.im_presetSpinner);
+				vb.setOnClickListener(new OnClickListener() {
+					public void onClick(View v) {
+						_onDeleteClicked();
+					}
+				});
+
+				vb = actionBarView.findViewById(R.id.im_renameBtn);
+				vb.setNextFocusDownId(R.id.im_presetSpinner);
+				vb.setOnClickListener(new OnClickListener() {
+					public void onClick(View v) {
+						_onRenameClicked();
+					}
+				});
+
+				vb = actionBarView.findViewById(R.id.im_newBtn);
+				vb.setNextFocusDownId(R.id.im_presetSpinner);
+				vb.setOnClickListener(new OnClickListener() {
+					public void onClick(View v) {
+						_onNewClicked();
+					}
+				});
+
+				vb = actionBarView.findViewById(R.id.im_showKeyboardBtn);
+				vb.setNextFocusDownId(R.id.im_presetSpinner);
+				vb.setNextFocusRightId(R.id.im_presetSpinner);
+				//vb.setNextFocusForwardId(R.id.im_presetSpinner);
+				vb.setOnClickListener(new OnClickListener() {
+					public void onClick(View v) {
+						// show input method selector
+						Input input = HataroidActivity.instance.getInput();
+						input.showInputMethodSelector();
+					}
+				});
 			}
-		});
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 	
 	void _setModifyButtonsEnabled(boolean enabled)
@@ -374,19 +488,49 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 	@Override protected void onListItemClick(ListView l, View v, int position, long id)
 	{
 		super.onListItemClick(l,  v, position, id);
-		
-		if (Input.isSystemPreset(_curPresetID))
+
+		InputMapListItem item = _adapter.getItem(position);
+		onMapBtnClicked(item);
+	}
+
+	public void onMapBtnClicked(InputMapListItem item)
+	{
+		if (!_verifyCanModifyCurPreset())
 		{
-    		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
-    		alertDialog.setTitle("Built-in PRESET");
-    		alertDialog.setMessage("This preset is read only. If you want to change the settings, please click the NEW button below or choose a different preset.");
-    		alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) {  } });
-    		alertDialog.show();
 			return;
 		}
-		
-		InputMapListItem item = _adapter.getItem(position);
+
 		showGetKeycodeDialog(item);
+	}
+
+	public void onUnMapBtnClicked(InputMapListItem item)
+	{
+		if (!_verifyCanModifyCurPreset())
+		{
+			return;
+		}
+
+		String prevMapId = _curPresetID;
+		int prevEmuKey = item._vkDef.id;
+
+		int systemKey = -1;
+		boolean unMap = true;
+
+		_updateInputMapKey(prevMapId, prevEmuKey, systemKey, unMap);
+	}
+
+	boolean _verifyCanModifyCurPreset()
+	{
+		if (Input.isSystemPreset(_curPresetID))
+		{
+			AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+			alertDialog.setTitle("Built-in PRESET");
+			alertDialog.setMessage("This preset is read only. If you want to change the settings, please click the NEW button below or choose a different preset.");
+			alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) {  } });
+			alertDialog.show();
+			return false;
+		}
+		return true;
 	}
 
 	public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
@@ -396,7 +540,7 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 			_curPresetID = _presetIDList.get(_curPresetIdx);
 			_setupInputMapItems();
 			
-			_storeSelectedInputMapID(_curPresetID);
+			_storeSelectedInputMapID(_curPresetID, getApplicationContext());
 		}
     }
 
@@ -417,6 +561,7 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
         Intent view = new Intent(ctx, InputCaptureView.class);
         view.putExtra(InputCaptureView.CONFIG_EMUKEY, scanItem._vkDef.id);
         //view.putExtra(InputCaptureView.CONFIG_SYSTEMKEY, scanItem._systemKey);
+	    view.putExtra(InputCaptureView.CONFIG_CANCANCEL, true);
         view.putExtra(InputCaptureView.CONFIG_MAPID, _curPresetID);
         ctx.startActivityForResult(view, resultID);
 	}
@@ -449,62 +594,14 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 			{
 				if (resultCode == RESULT_OK)
 				{
-					if (_curInputMap == null || _adapter == null)
-					{
-						break;
-					}
-					
 					int prevEmuKey = data.getIntExtra(InputCaptureView.RESULT_PREVEMUKEY, -1);
 					//int prevSystemKey = data.getIntExtra(InputCaptureView.RESULT_PREVSYSTEMKEY, -1);
-					String prevMapId= data.getStringExtra(InputCaptureView.RESULT_PREVMAPID);
-					
-					if (prevEmuKey < 0  || prevMapId == null || prevMapId.compareTo(_curPresetID) != 0)
-					{
-						break;
-					}
-					
+					String prevMapId = data.getStringExtra(InputCaptureView.RESULT_PREVMAPID);
+
 					boolean unMap = data.getBooleanExtra(InputCaptureView.RESULT_UNMAP, false);
 					int systemKey = data.getIntExtra(InputCaptureView.RESULT_KEYCODE, -1);
-					if (unMap)
-					{
-						//_curInputMap.removeKeyMapEntry(prevSystemKey);
-						_curInputMap.removeDestKeyMapEntry(prevEmuKey);
-					}
-					else if (systemKey >= 0)
-					{
-						_curInputMap.addKeyMapEntry(systemKey, prevEmuKey);
-					}
-					
-					// update list items
-					{
-						int numItems = _adapter.getCount();
-						Map<Integer, List<Integer>> emuToSystemMap = _curInputMap.destToSrcMap;
-						if (emuToSystemMap != null)
-						{
-							for (int i = 0; i < numItems; ++i)
-							{
-								InputMapListItem li = _adapter.getItem(i);
-								if (li != null)
-								{
-									int [] systemKeys = null;
-									List<Integer> systemKeysList = emuToSystemMap.get(li._vkDef.id);
-									if (systemKeysList != null && systemKeysList.size() > 0)
-									{
-										systemKeys = new int [systemKeysList.size()];
-										for (int s = 0; s < systemKeysList.size(); ++s)
-										{
-											systemKeys[s] = systemKeysList.get(s);
-										}
-									}
-									li._systemKeys = systemKeys;
-								}
-							}
-						}
-					}
-					
-					_adapter.notifyDataSetChanged();
-					
-					_storeInputMap(_curPresetID);
+
+					_updateInputMapKey(prevMapId, prevEmuKey, systemKey, unMap);
 				}
 				break;
 			}
@@ -544,6 +641,62 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 		}
 	}
 
+	boolean _updateInputMapKey(String prevMapId, int prevEmuKey, int systemKey, boolean unMap)
+	{
+		if (_curInputMap == null || _adapter == null)
+		{
+			return false;
+		}
+
+		if (prevEmuKey < 0  || prevMapId == null || prevMapId.compareTo(_curPresetID) != 0)
+		{
+			return false;
+		}
+
+		if (unMap)
+		{
+			//_curInputMap.removeKeyMapEntry(prevSystemKey);
+			_curInputMap.removeDestKeyMapEntry(prevEmuKey);
+		}
+		else if (systemKey >= 0)
+		{
+			_curInputMap.addKeyMapEntry(systemKey, prevEmuKey);
+		}
+
+		// update list items
+		{
+			int numItems = _adapter.getCount();
+			Map<Integer, List<Integer>> emuToSystemMap = _curInputMap.destToSrcMap;
+			if (emuToSystemMap != null)
+			{
+				for (int i = 0; i < numItems; ++i)
+				{
+					InputMapListItem li = _adapter.getItem(i);
+					if (li != null)
+					{
+						int [] systemKeys = null;
+						List<Integer> systemKeysList = emuToSystemMap.get(li._vkDef.id);
+						if (systemKeysList != null && systemKeysList.size() > 0)
+						{
+							systemKeys = new int [systemKeysList.size()];
+							for (int s = 0; s < systemKeysList.size(); ++s)
+							{
+								systemKeys[s] = systemKeysList.get(s);
+							}
+						}
+						li._systemKeys = systemKeys;
+					}
+				}
+			}
+		}
+
+		_adapter.notifyDataSetChanged();
+
+		_storeInputMap(_curPresetID);
+
+		return true;
+	}
+
 	boolean _showingDeleteConfirm = false;
 	void _onDeleteClicked()
 	{
@@ -560,7 +713,9 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 			alertDialog.setMessage("Are you sure you want to delete this input map?");
 			alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "No", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingDeleteConfirm = false; } });
 			alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingDeleteConfirm = false; _tryDeleteInputMap(); } });
-			alertDialog.setOnCancelListener(new DialogInterface.OnCancelListener() { public void onCancel(DialogInterface dialog) { _showingDeleteConfirm = false; }});
+			alertDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+				public void onCancel(DialogInterface dialog) { _showingDeleteConfirm = false; }
+			});
 			alertDialog.show();
 		}
 	}
@@ -671,11 +826,11 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 		}
 	}
 
-	void _storeSelectedInputMapID(String id)
+	static void _storeSelectedInputMapID(String id, Context ctx)
 	{
 		if (id != null)
 		{
-			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
 
 			Editor ed = prefs.edit();
 			ed.putString(kPrefLastPresetIDKey, id);
@@ -687,23 +842,42 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 	{
 		if (id != null && _userPresetList.containsKey(id))
 		{
-			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-			
-			Editor ed = prefs.edit();
-
-			_updateUserPresetOrderPrefs(prefs, ed);
-			
-			String itemKey = kPrefUserPresetPrefix + id;
 			InputMap map = _userPresetList.get(id);
 			String mapName = _userPresetNameList.get(id);
-			String mapStr = map.encodePrefString(mapName);
-			if (mapStr != null)
-			{
-				ed.putString(itemKey, mapStr);
-			}
 
-			ed.commit();
+			_writeInputMapToPrefs(id, mapName, map, _userPresetOrder, -1, getApplicationContext());
 		}
+	}
+
+	static void _writeInputMapToPrefs(String mapID, String mapName, InputMap map, List<String> userPresetOrder, int autoAddPresetOrder, Context ctx)
+	{
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+
+		if (autoAddPresetOrder >= 0)
+		{
+			userPresetOrder = _loadUserPresetOrder(prefs, mapID);
+			if (autoAddPresetOrder == 0)
+			{
+				userPresetOrder.add(0, mapID);
+			}
+			else
+			{
+				userPresetOrder.add(mapID);
+			}
+		}
+
+		Editor ed = prefs.edit();
+
+		_updateUserPresetOrderPrefs(prefs, ed, userPresetOrder);
+
+		String itemKey = kPrefUserPresetPrefix + mapID;
+		String mapStr = map.encodePrefString(mapName);
+		if (mapStr != null)
+		{
+			ed.putString(itemKey, mapStr);
+		}
+
+		ed.commit();
 	}
 
 	void _storeItemDeleted(String id)
@@ -714,7 +888,7 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 			
 			Editor ed = prefs.edit();
 
-			_updateUserPresetOrderPrefs(prefs, ed);
+			_updateUserPresetOrderPrefs(prefs, ed, _userPresetOrder);
 			
 			String itemKey = kPrefUserPresetPrefix + id;
 			if (prefs.contains(itemKey))
@@ -726,15 +900,15 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 		}
 	}
 	
-	void _updateUserPresetOrderPrefs(SharedPreferences prefs, Editor ed)
+	static void _updateUserPresetOrderPrefs(SharedPreferences prefs, Editor ed, List<String> userPresetOrder)
 	{
 		String order = null;
-		if (_userPresetOrder.size() > 0)
+		if (userPresetOrder.size() > 0)
 		{
-			order = _userPresetOrder.get(0);
-			for (int i = 1; i < _userPresetOrder.size(); ++i)
+			order = userPresetOrder.get(0);
+			for (int i = 1; i < userPresetOrder.size(); ++i)
 			{
-				order += "," + _userPresetOrder.get(i);
+				order += "," + userPresetOrder.get(i);
 			}
 		}
 
@@ -749,5 +923,48 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 		{
 			ed.putString(kPrefUserPresetOrder, order);
 		}
+	}
+
+	public static boolean createTVInputMap(Integer[] assignKeys, Integer[] assignVals, Context ctx)
+	{
+		String id = "TVInputMap";
+		String mapName = "Android TV Input Map";
+
+		InputMap map = new InputMap();
+		map.init(Input.kNumSrcKeyCodes);
+
+		int defKeyMap[] = new int[]
+		{
+			KeyEvent.KEYCODE_DPAD_UP, VirtKeyDef.VKB_KEY_JOYUP,
+			KeyEvent.KEYCODE_DPAD_DOWN, VirtKeyDef.VKB_KEY_JOYDOWN,
+			KeyEvent.KEYCODE_DPAD_LEFT, VirtKeyDef.VKB_KEY_JOYLEFT,
+			KeyEvent.KEYCODE_DPAD_RIGHT, VirtKeyDef.VKB_KEY_JOYRIGHT,
+			KeyEvent.KEYCODE_DPAD_CENTER, VirtKeyDef.VKB_KEY_JOYFIRE,
+			KeyEvent.KEYCODE_BUTTON_A, VirtKeyDef.VKB_KEY_JOYFIRE,
+			KeyEvent.KEYCODE_BUTTON_A, VirtKeyDef.VKB_KEY_MOUSELB,
+			KeyEvent.KEYCODE_BUTTON_B, VirtKeyDef.VKB_KEY_MOUSERB,
+		};
+
+		for (int i = 0; i < defKeyMap.length; i += 2)
+		{
+			int systemKey = defKeyMap[i];
+			int emuKey = defKeyMap[i+1];
+			map.addKeyMapEntry(systemKey, emuKey);
+		}
+
+		for (int i = 0; i < assignKeys.length; ++i)
+		{
+			int systemKey = assignVals[i];
+			int emuKey = assignKeys[i];
+			map.addKeyMapEntry(systemKey, emuKey);
+		}
+
+		_writeInputMapToPrefs(id, mapName, map, null, 0, ctx);
+
+		// select and enable input map
+		_storeSelectedInputMapID(id, ctx);
+		Input.storeEnableInputMap(true, ctx);
+
+		return true;
 	}
 }

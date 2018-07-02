@@ -312,44 +312,50 @@ public final class MidiDeviceConnectionWatcher {
 		 * checks Attached/Detached devices
 		 */
 		synchronized void checkConnectedDevices() {
-			HashMap<String, UsbDevice> deviceMap = usbManager.getDeviceList();
-			
-			// check attached device
-			for (UsbDevice device : deviceMap.values()) {
-                if (deviceGrantQueue.contains(device) || connectedDevices.contains(device)) {
-                    continue;
-                }
 
-                Set<UsbInterface> midiInterfaces = UsbMidiDeviceUtils.findAllMidiInterfaces(device, deviceFilters);
-                if (midiInterfaces.size() > 0) {
-                    Log.d(Constants.TAG, "attached deviceName:" + device.getDeviceName() + ", device:" + device);
-                    synchronized (deviceGrantQueue) {
-                        deviceGrantQueue.add(device);
-                    }
-                }
-			}
-			
-			// check detached device
-			for (UsbDevice device : connectedDevices) {
-				if (!deviceMap.containsValue(device)) {
-                    if (device.equals(grantingDevice)) {
-                        // currently granting, but detached
-                        grantingDevice = null;
-                        continue;
-                    }
+			try {
+				HashMap<String, UsbDevice> deviceMap = usbManager.getDeviceList();
 
-                    grantedDevices.remove(device);
+				// check attached device
+				for (UsbDevice device : deviceMap.values()) {
+					if (deviceGrantQueue.contains(device) || connectedDevices.contains(device)) {
+						continue;
+					}
 
-					Log.d(Constants.TAG, "detached deviceName:" + device.getDeviceName() + ", device:" + device);
-                    Message message = deviceDetachedHandler.obtainMessage();
-                    message.obj = device;
-                    deviceDetachedHandler.sendMessage(message);
+					Set<UsbInterface> midiInterfaces = UsbMidiDeviceUtils.findAllMidiInterfaces(device, deviceFilters);
+					if (midiInterfaces.size() > 0) {
+						Log.d(Constants.TAG, "attached deviceName:" + device.getDeviceName() + ", device:" + device);
+						synchronized (deviceGrantQueue) {
+							deviceGrantQueue.add(device);
+						}
+					}
 				}
-			}
 
-            // update current connection status
-			connectedDevices.clear();
-            connectedDevices.addAll(deviceMap.values());
+				// check detached device
+				for (UsbDevice device : connectedDevices) {
+					if (!deviceMap.containsValue(device)) {
+						if (device.equals(grantingDevice)) {
+							// currently granting, but detached
+							grantingDevice = null;
+							continue;
+						}
+
+						grantedDevices.remove(device);
+
+						Log.d(Constants.TAG, "detached deviceName:" + device.getDeviceName() + ", device:" + device);
+						Message message = deviceDetachedHandler.obtainMessage();
+						message.obj = device;
+						deviceDetachedHandler.sendMessage(message);
+					}
+				}
+
+				// update current connection status
+				connectedDevices.clear();
+				connectedDevices.addAll(deviceMap.values());
+			}
+			catch (Exception e)
+			{
+			}
 		}
 	}
 }

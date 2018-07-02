@@ -46,6 +46,16 @@
     <string name="menu_settings">Settings</string>
     <string name="title_activity_file_browser">FileBrowser</string>
     <string name="title_activity_inputmap_configure">Configure Input Mapping</string>
+	<string name="ab_title_inputmap_configure">Input Map</string>
+	<string name="select_floppy">SELECT FLOPPY</string>
+	<string name="select_sttosimage">SELECT ST TOS ROM</string>
+	<string name="select_stetosimage">SELECT STE TOS ROM</string>
+	<string name="select_acsiimage">SELECT ACSI IMAGE</string>
+	<string name="select_idemasterimage">SELECT IDE MASTER IMAGE</string>
+	<string name="select_ideslaveimage">SELECT IDE SLAVE IMAGE</string>
+	<string name="select_gemdosdir">SELECT GEMDOS DIR</string>
+	<string name="select_savestatefolder">SELECT SAVE STATE DIR</string>
+	<string name="select_soundfont">SELECT SOUNDFONT</string>
     <string name="InsertFloppyA">Insert Floppy A</string>
     <string name="InsertFloppyB">Insert Floppy B</string>
     <string name="EjectFloppyA">Eject Floppy A</string>
@@ -71,8 +81,14 @@
     <string name="cartridgeimage">Cartridge image</string>
     <string name="floppydisks_autoinsertb">Auto insert B</string>
     <string name="floppydisks_autoinsertb_summary">Automatically detect and insert second floppy disk</string>
+	<string name="floppydisks_enabledrivea">Enable Drive A</string>
+	<string name="floppydisks_enabledrivea_summary">Some software requires this to be disabled</string>
+	<string name="floppydisks_enabledriveb">Enable Drive B</string>
+	<string name="floppydisks_enabledriveb_summary">Some software requires this to be disabled</string>
     <string name="floppydisks_fastfloppyaccess">Fast floppy access</string>
     <string name="floppydisks_fastfloppyaccess_summary">Speed up floppy disc access (may cause incompatibilities)</string>
+	<string name="floppydisks_legacy">Legacy Floppy Emulation</string>
+	<string name="floppydisks_legacy_summary">Faster, but less compatible floppy emulation</string>
     <string name="floppydisks_writeprotection">Write protection</string>
     <string name="harddisks_acsiimage">ACSI HD image</string>
     <string name="harddisks_acsi_attach">Attach ACSI HD</string>
@@ -181,14 +197,18 @@
     <string name="rename">Rename</string>
     <string name="newStr">New</string>
     <string name="cancel">Cancel</string>
+	<string name="map">Map</string>
+	<string name="remap">Re-map</string>
     <string name="unmap">Un-map</string>
     <string name="device">Device</string>
     <string name="ok">OK</string>
     <string name="renameinputmap_info">Enter a name for your input map</string>
     <string name="switchkeyboard">Switch Keyboard</string>
     <string name="device_kitkat_immersive">Immersive Mode</string>
-    <string name="pref_storage_savestates_category">Save States</string>
     <string name="device_kitkat_immersive_summary">Enable Immersive Mode (Android 4.4 Kit Kat or newer required)</string>
+    <string name="device_force_android_tv">Force Android TV Mode</string>
+    <string name="device_force_android_tv_summary">Enables gamepad only control of the Emulator for non-touch screen devices</string>
+    <string name="pref_storage_savestates_category">Save States</string>
     <string name="storage_savestate_exitautosave">Auto save on quit</string>
     <string name="storage_savestate_exitautosave_summary">Automatically saves the session on quit and restores on load. This is saved separately from normal save slots</string>
     <string name="storage_savestate_folder">Save State Folder</string>
@@ -209,7 +229,7 @@
     <string name="capture_status"> </string>
     <string name="input_device_dumpmaps">Dump Input Maps to file</string>
     <string name="input_device_dumpmaps_summary">Saves the user input maps to a file for sending to the developer</string>
-    <string name="sound_buffer_size">Device sound buffer size (latency vs crackling)</string>
+    <string name="sound_buffer_size">Device sound buffer size (affects latency)</string>
     <string name="sound_buffer_size_summary">Adjust down to reduce audio latency or up to remove popping</string>
     <string name="blank"> </string>
     <string name="pref_device_developer_category">Developer Options</string>
@@ -225,6 +245,7 @@
     <string name="input_onscreen_hide_turbo_key">Hide turbo key</string>
     <string name="input_onscreen_hide_turbo_key_summary">Hides the turbo key on the top right of the screen</string>
     <string name="title_activity_shortcut_configure">Configure Shortcut Keys</string>
+	<string name="ab_title_configureshortcutmap">Shortcuts</string>
     <string name="shortcutselect_info">Select Shortcut Key:</string>
     <string name="input_onscreen_configureshortcutmap">Configure Shortcut Keys</string>
     <string name="input_onscreen_configureshortcutmap_summary">Configure on-screen keys mapping</string>
@@ -242,8 +263,9 @@
     <string name="input_joysticks_fire_size_summary">Default size is 1.0</string>
     <string name="refreshDB">Refresh DB</string>
     <string name="clearDB">Clear DB</string>
-    <string name="storage_savestate_kitkat_extsd">(KIT KAT and newer) Save to Secondary External SD</string>
-    <string name="storage_savestate_kitkat_extsd_summary">Save to the application folder on the External SD Card (KIT KAT and newer only)</string>
+    <string name="storage_savestate_kitkat_extsd">(KIT KAT+) Save to Secondary External SD</string>
+    <string name="storage_savestate_kitkat_extsd_summary">Save to the application folder on the External SD Card (KIT KAT+)</string>
+    <string name="title_midi_patches">MIDI PATCHES</string>
     <string name="midi">MIDI</string>
     <string name="pref_midi_options_category">MIDI Options</string>
     <string name="midi_out">Enable MIDI Out</string>
@@ -292,4 +314,8 @@
 	<string name="shader_effect">Shader Effect</string>
 	<string name="shader">Shader</string>
 
+    <string name="SetJoystick">Use Joystick</string>
+    <string name="SetMouse">Use Mouse</string>
+    <string name="SetNormalSpeed">Set Normal</string>
+    <string name="SetTurboSpeed">Set Turbo</string>
 </resources>

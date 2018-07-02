@@ -25,7 +25,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="0.25"
             android:ems="10"
-            android:inputType="text" >
+			android:imeOptions="actionDone"
+			android:inputType="text" >
 
             <requestFocus />
         </EditText>
@@ -50,25 +51,28 @@
             <Button
                 android:id="@+id/rim_cancelBtn"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="46dp"
                 android:layout_gravity="center_vertical"
                 android:layout_weight="0.3"
+				android:background="@drawable/btn_color_selector"
                 android:text="@string/cancel" />
 
             <Button
                 android:id="@+id/rim_okBtn"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="46dp"
                 android:layout_gravity="center_vertical"
                 android:layout_weight="0.3"
+				android:background="@drawable/btn_color_selector"
                 android:text="@string/ok" />
 
             <Button
                 android:id="@+id/rim_keyboardBtn"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="46dp"
                 android:layout_gravity="center_vertical"
                 android:layout_weight="0.3"
+				android:background="@drawable/btn_color_selector"
                 android:text="@string/switchkeyboard" />
 
         </LinearLayout>

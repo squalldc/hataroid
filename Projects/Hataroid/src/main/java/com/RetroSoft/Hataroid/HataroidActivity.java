@@ -13,13 +13,17 @@ import java.util.Map;
 
 import org.xmlpull.v1.XmlPullParserException;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.UiModeManager;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.content.res.Configuration;
 import android.content.res.XmlResourceParser;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -27,11 +31,11 @@ import android.media.AudioTrack;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 
@@ -40,9 +44,12 @@ import com.RetroSoft.Hataroid.GameDB.GameDBHelper;
 import com.RetroSoft.Hataroid.GameDB.IGameDBScanner;
 import com.RetroSoft.Hataroid.Help.HelpActivity;
 import com.RetroSoft.Hataroid.Input.Input;
+import com.RetroSoft.Hataroid.Input.InputCaptureView;
+import com.RetroSoft.Hataroid.Input.InputMap;
 import com.RetroSoft.Hataroid.Input.InputMapConfigureView;
 import com.RetroSoft.Hataroid.Input.Shortcut.ShortcutMap;
 import com.RetroSoft.Hataroid.Input.Shortcut.ShortcutMapConfigureView;
+import com.RetroSoft.Hataroid.Input.VirtKeyDef;
 import com.RetroSoft.Hataroid.Midi.InstrPatchMap;
 import com.RetroSoft.Hataroid.Midi.USBMidi;
 import com.RetroSoft.Hataroid.Preferences.Settings;
@@ -54,47 +61,104 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 {
 	public static final String LOG_TAG = "hataroid";
 
-	private static final int ACTIVITYRESULT_FLOPPYA					= 1;
+	private static final int ACTIVITYRESULT_FLOPPYA                 = 1;
 	private static final int ACTIVITYRESULT_FLOPPYB					= 2;
 	private static final int ACTIVITYRESULT_SETTINGS				= 3;
 	private static final int ACTIVITYRESULT_SS_SAVE					= 4;
 	private static final int ACTIVITYRESULT_SS_LOAD					= 5;
 	private static final int ACTIVITYRESULT_SS_DELETE				= 6;
 	private static final int ACTIVITYRESULT_SS_QUICKSAVESLOT		= 7;
+	private static final int ACTIVITYRESULT_TV_KEYASSIGN			= 8;
 
-	public static HataroidActivity	instance = null;
-	private boolean				_lostFocus = false;
+	private static final int kInitState_None						= 0;
+	private static final int kInitState_Permissions                 = 1;
+	private static final int kInitState_TVCheck						= 2;
+	private static final int kInitState_NativePlusDeps				= 3;
+	private static final int kInitState_Ready						= 4;
 
-	private HataroidViewGL2		_viewGL2;
-	private Thread				_emuThread;
+	private static final int APP_PERMISSIONS_REQUEST_WRITE_STORAGE  = 1;
 
-	private AudioTrack			_audioTrack;
-	private Boolean				_audioPaused = true;
-	
-	private Input				_input = null;
+	public static HataroidActivity      instance = null;
+	private boolean				        _lostFocus = false;
 
-	private USBMidi				_usbMIDI = null;
+	private int					        _initState = kInitState_None;
 
-	boolean						_waitSaveAndQuit = false;
+	private HataroidViewGL2		        _viewGL2 = null;
+	private Thread				        _emuThread = null;
 
-	boolean						_allowDeveloperOptions = false;
-	
-	boolean						_tryUseImmersiveMode = false;
-	boolean						_wantImmersiveMode = false;
+	private AudioTrack			        _audioTrack = null;
+	private Boolean				        _audioPaused = true;
 
-	SoftMenu					_softMenu;
+	private Input				        _input = null;
 
-	private GameDBHelper		_gameDB = null;
-	
+	private USBMidi				        _usbMIDI = null;
+
+	boolean						        _waitSaveAndQuit = false;
+	static boolean                      _showingQuitConfirm = false;
+
+	boolean						        _allowDeveloperOptions = false;
+
+	boolean						        _tryUseImmersiveMode = false;
+	boolean						        _wantImmersiveMode = false;
+
+	boolean					        	_useTouchScreen = true;
+
+	SoftMenu					        _softMenu = null;
+	boolean[]                           _softMenuRes = new boolean[1];
+
+	static boolean                      _showingGenericDialog = false;
+	static Object                       _genericDialogMutex = new Object();
+	static Map<Integer,AlertDialog>     _genericDialogs = new HashMap<Integer,AlertDialog>();
+	static int                          _nextGenericDialogID = 1;
+
+	private GameDBHelper		        _gameDB = null;
+
+	private long				        _curRunID = 0;
+	private boolean				        _assigningTVButtons = false;
+
+	private boolean                     _showingIncompatibleDialog = false;
+	private boolean                     _requestingPermissions = false;
+
+	private boolean                     _dbgClearTVPrefs = false;
+	private boolean                     _dbgForceTVMode = false;
+
+	boolean                             _argsConsumed = false;
+	IntentArgs                          _args = new IntentArgs();
+
+	static class IntentArgs
+	{
+		String          _argFloppyA = null;
+		String          _argFloppyAZipPath = null;
+
+		public void Serialize(Bundle outState)
+		{
+			outState.putString("_argFloppyA", _argFloppyA);
+			outState.putString("_argFloppyAZipPath", _argFloppyAZipPath);
+		}
+
+		public void Deserialize(Bundle savedInstanceState)
+		{
+			_argFloppyA =  savedInstanceState.getString(_argFloppyA);
+			_argFloppyAZipPath = savedInstanceState.getString(_argFloppyAZipPath);
+		}
+	}
+
 	@Override protected void onCreate(Bundle icicle)
 	{
+		_curRunID = System.currentTimeMillis();
+
 		super.onCreate(icicle);
-		
+
+		parseIntentOptions(icicle);
+
 		_tryUseImmersiveMode = android.os.Build.VERSION.SDK_INT >= 19;
-		
+
 		try
 		{
-			PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+			for (int i = 0; i < Settings.kXMLPrefIDs.length; ++i)
+			{
+				PreferenceManager.setDefaultValues(this, Settings.kXMLPrefIDs[i], false);
+			}
 			_setupDefaultCheckboxPreferences();
 		}
 		catch (Exception e)
@@ -125,6 +189,156 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 			e.printStackTrace();
 		}
 
+		// reset for re-testing tv setup
+		if (_dbgClearTVPrefs)
+		{
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+			Editor ed = prefs.edit();
+			ed.putBoolean("TVSetupDone", false);
+			ed.commit();
+		}
+
+		_checkInitState();
+	}
+
+	@Override protected void onSaveInstanceState(Bundle outState)
+	{
+		try
+		{
+			outState.putBoolean("_argsConsumed", _argsConsumed);
+			_args.Serialize(outState);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	void parseIntentOptions(Bundle savedInstanceState)
+	{
+		try
+		{
+			_argsConsumed = true;
+
+			Bundle b = (savedInstanceState == null) ? getIntent().getExtras() : savedInstanceState;
+			if (b != null)
+			{
+				_argsConsumed = b.getBoolean("_argsConsumed", false);
+				_args.Deserialize(b);
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	void _consumeIntentArgs()
+	{
+		if (_argsConsumed)
+		{
+			return;
+		}
+
+		try
+		{
+			if (_args._argFloppyA != null && _args._argFloppyA.length() > 0)
+			{
+				try {
+					boolean isPasti = HataroidNativeLib.emulatorIsPastiDisk(_args._argFloppyA, _args._argFloppyAZipPath);
+					if (isPasti)
+					{
+						SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+						Editor ed = prefs.edit();
+						ed.putBoolean("pref_storage_floppydisks_legacy", false);
+						ed.commit();
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
+				HataroidNativeLib.emulatorInsertFloppy(0, _args._argFloppyA, _args._argFloppyAZipPath, "");
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		finally
+		{
+			_argsConsumed = true;
+		}
+	}
+
+	void _checkInitState()
+	{
+		switch (_initState)
+		{
+			case kInitState_None:
+			{
+				//_setInitState(kInitState_TVCheck);
+				_setInitState(kInitState_Permissions); // Android 6+
+				return;
+			}
+			case kInitState_Permissions: {
+				checkPermissions();
+				return;
+			}
+			case kInitState_TVCheck:
+			{
+				checkShowTVAssignButtons();
+				return;
+			}
+		}
+	}
+
+	void _setInitState(int state)
+	{
+		if (_initState == state)
+		{
+			return;
+		}
+
+		_initState = state;
+		switch (_initState)
+		{
+			case kInitState_Permissions:
+			{
+				checkPermissions();
+				return;
+			}
+			case kInitState_TVCheck:
+			{
+				if (_setupTVDeviceOptions())
+				{
+					_setInitState(kInitState_NativePlusDeps);
+				}
+				return;
+			}
+			case kInitState_NativePlusDeps:
+			{
+				_initNativePlusDeps();
+
+				_viewGL2 = new HataroidViewGL2(getApplication(), false, 0, 0);
+				setContentView(_viewGL2);
+
+				HataroidNativeLib.emulationStartExec();
+				_setInitState(kInitState_Ready);
+
+				_consumeIntentArgs();
+				return;
+			}
+			default:
+			{
+				break;
+			}
+		}
+	}
+
+	void _initNativePlusDeps()
+	{
+		System.loadLibrary("hataroid");
+
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR1)
 		{
 			try
@@ -144,11 +358,6 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 
 		_initSoftMenu();
 
-		System.loadLibrary("hataroid");
-        
-        _viewGL2 = new HataroidViewGL2(getApplication(), false, 0, 0);
-		setContentView(_viewGL2);
-		
 		try
 		{
 			_setupDeviceOptions();
@@ -158,43 +367,45 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 			e.printStackTrace();
 		}
 
-		//startEmulationThread();
 	}
 	
 	void _readPrefDefaults(Map<String,String[]> prefDefs) throws XmlPullParserException, IOException
 	{
 		final String CheckBoxPrefTag = "CheckBoxPreference";
 
-		XmlResourceParser p = getResources().getXml(R.xml.preferences);
-		int et = p.getEventType();
-		while (et != XmlResourceParser.END_DOCUMENT)
+		for (int k = 0; k < Settings.kXMLPrefIDs.length; ++k)
 		{
-			if (et == XmlResourceParser.START_TAG)
+			XmlResourceParser p = getResources().getXml(Settings.kXMLPrefIDs[k]);
+			int et = p.getEventType();
+			while (et != XmlResourceParser.END_DOCUMENT)
 			{
-				String attrKey = null;
-				String attrDefaultVal = null;
+				if (et == XmlResourceParser.START_TAG)
+				{
+					String attrKey = null;
+					String attrDefaultVal = null;
 
-				for (int i = 0; i < p.getAttributeCount(); ++i)
-				{
-					String attrName = p.getAttributeName(i);
-					if (attrName.compareTo("defaultValue")==0)
+					for (int i = 0; i < p.getAttributeCount(); ++i)
 					{
-						attrDefaultVal = p.getAttributeValue(i);
+						String attrName = p.getAttributeName(i);
+						if (attrName.compareTo("defaultValue")==0)
+						{
+							attrDefaultVal = p.getAttributeValue(i);
+						}
+						else if (attrName.compareTo("key")==0)
+						{
+							attrKey = p.getAttributeValue(i);
+						}
 					}
-					else if (attrName.compareTo("key")==0)
+
+					if (attrKey != null && attrDefaultVal != null)
 					{
-						attrKey = p.getAttributeValue(i);
+						String attrType = (p.getName().compareTo(CheckBoxPrefTag)==0) ? "boolean" : "string";
+						prefDefs.put(attrKey, new String[] {attrDefaultVal, attrType});
 					}
 				}
-				
-				if (attrKey != null && attrDefaultVal != null)
-				{
-					String attrType = (p.getName().compareTo(CheckBoxPrefTag)==0) ? "boolean" : "string";
-					prefDefs.put(attrKey, new String[] {attrDefaultVal, attrType});
-				}
+
+				et = p.next();
 			}
-
-			et = p.next();
 		}
 	}
 
@@ -354,7 +565,32 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 		}
 	}
 
-	
+	boolean _setupTVDeviceOptions()
+	{
+		boolean done = true;
+		try
+		{
+			_useTouchScreen = isTouchscreenDevice();
+			if (_useTouchScreen) {
+				SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+				boolean forceAndroidTV = prefs.getBoolean("pref_device_force_android_tv", false);
+				if (forceAndroidTV) {
+					_useTouchScreen = false;
+				}
+			}
+
+			if (!_useTouchScreen)
+			{
+				done = !checkShowTVAssignButtons();
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		return done;
+	}
+
 	@Override protected void onDestroy()
 	{
 		try
@@ -397,8 +633,11 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 		super.onDestroy();
 
 		Log.i(LOG_TAG, "lib Exit");
-		HataroidNativeLib.libExit();
-		
+		if (_isInitReady())
+		{
+			HataroidNativeLib.libExit();
+		}
+
 		_destroyAllGenericDialogs();
 	}
 	
@@ -416,7 +655,6 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 		});
 	}
 
-	boolean _showingIncompatibleDialog = false;
 	public void startEmulationThread()
 	{
 		if (isAlwaysFinishActivitiesEnabled())
@@ -430,13 +668,13 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 					{
 		    			AlertDialog alertDialog = new AlertDialog.Builder(HataroidActivity.this).create();
 		    			alertDialog.setTitle("Incompatible Setting Detected");
-		    			alertDialog.setMessage("You have the Developer option 'Don't Keep Activities' enabled.\n\nThis will interfere with the operation of Hataroid.\nPlease disable this and retry.");
+		    			alertDialog.setMessage("Hataroid currently doesn't fully work with the Developer option 'Don't Keep Activities' enabled.\n\nThis will be fixed in a future version, but for now, try disabling this if you have any issues.");
 						alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Cancel", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { finish(); } });
 						alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showDeveloperOptionsScreen(); _showingIncompatibleDialog = false; } });
 						alertDialog.setCancelable(false);
 		    			alertDialog.show();
 					}
-		    	});
+				});
 			}
 
 	    	return;
@@ -466,6 +704,11 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 
 	private void stopEmulationThread()
 	{
+		if (!_isInitReady())
+		{
+			return;
+		}
+
 		try
 		{
 			if (_emuThread != null)
@@ -507,6 +750,8 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 		}
 
 		setGameDBScannerInterface(this);
+
+		_checkInitState();
 	}
 
 	@Override public void onWindowFocusChanged(boolean hasFocus)
@@ -538,7 +783,6 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 			return;
 		}
 
-		// UNTESTED, need some people to test before I enable this for everyone
 		try
 		{
 			View decorView = getWindow().getDecorView();
@@ -570,23 +814,34 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 			_tryUseImmersiveMode = false;
 		}
 	}
+
+	boolean _isInitReady()
+	{
+		return (_initState == kInitState_Ready);
+	}
 	
 	private void _pause()
-	{		
-		_viewGL2.onPause();
-		
-		pauseEmulation();
-		pauseAudio();
+	{
+		if (_isInitReady())
+		{
+			_viewGL2.onPause();
+
+			pauseEmulation();
+			pauseAudio();
+		}
 	}
 	
 	private void _resume()
 	{
 		_lostFocus = false;
 
-		_viewGL2.onResume();
-		
-		resumeEmulation();
-		_checkPlayAudio();
+		if (_isInitReady())
+		{
+			_viewGL2.onResume();
+
+			resumeEmulation();
+			_checkPlayAudio();
+		}
 	}
 	
 	private void _checkPlayAudio()
@@ -604,11 +859,21 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 	
 	private void pauseEmulation()
 	{
+		if (!_isInitReady())
+		{
+			return;
+		}
+
 		HataroidNativeLib.emulationPause();
 	}
 	
 	private void resumeEmulation()
 	{
+		if (!_isInitReady())
+		{
+			return;
+		}
+
 		HataroidNativeLib.emulationResume();
 	}
 	
@@ -885,8 +1150,17 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 					String filePath = data.getStringExtra(FileBrowser.RESULT_PATH);
 					String zipPath = data.getStringExtra(FileBrowser.RESULT_ZIPPATH);
 					String dispName = data.getStringExtra(FileBrowser.RESULT_DISPLAYNAME);
+					boolean pastiReset = data.getBooleanExtra(FileBrowser.RESULT_PASTIRESET, false);
+
 					HataroidNativeLib.emulatorInsertFloppy((requestCode==ACTIVITYRESULT_FLOPPYA) ? 0 : 1, filePath, zipPath, dispName);
-					
+
+					if (pastiReset) {
+						SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+						Editor ed = prefs.edit();
+						ed.putBoolean("pref_storage_floppydisks_legacy", false);
+						ed.commit();
+					}
+
 					if (data.hasExtra(FileBrowser.RESULT_RESETCOLD))
 					{
 						Boolean coldReset = data.getBooleanExtra(FileBrowser.RESULT_RESETCOLD, false);
@@ -911,6 +1185,7 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 			{
 				_updateOptions();
 				_setupDeviceOptions();
+				_setupTVDeviceOptions();
 				HataroidNativeLib.hataroidSettingsResult(1);
 				break;
 			}
@@ -952,11 +1227,22 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 				_updateOptions();
 				break;
 			}
+
+			case ACTIVITYRESULT_TV_KEYASSIGN:
+			{
+				onTVKeyAssign(requestCode, resultCode, data);
+				break;
+			}
 		}
 	}
 	
 	void _updateOptions()
 	{
+		if (!_isInitReady())
+		{
+			return;
+		}
+
 		Map<String, Object> options = getFullEmulatorOptions(true);
 		String [] optionKeys = (String [])options.get("keys");
 		String [] valKeys = (String [])options.get("vals");
@@ -975,15 +1261,37 @@ public class HataroidActivity extends Activity implements IGameDBScanner
     	
     	return dynOptions;
 	}
-	
+
 	@Override public boolean dispatchKeyEvent(KeyEvent event)
 	{
-		if (_input.dispatchKeyEvent(event))
+		_softMenuRes[0] = false;
+		if (_input.dispatchKeyEvent(event, _softMenuRes))
 		{
+			if (_softMenuRes[0] && event.getAction() == KeyEvent.ACTION_DOWN)
+			{
+				Log.i(LOG_TAG, "---- dispatchKeyEvent try to show soft menu");
+				showSoftMenu(0);
+			}
 			return true;
 		}
 
+		if (event.getAction() == KeyEvent.ACTION_DOWN) {
+			if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+				showQuitConfirm();
+				return true;
+			}
+		}
+
 		return super.dispatchKeyEvent(event);
+	}
+
+	@Override public boolean dispatchGenericMotionEvent(MotionEvent event)
+	{
+		if (_input.dispatchGenericMotionEvent(event))
+		{
+			return true;
+		}
+		return super.dispatchGenericMotionEvent(event);
 	}
 
 	@Override public boolean onKeyDown(int keyCode, KeyEvent event)
@@ -992,7 +1300,7 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 //		{
 //			return false;
 //		}
-		
+
 		switch (keyCode)
 		{
 			case KeyEvent.KEYCODE_BACK:
@@ -1002,8 +1310,9 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 			}
 			case KeyEvent.KEYCODE_MENU:
 			{
+				Log.i(LOG_TAG, "---- keydown - try to show soft menu");
 				showSoftMenu(0);
-				return false;
+				return true;
 			}
 			default:
 			{
@@ -1021,10 +1330,9 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 //			return false;
 //		}
 
-		return super.onKeyDown(keyCode, event);
+		return super.onKeyUp(keyCode, event);
 	}
 
-	static boolean _showingQuitConfirm = false;
 	public void showQuitConfirm()
 	{
 		if (_waitSaveAndQuit)
@@ -1073,11 +1381,26 @@ public class HataroidActivity extends Activity implements IGameDBScanner
     {
     	this.runOnUiThread(new Runnable() {
 			public void run() {
-				Intent settings = new Intent(HataroidActivity.instance, Settings.class);
-				startActivityForResult(settings, ACTIVITYRESULT_SETTINGS);
+				startSettingsActivity();
 			}
 		});
     }
+
+    public void startSettingsActivity()
+	{
+//		if (Build.VERSION.SDK_INT < 11)
+		{
+			Intent settings = new Intent(HataroidActivity.instance, Settings.class);
+			startActivityForResult(settings, ACTIVITYRESULT_SETTINGS);
+		}
+//		else
+//		{
+//			// Display the fragment as the main content.
+//			getFragmentManager().beginTransaction()
+//					.replace(android.R.id.content, new SettingsFragment())
+//					.commit();
+//		}
+	}
 
 	public void showFloppyAInsert()
 	{
@@ -1085,6 +1408,8 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 			public void run() {
 				Intent fileBrowser = new Intent(HataroidActivity.instance, FileBrowser.class);
 				fileBrowser.putExtra(FileBrowser.CONFIG_REFRESHDB, true);
+				fileBrowser.putExtra(FileBrowser.CONFIG_TITLE, getApplicationContext().getString(R.string.select_floppy));
+				fileBrowser.putExtra(FileBrowser.CONFIG_CHECKPASTI, true);
 				startActivityForResult(fileBrowser, ACTIVITYRESULT_FLOPPYA);
 			}
 		});
@@ -1096,16 +1421,13 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 			public void run() {
 				Intent fileBrowser = new Intent(HataroidActivity.instance, FileBrowser.class);
 				fileBrowser.putExtra(FileBrowser.CONFIG_REFRESHDB, true);
+				fileBrowser.putExtra(FileBrowser.CONFIG_TITLE, getApplicationContext().getString(R.string.select_floppy));
+				fileBrowser.putExtra(FileBrowser.CONFIG_CHECKPASTI, true);
 				startActivityForResult(fileBrowser, ACTIVITYRESULT_FLOPPYB);
 			}
 		});
 	}
 
-	static boolean _showingGenericDialog = false;
-	static Object _genericDialogMutex = new Object();
-	static Map<Integer,AlertDialog> _genericDialogs = new HashMap<Integer,AlertDialog>();
-	static int _nextGenericDialogID = 1;
-	
 	static void _addDialog(int dialogID, AlertDialog dialog)
 	{
 		synchronized(_genericDialogMutex)
@@ -1122,9 +1444,15 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 		}
 	}
 
-    public int showGenericDialog(final int ok, final int noyes, final String message)
+    public int showGenericDialog(final int ok, final int noyes, final String message, final String noTxt, final String yesTxt)
     {
-    	if (_showingGenericDialog || _waitSaveAndQuit)
+	    if (_waitSaveAndQuit)
+	    {
+		    HataroidNativeLib.hataroidDialogResult(-1);
+		    return -1;
+	    }
+
+    	if (_showingGenericDialog)
     	{
     		return -1;
     	}
@@ -1144,14 +1472,14 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 				alertDialog.setCanceledOnTouchOutside(false);
     			if (ok==1)
    				{
-    				alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingGenericDialog = false; _clearDialog(dialogID); HataroidNativeLib.hataroidDialogResult(0); } });
+    				alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, yesTxt, new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingGenericDialog = false; _clearDialog(dialogID); HataroidNativeLib.hataroidDialogResult(0); } });
    				}
     			else if (noyes==1)
     			{
     				//alertDialog.setOnDismissListener( new DialogInterface.OnDismissListener() { public void onDismiss(DialogInterface dialog) { HataroidNativeLib.hataroidDialogResult(0); } });
     				alertDialog.setOnCancelListener( new DialogInterface.OnCancelListener() { public void onCancel(DialogInterface dialog) { _showingGenericDialog = false; _clearDialog(dialogID); HataroidNativeLib.hataroidDialogResult(0); } });
-    				alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "No", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingGenericDialog = false; _clearDialog(dialogID); HataroidNativeLib.hataroidDialogResult(0); } });
-    				alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Yes", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingGenericDialog = false; _clearDialog(dialogID); HataroidNativeLib.hataroidDialogResult(1); } });
+    				alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, noTxt, new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingGenericDialog = false; _clearDialog(dialogID); HataroidNativeLib.hataroidDialogResult(0); } });
+    				alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, yesTxt, new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showingGenericDialog = false; _clearDialog(dialogID); HataroidNativeLib.hataroidDialogResult(1); } });
     			}
     			
     			_addDialog(dialogID, alertDialog);
@@ -1300,6 +1628,11 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 	
 	boolean _storeAutoSaveOnExit()
 	{
+		if (!_isInitReady())
+		{
+			return false;
+		}
+
 		String saveFolder = _getAutoSaveFolder();
 		boolean autoSaveOnExit = _autoSaveOnExitEnabled();
 		if (saveFolder != null && autoSaveOnExit)
@@ -1464,7 +1797,6 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 		}
 	}
 	
-	@SuppressWarnings("deprecation")
 	boolean isAlwaysFinishActivitiesEnabled()
 	{
 		try
@@ -1566,21 +1898,39 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 
 	void _initSoftMenu()
 	{
+		boolean showShortcuts = !_useTouchScreen;
 		_softMenu = new SoftMenu();
-		_softMenu.create(getApplicationContext());
+		_softMenu.create(getApplicationContext(), showShortcuts);
 	}
 
 	public void showSoftMenu(int optionType)
 	{
-		final int subMenuType = optionType;
-		this.runOnUiThread(new Runnable()
+		if (!_isInitReady())
 		{
-			public void run()
-			{
-				View rootView = HataroidActivity.this.findViewById(android.R.id.content);
+			return;
+		}
 
-				_softMenu.prepare();
-				_softMenu.show(HataroidActivity.instance, rootView, subMenuType);
+		final int subMenuType = optionType;
+
+		this.runOnUiThread(new Runnable() {
+			public void run() {
+				HataroidActivity ha = HataroidActivity.instance;
+				View rootView = ha.findViewById(android.R.id.content);
+
+				InputMap inputMap = null;
+				Input input = ha.getInput();
+				if (input != null)
+				{
+					inputMap = input.getCurInputMap();
+
+					input.clearAxis();
+					input.getKeyPresses().clearAll();
+					input.clearDirectPresses();
+				}
+
+				boolean showShortcuts = !_useTouchScreen;
+				_softMenu.prepare(showShortcuts);
+				_softMenu.show(ha, rootView, subMenuType, inputMap);
 			}
 		});
 	}
@@ -1601,6 +1951,8 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 			{
 				Intent fileBrowser = new Intent(this, FileBrowser.class);
 				fileBrowser.putExtra(FileBrowser.CONFIG_REFRESHDB, true);
+				fileBrowser.putExtra(FileBrowser.CONFIG_TITLE, getApplicationContext().getString(R.string.select_floppy));
+				fileBrowser.putExtra(FileBrowser.CONFIG_CHECKPASTI, true);
 				startActivityForResult(fileBrowser, (id==R.id.floppya)?ACTIVITYRESULT_FLOPPYA:ACTIVITYRESULT_FLOPPYB);
 				return true;
 			}
@@ -1633,8 +1985,7 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 			}
 			case R.id.settings:
 			{
-				Intent settings = new Intent(this, Settings.class);
-				startActivityForResult(settings, ACTIVITYRESULT_SETTINGS);
+				startSettingsActivity();
 				return true;
 			}
 			case R.id.help:
@@ -1666,9 +2017,273 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 				}
 				break;
 			}
+
+			case R.id.mousejoy:
+			{
+				HataroidNativeLib.emulatorToggleMouseActive();
+				break;
+			}
+
+			case R.id.speedtoggle:
+			{
+				HataroidNativeLib.emulatorToggleTurboMode();
+				break;
+			}
+			case R.id.keybd:
+			{
+				boolean nonTouch = !_useTouchScreen;
+				HataroidNativeLib.emulatorToggleVirtKeyboard(nonTouch);
+				break;
+			}
+			case R.id.screen_preset_0:	{ HataroidNativeLib.emulatorSetScreenScalePreset(0); break; }
+			case R.id.screen_preset_1:	{ HataroidNativeLib.emulatorSetScreenScalePreset(5); break; }
+			case R.id.screen_preset_2:	{ HataroidNativeLib.emulatorSetScreenScalePreset(1); break; }
+			case R.id.screen_preset_3:	{ HataroidNativeLib.emulatorSetScreenScalePreset(2); break; }
+			case R.id.screen_preset_4:	{ HataroidNativeLib.emulatorSetScreenScalePreset(3); break; }
+			case R.id.screen_preset_5:	{ HataroidNativeLib.emulatorSetScreenScalePreset(4); break; }
+
+			case R.id.skey_1:			{ _input.setDirectPress(VirtKeyDef.VKB_KEY_Y); break; }
+			case R.id.skey_2:			{ _input.setDirectPress(VirtKeyDef.VKB_KEY_N); break; }
+			case R.id.skey_3:			{ _input.setDirectPress(VirtKeyDef.VKB_KEY_1); break; }
+			case R.id.skey_4:			{ _input.setDirectPress(VirtKeyDef.VKB_KEY_2); break; }
+			case R.id.skey_5:			{ _input.setDirectPress(VirtKeyDef.VKB_KEY_SPACE); break; }
+
 		}
 
 		return false;
 	}
 
+	boolean checkPermissions()
+	{
+		if (Build.VERSION.SDK_INT >= 23)
+		{
+			if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+			{
+				// Permission is not granted
+				if (!_requestingPermissions)
+				{
+//					if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+//						// Show an explanation to the user *asynchronously* -- don't block
+//						// this thread waiting for the user's response! After the user
+//						// sees the explanation, try again to request the permission.
+//					} else
+					{
+						_requestingPermissions = true;
+						// No explanation needed; request the permission
+						ActivityCompat.requestPermissions(this,
+								new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+								APP_PERMISSIONS_REQUEST_WRITE_STORAGE);
+					}
+				}
+			} else {
+				// Permission has already been granted
+				_setInitState(kInitState_TVCheck);
+			}
+		} else {
+			_setInitState(kInitState_TVCheck);
+		}
+		return false;
+	}
+
+	@Override
+	public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults)
+	{
+		switch (requestCode)
+		{
+			case APP_PERMISSIONS_REQUEST_WRITE_STORAGE:
+			{
+				_requestingPermissions = false;
+
+				// If request is cancelled, the result arrays are empty.
+				if (grantResults.length > 0  && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+				{
+					// permission was granted, yay!
+					_setInitState(kInitState_TVCheck);
+				}
+				else
+				{
+					// permission denied! - Warn user may have problems
+					this.runOnUiThread(new Runnable()
+					{
+						public void run()
+						{
+							AlertDialog alertDialog = new AlertDialog.Builder(HataroidActivity.this).create();
+							alertDialog.setTitle("Hataroid Warning");
+							alertDialog.setMessage("Without storage access permission, you might not be able to load your files properly");
+							alertDialog.setCancelable(false);
+							alertDialog.setCanceledOnTouchOutside(false);
+							alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _setInitState(kInitState_TVCheck); } });
+							alertDialog.show();
+						}
+					});
+				}
+				return;
+			}
+		}
+	}
+
+	public boolean isTouchscreenDevice()
+	{
+		try
+		{
+			boolean kDebugForceNonTouchScreen = false;
+
+			UiModeManager uiModeManager = (UiModeManager) getSystemService(UI_MODE_SERVICE);
+			if (uiModeManager.getCurrentModeType() == Configuration.UI_MODE_TYPE_TELEVISION
+				|| kDebugForceNonTouchScreen)
+			{
+				Log.i("hataroid", "Detected TV UIMode. Disabling touchscreen support.");
+				return false;
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
+		try
+		{
+			if (!getPackageManager().hasSystemFeature("android.hardware.touchscreen"))
+			{
+				Log.i("hataroid", "No touch screen detected.  Disabling touchscreen support.");
+				return false;
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
+		if (_dbgForceTVMode) {
+			return false;
+		}
+		return true;
+	}
+
+	boolean checkShowTVAssignButtons()
+	{
+		if (!_useTouchScreen)
+		{
+			if (!_assigningTVButtons)
+			{
+				SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+				boolean setupDone = prefs.getBoolean("TVSetupDone", false);
+
+				if (!setupDone)
+				{
+					_showNoTouchSplashScreen();
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	void _showNoTouchSplashScreen()
+	{
+		final Long runCheckID = _curRunID;
+
+		_assigningTVButtons = true;
+		this.runOnUiThread(new Runnable() {
+			public void run() {
+				String msg = "TV MODE DETECTED.\n\n";
+				msg += "- A game controller is required.\n";
+				msg += "- A button to bring up the menu/settings is required.\n\n";
+				msg += "- Additional buttons can be assigned in the Input Settings (eg mouse buttons)\n\n";
+				msg += "If this is your first time running in this mode, you will be guided to assign the menu button.\n";
+
+				AlertDialog alertDialog = new AlertDialog.Builder(HataroidActivity.this).create();
+				alertDialog.setTitle("Hataroid TV Mode");
+				alertDialog.setMessage(msg);
+				alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int which) {
+						Integer[] assignKeys = new Integer[] { VirtKeyDef.VKB_KEY_ANDROID_MENU };//, VirtKeyDef.VKB_KEY_ANDROID_BACK };
+						Integer[] assignVals = new Integer[assignKeys.length];
+						for (int i = 0; i < assignVals.length; ++i)
+						{
+							assignVals[i] = -1;
+						}
+						showTVAssignKeyDialog(assignKeys, assignVals, 0, runCheckID);
+					}
+				});
+				alertDialog.setCancelable(false);
+				alertDialog.setCanceledOnTouchOutside(false);
+				alertDialog.show();
+			}
+		});
+	}
+
+	public void showTVAssignKeyDialog(Integer[] assignKeys, Integer[] assignVals, Integer curKey, Long runCheckID)
+	{
+		final int resultID = ACTIVITYRESULT_TV_KEYASSIGN;
+
+		Object[] callerData = new Object[4];
+		callerData[0] = assignKeys;
+		callerData[1] = assignVals;
+		callerData[2] = curKey;
+		callerData[3] = runCheckID;
+
+		Intent view = new Intent(this, InputCaptureView.class);
+		view.putExtra(InputCaptureView.CONFIG_EMUKEY, assignKeys[curKey].intValue());
+		//view.putExtra(InputCaptureView.CONFIG_SYSTEMKEY, scanItem._systemKey);
+		view.putExtra(InputCaptureView.CONFIG_MAPID, "");//_curPresetID);
+		view.putExtra(InputCaptureView.CONFIG_CANCANCEL, false);
+		view.putExtra(InputCaptureView.CONFIG_CALLERDATA, callerData);
+		startActivityForResult(view, resultID);
+	}
+
+	protected void onTVKeyAssign(int requestCode, int resultCode, Intent data)
+	{
+		boolean clearAssignState = true;
+		if (data != null)
+		{
+			Object[] callerData = (Object[]) data.getSerializableExtra(InputCaptureView.RESULT_CALLERDATA);
+			Object[] assignKeysObj = (Object[]) callerData[0];
+			Object[] assignValsObj = (Object[]) callerData[1];
+			Integer curKey = (Integer) callerData[2];
+			Long runCheckID = (Long) callerData[3];
+
+			Integer[] assignKeys = new Integer[assignKeysObj.length];
+			Integer[] assignVals = new Integer[assignValsObj.length];
+			for (int i = 0; i < assignKeysObj.length; ++i)
+			{
+				assignKeys[i] = ((Number)assignKeysObj[i]).intValue();
+				assignVals[i] = ((Number)assignValsObj[i]).intValue();
+			}
+
+			if (_curRunID == runCheckID)
+			{
+				if (resultCode == RESULT_OK)
+				{
+					int systemKey = data.getIntExtra(InputCaptureView.RESULT_KEYCODE, -1);
+					assignVals[curKey] = systemKey;
+				}
+
+				int nextKey = curKey + 1;
+				if (nextKey < assignKeys.length)
+				{
+					clearAssignState = false;
+					showTVAssignKeyDialog(assignKeys, assignVals, nextKey, runCheckID);
+				}
+				else
+				{
+					InputMapConfigureView.createTVInputMap(assignKeys, assignVals, getApplicationContext());
+
+					SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+					Editor ed = prefs.edit();
+					ed.putBoolean("pref_input_onscreen_autohide", true);
+					ed.putBoolean("TVSetupDone", true);
+					ed.commit();
+				}
+			}
+		}
+
+		if (clearAssignState)
+		{
+			_assigningTVButtons = false;
+
+			_setInitState(kInitState_NativePlusDeps);
+		}
+	}
 }

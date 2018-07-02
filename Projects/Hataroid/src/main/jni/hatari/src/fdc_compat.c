@@ -267,9 +267,9 @@ void FDC_DmaStatus_ReadWord ( void )
 int	FDC_DMA_GetModeControl_R_WR ( void )
 {
     if (_FDC_UseCompatMode) {
-        FDC_DMA_GetModeControl_R_WR_Old();
+        return FDC_DMA_GetModeControl_R_WR_Old();
     } else {
-        FDC_DMA_GetModeControl_R_WR_New();
+        return FDC_DMA_GetModeControl_R_WR_New();
     }
     //return (*( (int (*)()) _FDC_FnTables[FDC_FN_DMA_GETMODECONTROL_R_WR]))();
 }

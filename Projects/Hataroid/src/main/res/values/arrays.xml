@@ -180,6 +180,17 @@
 			<item >5</item>
 		</string-array>
 
+		<string-array name="pref_input_joysticks_autofirespd_entries">
+			<item >Off</item>
+			<item >Medium</item>
+			<item >Fast</item>
+		</string-array>
+		<string-array name="pref_input_joysticks_autofirespd_values">
+			<item >0</item>
+			<item >8</item>
+			<item >4</item>
+		</string-array>
+
 		<string-array name="pref_input_mouse_emutype_entries">
 			<item >Direct (Touch)</item>
 			<item >Buttons (On-Screen)</item>

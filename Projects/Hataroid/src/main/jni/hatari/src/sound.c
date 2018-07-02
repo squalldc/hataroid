@@ -94,6 +94,9 @@ const char Sound_fileid[] = "Hatari sound.c : " __DATE__ " " __TIME__;
 #include "avi_record.h"
 #include "clocks_timings.h"
 
+#include <hataroid.h>
+#include <midi/fsmidi.h>
+
 
 
 /*--------------------------------------------------------------*/

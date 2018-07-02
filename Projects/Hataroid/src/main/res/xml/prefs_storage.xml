@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+	android:key="storage_category_key"
+	android:title="@string/storage"
+	android:persistent="false"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:robobunny="http://robobunny.com">
+
+	<PreferenceCategory
+		android:title="@string/pref_storage_savestates_category"
+		android:enabled="true"
+		android:key="pref_storage_savestates_category">
+		<Preference
+			android:persistent="true"
+			android:key="pref_storage_savestate_folder"
+			android:title="@string/storage_savestate_folder"
+			android:defaultValue="" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_storage_savestate_exitautosave"
+			android:title="@string/storage_savestate_exitautosave"
+			android:summaryOn="@string/storage_savestate_exitautosave_summary"
+			android:summaryOff="@string/storage_savestate_exitautosave_summary"
+			android:defaultValue="false" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_storage_savestate_kitkat_extsd"
+			android:title="@string/storage_savestate_kitkat_extsd"
+			android:summaryOn="@string/storage_savestate_kitkat_extsd_summary"
+			android:summaryOff="@string/storage_savestate_kitkat_extsd_summary"
+			android:defaultValue="false" />
+	</PreferenceCategory>
+	<PreferenceCategory
+		android:title="@string/pref_storage_floppydisks_category"
+		android:key="pref_storage_floppydisks_category">
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_storage_floppydisks_enabledrivea"
+			android:title="@string/floppydisks_enabledrivea"
+			android:summaryOn="@string/floppydisks_enabledrivea_summary"
+			android:summaryOff="@string/floppydisks_enabledrivea_summary"
+			android:defaultValue="true" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_storage_floppydisks_enabledriveb"
+			android:title="@string/floppydisks_enabledriveb"
+			android:summaryOn="@string/floppydisks_enabledriveb_summary"
+			android:summaryOff="@string/floppydisks_enabledriveb_summary"
+			android:defaultValue="true" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_storage_floppydisks_autoinsertb"
+			android:title="@string/floppydisks_autoinsertb"
+			android:summaryOn="@string/floppydisks_autoinsertb_summary"
+			android:summaryOff="@string/floppydisks_autoinsertb_summary"
+			android:defaultValue="false" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_storage_floppydisks_fastfloppyaccess"
+			android:title="@string/floppydisks_fastfloppyaccess"
+			android:summaryOn="@string/floppydisks_fastfloppyaccess_summary"
+			android:summaryOff="@string/floppydisks_fastfloppyaccess_summary"
+			android:defaultValue="false" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_storage_floppydisks_legacy"
+			android:title="@string/floppydisks_legacy"
+			android:summaryOn="@string/floppydisks_legacy_summary"
+			android:summaryOff="@string/floppydisks_legacy_summary"
+			android:defaultValue="true" />
+		<ListPreference android:key="pref_storage_floppydisks_writeprotection"
+						android:persistent="true"
+						android:entries="@array/pref_storage_floppydisks_writeprotection_entries"
+						android:entryValues="@array/pref_storage_floppydisks_writeprotection_values"
+						android:dialogTitle="@string/floppydisks_writeprotection"
+						android:title="@string/floppydisks_writeprotection"
+						android:defaultValue="1" />
+	</PreferenceCategory>
+	<PreferenceCategory
+		android:title="@string/pref_storage_harddisks_category"
+		android:enabled="true"
+		android:key="pref_storage_harddisks_category">
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_storage_harddisks_acsi_attach"
+			android:title="@string/harddisks_acsi_attach"
+			android:summaryOn="@string/harddisks_acsi_attach_summary"
+			android:summaryOff="@string/harddisks_acsi_attach_summary"
+			android:defaultValue="false" />
+		<Preference
+			android:persistent="true"
+			android:key="pref_storage_harddisks_acsiimage"
+			android:title="@string/harddisks_acsiimage"
+			android:defaultValue="none" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_storage_harddisks_idemaster_attach"
+			android:title="@string/harddisks_idemaster_attach"
+			android:summaryOn="@string/harddisks_idemaster_attach_summary"
+			android:summaryOff="@string/harddisks_idemaster_attach_summary"
+			android:defaultValue="false" />
+		<Preference
+			android:persistent="true"
+			android:key="pref_storage_harddisks_idemasterimage"
+			android:title="@string/harddisks_idemasterimage"
+			android:defaultValue="none" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_storage_harddisks_ideslave_attach"
+			android:title="@string/harddisks_ideslave_attach"
+			android:summaryOn="@string/harddisks_ideslave_attach_summary"
+			android:summaryOff="@string/harddisks_ideslave_attach_summary"
+			android:defaultValue="false" />
+		<Preference
+			android:persistent="true"
+			android:key="pref_storage_harddisks_ideslaveimage"
+			android:title="@string/harddisks_ideslaveimage"
+			android:defaultValue="none" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_storage_harddisks_gemdosdrive_attach"
+			android:title="@string/harddisks_gemdosdrive_attach"
+			android:summaryOn="@string/harddisks_gemdosdrive_attach_summary"
+			android:summaryOff="@string/harddisks_gemdosdrive_attach_summary"
+			android:defaultValue="false" />
+		<Preference
+			android:persistent="true"
+			android:key="pref_storage_harddisks_gemdosdrive"
+			android:title="@string/harddisks_gemdosdrive"
+			android:defaultValue="none" />
+		<ListPreference android:key="pref_storage_harddisks_gemdoswriteprotection"
+						android:persistent="true"
+						android:entries="@array/pref_storage_harddisks_gemdoswriteprotection_entries"
+						android:entryValues="@array/pref_storage_harddisks_gemdoswriteprotection_values"
+						android:dialogTitle="@string/harddisks_gemdoswriteprotection"
+						android:title="@string/harddisks_gemdoswriteprotection"
+						android:defaultValue="1" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_storage_harddisks_bootfromharddisk"
+			android:title="@string/harddisks_bootfromharddisk"
+			android:summaryOn="@string/harddisks_bootfromharddisk_summary"
+			android:summaryOff="@string/harddisks_bootfromharddisk_summary"
+			android:defaultValue="false" />
+	</PreferenceCategory>
+	<PreferenceCategory
+		android:title="@string/pref_storage_rom_category"
+		android:enabled="false"
+		android:key="pref_storage_rom_category">
+		<EditTextPreference
+			android:persistent="true"
+			android:key="pref_storage_cartridge"
+			android:title="@string/cartridgeimage"
+			android:defaultValue="none" />
+	</PreferenceCategory>
+</PreferenceScreen>

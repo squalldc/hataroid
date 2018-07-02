@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+	android:key="midi_category_key"
+	android:title="@string/midi"
+	android:persistent="false"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:robobunny="http://robobunny.com">
+
+	<PreferenceCategory
+		android:title="@string/pref_midi_options_category"
+		android:key="pref_midi_options_category">
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_midi_out"
+			android:title="@string/midi_out"
+			android:summaryOn="@string/midi_out_summary"
+			android:summaryOff="@string/midi_out_summary"
+			android:defaultValue="false" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_midi_st_reset"
+			android:title="@string/midi_st_reset"
+			android:summaryOn="@string/midi_st_reset_summary"
+			android:summaryOff="@string/midi_st_reset_summary"
+			android:defaultValue="false" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_sound_mute"
+			android:title="@string/sound_mute"
+			android:summaryOn="@string/sound_mute_summary"
+			android:summaryOff="@string/sound_mute_summary"
+			android:defaultValue="false" />
+	</PreferenceCategory>
+	<PreferenceCategory
+		android:title="@string/pref_midi_fluidsynth_category"
+		android:key="pref_midi_fluidsynth_category"
+		xmlns:robobunny="http://robobunny.com">
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_midi_fluidsynth_use_custom_sf"
+			android:title="@string/midi_fluidsynth_use_custom_sf"
+			android:summaryOn="@string/midi_fluidsynth_use_custom_sf_summary"
+			android:summaryOff="@string/midi_fluidsynth_use_custom_sf_summary"
+			android:defaultValue="false" />
+		<Preference
+			android:persistent="true"
+			android:key="pref_midi_fluidsynth_soundfont"
+			android:title="@string/midi_fluidsynth_soundfont"
+			android:defaultValue="" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_midi_fluidsynth_reverb"
+			android:title="@string/midi_fluidsynth_reverb"
+			android:summaryOn="@string/midi_fluidsynth_reverb_summary"
+			android:summaryOff="@string/midi_fluidsynth_reverb_summary"
+			android:defaultValue="false" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_midi_fluidsynth_chorus"
+			android:title="@string/midi_fluidsynth_chorus"
+			android:summaryOn="@string/midi_fluidsynth_chorus_summary"
+			android:summaryOff="@string/midi_fluidsynth_chorus_summary"
+			android:defaultValue="false" />
+		<ListPreference android:key="pref_midi_fluidsynth_interp"
+						android:persistent="true"
+						android:entries="@array/pref_midi_fluidsynth_interp_entries"
+						android:entryValues="@array/pref_midi_fluidsynth_interp_values"
+						android:dialogTitle="@string/midi_fluidsynth_interp"
+						android:title="@string/midi_fluidsynth_interp"
+						android:defaultValue="1" />
+		<ListPreference android:key="pref_midi_fluidsynth_maxpoly"
+						android:persistent="true"
+						android:entries="@array/pref_midi_fluidsynth_maxpoly_entries"
+						android:entryValues="@array/pref_midi_fluidsynth_maxpoly_values"
+						android:dialogTitle="@string/midi_fluidsynth_maxpoly"
+						android:title="@string/midi_fluidsynth_maxpoly"
+						android:defaultValue="64" />
+		<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
+			android:persistent="true"
+			android:key="pref_midi_fluidsynth_volgain"
+			android:title="@string/midi_fluidsynth_volgain"
+			android:summary="@string/midi_fluidsynth_volgain_summary"
+			android:defaultValue="100"
+			android:max="300"
+			robobunny:min="0"
+			robobunny:unitsLeft=""
+			robobunny:unitsRight=""
+			/>
+	</PreferenceCategory>
+	<PreferenceCategory
+		android:title="@string/pref_midi_patches_category"
+		android:key="pref_midi_patches_category">
+		<Preference
+			android:persistent="true"
+			android:key="pref_midi_instrument_patches_configure"
+			android:title="@string/midi_instrument_patches_configure"
+			android:summary="@string/midi_instrument_patches_configure_summary"
+			android:defaultValue="none" />
+		<Preference
+			android:persistent="true"
+			android:enabled="false"
+			android:key="pref_midi_drum_patches_configure"
+			android:title="@string/midi_drum_patches_configure"
+			android:summary="@string/midi_drum_patches_configure_summary"
+			android:defaultValue="none" />
+	</PreferenceCategory>
+	<PreferenceCategory
+		android:title="@string/pref_midi_tweaks_category"
+		android:key="pref_midi_tweaks_category"
+		xmlns:robobunny="http://robobunny.com">
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_midi_tweak_ignore_pgm_changes"
+			android:title="@string/midi_tweak_ignore_pgm_changes"
+			android:summaryOn="@string/midi_tweak_ignore_pgm_changes_summary"
+			android:summaryOff="@string/midi_tweak_ignore_pgm_changes_summary"
+			android:defaultValue="false" />
+		<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
+			android:persistent="true"
+			android:key="pref_midi_chan_transpose"
+			android:title="@string/pref_midi_chan_transpose"
+			android:summary="@string/pref_midi_chan_transpose_summary"
+			android:defaultValue="0"
+			android:max="12"
+			robobunny:min="-12"
+			robobunny:unitsLeft=""
+			robobunny:unitsRight=""
+			/>
+		<Preference
+			android:persistent="true"
+			android:key="pref_midi_setup_kk2tweaks"
+			android:title="@string/pref_midi_setup_kk2tweaks"
+			android:summary="@string/pref_midi_setup_kk2tweaks_summary"
+			android:defaultValue="" />
+	</PreferenceCategory>
+
+	<PreferenceCategory
+		android:title="@string/pref_midi_experimental"
+		android:key="pref_midi_experimental_category">
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_midi_hardware_out"
+			android:title="@string/midi_hardware_out"
+			android:summaryOn="@string/midi_hardware_out_summary"
+			android:summaryOff="@string/midi_hardware_out_summary"
+			android:defaultValue="false" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_midi_hardware_in"
+			android:title="@string/midi_hardware_in"
+			android:summaryOn="@string/midi_hardware_in_summary"
+			android:summaryOff="@string/midi_hardware_in_summary"
+			android:defaultValue="false" />
+	</PreferenceCategory>
+
+
+</PreferenceScreen>

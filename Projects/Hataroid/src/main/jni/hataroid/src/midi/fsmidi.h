@@ -64,6 +64,9 @@ extern int fsMidi_getMidiTranspose();
 extern int fsMidi_isMidiHardwareOutEnabled();
 extern int fsMidi_isMidiHardwareInEnabled();
 
+extern void fsMidi_generateFrames(int nframes);
+extern short *fsMidi_consumeBuffer(int bufLenReqShorts, int *startOffsetShorts, int *readLenShorts, int *bufMaxShorts);
+
 #ifdef __cplusplus
 }
 #endif

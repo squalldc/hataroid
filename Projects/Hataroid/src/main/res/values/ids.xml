@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<item name="mousejoy" type="id"/>
+	<item name="keybd" type="id"/>
+	<item name="speedtoggle" type="id"/>
+	<item name="screensize" type="id"/>
+	<item name="screen_preset_0" type="id"/>
+	<item name="screen_preset_1" type="id"/>
+	<item name="screen_preset_2" type="id"/>
+	<item name="screen_preset_3" type="id"/>
+	<item name="screen_preset_4" type="id"/>
+	<item name="screen_preset_5" type="id"/>
+	<item name="shortcuts" type="id"/>
+	<item name="skey_1" type="id"/>
+	<item name="skey_2" type="id"/>
+	<item name="skey_3" type="id"/>
+	<item name="skey_4" type="id"/>
+	<item name="skey_5" type="id"/>
+
+</resources>

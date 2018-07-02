@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+				android:layout_width="match_parent"
+				android:layout_height="48dp">
+
+	<TextView
+		android:layout_width="wrap_content"
+		android:layout_height="match_parent"
+		android:textAppearance="?android:attr/textAppearanceMedium"
+		android:text="Large Text"
+		android:id="@+id/ab_title"
+		android:layout_alignParentLeft="true"
+		android:textColor="?android:attr/textColorPrimary"
+		android:gravity="center_vertical"/>
+
+	<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+				  android:layout_width="match_parent"
+				  android:layout_height="wrap_content"
+				  android:orientation="horizontal"
+				  android:gravity="right"
+				  android:layout_alignParentRight="true"
+				  android:focusable="true">
+
+		<Button
+			android:id="@+id/im_deleteBtn"
+			style="?android:attr/buttonStyle"
+			android:layout_width="80dp"
+			android:layout_height="fill_parent"
+			android:layout_gravity="center_vertical|right"
+			android:text="@string/delete"
+			android:foregroundGravity="center_vertical"
+			android:gravity="center_vertical|center_horizontal"
+			android:background="@drawable/btn_color_selector"
+			android:textSize="12sp"
+			android:focusable="true"/>
+
+		<Button
+			android:id="@+id/im_renameBtn"
+			style="?android:attr/buttonStyle"
+			android:layout_width="80dp"
+			android:layout_height="fill_parent"
+			android:layout_gravity="center_vertical|right"
+			android:text="@string/rename"
+			android:foregroundGravity="center_vertical"
+			android:gravity="center_vertical|center_horizontal"
+			android:background="@drawable/btn_color_selector"
+			android:textSize="12sp"
+			android:focusable="true"/>
+
+		<Button
+			android:id="@+id/im_newBtn"
+			style="?android:attr/buttonStyle"
+			android:layout_width="80dp"
+			android:layout_height="fill_parent"
+			android:layout_gravity="center_vertical|right"
+			android:text="@string/newStr"
+			android:foregroundGravity="center_vertical"
+			android:gravity="center_vertical|center_horizontal"
+			android:background="@drawable/btn_color_selector"
+			android:textSize="12sp"
+			android:focusable="true"/>
+
+		<Button
+			android:id="@+id/im_showKeyboardBtn"
+			style="?android:attr/buttonStyle"
+			android:layout_width="80dp"
+			android:layout_height="fill_parent"
+			android:layout_gravity="center_vertical|right"
+			android:text="@string/switchkeyboard"
+			android:foregroundGravity="center_vertical"
+			android:gravity="center_vertical|center_horizontal"
+			android:background="@drawable/btn_color_selector"
+			android:textSize="12sp"
+			android:focusable="true"/>
+
+	</LinearLayout>
+</RelativeLayout>

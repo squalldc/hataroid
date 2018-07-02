@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+//#include <unistd.h>
 
 #include <fluidsynth.h>
 #include "../../../fluidsynth/src/drivers/fluid_android.h"
@@ -279,7 +280,7 @@ void fsMidi_applyPendingChanges()
 				}
 
 				Debug_Printf("----> fsSynth - Load SoundFont");
-				int dialogID = showGenericDialog(0, "Loading MIDI SoundFont...", 0, 0);
+				int dialogID = showGenericDialog(0, "Loading MIDI SoundFont...", 0, 0, "", "");
 
 				if (strncmp(_pendingSoundFontName, "asset://", 8) == 0 || fluid_is_soundfont(_pendingSoundFontName))
 				{

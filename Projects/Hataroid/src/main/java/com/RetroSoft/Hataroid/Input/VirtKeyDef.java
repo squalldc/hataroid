@@ -152,18 +152,25 @@ public class VirtKeyDef
 	public final static int VKB_KEY_FLOPPYA_INSERT		= 130;
 	public final static int VKB_KEY_FLOPPYB_INSERT		= 131;
 	public final static int VKB_KEY_SETTINGS_MENU		= 132;
+	public final static int VKB_KEY_ANDROID_BACK		= 133;
+	public final static int VKB_KEY_PAUSE		= 134;
+	public final static int VKB_KEY_NAVLEFT		= 135;
+	public final static int VKB_KEY_NAVRIGHT		= 136;
+	public final static int VKB_KEY_NAVDOWN		= 137;
+	public final static int VKB_KEY_NAVUP		= 138;
+	public final static int VKB_KEY_NAVBTN		= 139;
 
-	public final static int VKB_KEY_NumOf		= 133;
+	public final static int VKB_KEY_NumOf		= 140;
 
-	public final static int FLAG_POLY		= (1<<0);
-	public final static int FLAG_STFNKEY		= (1<<1);
+	public final static int FLAG_STFNKEY		= (1<<0);
+	public final static int FLAG_POLY		= (1<<1);
 	public final static int FLAG_STKEY		= (1<<2);
-	public final static int FLAG_PERSIST		= (1<<3);
-	public final static int FLAG_CUSTOMKEY		= (1<<4);
+	public final static int FLAG_CUSTOMKEY		= (1<<3);
+	public final static int FLAG_PERSIST		= (1<<4);
 	public final static int FLAG_JOY		= (1<<5);
 	public final static int FLAG_VKB		= (1<<6);
-	public final static int FLAG_SCREEN		= (1<<7);
-	public final static int FLAG_SCREEN2		= (1<<8);
+	public final static int FLAG_SCREEN2		= (1<<7);
+	public final static int FLAG_SCREEN		= (1<<8);
 	public final static int FLAG_MOUSE		= (1<<9);
 	public final static int FLAG_MOUSEBUTTON		= (1<<10);
 	public final static int FLAG_MAIN		= (1<<11);
@@ -302,6 +309,13 @@ public class VirtKeyDef
 		new VirtKeyDef(VKB_KEY_JOY2FIRE, "Joystick 2 Fire", (short)-1, (short)1, (short)0, (short)5, FLAG_JOY),
 		new VirtKeyDef(VKB_KEY_FLOPPYA_INSERT, "Floppy A Insert", (short)-1, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
 		new VirtKeyDef(VKB_KEY_FLOPPYB_INSERT, "Floppy B Insert", (short)-1, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
-		new VirtKeyDef(VKB_KEY_SETTINGS_MENU, "Settings Menu", (short)-1, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN)
+		new VirtKeyDef(VKB_KEY_SETTINGS_MENU, "Settings Menu", (short)-1, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_ANDROID_BACK, "Android Back", (short)4, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_PAUSE, "Pause Toggle", (short)-1, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_NAVLEFT, "Nav Left", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_NAVRIGHT, "Nav Right", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_NAVDOWN, "Nav Down", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_NAVUP, "Nav Up", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_NAVBTN, "Nav Button", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN)
 	};
 }

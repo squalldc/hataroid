@@ -14,6 +14,7 @@ public interface IMapSet
 	public String get_NewMapSetNamePrefix();		// eg. "my_shortcut_map";
 
 	public int get_ViewLayoutResID();				// eg. R.layout.shortcutmap_view
+	public int get_ViewLayoutID();					// eg. R.id.shortcutmap_view
 	public int get_ItemLayoutResID();				// eg. R.layout.shortcutmap_item
 
 	public int getNumPresets();

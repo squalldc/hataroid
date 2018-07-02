@@ -8,6 +8,7 @@ public class HataroidNativeLib
 	public static native void emulationMain();
 	public static native void emulationDestroy(HataroidActivity instance);
 
+	public static native void emulationStartExec();
 	public static native void emulationPause();
 	public static native void emulationResume();
 	
@@ -19,13 +20,25 @@ public class HataroidNativeLib
     										boolean t1, float tx1, float ty1,
     										boolean t2, float tx2, float ty2,
     										float mouseX, float mouseY, int mouseBtns,
-    										int[] keyPresses);
+    										int[] keyPresses, float[] curAxis);
 
     public static native void emulatorSetOptions(String[] keys, String[] vals);
 	public static native void emulatorResetCold();
 	public static native void emulatorResetWarm();
+
 	public static native void emulatorToggleUserPaused();
 	public static native boolean emulatorGetUserPaused();
+	public static native void emulatorSetEmuPausedSoftMenu(boolean paused);
+
+	public static native void emulatorSetScreenScalePreset(int preset);
+	public static native void emulatorToggleVirtKeyboard(boolean nonTouch);
+
+	public static native void emulatorToggleMouseActive();
+	public static native boolean emulatorGetMouseActive();
+
+	public static native void emulatorToggleTurboMode();
+	public static native boolean emulatorGetTurboMode();
+
 	public static native void emulatorEjectFloppy(int drive);
 	public static native void emulatorInsertFloppy(int drive, String filename, String zipPath, String dispName);
 	
@@ -37,6 +50,8 @@ public class HataroidNativeLib
 
 	public static native String emulatorGetCurFloppy(int floppy);
 	public static native String emulatorGetCurFloppyZip(int floppy);
+	public static native boolean emulatorIsPastiDiskResetRequired(String filename, String zipPath);
+	public static native boolean emulatorIsPastiDisk(String filename, String zipPath);
 
 	public static native void emulatorSendMidiInstrPatch(int[] instrDefs);
 	public static native void emulatorReceiveHardwareMidiBytes(int count, byte[] b);

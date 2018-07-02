@@ -252,7 +252,21 @@ void M68000_Reset(bool bCold)
 	{
 		/* Clear registers */
 		memset(&regs, 0, sizeof(regs));
+
+		nWaitStateCycles = 0; // Used to emulate the wait state cycles of certain IO registers
 	}
+
+	//cpu_instruction_t CpuInstruction;
+
+	//Uint32 BusErrorAddress;         /* Stores the offending address for bus-/address errors */
+	//bool bBusErrorReadWrite;        /* 0 for write error, 1 for read error */
+	//int nCpuFreqShift;              /* Used to emulate higher CPU frequencies: 0=8MHz, 1=16MHz, 2=32Mhz */
+
+	LastOpcodeFamily = i_NOP; // see the enum in readcpu.h i_XXX */
+	LastInstrCycles = 0; // number of cycles for previous instr. (not rounded to 4) */
+	Pairing = 0; // set to 1 if the latest 2 intr paired */
+	//char PairingArray[ MAX_OPCODE_FAMILY ][ MAX_OPCODE_FAMILY ];
+
 	/* Now reset the UAE CPU core */
 	m68k_reset();
 #endif

@@ -27,204 +27,222 @@ import com.RetroSoft.Hataroid.R;
 import com.RetroSoft.Hataroid.Preferences.Settings;
 import com.RetroSoft.Hataroid.Util.BitFlags;
 
-public class SaveStateBrowser extends ListActivity
-{
-	static final int			kMaxSlots = 1000;
-	
-	static final int			ACTIVITYRESULT_SETTINGS		= 0;
-	
-	public static final int		SSMODE_SAVE					= 0;
-	public static final int		SSMODE_LOAD					= 1;
-	public static final int		SSMODE_DELETE				= 2;
-	public static final int		SSMODE_QUICKSAVESLOT		= 3;
-	
-	public static final String	CONFIG_MODE = "Config_Mode";
-	
-	public static final String	RESULT_SAVESTATE_FILENAME	= "Result_SaveStateFileName";
-	public static final String	RESULT_SAVESTATE_SLOT		= "Result_SaveStateSlot";
+public class SaveStateBrowser extends ListActivity {
+	static final int kMaxSlots = 1000;
 
-	static final String			kPrefLastLoadedSlot			= "_pref_savestate_lastloadedslot";
-	public static final String	kPrefQuickSaveSlot			= "pref_savestate_quicksaveslot";
+	static final int ACTIVITYRESULT_SETTINGS = 0;
+
+	public static final int SSMODE_SAVE = 0;
+	public static final int SSMODE_LOAD = 1;
+	public static final int SSMODE_DELETE = 2;
+	public static final int SSMODE_QUICKSAVESLOT = 3;
+
+	public static final String CONFIG_MODE = "Config_Mode";
+
+	public static final String RESULT_SAVESTATE_FILENAME = "Result_SaveStateFileName";
+	public static final String RESULT_SAVESTATE_SLOT = "Result_SaveStateSlot";
+
+	static final String kPrefLastLoadedSlot = "_pref_savestate_lastloadedslot";
+	public static final String kPrefQuickSaveSlot = "pref_savestate_quicksaveslot";
 
 	//private static boolean		_firstCreate = true;
-	
-	private int					_mode = SSMODE_SAVE;
-	
-	private String				_saveFolder = null;
-	private File				_curDir;
-	private int					_lastSavedSlot = 0;
-	private int					_quickSaveSlot = -1;
 
-	private SaveStateAdapter	_adapter;
-	private BitFlags			_usedSlots = new BitFlags(kMaxSlots);
+	private int _mode = SSMODE_SAVE;
 
-	private Intent				_retIntent;
-	
-	public static int			dispWidth = 1024;
+	private String _saveFolder = null;
+	private File _curDir;
+	private int _lastSavedSlot = 0;
+	private int _quickSaveSlot = -1;
 
-	@Override public void onCreate(Bundle savedInstanceState)
-	{
+	private SaveStateAdapter _adapter;
+	private BitFlags _usedSlots = new BitFlags(kMaxSlots);
+
+	private Intent _retIntent;
+
+	public static int dispWidth = 1024;
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		try
-		{
+		try {
 			requestWindowFeature(Window.FEATURE_NO_TITLE);
 
 			Display display = getWindowManager().getDefaultDisplay();
 			dispWidth = display.getWidth();
 
 			// inflate and adjust layout
-			LayoutInflater inflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+			LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 			View layout = inflater.inflate(R.layout.savestate_view, null);
-			layout.setMinimumWidth((int)(dispWidth * 0.65f));
+			layout.setMinimumWidth((int) (dispWidth * 0.65f));
 
 			setContentView(layout);
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-    	parseOptions(savedInstanceState);
+		parseOptions(savedInstanceState);
 		setupButtonListeners();
-		
+
 		int titleStrId = -1;
-		switch (_mode)
-		{
-			case SSMODE_SAVE:	titleStrId = R.string.savestate_save_title; break;
-			case SSMODE_LOAD:	titleStrId = R.string.savestate_load_title; break;
-			case SSMODE_DELETE:	titleStrId = R.string.savestate_delete_title; break;
-			case SSMODE_QUICKSAVESLOT: titleStrId = R.string.savestate_quicksaveslot_title; break;
+		switch (_mode) {
+			case SSMODE_SAVE:
+				titleStrId = R.string.savestate_save_title;
+				break;
+			case SSMODE_LOAD:
+				titleStrId = R.string.savestate_load_title;
+				break;
+			case SSMODE_DELETE:
+				titleStrId = R.string.savestate_delete_title;
+				break;
+			case SSMODE_QUICKSAVESLOT:
+				titleStrId = R.string.savestate_quicksaveslot_title;
+				break;
 		}
-		if (titleStrId >= 0)
-		{
+		if (titleStrId >= 0) {
 			String titleStr = getResources().getString(titleStrId);
-			if (titleStr != null)
-			{
+			if (titleStr != null) {
 				setUserTitleText(titleStr);
 			}
 		}
 
 		_retIntent = new Intent();
-		
+
 		//if (_firstCreate)
 		{
-			try
-			{
-		    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
-		    	_saveFolder = prefs.getString(Settings.kPrefName_SaveState_Folder, null);
-		    	_lastSavedSlot = prefs.getInt(kPrefLastLoadedSlot, 0);
-		    	_quickSaveSlot = prefs.getInt(kPrefQuickSaveSlot, -1);
-			}
-			catch (Exception e)
-			{
+			try {
+				SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+				_saveFolder = prefs.getString(Settings.kPrefName_SaveState_Folder, null);
+				_lastSavedSlot = prefs.getInt(kPrefLastLoadedSlot, 0);
+				_quickSaveSlot = prefs.getInt(kPrefQuickSaveSlot, -1);
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
 
 		String invalidSaveFolderMessage = "Unable to access save state folder. Please check your settings and then retry";
-		if (_saveFolder == null || _saveFolder.length() == 0)
-		{
+		if (_saveFolder == null || _saveFolder.length() == 0) {
 			_saveFolder = null;
 			invalidSaveFolderMessage = "Please set up the Save State Folder in the Settings first and then retry";
-		}
-		else
-		{
+		} else {
 			String testFolder = _saveFolder;
 			_saveFolder = null;
-			try
-			{
+			try {
 				File rootDir = new File(testFolder);
-				if (rootDir.exists() && rootDir.canRead())
-				{
+				if (rootDir.exists() && rootDir.canRead()) {
 					_saveFolder = rootDir.getAbsolutePath();
 				}
-			}
-			catch (Exception e)
-			{
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
-		
-		if (_saveFolder != null)
-		{
+
+		if (_saveFolder != null) {
 			_curDir = new File(_saveFolder);
 			_retrieveSaveFiles(_curDir);
-		}
-		else
-		{
+		} else {
 			_showErrorDialog(invalidSaveFolderMessage);
 		}
 	}
-	
-	void _showErrorDialog(String msg)
-	{
+
+	void _showErrorDialog(String msg) {
 		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
 		alertDialog.setTitle("Invalid Save State Folder");
 		alertDialog.setMessage(msg);
-		alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { _showSettingsDialog(); } });
-		alertDialog.setOnCancelListener(new DialogInterface.OnCancelListener() { public void onCancel(DialogInterface dialog) { sendFinish(RESULT_CANCELED); }});
+		alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+				_showSettingsDialog();
+			}
+		});
+		alertDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+			public void onCancel(DialogInterface dialog) {
+				sendFinish(RESULT_CANCELED);
+			}
+		});
 		alertDialog.show();
 	}
-	
-	void _showSettingsDialog()
-	{
-        Intent settings = new Intent(this, Settings.class);
-        startActivityForResult(settings, ACTIVITYRESULT_SETTINGS);
+
+	void _showSettingsDialog() {
+		Intent settings = new Intent(this, Settings.class);
+		startActivityForResult(settings, ACTIVITYRESULT_SETTINGS);
 	}
-	
-	@Override protected void onSaveInstanceState(Bundle outState)
-	{
-		try
-		{
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		try {
 			outState.putInt(CONFIG_MODE, _mode);
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
-	void parseOptions(Bundle savedInstanceState)
-	{
+
+	void parseOptions(Bundle savedInstanceState) {
 		_mode = SSMODE_SAVE;
-		
+
 		Bundle b = (savedInstanceState == null) ? getIntent().getExtras() : savedInstanceState;
-		if (b != null)
-		{
+		if (b != null) {
 			_mode = b.getInt(CONFIG_MODE, SSMODE_SAVE);
 		}
 	}
-	
-	@Override protected void onDestroy()
-	{
+
+	@Override
+	protected void onDestroy() {
 		super.onDestroy();
 	}
 
-	@Override protected void onPause()
-	{
+	@Override
+	protected void onPause() {
 		super.onPause();
 	}
-	
-	@Override protected void onResume()
-	{
+
+	@Override
+	protected void onResume() {
 		super.onResume();
 	}
 
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent event)
+	{
+		int action = event.getAction();
+		int keyCode = event.getKeyCode();
+
+		if (action == KeyEvent.ACTION_UP) {
+			switch (keyCode) {
+				case KeyEvent.KEYCODE_BACK: {
+					sendFinish(RESULT_CANCELED);
+					return true;
+				}
+			}
+		} else if (action == KeyEvent.ACTION_DOWN) {
+			if (keyCode == KeyEvent.KEYCODE_BACK) {
+				return true;
+			}
+		}
+		return super.dispatchKeyEvent(event);
+	}
+
 	@Override public boolean onKeyDown(int keyCode, KeyEvent event)
+	{
+		if (keyCode == KeyEvent.KEYCODE_BACK) {
+			return true;
+		}
+		return super.onKeyDown(keyCode, event);
+	}
+
+	@Override public boolean onKeyUp(int keyCode, KeyEvent event)
 	{
 		switch (keyCode)
 		{
 			case KeyEvent.KEYCODE_BACK:
 			{
 				sendFinish(RESULT_CANCELED);
-				return false;
+				return true;
 			}
 		}
 
 		return super.onKeyDown(keyCode, event);
 	}
-	
+
 	void setupButtonListeners()
 	{
 		findViewById(R.id.ss_closeBtn).setOnClickListener(new OnClickListener() {

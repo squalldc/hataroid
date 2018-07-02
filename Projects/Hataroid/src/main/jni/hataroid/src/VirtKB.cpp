@@ -6,7 +6,7 @@
 #include <math.h>
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
-#include <sdl.h>
+#include <SDL.h>
 
 #include "VirtKBDefs.h"
 #include "VirtKBTex.h"
@@ -34,8 +34,13 @@ extern "C"
 																						jboolean t1, jfloat tx1, jfloat ty1,
 																						jboolean t2, jfloat tx2, jfloat ty2,
 																						jfloat mouseX, jfloat mouseY, jint mouseBtns,
-																						jintArray keyPresses);
-	//JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_toggleMouseJoystick(JNIEnv * env, jobject obj);
+																						jintArray keyPresses, jfloatArray curAxis);
+
+	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorToggleMouseActive(JNIEnv * env, jobject obj);
+	JNIEXPORT jboolean JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorGetMouseActive(JNIEnv * env, jobject obj);
+
+	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSetScreenScalePreset(JNIEnv * env, jobject obj, jint preset);
+	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorToggleVirtKeyboard(JNIEnv * env, jobject obj, jboolean nonTouch);
 
 	extern volatile int g_doubleBuffer;
 };
@@ -56,6 +61,12 @@ extern "C"
 #define ST_SCANCODE_LEFTARROW	0x4B
 
 #define AUTOHIDE_DELAY_SECS     1.0f
+
+static const int kAxis_X1			= 0;
+static const int kAxis_Y1			= 1;
+static const int kAxis_X2			= 2;
+static const int kAxis_Y2			= 3;
+static const int kNumAxis			= 4;
 
 struct QuickKey;
 typedef void (*OnKeyEvent)(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
@@ -179,6 +190,15 @@ static bool			s_hideExtraJoyKeys = false;
 static bool			s_hideShortcutKeys = false;
 //static bool			s_hideTurboKey = false;
 
+static const long	kInitKBRepeatDelay = 150;
+static const long	kMinKBRepeatDelay = 25;
+static const long	kKBRepeatDelayDeltaRate = 10;
+
+static bool			s_nonTouchKB = false;
+static int			s_curKBKeyFocus = VKB_KEY_SPACE;
+static long			s_lastKBFocusRepeat = 0;
+static long			s_KBRepeatDelay = kInitKBRepeatDelay;
+
 static bool			s_hideJoystick = false;
 static float		s_keySizeVX = 1;
 static float		s_keySizeVY = 1;
@@ -188,6 +208,7 @@ static float		s_keySizeHY = 1;
 static KeyCallback*	s_keyCallbacks = 0;
 
 static BitFlags*	s_jKeyPresses = new BitFlags(VKB_KEY_NumOf);
+static float*		s_jAxis = new float [kNumAxis];
 
 static ShortcutMap*	s_shortcutMap = new ShortcutMap();
 
@@ -204,14 +225,17 @@ static bool			s_RMB = false;
 static int			s_prevFingerCount = 0;
 static int			s_mousePresses = 0;
 static float		s_mousePressTime = 0;
-
-static bool			s_mouseQuickPress = false;
+static bool         s_mouseMoveOnly = false;
+static float        s_mouseDragStartX = 0;
+static float        s_mouseDragStartY = 0;
 
 static float		_prevHWMouseX = MAXFLOAT;
 static float		_prevHWMouseY = MAXFLOAT;
 static float		_curHWMouseX = MAXFLOAT;
 static float		_curHWMouseY = MAXFLOAT;
 static int			_curHWMouseBtns = 0;
+
+static float        _curDPADMouseAccel = 0.1f;
 
 static VirtJoy*		_virtJoy = 0;
 static bool         _virtJoyEnabled = false;
@@ -236,13 +260,19 @@ static void VirtKB_GetVkbScreenOffset(int *x, int *y);
 static void VirtKB_ZoomVKB(float absChange);
 static void VirtKB_PanVKB(float absX, float absY);
 static void VirtKB_resetVkbPresses();
-static void VirtKB_addVkbPress(int vkbKeyID);
+static void VirtKB_addVkbPress(int vkbKeyID, bool focusKey);
+
+static void VirtKB_NavLeft();
+static void VirtKB_NavRight();
+static void VirtKB_NavUp();
+static void VirtKB_NavDown();
 
 static const VirtKeyDef *VirtKB_VkbHitTest(float x, float y);
 
 static void VirtKB_updateInput();
 static void VirtKB_updateMouse();
 static void VirtKB_updateHardwareMouse();
+static void VirtKB_updateVirtMouseEmu();
 
 static void VirtKB_clearMousePresses();
 
@@ -261,6 +291,7 @@ static void VirtkKB_ScreenPresetToggle(const VirtKeyDef *keyDef, uint32_t uParam
 static void VirtkKB_KeyboardPresetToggle(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 static bool VirtkKB_KeyboardSetPreset(int preset);
 static void VirtKB_ToggleShowUI(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
+static void VirtKB_TogglePause(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 static void VirtKB_MJToggle(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 static void VirtKB_MouseLB(bool down);
 static void VirtKB_MouseRB(bool down);
@@ -358,7 +389,7 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_updateInput
 		jboolean t1, jfloat  tx1, jfloat ty1,
 		jboolean t2, jfloat  tx2, jfloat ty2,
 		jfloat mouseX, jfloat mouseY, jint mouseBtns,
-		jintArray keyPresses)
+		jintArray keyPresses, jfloatArray curAxis)
 {
 	if (!(s_InputReady&s_InputEnabled)) return;
 
@@ -376,6 +407,19 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_updateInput
 
 		(env)->ReleaseIntArrayElements(keyPresses, keyPressVals, JNI_ABORT);
 		//(env)->DeleteLocalRef(keyPresses); // explicitly releasing to assist garbage collection, though not required
+	}
+
+	{
+		int numVals = (env)->GetArrayLength(curAxis);
+		jfloat* axisVals = (env)->GetFloatArrayElements(curAxis, 0);
+
+		for (int i = 0; i < numVals; ++i)
+		{
+			s_jAxis[i] = axisVals[i];
+		}
+
+		(env)->ReleaseFloatArrayElements(curAxis, axisVals, JNI_ABORT);
+		//(env)->DeleteLocalRef(curAxis); // explicitly releasing to assist garbage collection, though not required
 	}
 
 	bool *curtouched = s_curtouched[s_curIndex];
@@ -414,14 +458,33 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_updateInput
 	s_curEnv = 0;
 }
 
-/*
-JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_toggleMouseJoystick(JNIEnv * env, jobject obj)
+JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorToggleMouseActive(JNIEnv * env, jobject obj)
 {
 	if (!(s_InputReady&s_InputEnabled)) return;
 
-	VirtKB_MJToggle(true);
+	VirtKB_SetMouseActive(!VirtKB_getMouseActive());
 }
-*/
+
+JNIEXPORT jboolean JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorGetMouseActive(JNIEnv * env, jobject obj)
+{
+	return VirtKB_getMouseActive();
+}
+
+JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSetScreenScalePreset(JNIEnv * env, jobject obj, jint preset)
+{
+	if (!(s_InputReady&s_InputEnabled)) return;
+
+	s_curScreenZoomPreset = (preset) % ScreenZoom_NumOf;
+	Renderer_setZoomPreset(s_curScreenZoomPreset);
+}
+
+JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorToggleVirtKeyboard(JNIEnv * env, jobject obj, jboolean nonTouch)
+{
+	if (!(s_InputReady&s_InputEnabled)) return;
+
+	s_nonTouchKB = nonTouch;
+	VirtKB_ToggleKeyboard(0, 0, true);
+}
 
 void VirtKB_EnableInput(bool enable)
 {
@@ -686,6 +749,11 @@ static void _onMouseButtonEventCallback(const VirtKeyDef *vk, uint32_t uParam1, 
 
 static void _onJoystickEventCallback(const VirtKeyDef *vk, uint32_t uParam1, bool down)
 {
+	if ((s_showKeyboard && s_nonTouchKB) || VirtKB_getMouseActive())
+	{
+		return;
+	}
+
 	int joybit = GET_LOWORD(uParam1);
 	int clearbit = GET_HIWORD(uParam1);
 
@@ -701,6 +769,11 @@ static void _onJoystickEventCallback(const VirtKeyDef *vk, uint32_t uParam1, boo
 
 static void _onJoystick2EventCallback(const VirtKeyDef *vk, uint32_t uParam1, bool down)
 {
+	if ((s_showKeyboard && s_nonTouchKB) || VirtKB_getMouseActive())
+	{
+		return;
+	}
+
 	int joybit = GET_LOWORD(uParam1);
 	int clearbit = GET_HIWORD(uParam1);
 
@@ -747,6 +820,7 @@ static void VirtKB_InitCallbacks()
 				case VKB_KEY_NORMALSPEED:			kcb->onKeyEvent = VirtKB_ToggleTurboSpeed; break;
 
 				case VKB_KEY_TOGGLEUI:				kcb->onKeyEvent = VirtKB_ToggleShowUI; break;
+				case VKB_KEY_PAUSE:					kcb->onKeyEvent = VirtKB_TogglePause; break;
 
 				case VKB_KEY_AUTOFIRE:				kcb->onKeyEvent = VirtKB_ToggleAutoFire; break;
 
@@ -817,7 +891,7 @@ void VirtKB_CreateQuickKeys()
 	float sscale = (float)scrwidth/1024.0f;
 
 	// top left keys
-	if (!s_showJoystickOnly && !s_hideAll)
+	if (!s_showJoystickOnly && !s_hideAll && !s_nonTouchKB)
 	{
 		int keyOffsetX = (int)ceilf(10*sscale);
 		int keyOffsetY = (int)ceilf(10*sscale);
@@ -1278,6 +1352,8 @@ void VirtKB_updateInput()
 	float *curtouchX = s_curtouchX[s_curIndex];
 	float *curtouchY = s_curtouchY[s_curIndex];
 
+	bool hasTouches = false;
+
 	BitFlags *prevButtons = s_curButtons[prevIndex];
 	BitFlags *curButtons = s_curButtons[s_curIndex];
 
@@ -1295,6 +1371,8 @@ void VirtKB_updateInput()
 	{
 		if (curtouched[i])
 		{
+			hasTouches = true;
+
 			// quick keys
 			for (int c = 0; c < s_numQuickKeys; ++c)
 			{
@@ -1392,7 +1470,7 @@ void VirtKB_updateInput()
 				const VirtKeyDef *vk = VirtKB_VkbHitTest(curtouchX[i], curtouchY[i]);
 				if (vk)
 				{
-					VirtKB_addVkbPress(vk->id);
+					VirtKB_addVkbPress(vk->id, false);
 					curButtons->setBit(vk->id);
 					curButtonDownSet[numCurButtonDown] = MAKE_BUTTON_DOWN_SET(vk->id, INVALID_QUICK_KEY_ID);
 					++numCurButtonDown;
@@ -1424,6 +1502,63 @@ void VirtKB_updateInput()
 						}
 					}
 				}
+			}
+		}
+	}
+
+	// add cur key focus (non-touch mode)
+	{
+		if (s_showKeyboard && s_nonTouchKB)
+		{
+			long nowMS = SDL_GetTicks();
+            long elapsedMS = nowMS - s_lastKBFocusRepeat;
+            bool canNav = elapsedMS > s_KBRepeatDelay;
+
+            bool navPressed = false;
+
+			if (curButtons->getBit(VKB_KEY_NAVLEFT))		{ if (canNav) { VirtKB_NavLeft(); s_lastKBFocusRepeat = nowMS; } navPressed = true; }
+			else if (curButtons->getBit(VKB_KEY_NAVRIGHT))	{ if (canNav) { VirtKB_NavRight(); s_lastKBFocusRepeat = nowMS; } navPressed = true; }
+			else if (curButtons->getBit(VKB_KEY_NAVUP))		{ if (canNav) { VirtKB_NavUp(); s_lastKBFocusRepeat = nowMS; } navPressed = true; }
+			else if (curButtons->getBit(VKB_KEY_NAVDOWN))	{ if (canNav) { VirtKB_NavDown(); s_lastKBFocusRepeat = nowMS; } navPressed = true; }
+
+			if (curButtons->getBit(VKB_KEY_NAVBTN))
+			{
+				//VirtKB_NavAction();
+				if (numCurButtonDown < MaxButtonDown)
+				{
+					int vkID = s_curKBKeyFocus;
+					if (vkID >= 0 && vkID < VKB_KEY_NumOf)
+					{
+						const VirtKeyDef *vk = &g_vkbKeyDefs[vkID];
+
+						VirtKB_addVkbPress(vk->id, false);
+						curButtons->setBit(vk->id);
+						curButtonDownSet[numCurButtonDown] = MAKE_BUTTON_DOWN_SET(vk->id, INVALID_QUICK_KEY_ID);
+						++numCurButtonDown;
+					}
+				}
+			}
+
+			if (!navPressed)
+			{
+				s_lastKBFocusRepeat = 0;
+				s_KBRepeatDelay = kInitKBRepeatDelay;
+			}
+			else
+			{
+				if (canNav)
+				{
+					s_KBRepeatDelay -= kKBRepeatDelayDeltaRate;
+					s_KBRepeatDelay = (s_KBRepeatDelay < kMinKBRepeatDelay) ? kMinKBRepeatDelay : s_KBRepeatDelay;
+
+				}
+			}
+
+			VirtKB_addVkbPress(s_curKBKeyFocus, true);
+
+			if (hasTouches) // TODO: only if touch outside keyboard
+			{
+				VirtKB_ToggleKeyboard(0, 0, true); // hide keyboard
 			}
 		}
 	}
@@ -1500,6 +1635,7 @@ void VirtKB_updateInput()
 		}
 
 		VirtKB_updateHardwareMouse();
+		VirtKB_updateVirtMouseEmu();
 
 		if (s_mouseDx != 0.0f || s_mouseDy != 0.0f)
 		{
@@ -1555,6 +1691,58 @@ static void VirtKB_updateHardwareMouse()
 	}
 }
 
+static void VirtKB_updateVirtMouseEmu()
+{
+	if (isUserEmuPaused())
+	{
+		return;
+	}
+
+	float accel = 25; // TODO: user option
+
+	float jx = s_jAxis[kAxis_X2];
+	float jy = s_jAxis[kAxis_Y2];
+
+	bool nonTouchKBActive = (s_showKeyboard && s_nonTouchKB);
+
+	if (VirtKB_getMouseActive() && !nonTouchKBActive)
+	{
+		float jx1 = s_jAxis[kAxis_X1];
+		float jy1 = s_jAxis[kAxis_Y1];
+
+		bool dpadMouse = false;
+		if (fabsf(jx1) < 0.001f && fabsf(jy1) < 0.001f) {
+			BitFlags *curButtons = s_curButtons[s_curIndex];
+
+			if (curButtons->getBit(VKB_KEY_JOYLEFT))		{ jx1 = -_curDPADMouseAccel; dpadMouse  = true; }
+			else if (curButtons->getBit(VKB_KEY_JOYRIGHT))	{ jx1 = _curDPADMouseAccel; dpadMouse  = true; }
+			if (curButtons->getBit(VKB_KEY_JOYUP))		    { jy1 = -_curDPADMouseAccel; dpadMouse  = true; }
+			else if (curButtons->getBit(VKB_KEY_JOYDOWN))	{ jy1 = _curDPADMouseAccel; dpadMouse  = true; }
+		}
+		if (dpadMouse) {
+			float dT = 1/60.0f; // TODO
+			_curDPADMouseAccel += dT;
+			if (_curDPADMouseAccel > 1) {
+				_curDPADMouseAccel = 1;
+			}
+		} else {
+			_curDPADMouseAccel = 0.1f;
+		}
+
+		if (fabsf(jx1) > fabsf(jx))
+		{
+			jx = jx1;
+		}
+		if (fabsf(jy1) > fabsf(jy))
+		{
+			jy = jy1;
+		}
+	}
+
+	s_mouseDx += jx * accel;
+	s_mouseDy += jy * accel;
+}
+
 static void VirtKB_updateMouse()
 {
 	int prevIndex = 1 - s_curIndex;
@@ -1567,28 +1755,14 @@ static void VirtKB_updateMouse()
 	float *curtouchX = s_curtouchX[s_curIndex];
 	float *curtouchY = s_curtouchY[s_curIndex];
 
-
+	const float kMoveTimeThresh = 16.0f/60.0f;
 	float dt = 1.f/60.f; // TODO: calculate real value
 	int fingers = 0;
 
 
 	int prevMousePresses = s_mousePresses;
-	int curMousePresses = s_mousePresses;
+	int curMousePresses = 0;//s_mousePresses;
 
-
-	int quickPressed = false;
-	if (s_mouseQuickPress)
-	{
-		quickPressed = true;
-		if ((s_curInputFlags & (FLAG_MOUSEBUTTON)) == 0)
-		{
-			if (prevMousePresses & 1) { s_LMB = false; }
-			if (prevMousePresses & 2) { s_RMB = false; }
-		}
-
-//Debug_Printf("Mouse Released: %d", prevMousePresses);
-		s_mousePresses = 0;
-	}
 
 	for (int i = 0; i < VKB_MaxTouches; ++i)
 	{
@@ -1631,14 +1805,18 @@ static void VirtKB_updateMouse()
 				}
 
 				s_mouseFinger = i;
-//Debug_Printf("MouseFinger set: %d", s_mouseFinger);
+				//Debug_Printf("MouseFinger set: %d", s_mouseFinger);
 
 				s_prevMouseX = curtouchX[i];
 				s_prevMouseY = curtouchY[i];
+				s_mouseDragStartX = s_prevMouseX;
+				s_mouseDragStartY = s_prevMouseY;
 				s_mouseMoved = 0;
 
 				s_mousePresses = 0;
 				s_mousePressTime = 0;
+
+				s_mouseMoveOnly = false;
 			}
 		}
 	}
@@ -1646,25 +1824,22 @@ static void VirtKB_updateMouse()
 	{
 		if (curtouched[s_mouseFinger])
 		{
-			if (!s_mouseMoved && !s_mouseQuickPress)
+			if (!s_mouseMoveOnly)
 			{
-				s_mousePressTime += 1.0f/60.0f;//dt;
-				if (s_mousePressTime > 8.0f/60.0f)
+				s_mousePressTime += dt;
+				if (s_mousePressTime >= kMoveTimeThresh)
 				{
-					s_mouseMoved = 1;
 					curMousePresses = fingers;
 				}
 			}
 		}
 		else
 		{
-//Debug_Printf("MouseFinger cleared: %d", s_mouseFinger);
+			//Debug_Printf("MouseFinger cleared: %d", s_mouseFinger);
+			curMousePresses = (!s_mouseMoved && s_mousePressTime < kMoveTimeThresh) ? (s_prevFingerCount>0?s_prevFingerCount:1) : 0;//s_mouseMoveOnly ? 0 : s_prevFingerCount);
+
 			s_mouseFinger = -1;
-
 			s_mousePressTime = 0;
-			curMousePresses = s_mouseMoved ? 0: s_prevFingerCount;
-			s_mouseQuickPress = s_mouseMoved ? false : true;
-
 			s_mouseDx = 0;
 			s_mouseDy = 0;
 		}
@@ -1672,24 +1847,39 @@ static void VirtKB_updateMouse()
 
 	if (s_mouseFinger >= 0)
 	{
-		s_mouseDx += curtouchX[s_mouseFinger] - s_prevMouseX;
-		s_mouseDy += curtouchY[s_mouseFinger] - s_prevMouseY;
+		float dx = curtouchX[s_mouseFinger] - s_prevMouseX;
+		float dy = curtouchY[s_mouseFinger] - s_prevMouseY;
+
+		s_mouseDx += dx;
+		s_mouseDy += dy;
 
 		s_prevMouseX = curtouchX[s_mouseFinger];
 		s_prevMouseY = curtouchY[s_mouseFinger];
 
-		if (s_mouseDx != 0.0f || s_mouseDy != 0.0f)
+		if (!s_mouseMoveOnly)
 		{
-			s_mouseMoved = 1;
+			int scrwidth = getScreenWidth();
+			int scrheight = getScreenHeight();
+
+			float threshX = scrwidth * 0.01f;
+			float threshY = scrheight * 0.01f;
+
+			float mdx = curtouchX[s_mouseFinger] - s_mouseDragStartX;
+			float mdy = curtouchY[s_mouseFinger] - s_mouseDragStartY;
+
+			if (fabsf(mdx) > threshX || fabsf(mdx) > threshY)
+			{
+				s_mouseMoved = 1;
+
+				if (s_mousePressTime <= kMoveTimeThresh) {
+					s_mouseMoveOnly = true;
+				}
+			}
 		}
 	}
 
 	if (prevMousePresses != curMousePresses)
 	{
-if (s_mouseQuickPress)
-{
-//Debug_Printf("Quick Pressed");
-}
 		if ((s_curInputFlags & (FLAG_MOUSEBUTTON)) == 0)
 		{
 			if (prevMousePresses & 1) { s_LMB = false; }
@@ -1697,22 +1887,17 @@ if (s_mouseQuickPress)
 
 			if (curMousePresses != 0)
 			{
-//Debug_Printf("Mouse Pressed: %d", curMousePresses);
+				//Debug_Printf("Mouse Pressed: %d", curMousePresses);
 				if (curMousePresses & 1) { s_LMB = true; }
 				if (curMousePresses & 2) { s_RMB = true; }
 			}
 			else
 			{
-//Debug_Printf("Mouse Released: %d", prevMousePresses);
+				//Debug_Printf("Mouse Released: %d", prevMousePresses);
 			}
 		}
 
 		s_mousePresses = curMousePresses;
-	}
-
-	if (quickPressed)
-	{
-		s_mouseQuickPress = false;
 	}
 
 	s_prevFingerCount = fingers;
@@ -1723,23 +1908,23 @@ static void VirtKB_resetVkbPresses()
 	s_VkbCurNumPresses = 0;
 }
 
-static void VirtKB_addVkbPress_Rect(const VirtKeyDef *k);
-static void VirtKB_addVkbPress_Poly(const VirtKeyDef *k);
+static void VirtKB_addVkbPress_Rect(const VirtKeyDef *k, bool focusKey);
+static void VirtKB_addVkbPress_Poly(const VirtKeyDef *k, bool focusKey);
 
-static void VirtKB_addVkbPress(int vkbKeyID)
+static void VirtKB_addVkbPress(int vkbKeyID, bool focusKey)
 {
 	const VirtKeyDef *k = &g_vkbKeyDefs[vkbKeyID];
 	if (k->flags & FLAG_POLY)
 	{
-		VirtKB_addVkbPress_Poly(k);
+		VirtKB_addVkbPress_Poly(k, focusKey);
 	}
 	else
 	{
-		VirtKB_addVkbPress_Rect(k);
+		VirtKB_addVkbPress_Rect(k, focusKey);
 	}
 }
 
-static void VirtKB_addVkbPress_Rect(const VirtKeyDef *k)
+static void VirtKB_addVkbPress_Rect(const VirtKeyDef *k, bool focusKey)
 {
 	int numKeys = 1;
 	short onekey[1] = {(short)k->id };
@@ -1785,8 +1970,9 @@ static void VirtKB_addVkbPress_Rect(const VirtKeyDef *k)
 
 		float a = 0.8f;
 		float r = 0.1f;
-		float g = 0.1f;
-		float b = 1.0f;
+		float g, b;
+		if (focusKey)	{ g = 1.0f; b = 0.1f; }
+		else			{ g = 0.1f; b = 1.0f; }
 
 		VirtKB_UpdateRectVerts(v, x1, y1, x2, y2, tx1, ty1, tx2, ty2, r, g, b, a);
 
@@ -1794,7 +1980,7 @@ static void VirtKB_addVkbPress_Rect(const VirtKeyDef *k)
 	}
 }
 
-static void VirtKB_addVkbPress_Poly(const VirtKeyDef *k)
+static void VirtKB_addVkbPress_Poly(const VirtKeyDef *k, bool focusKey)
 {
 	float curZoomKB = s_vkbZoom;
 	int curOffX  = 0, curOffY = 0;
@@ -1824,8 +2010,9 @@ static void VirtKB_addVkbPress_Poly(const VirtKeyDef *k)
 
 		float a = 0.8f;
 		float r = 0.1f;
-		float g = 0.1f;
-		float b = 1.0f;
+		float g, b;
+		if (focusKey)	{ g = 1.0f; b = 0.1f; }
+		else			{ g = 0.1f; b = 1.0f; }
 
 		VirtKB_UpdatePolyVerts(v, keyX, keyY, texU, texV, r, g, b, a);
 
@@ -1989,7 +2176,6 @@ static const VirtKeyDef *VirtKB_VkbHitTest(float x, float y)
 	y = (y - curOffY) / curZoomKB;
 
 	const RowSearch *row = 0;
-	extern const int g_vkbRowSearchSize;
 	for (int i = 0; i < g_vkbRowSearchSize; ++i)
 	{
 		const RowSearch *curRow = &g_vkbRowSearch[i];
@@ -2064,6 +2250,106 @@ static void VirtKB_ToggleTurboSpeed(const VirtKeyDef *keyDef, uint32_t uParam1, 
 		setTurboSpeed(1-curTurbo);
 
 		s_recreateQuickKeys = true;
+	}
+}
+
+static int _VirtKB_FindCurFocusRow()
+{
+	const RowSearch *row = 0;
+	for (int i = 0; i < g_vkbRowSearchSize; ++i)
+	{
+		const RowSearch *curRow = &g_vkbRowSearch[i];
+		if (s_curKBKeyFocus >= curRow->minID && s_curKBKeyFocus <= curRow->maxID)
+		{
+			return i;
+		}
+	}
+	return -1;
+}
+
+static int _findClosestKey(int curVKeyID, int nextRowIdx, int dir)
+{
+	// cmp avg x
+	const VirtKeyDef* curKey = &g_vkbKeyDefs[curVKeyID];
+	int curKeyVKBID = curKey->id;
+	float curX = (curKey->v[0] + curKey->v[2]) * 0.5f;
+
+	float minDiff = MAXFLOAT;
+	int minKey = -1;
+	// just do a linear search through row of keys
+	const RowSearch *nextRow = &g_vkbRowSearch[nextRowIdx];
+	for (int i = nextRow->minID; i <= nextRow->maxID; ++i)
+	{
+		const VirtKeyDef* cmpKey = &g_vkbKeyDefs[i];
+		float cmpX = (cmpKey->v[0] + cmpKey->v[2]) * 0.5f;
+		float diff = curX - cmpX;
+		if (diff < 0.0f) { diff *= -1.0f; }
+		if (diff < minDiff)
+		{
+			minDiff = diff;
+			minKey = i;
+		}
+	}
+	if (minKey < 0) { minKey = nextRow->minID; }
+
+	const VirtKeyDef* minKeyDef = &g_vkbKeyDefs[minKey];
+	int minKeyVKBID = minKeyDef->id;
+	if (minKeyVKBID == curKeyVKBID) // (big keys)
+	{
+		if (dir != 0)
+		{
+			// search one more row
+			int lastRowIdx = nextRowIdx + dir;
+			if (lastRowIdx >= 0 && lastRowIdx < g_vkbRowSearchSize)
+			{
+				return _findClosestKey(curVKeyID, lastRowIdx, 0);
+			}
+		}
+	}
+
+	return minKey;
+}
+
+static void VirtKB_NavLeft()
+{
+	int curRowIdx = _VirtKB_FindCurFocusRow();
+	if (curRowIdx >= 0)
+	{
+		const RowSearch *curRow = &g_vkbRowSearch[curRowIdx];
+		if (s_curKBKeyFocus > curRow->minID)
+		{
+			--s_curKBKeyFocus;
+		}
+	}
+}
+static void VirtKB_NavRight()
+{
+	int curRowIdx = _VirtKB_FindCurFocusRow();
+	if (curRowIdx >= 0)
+	{
+		const RowSearch *curRow = &g_vkbRowSearch[curRowIdx];
+		if (s_curKBKeyFocus < curRow->maxID)
+		{
+			++s_curKBKeyFocus;
+		}
+	}
+}
+static void VirtKB_NavUp()
+{
+	int curRowIdx = _VirtKB_FindCurFocusRow();
+	if (curRowIdx > 0)
+	{
+		int nextRowIdx = curRowIdx - 1;
+		s_curKBKeyFocus = _findClosestKey(s_curKBKeyFocus, nextRowIdx, -1);
+	}
+}
+static void VirtKB_NavDown()
+{
+	int curRowIdx = _VirtKB_FindCurFocusRow();
+	if (curRowIdx >= 0 && curRowIdx < (g_vkbRowSearchSize-1))
+	{
+		int nextRowIdx = curRowIdx + 1;
+		s_curKBKeyFocus = _findClosestKey(s_curKBKeyFocus, nextRowIdx, 1);
 	}
 }
 
@@ -2232,7 +2518,7 @@ static void VirtKB_clearMousePresses()
 
 	s_waitInputCleared = true;
 
-Debug_Printf("mouse reset");
+	Debug_Printf("mouse reset");
 	s_mouseFinger = -1;
 	s_mouseMoved = 0;
 	s_prevMouseX = 0;
@@ -2244,7 +2530,7 @@ Debug_Printf("mouse reset");
 	s_mousePresses = 0;
 	s_mousePressTime = 0;
 
-	s_mouseQuickPress = false;
+	_curDPADMouseAccel = 0.1f;
 }
 
 static void VirtKB_MouseLB(bool down)
@@ -2338,6 +2624,11 @@ void VirtKB_updateAutoHide(bool touched)
         return;
     }
 
+    if (s_showKeyboard && s_nonTouchKB)
+    {
+    	touched = true;
+    }
+
     bool refreshVerts = false;
 
     if (touched != s_autoHideInput)
@@ -2398,6 +2689,15 @@ void VirtKB_setHideAll(bool set)
     {
         _virtJoy->setHide(set);
     }
+
+    if (!s_hideAll)
+    {
+        s_autoHideInput = true;
+        _setAutoHideAlpha(1);
+
+        VirtKB_UpdateQuickKeyVerts();
+        VirtKB_UpdateVkbVerts();
+    }
 }
 
 static void VirtKB_ToggleShowUI(const VirtKeyDef *keyDef, uint32_t uParam1, bool down)
@@ -2406,6 +2706,14 @@ static void VirtKB_ToggleShowUI(const VirtKeyDef *keyDef, uint32_t uParam1, bool
 	{
         VirtKB_setHideAll(!s_hideAll);
 		s_recreateQuickKeys = true;
+	}
+}
+
+static void VirtKB_TogglePause(const VirtKeyDef *keyDef, uint32_t uParam1, bool down)
+{
+	if (down)
+	{
+		toggleUserEmuPaused();
 	}
 }
 

@@ -253,10 +253,10 @@ void dump_counts (void)
 }
 #endif
 
-static void cpu_halt ( void )
+static void cpu_halt ( const char *text )
 {
-    m68k_setstopped(true); // TODO: stop it for now until reset works fully
-	Dialog_HaltDlg();
+//    m68k_setstopped(true); // TODO: stop it for now until reset works fully
+	Dialog_HaltDlg(text);
 }
 
 
@@ -878,8 +878,6 @@ static void InterruptAddJitter (int Level , int Pending)
       M68000_AddCycles ( cycles );
 }
 
-extern void hataroid_setDoubleBusError();
-
 /* Handle exceptions. We need a special case to handle MFP exceptions */
 /* on Atari ST, because it's possible to change the MFP's vector base */
 /* and get a conflict with 'normal' cpu exceptions. */
@@ -1067,8 +1065,8 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
 	    /* Check for double bus errors: */
 	    if (regs.spcflags & SPCFLAG_BUSERROR) {
 	      fprintf(stderr, "Detected double bus error at address $%x, PC=$%lx => CPU halted!\n", BusErrorAddress, (long)currpc);
-          DlgAlert_Notice("Detected double bus error => CPU halted!\n\nPlease quit and restart Hataroid.\n");
-	      cpu_halt();
+          //DlgAlert_Notice("Detected double bus error\n\nResetting ST.\n");
+	      cpu_halt("Detected ST double bus error\n\nReset ST or Quit?\n");
 	      return;
 	    }
 	    if ((ExceptionDebugMask & EXCEPT_BUS) && BusErrorAddress!=0xff8a00) {
@@ -1089,8 +1087,8 @@ void Exception(int nr, uaecptr oldpc, int ExceptionSource)
         if ( nr==2 || nr==3 )			/* address error during bus/address error -> stop emulation */
             {
 	      fprintf(stderr,"Address Error during exception 2/3, new PC=$%x => CPU halted\n",newpc);
-          DlgAlert_Notice("Address Error during exception 2/3 => CPU halted!\n\nPlease quit and restart Hataroid.\n");
-	      cpu_halt();
+          //DlgAlert_Notice("Address Error during exception 2/3\n\nResetting ST.\n");
+	      cpu_halt("ST Address Error during exception 2/3\n\nReset ST or Quit?\n");
           return;
             }
         else
@@ -1544,6 +1542,9 @@ void m68k_reset (void)
     m68k_areg(regs, 7) = get_long(0);
     m68k_setpc(get_long(4));
     refill_prefetch (m68k_getpc(), 0);
+
+	//OpcodeFamily;
+	BusCyclePenalty = 0;
 }
 
 
@@ -1655,7 +1656,6 @@ static bool do_specialties_interrupt (int Pending)
     return false;					/* no interrupt was found */
 }
 
-
 static int do_specialties (void)
 {
     if(regs.spcflags & SPCFLAG_BUSERROR) {
@@ -1695,7 +1695,7 @@ static int do_specialties (void)
 	    /* Take care of quit event if needed */
 	    if (regs.spcflags & SPCFLAG_BRK)
 		return 1;
-	
+
 	    M68000_AddCycles(4);
 	
 	    /* It is possible one or more ints happen at the same time */
@@ -1715,7 +1715,7 @@ static int do_specialties (void)
 
 
     if (regs.spcflags & SPCFLAG_TRACE)
-	do_trace ();
+		do_trace ();
 
 //    if (regs.spcflags & SPCFLAG_DOINT) {
     /* [NP] pending int should be processed now, not after the current instr */
@@ -1729,8 +1729,8 @@ static int do_specialties (void)
 	set_special (SPCFLAG_DOINT);
     }
 
-    if (regs.spcflags & SPCFLAG_DEBUGGER)
-	DebugCpu_Check();
+//    if (regs.spcflags & SPCFLAG_DEBUGGER)
+//	DebugCpu_Check();
 
     if (regs.spcflags & (SPCFLAG_BRK | SPCFLAG_MODE_CHANGE)) {
 	unset_special(SPCFLAG_MODE_CHANGE);
@@ -1878,6 +1878,8 @@ static void m68k_run_1 (struct ResumeFrameData *resumeData)
 /* Same thing, but don't use prefetch to get opcode.  */
 static void m68k_run_2 (void)
 {
+    Uint32 prevVBLCount = nVBLCount;
+
     for (;;) {
 	int cycles;
 
@@ -1920,9 +1922,9 @@ static void m68k_run_2 (void)
 	  nWaitStateCycles = 0;
 	}
 
-        if ( PendingInterruptCount <= 0 )
+    if ( PendingInterruptCount <= 0 )
 	{
-	    while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) )
+	    while ( ( PendingInterruptCount <= 0 ) && ( PendingInterruptFunction ) && ( ( regs.spcflags & SPCFLAG_STOP ) == 0 ) )
 		CALL_VAR(PendingInterruptFunction);
 	    if ( MFP_UpdateNeeded == true )
 		MFP_UpdateIRQ ( 0 );
@@ -1937,6 +1939,21 @@ static void m68k_run_2 (void)
 	if (bDspEnabled) {
 	    DSP_Run( Cycles_GetCounter(CYCLES_COUNTER_CPU) );
 	}
+
+	// done 1 frame
+	if (nVBLCount != prevVBLCount)
+	{
+		if (nVBLs % (nFrameSkips+1))
+		{
+			// skipping frame
+			prevVBLCount = nVBLCount;
+		}
+		else
+		{
+			return;
+		}
+	}
+
     }
 }
 
@@ -1965,10 +1982,10 @@ void m68k_go_frame (void)
 {
     if (!(regs.spcflags & SPCFLAG_BRK))
     {
-        //if(currprefs.cpu_compatible)
-	  m68k_run_1(0);
-        //else
-	//  m68k_run_2(0);
+      if(currprefs.cpu_compatible)
+	  	m68k_run_1(0);
+      else
+	 	m68k_run_2();
     }
     unset_special(SPCFLAG_BRK);
 }

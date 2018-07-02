@@ -2368,7 +2368,7 @@ unsigned long REGPARAM2 CPUFUNC(op_628_0)(uae_u32 opcode) /* ADD */
 {{	uae_s8 src = get_ibyte(2);
 {	uaecptr dsta = m68k_areg(regs, dstreg) + (uae_s32)(uae_s16)get_iword(4);
 {	uae_s8 dst = get_byte(dsta);
-{	refill_prefetch (m68k_getpc(), 6);
+{	refill_prefetch (m68k_getpc(), 2);
 {uae_u32 newv = ((uae_s8)(dst)) + ((uae_s8)(src));
 {	int flgs = ((uae_s8)(src)) < 0;
 	int flgo = ((uae_s8)(dst)) < 0;
@@ -2536,7 +2536,7 @@ unsigned long REGPARAM2 CPUFUNC(op_668_0)(uae_u32 opcode) /* ADD */
 {{	uae_s16 src = get_iword(2);
 {	uaecptr dsta = m68k_areg(regs, dstreg) + (uae_s32)(uae_s16)get_iword(4);
 {	uae_s16 dst = get_word(dsta);
-{	refill_prefetch (m68k_getpc(), 6);
+{	refill_prefetch (m68k_getpc(), 2);
 {uae_u32 newv = ((uae_s16)(dst)) + ((uae_s16)(src));
 {	int flgs = ((uae_s16)(src)) < 0;
 	int flgo = ((uae_s16)(dst)) < 0;
@@ -2704,7 +2704,7 @@ unsigned long REGPARAM2 CPUFUNC(op_6a8_0)(uae_u32 opcode) /* ADD */
 {{	uae_s32 src = get_ilong(2);
 {	uaecptr dsta = m68k_areg(regs, dstreg) + (uae_s32)(uae_s16)get_iword(6);
 {	uae_s32 dst = get_long(dsta);
-{	refill_prefetch (m68k_getpc(), 6);
+{	refill_prefetch (m68k_getpc(), 2);
 {uae_u32 newv = ((uae_s32)(dst)) + ((uae_s32)(src));
 {	int flgs = ((uae_s32)(src)) < 0;
 	int flgo = ((uae_s32)(dst)) < 0;
@@ -37474,7 +37474,7 @@ unsigned long REGPARAM2 CPUFUNC(op_628_5)(uae_u32 opcode) /* ADD */
 {{	uae_s8 src = get_ibyte_prefetch(2);
 {	uaecptr dsta = m68k_areg(regs, dstreg) + (uae_s32)(uae_s16)get_iword_prefetch(4);
 {	uae_s8 dst = get_byte(dsta);
-{	refill_prefetch (m68k_getpc(), 6);
+{	refill_prefetch (m68k_getpc(), 2);
 {uae_u32 newv = ((uae_s8)(dst)) + ((uae_s8)(src));
 {	int flgs = ((uae_s8)(src)) < 0;
 	int flgo = ((uae_s8)(dst)) < 0;
@@ -37689,7 +37689,7 @@ unsigned long REGPARAM2 CPUFUNC(op_668_5)(uae_u32 opcode) /* ADD */
 		goto endlabel2245;
 	}
 {{	uae_s16 dst = get_word(dsta);
-{	refill_prefetch (m68k_getpc(), 6);
+{	refill_prefetch (m68k_getpc(), 2);
 {uae_u32 newv = ((uae_s16)(dst)) + ((uae_s16)(src));
 {	int flgs = ((uae_s16)(src)) < 0;
 	int flgo = ((uae_s16)(dst)) < 0;
@@ -37935,7 +37935,7 @@ unsigned long REGPARAM2 CPUFUNC(op_6a8_5)(uae_u32 opcode) /* ADD */
 		goto endlabel2253;
 	}
 {{	uae_s32 dst = get_long(dsta);
-{	refill_prefetch (m68k_getpc(), 6);
+{	refill_prefetch (m68k_getpc(), 2);
 {uae_u32 newv = ((uae_s32)(dst)) + ((uae_s32)(src));
 {	int flgs = ((uae_s32)(src)) < 0;
 	int flgo = ((uae_s32)(dst)) < 0;

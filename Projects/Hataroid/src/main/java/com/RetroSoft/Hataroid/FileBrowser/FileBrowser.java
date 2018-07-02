@@ -14,6 +14,7 @@ import java.util.zip.ZipFile;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -21,37 +22,47 @@ import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+//import android.support.v7.app.ActionBar;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import com.RetroSoft.Hataroid.HataroidActivity;
+import com.RetroSoft.Hataroid.HataroidNativeLib;
 import com.RetroSoft.Hataroid.R;
 import com.RetroSoft.Hataroid.GameDB.GameDBFile;
 import com.RetroSoft.Hataroid.GameDB.GameDBHelper;
 import com.RetroSoft.Hataroid.GameDB.IGameDBScanner;
 import com.RetroSoft.Hataroid.Input.RenameInputMapView;
+//import com.RetroSoft.Hataroid.Util.AppCompatListActivity;
 
+//public class FileBrowser extends AppCompatListActivity implements IGameDBScanner
 public class FileBrowser extends ListActivity implements IGameDBScanner
 {
 	public static final String CONFIG_OPENZIPS = "Config_OpenZips";
 	public static final String CONFIG_EXT = "Config_Ext";
 	public static final String CONFIG_RESETST = "Config_ResetST";
+	public static final String CONFIG_CHECKPASTI = "Config_CheckPasti";
 	public static final String CONFIG_REFRESHDB = "Config_RefreshDB";
 	public static final String CONFIG_SELECTFOLDER = "Config_SelectFolder";
 	public static final String CONFIG_NEWFOLDER = "Config_NewFolder";
 	public static final String CONFIG_PREFLASTITEMPATH = "Config_PrefLastItemPath";
 	public static final String CONFIG_PREFLASTITEMNAME = "Config_PrefLastItemName";
-	
+	public static final String CONFIG_TITLE = "Config_Title";
+
 	public static final String RESULT_PATH = "ResultPath";
 	public static final String RESULT_ZIPPATH = "ResultZipPath";
 	public static final String RESULT_DISPLAYNAME = "ResultDisplayName";
 	public static final String RESULT_RESETCOLD = "ResetCold";
 	public static final String RESULT_RESETWARM = "ResetWarm";
+	public static final String RESULT_PASTIRESET = "PastiReset";
 
 	private static final int	ACTIVITYRESULT_NEWFOLDERNAME				= 1;
 
@@ -63,6 +74,8 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 	private static String		_savedPath = null;
 	private static int			_prevFirstVisibleItem = 0;
 
+	private String				_title = "";
+
 	private File				_curDir;
 	private ZipFile				_curZipFile;
 
@@ -70,6 +83,7 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 
 	private boolean				_openZips = true;
 	private boolean				_resetST = true;
+	private boolean             _checkPasti = false;
 	private boolean				_refreshDB = false;
 	private boolean				_selectFolder = false;
 	private boolean				_newFolder = false;
@@ -89,9 +103,51 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 	@Override public void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
+
 		setContentView(R.layout.activity_file_browser_view);
-		
+
 		parseOptions(savedInstanceState);
+
+//		try
+//		{
+//			ActionBar actionBar = getSupportActionBar();
+//
+//			LayoutInflater mInflater = LayoutInflater.from(this);
+//			View customView = mInflater.inflate(R.layout.activity_file_browser_actionbar, null);
+//
+//			actionBar.setCustomView(customView);
+//			actionBar.setDisplayShowCustomEnabled(true);
+//
+//			TextView tv = (TextView)customView.findViewById(R.id.ab_title);
+//			tv.setText(_title);
+//		}
+//		catch (Exception e)
+//		{
+//			e.printStackTrace();
+//		}
+
+		try
+		{
+			View mView = this.findViewById(R.id.filebrowser_view);
+
+			TextView title = (TextView)mView.findViewById(R.id.ab_title);
+			title.setText(_title);
+
+			ImageButton navBackBtn = (ImageButton)mView.findViewById(R.id.nav_back);
+			navBackBtn.setOnClickListener(new View.OnClickListener() {
+				public void onClick(View view) {
+					if (!_selectFolder || !onSelectButtonClicked())
+					{
+						sendFinish(RESULT_CANCELED);
+					}
+				}
+			});
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
 		setupButtonListeners();
 
 		_retIntent = new Intent();
@@ -202,9 +258,11 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 			
 			outState.putBoolean(CONFIG_OPENZIPS, _openZips);
 			outState.putBoolean(CONFIG_RESETST, _resetST);
+			outState.putBoolean(CONFIG_CHECKPASTI, _checkPasti);
 			outState.putBoolean(CONFIG_REFRESHDB, _refreshDB);
 			outState.putBoolean(CONFIG_SELECTFOLDER, _selectFolder);
 			outState.putBoolean(CONFIG_NEWFOLDER, _newFolder);
+			outState.putString(CONFIG_TITLE, _title);
 		}
 		catch (Exception e)
 		{
@@ -217,6 +275,7 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 		_exts = new String [] {".st", ".msa", ".dim", ".stx"};
 		_openZips = true;
 		_resetST = true;
+		_checkPasti = false;
 
 		Bundle b = (savedInstanceState == null) ? getIntent().getExtras() : savedInstanceState;
 		if (b != null)
@@ -229,12 +288,15 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 			
 			_openZips = b.getBoolean(CONFIG_OPENZIPS, true);
 			_resetST = b.getBoolean(CONFIG_RESETST, true);
+			_checkPasti = b.getBoolean(CONFIG_CHECKPASTI, false);
 			_refreshDB = b.getBoolean(CONFIG_REFRESHDB, false);
 			_selectFolder = b.getBoolean(CONFIG_SELECTFOLDER, false);
 			_newFolder = b.getBoolean(CONFIG_NEWFOLDER, false);
 			
 			_prefLastItemPathKey = b.getString(CONFIG_PREFLASTITEMPATH);
 			_prefLastItemNameKey = b.getString(CONFIG_PREFLASTITEMNAME);
+
+			_title = b.getString(CONFIG_TITLE);
 		}
 
 		if (_prefLastItemPathKey == null) { _prefLastItemPathKey = LastFloppyDirItemPathKey; }
@@ -303,159 +365,204 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 		super.onResume();
 	}
 
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent event)
+	{
+		int action = event.getAction();
+		int keyCode = event.getKeyCode();
+
+		if (action == KeyEvent.ACTION_UP) {
+			if (handleBackBtn(keyCode)) {
+				return true;
+			}
+		} else if (action == KeyEvent.ACTION_DOWN) {
+			if (keyCode == KeyEvent.KEYCODE_BACK) {
+				return true;
+			}
+		}
+		return super.dispatchKeyEvent(event);
+	}
+
 	@Override public boolean onKeyDown(int keyCode, KeyEvent event)
 	{
-		switch (keyCode)
-		{
-			case KeyEvent.KEYCODE_BACK:
-			{
+		if (keyCode == KeyEvent.KEYCODE_BACK) {
+			return true;
+		}
+		return super.onKeyDown(keyCode, event);
+	}
+
+	@Override public boolean onKeyUp(int keyCode, KeyEvent event)
+	{
+		if (handleBackBtn(keyCode)) {
+			return true;
+		}
+		return super.onKeyDown(keyCode, event);
+	}
+
+	boolean handleBackBtn(int keyCode)
+	{
+		switch (keyCode) {
+			case KeyEvent.KEYCODE_BACK: {
 				String scrollItemName = _getCurPathItem(_savedPath);
 
-				if (_curZipFile!=null)
-				{
+				if (_curZipFile != null) {
 					// exiting zip file
 					_closeZipFile(_curZipFile);
 					_curZipFile = null;
 
 					String parentPath = _getParentPathName(_savedPath);
 					_setCurDir(parentPath);
-				}
-				else if (_curDir != null)
-				{
+				} else if (_curDir != null) {
 					String root = "/";//_root;
-					if (root.compareToIgnoreCase(_curDir.getAbsolutePath()) == 0)
-					{
+					if (root.compareToIgnoreCase(_curDir.getAbsolutePath()) == 0) {
 						sendFinish(RESULT_CANCELED);
-						return false;
-					}
-					else if (_curDir.getParent() != null)
-					{
+						return true;
+					} else if (_curDir.getParent() != null) {
 						_setCurDir(_curDir.getParent());
 					}
 				}
 
 				retrieveFileList(_curDir, _exts);
 				_scrollToItemName(scrollItemName);
-				return false;
+				return true;
 			}
 		}
-
-		return super.onKeyDown(keyCode, event);
+		return false;
 	}
 	
 	void setupButtonListeners()
 	{
-		findViewById(R.id.fb_closeBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				sendFinish(RESULT_CANCELED);
-			}
-		});
+//		findViewById(R.id.fb_closeBtn).setOnClickListener(new OnClickListener() {
+//			public void onClick(View v) {
+//				sendFinish(RESULT_CANCELED);
+//			}
+//		});
+
+//		ActionBar actionBar = null;
+//		View actionBarView = null;
+//		try
+//		{
+//			actionBar = getSupportActionBar();
+//			if (actionBar != null)
+//			{
+//				actionBarView = actionBar.getCustomView();
+//			}
+//		}
+//		catch (Exception e)
+//		{
+//			e.printStackTrace();
+//		}
+		View actionBarView = this.findViewById(R.id.filebrowser_view);
 
 		try
 		{
-			int enabledButtonCount = 0;
-			
-			View selectBtnView = findViewById(R.id.fb_selectBtn);
-			if (selectBtnView != null)
+			if (actionBarView != null)
 			{
-				if (_selectFolder)
+				int enabledButtonCount = 0;
+
+				View selectBtnView = actionBarView.findViewById(R.id.fb_selectBtn);
+				if (selectBtnView != null)
 				{
-					if (_selectFolderListener == null)
+					if (_selectFolder)
 					{
-						_selectFolderListener = new SelectFolderClickListener(this);
-						selectBtnView.setOnClickListener(_selectFolderListener);
+						if (_selectFolderListener == null)
+						{
+							_selectFolderListener = new SelectFolderClickListener(this);
+							selectBtnView.setOnClickListener(_selectFolderListener);
+						}
+						++enabledButtonCount;
 					}
-					++enabledButtonCount;
-				}
-				else
-				{
-					selectBtnView.setEnabled(false);
-					selectBtnView.setVisibility(View.INVISIBLE);
-					((ViewGroup)selectBtnView.getParent()).removeView(selectBtnView);
-				}
-			}
-
-			View newFolderBtnView = findViewById(R.id.fb_newFolderBtn);
-			if (newFolderBtnView != null)
-			{
-				if (_newFolder)
-				{
-					newFolderBtnView.setOnClickListener(new OnClickListener() { public void onClick(View v) { _onNewFolderBtnClicked(); }});
-					++enabledButtonCount;
-				}
-				else
-				{
-					newFolderBtnView.setEnabled(false);
-					newFolderBtnView.setVisibility(View.INVISIBLE);
-					((ViewGroup)newFolderBtnView.getParent()).removeView(newFolderBtnView);
-				}
-			}
-			
-			_refreshDBBtnView = null;
-			_clearDBBtnView = null;
-			View refreshDBBtnView = findViewById(R.id.fb_refreshDBBtn);
-			View clearDBBtnView = findViewById(R.id.fb_clearDBBtn);
-			if (refreshDBBtnView != null)
-			{
-				if (_refreshDB)
-				{
-					refreshDBBtnView.setOnClickListener(new OnClickListener() { public void onClick(View v) { _onRefreshDBClicked(); }});
-					_refreshDBBtnView = refreshDBBtnView;
-
-					if (clearDBBtnView != null)
+					else
 					{
-						clearDBBtnView.setOnClickListener(new OnClickListener() { public void onClick(View v) { _onClearDBClicked(); }});
-						_clearDBBtnView = clearDBBtnView;
-					}
-
-					++enabledButtonCount;
-				}
-				else
-				{
-					refreshDBBtnView.setEnabled(false);
-					refreshDBBtnView.setVisibility(View.INVISIBLE);
-					((ViewGroup)refreshDBBtnView.getParent()).removeView(refreshDBBtnView);
-
-					if (clearDBBtnView != null)
-					{
-						clearDBBtnView.setEnabled(false);
-						clearDBBtnView.setVisibility(View.INVISIBLE);
-						((ViewGroup)clearDBBtnView.getParent()).removeView(clearDBBtnView);
+						selectBtnView.setEnabled(false);
+						selectBtnView.setVisibility(View.INVISIBLE);
+						((ViewGroup)selectBtnView.getParent()).removeView(selectBtnView);
 					}
 				}
-			}
 
-			if (enabledButtonCount == 0)
-			{
-				View buttonLayoutView = findViewById(R.id.bottomButtonsLayout);
-				if (buttonLayoutView != null)
+				View newFolderBtnView = actionBarView.findViewById(R.id.fb_newFolderBtn);
+				if (newFolderBtnView != null)
 				{
-					((ViewGroup)buttonLayoutView.getParent()).removeView(buttonLayoutView);
-				}
-			}
-
-			ListView fileListView = (ListView)findViewById(android.R.id.list);
-			if (fileListView != null)
-			{
-				Object lpObj = fileListView.getLayoutParams();
-				if (lpObj instanceof LinearLayout.LayoutParams)
-				{
-					LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams)lpObj;
-					lp.weight = (_selectFolder || _newFolder) ? 0.9f : 0.95f;
-					fileListView.setLayoutParams(lp);
-					View root = fileListView.getRootView();
-					if (root != null)
+					if (_newFolder)
 					{
-						root.requestLayout();
+						newFolderBtnView.setOnClickListener(new OnClickListener() { public void onClick(View v) { _onNewFolderBtnClicked(); }});
+						++enabledButtonCount;
+					}
+					else
+					{
+						newFolderBtnView.setEnabled(false);
+						newFolderBtnView.setVisibility(View.INVISIBLE);
+						((ViewGroup)newFolderBtnView.getParent()).removeView(newFolderBtnView);
 					}
 				}
+
+				_refreshDBBtnView = null;
+				_clearDBBtnView = null;
+				View refreshDBBtnView = actionBarView.findViewById(R.id.fb_refreshDBBtn);
+				View clearDBBtnView = actionBarView.findViewById(R.id.fb_clearDBBtn);
+				if (refreshDBBtnView != null)
+				{
+					if (_refreshDB)
+					{
+						refreshDBBtnView.setOnClickListener(new OnClickListener() { public void onClick(View v) { _onRefreshDBClicked(); }});
+						_refreshDBBtnView = refreshDBBtnView;
+
+						if (clearDBBtnView != null)
+						{
+							clearDBBtnView.setOnClickListener(new OnClickListener() { public void onClick(View v) { _onClearDBClicked(); }});
+							_clearDBBtnView = clearDBBtnView;
+						}
+
+						++enabledButtonCount;
+					}
+					else
+					{
+						refreshDBBtnView.setEnabled(false);
+						refreshDBBtnView.setVisibility(View.INVISIBLE);
+						((ViewGroup)refreshDBBtnView.getParent()).removeView(refreshDBBtnView);
+
+						if (clearDBBtnView != null)
+						{
+							clearDBBtnView.setEnabled(false);
+							clearDBBtnView.setVisibility(View.INVISIBLE);
+							((ViewGroup)clearDBBtnView.getParent()).removeView(clearDBBtnView);
+						}
+					}
+				}
+
+//				if (enabledButtonCount == 0)
+//				{
+//					View buttonLayoutView = findViewById(R.id.bottomButtonsLayout);
+//					if (buttonLayoutView != null)
+//					{
+//						((ViewGroup)buttonLayoutView.getParent()).removeView(buttonLayoutView);
+//					}
+//				}
+
+//				ListView fileListView = (ListView)findViewById(android.R.id.list);
+//				if (fileListView != null)
+//				{
+//					Object lpObj = fileListView.getLayoutParams();
+//					if (lpObj instanceof LinearLayout.LayoutParams)
+//					{
+//						LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams)lpObj;
+//						lp.weight = (_selectFolder || _newFolder) ? 0.9f : 0.95f;
+//						fileListView.setLayoutParams(lp);
+//						View root = fileListView.getRootView();
+//						if (root != null)
+//						{
+//							root.requestLayout();
+//						}
+//					}
+//				}
+
 			}
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
-	}
+ 	}
 
 	boolean _allowAllFiles()
 	{
@@ -617,7 +724,7 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 				{
 					isPastiFile = true;
 				}
-				
+
 				//if (isPastiFile)
 				//{
 				//	_showPastiAlert();
@@ -720,7 +827,7 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 		}
 	}
 	
-	public void onSelectButtonClicked()
+	public boolean onSelectButtonClicked()
 	{
 		if (_selectFolder)
 		{
@@ -737,8 +844,10 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 			{
 				_retIntent.putExtra(RESULT_PATH, selectedPath);
 				sendFinish(RESULT_OK);
+				return true;
 			}
 		}
+		return false;
 	}
 
 	private void onFileClicked(FileListItem item)
@@ -749,11 +858,12 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 		}
 
 		String itemPath = item.getPath();
+		String zipPath = null;
 
 		_retIntent.putExtra(RESULT_PATH, itemPath);
 		if (item.isZipFile())
 		{
-			String zipPath = item.getName();
+			zipPath = item.getName();
 			_retIntent.putExtra(RESULT_ZIPPATH, zipPath);
 		}
 		_retIntent.putExtra(RESULT_DISPLAYNAME, item.getDisplayName());
@@ -764,43 +874,77 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 		}
 		else
 		{
-			AlertDialog alertDialog = new AlertDialog.Builder(this).create();
-			alertDialog.setTitle("Reset ST?");
-			alertDialog.setMessage("Do you want to the Reset the ST?");
-			
-			alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "No",
-					new DialogInterface.OnClickListener()
-					{
-						public void onClick(DialogInterface dialog, int which)
-						{
-							sendFinish(RESULT_OK);
+			boolean pastiResetReq = false;
+
+			if (_checkPasti)
+			{
+				try {
+					pastiResetReq = HataroidNativeLib.emulatorIsPastiDiskResetRequired(itemPath, zipPath);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+
+			if (pastiResetReq) {
+
+				AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+				alertDialog.setTitle("Reset Required");
+				alertDialog.setMessage("Pasti Disk inserted while legacy floppy emulation is enabled.\nDo you want to Reset the ST to switch to pasti emulation?");
+
+				alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Cancel",
+					new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int which) {
+								sendFinish(RESULT_CANCELED);
+							}
 						}
+				);
+
+				alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Yes",
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface dialog, int which) {
+						_retIntent.putExtra(RESULT_RESETCOLD, true);
+						_retIntent.putExtra(RESULT_PASTIRESET, true);
+						sendFinish(RESULT_OK);
+					}
 					}
 				);
-				
-			alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Yes (Cold)",
-				new DialogInterface.OnClickListener()
-				{
-					public void onClick(DialogInterface dialog, int which)
-					{
-						_retIntent.putExtra(RESULT_RESETCOLD, true);
-						sendFinish(RESULT_OK);
-					}
-				}
-			);
-	
-			alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Yes (Warm)",
-				new DialogInterface.OnClickListener()
-				{
-					public void onClick(DialogInterface dialog, int which)
-					{
-						_retIntent.putExtra(RESULT_RESETWARM, true);
-						sendFinish(RESULT_OK);
-					}
-				}
-			);
-	
-			alertDialog.show();
+
+				alertDialog.show();
+
+			} else {
+
+				AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+				alertDialog.setTitle("Reset ST?");
+				alertDialog.setMessage("Do you want to the Reset the ST?");
+
+				alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "No",
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int which) {
+								sendFinish(RESULT_OK);
+							}
+						}
+				);
+
+				alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Yes (Cold)",
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int which) {
+								_retIntent.putExtra(RESULT_RESETCOLD, true);
+								sendFinish(RESULT_OK);
+							}
+						}
+				);
+
+				alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Yes (Warm)",
+						new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int which) {
+								_retIntent.putExtra(RESULT_RESETWARM, true);
+								sendFinish(RESULT_OK);
+							}
+						}
+				);
+
+				alertDialog.show();
+			}
 		}
 	}
 	
@@ -1011,12 +1155,12 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 	
 	void setCurPathText(String s)
 	{
-		View v = findViewById(R.id.fb_curPathText);
-		if (v != null && v instanceof TextView)
-		{
-			TextView tv = (TextView)v;
-			tv.setText(s);
-		}
+//		View v = findViewById(R.id.fb_curPathText);
+//		if (v != null && v instanceof TextView)
+//		{
+//			TextView tv = (TextView)v;
+//			tv.setText(s);
+//		}
 	}
 
 	void _onNewFolderBtnClicked()
@@ -1135,5 +1279,23 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 			_clearDBBtnView.setVisibility(showDBRefresh ? View.VISIBLE : View.INVISIBLE);
 		}
 	}
+
+//	@Override
+//	public boolean onOptionsItemSelected(MenuItem item)
+//	{
+//		switch (item.getItemId())
+//		{
+//			case android.R.id.home:
+//			{
+//				if (!_selectFolder || !onSelectButtonClicked())
+//				{
+//					sendFinish(RESULT_CANCELED);
+//				}
+//				return true;
+//			}
+//		}
+//
+//		return super.onOptionsItemSelected(item);
+//	}
 }
 

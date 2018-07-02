@@ -56,7 +56,7 @@
 #define HAVE_MEMALIGN 1
 
 /* Define to 1 if you have the 'gettimeofday' function. */
-#define HAVE_GETTIMEOFDAY 0
+#define HAVE_GETTIMEOFDAY 1
 
 /* Define to 1 if you have the 'nanosleep' function. */
 #define HAVE_NANOSLEEP 1

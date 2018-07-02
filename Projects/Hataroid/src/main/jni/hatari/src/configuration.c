@@ -31,6 +31,7 @@ const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __T
 #include "clocks_timings.h"
 #include "68kDisass.h"
 #include "fdc.h"
+#include "fdc_compat.h"
 #include "dsp.h"
 #include "joy.h"
 
@@ -101,6 +102,7 @@ static const struct Config_Tag configs_Joystick0[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nJoystickMode },
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[0].bEnableAutoFire },
+	{ "bEnableAutoFireFast", Bool_Tag, &ConfigureParams.Joysticks.Joy[0].bEnableAutoFireFast },
 	{ "bEnableJumpOnFire2", Bool_Tag, &ConfigureParams.Joysticks.Joy[0].bEnableJumpOnFire2 },
 	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nJoyId },
 	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[0].nKeyCodeUp },
@@ -116,6 +118,7 @@ static const struct Config_Tag configs_Joystick1[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nJoystickMode },
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[1].bEnableAutoFire },
+	{ "bEnableAutoFireFast", Bool_Tag, &ConfigureParams.Joysticks.Joy[1].bEnableAutoFireFast },
 	{ "bEnableJumpOnFire2", Bool_Tag, &ConfigureParams.Joysticks.Joy[1].bEnableJumpOnFire2 },
 	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nJoyId },
 	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[1].nKeyCodeUp },
@@ -131,6 +134,7 @@ static const struct Config_Tag configs_Joystick2[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nJoystickMode },
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[2].bEnableAutoFire },
+	{ "bEnableAutoFireFast", Bool_Tag, &ConfigureParams.Joysticks.Joy[2].bEnableAutoFireFast },
 	{ "bEnableJumpOnFire2", Bool_Tag, &ConfigureParams.Joysticks.Joy[2].bEnableJumpOnFire2 },
 	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nJoyId },
 	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[2].nKeyCodeUp },
@@ -146,6 +150,7 @@ static const struct Config_Tag configs_Joystick3[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nJoystickMode },
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[3].bEnableAutoFire },
+	{ "bEnableAutoFireFast", Bool_Tag, &ConfigureParams.Joysticks.Joy[3].bEnableAutoFireFast },
 	{ "bEnableJumpOnFire2", Bool_Tag, &ConfigureParams.Joysticks.Joy[3].bEnableJumpOnFire2 },
 	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nJoyId },
 	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[3].nKeyCodeUp },
@@ -161,6 +166,7 @@ static const struct Config_Tag configs_Joystick4[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nJoystickMode },
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[4].bEnableAutoFire },
+	{ "bEnableAutoFireFast", Bool_Tag, &ConfigureParams.Joysticks.Joy[4].bEnableAutoFireFast },
 	{ "bEnableJumpOnFire2", Bool_Tag, &ConfigureParams.Joysticks.Joy[4].bEnableJumpOnFire2 },
 	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nJoyId },
 	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[4].nKeyCodeUp },
@@ -176,6 +182,7 @@ static const struct Config_Tag configs_Joystick5[] =
 {
 	{ "nJoystickMode", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nJoystickMode },
 	{ "bEnableAutoFire", Bool_Tag, &ConfigureParams.Joysticks.Joy[5].bEnableAutoFire },
+	{ "bEnableAutoFireFast", Bool_Tag, &ConfigureParams.Joysticks.Joy[5].bEnableAutoFireFast },
 	{ "bEnableJumpOnFire2", Bool_Tag, &ConfigureParams.Joysticks.Joy[5].bEnableJumpOnFire2 },
 	{ "nJoyId", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nJoyId },
 	{ "nKeyCodeUp", Int_Tag, &ConfigureParams.Joysticks.Joy[5].nKeyCodeUp },
@@ -445,6 +452,8 @@ static const struct Config_Tag configs_Hataroid[] =
 
     { "useEmuTOS", Bool_Tag, &ConfigureParams.Hataroid.useEmuTOS },
 
+    { "legacyFloppy", Bool_Tag, &ConfigureParams.Hataroid.legacyFloppy },
+
 	{ NULL , Error_Tag, NULL }
 };
 
@@ -542,6 +551,7 @@ void Configuration_SetDefault(void)
 	{
 		ConfigureParams.Joysticks.Joy[i].nJoystickMode = JOYSTICK_DISABLED;
 		ConfigureParams.Joysticks.Joy[i].bEnableAutoFire = false;
+		ConfigureParams.Joysticks.Joy[i].bEnableAutoFireFast = false;
 		ConfigureParams.Joysticks.Joy[i].bEnableJumpOnFire2 = false;
 		ConfigureParams.Joysticks.Joy[i].nJoyId = (i > maxjoy ? maxjoy : i);
 		ConfigureParams.Joysticks.Joy[i].nKeyCodeUp = SDLK_UP;
@@ -703,6 +713,8 @@ void Configuration_SetDefault(void)
 		ConfigureParams.Hataroid.mouseActive = false;
 
         ConfigureParams.Hataroid.useEmuTOS = false;
+
+        ConfigureParams.Hataroid.legacyFloppy = true;
 	}
 
 	// Hataroid Midi extra
@@ -1084,7 +1096,16 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	MemorySnapShot_Store(&ConfigureParams.DiskImage.FastFloppy, sizeof(ConfigureParams.DiskImage.FastFloppy));
 
 	ConfigureParams.Hataroid.saveDispName[0] = 0;
-    ConfigureParams.Hataroid.useEmuTOS = false;
+
+
+    if (gSaveVersion < 1901)
+    {
+	    ConfigureParams.Hataroid.useEmuTOS = false;
+    }
+
+    // Support for toggling old floppy emulation since ppl requested this
+    ConfigureParams.Hataroid.legacyFloppy = (FDC_Compat_GetCompatMode() == FDC_CompatMode_Old); // retrieve this value during save/load to ensure it's in sync
+
 	if (gSaveVersion >= 1702)
 	{
 		// Hataroid settings
@@ -1107,6 +1128,10 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 
 		MemorySnapShot_Store(&ConfigureParams.Hataroid.mouseActive, sizeof(ConfigureParams.Hataroid.mouseActive));
 
+        if (gSaveVersion >= 1902)
+        {
+            MemorySnapShot_Store(&ConfigureParams.Hataroid.legacyFloppy, sizeof(ConfigureParams.Hataroid.legacyFloppy));
+        }
         if (gSaveVersion >= 1901)
         {
             MemorySnapShot_Store(&ConfigureParams.Hataroid.useEmuTOS, sizeof(ConfigureParams.Hataroid.useEmuTOS));
@@ -1152,7 +1177,7 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 	if (!bSave)
 	{
 		// always use compatible cpu (since Hatari doesn't switch properly while running from non-compatible -> compatible
-		ConfigureParams.System.bCompatibleCpu = true;
+		//ConfigureParams.System.bCompatibleCpu = true;
 
 		// always enable midi
 		ConfigureParams.Midi.bEnableMidi = true;

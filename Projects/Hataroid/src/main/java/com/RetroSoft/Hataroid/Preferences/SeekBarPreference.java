@@ -1,4 +1,4 @@
-// from http://robobunny.com/wp/2013/08/24/android-seekbar-preference-v2/
+// based off http://robobunny.com/wp/2013/08/24/android-seekbar-preference-v2/
 
 package com.RetroSoft.Hataroid.Preferences;
 
@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.preference.Preference;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
@@ -53,7 +54,8 @@ public class SeekBarPreference extends Preference implements OnSeekBarChangeList
 		mSeekBar = new SeekBar(context, attrs);
 		mSeekBar.setMax(mMaxValue - mMinValue);
 		mSeekBar.setOnSeekBarChangeListener(this);
-		
+		mSeekBar.setKeyProgressIncrement(1);
+
 		setWidgetLayoutResource(R.layout.seek_bar_preference);
 	}
 	
@@ -162,7 +164,7 @@ public class SeekBarPreference extends Preference implements OnSeekBarChangeList
 		}
 		
 	}
-	
+
 	//@Override
 	public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
 		if (mSeekBar != seekBar)
@@ -172,6 +174,11 @@ public class SeekBarPreference extends Preference implements OnSeekBarChangeList
 
 		int newValue = progress + mMinValue;
 		setCurrentValue(newValue, false);
+	}
+
+	public void onSeekBarKeyDown(int keyCode, KeyEvent event)
+	{
+		mSeekBar.onKeyDown(keyCode, event);
 	}
 
 	public void setCurrentValue(int newValue, boolean storeNow)

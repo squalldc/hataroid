@@ -170,6 +170,7 @@ public class GameDBScanner extends Thread
 
 	void _runScan()
 	{
+		_gameDB.initScan();
 		_gameDB.setCurProgressText("Loading Game DB...", this, true);
 		_gameDB.loadDBMap(_assets);
 		

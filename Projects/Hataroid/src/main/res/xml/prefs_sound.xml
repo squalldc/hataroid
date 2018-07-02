@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+	android:key="sound_category_key"
+	android:title="@string/sound"
+	android:persistent="false"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:robobunny="http://robobunny.com">
+
+	<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
+		android:persistent="true"
+		android:key="pref_sound_buffer_size"
+		android:title="@string/sound_buffer_size"
+		android:summary="@string/sound_buffer_size_summary"
+		android:defaultValue="18"
+		android:max="50"
+		robobunny:min="1"
+		robobunny:unitsLeft=""
+		robobunny:unitsRight=""
+		/>
+	<CheckBoxPreference
+		android:persistent="true"
+		android:key="pref_sound_enabled"
+		android:title="@string/sound_enabled"
+		android:summaryOn="@string/sound_enabled_summary"
+		android:summaryOff="@string/sound_enabled_summary"
+		android:defaultValue="true" />
+	<CheckBoxPreference
+		android:persistent="true"
+		android:key="pref_sound_synchronize_enabled"
+		android:title="@string/sound_synchronize_enabled"
+		android:summaryOn="@string/sound_synchronize_enabled_summary"
+		android:summaryOff="@string/sound_synchronize_enabled_summary"
+		android:defaultValue="false" />
+	<ListPreference android:key="pref_sound_quality"
+					android:persistent="true"
+					android:entries="@array/pref_sound_playbackquality_entries"
+					android:entryValues="@array/pref_sound_playbackquality_values"
+					android:dialogTitle="@string/playbackquality"
+					android:title="@string/playbackquality"
+					android:defaultValue="22050" />
+	<ListPreference android:key="pref_sound_ymvoicesmixing"
+					android:persistent="true"
+					android:entries="@array/pref_sound_ymvoicesmixing_entries"
+					android:entryValues="@array/pref_sound_ymvoicesmixing_values"
+					android:dialogTitle="@string/ymvoices_mixing"
+					android:title="@string/ymvoices_mixing"
+					android:defaultValue="st" />
+	<CheckBoxPreference
+		android:persistent="true"
+		android:key="pref_sound_downmix_enabled"
+		android:title="@string/sound_downmix_enabled"
+		android:summaryOn="@string/sound_downmix_enabled_summary"
+		android:summaryOff="@string/sound_downmix_enabled_summary"
+		android:defaultValue="false" />
+</PreferenceScreen>

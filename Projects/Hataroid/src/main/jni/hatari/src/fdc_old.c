@@ -2996,6 +2996,7 @@ void FDC_Init_Old ( void )
 int	FDC_Get_Statusbar_Text_Old ( char *text, size_t maxlen )
 {
     text[0] = 0;
+	return 0;
 }
 
 // Not Supported in Legacy FDC

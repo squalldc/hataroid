@@ -4,13 +4,14 @@ LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE    := libhatari
-LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/zlib
+#LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/zlib
 LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/SDL/include
 LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/hatari/cmake
 LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/hatari/src/includes
 LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/hatari/src/debug
 LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/hatari/src/falcon
 LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/hatari/src/gui-sdl
+LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/hataroid/src
 
 #uae-cpu
 LOCAL_SRC_FILES :=	src/uae-cpu/cpudefs.c src/uae-cpu/cpuemu.c src/uae-cpu/cpustbl.c \

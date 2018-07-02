@@ -25,6 +25,7 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 #include "floppy_stx.h"
 #include "gemdos.h"
 #include "fdc.h"
+#include "fdc_compat.h"
 #include "hdc.h"
 #include "ide.h"
 #include "acia.h"
@@ -59,6 +60,8 @@ const char Main_fileid[] = "Hatari main.c : " __DATE__ " " __TIME__;
 
 #include "falcon/hostscreen.h"
 #include "falcon/dsp.h"
+
+#include <hataroid.h>
 
 #if HAVE_GETTIMEOFDAY
 #include <sys/time.h>
@@ -124,7 +127,7 @@ Uint32 Main_GetTicks(void)
  * return of SDL_GetTicks in micro sec.
  */
 
-static Sint64	Time_GetTicks ( void )
+Sint64	Time_GetTicks ( void )
 {
 	Sint64	ticks_micro;
 
@@ -260,7 +263,7 @@ void Main_RequestQuit(int exitval)
 	nQuitValue = exitval;
 }
 
-void hatari_setCPUBrk()
+void Main_SetCPUBrk()
 {
 	M68000_SetSpecial(SPCFLAG_BRK);
 }
@@ -382,8 +385,8 @@ void Main_WaitOnVbl(void)
 		nDelay = DestTicks - CurrentTicks;
 		/* If the delay is still bigger than one frame, somebody
 		 * played tricks with the system clock and we have to abort */
-		if (nDelay > FrameDuration_micro)
-			break;
+//		if (nDelay > FrameDuration_micro)
+//			break;
 	}
 
 //printf ( "tick %lld\n" , CurrentTicks );
@@ -696,7 +699,9 @@ static void Main_Init(void)
 		GemDOS_InitDrives(false);
 	}
 
-	if (Reset_Cold(true))             /* Reset all systems, load TOS image */
+	FDC_Compat_SetCompatMode(ConfigureParams.Hataroid.legacyFloppy ? FDC_CompatMode_Old : FDC_CompatMode_Default);
+
+	if (Reset_Cold(false))             /* Reset all systems, load TOS image */
 	{
 		/* If loading of the TOS failed, we bring up the GUI to let the
 		 * user choose another TOS ROM file. */
@@ -895,6 +900,8 @@ int hatari_main_init(int argc, const char *argv[])
 
 //	M68000_restoreMemorySnapshot();
 //	M68000_doFrameInit();
+
+	return 0;
 }
 
 void hatari_main_doframe()

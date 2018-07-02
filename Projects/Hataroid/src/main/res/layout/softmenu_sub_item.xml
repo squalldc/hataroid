@@ -12,6 +12,7 @@
         android:padding="10dp"
         android:singleLine="true"
         android:text="@+id/TextView01"
+        android:textColor="#ffffff"
         android:textSize="22sp"
         />
 

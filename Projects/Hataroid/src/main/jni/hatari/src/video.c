@@ -3478,7 +3478,7 @@ static void Video_ColorReg_ReadWord(void)
 	if ( (ConfigureParams.System.nMachineType == MACHINE_ST)
 	  && ( M68000_GetPC() < 0x400000 ) )				/* PC in RAM < 4MB */
 	{
-		col = ( col & 0x777 ) | ( rand() & 0x888 );
+		col = ( col & 0x777 ) | ((addr^col) & 0x888); //( rand() & 0x888 );
 		IoMem_WriteWord ( addr , col );
 	}
 

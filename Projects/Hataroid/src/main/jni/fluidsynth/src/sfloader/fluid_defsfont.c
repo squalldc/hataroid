@@ -414,7 +414,7 @@ DSFILE* dsFile_fopen(const char *filename, const char *mode)
 			{
 				int len = 0;
 				int id = 0;
-				char *buf = hataroid_getAssetDataRef(0, &filename[8], 1, &len, &id);
+				char *buf = (char*)hataroid_getAssetDataRef(0, &filename[8], 1, &len, &id);
 				if (buf)
 				{
 					f = FLUID_NEW(DSFILE);

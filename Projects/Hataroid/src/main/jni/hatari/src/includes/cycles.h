@@ -28,6 +28,7 @@ extern int	CurrentInstrCycles;
 extern int	MovepByteNbr;
 
 
+extern void Cycles_Reset(void);
 extern void Cycles_MemorySnapShot_Capture(bool bSave);
 extern void Cycles_SetCounter(int nId, int nValue);
 extern int Cycles_GetCounter(int nId);

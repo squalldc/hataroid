@@ -8,7 +8,9 @@ extern "C" {
 #endif /* __cplusplus */
 
 extern void Debug_Printf(const char *a_pszformat, ...);
-extern void usleep(int usecs);
+extern void Debug_VPrintf(const char *a_pszformat, va_list args);
+
+//extern void usleep(int usecs);
 extern int hasDialogResult();
 extern int getDialogResult();
 extern void clearDialogResult();
@@ -67,7 +69,7 @@ struct JNIMainMethodCache
 
 extern struct JNIAudio	g_jniAudioInterface;
 
-extern int showGenericDialog(JNIEnv *curEnv, const char *message, int ok, int noyes);
+extern int showGenericDialog(JNIEnv *curEnv, const char *message, int ok, int noyes, const char* noTxt, const char* yesOKTxt);
 extern void destroyGenericDialog(JNIEnv *curEnv, int dialogID);
 extern void updateGenericDialogMessage(JNIEnv *curEnv, int dialogID, const char *message);
 extern void showOptionsDialog(JNIEnv *curEnv);
@@ -77,7 +79,9 @@ extern int hasEmuCommands();
 extern void processEmuCommands();
 extern void clearEmuCommands();
 extern void RequestAndWaitQuit();
-extern void setUserEmuPaused(int pause);
+extern void setUserEmuPaused(int pause, int pauseFlag);
+extern void toggleUserEmuPaused();
+extern int isUserEmuPaused();
 
 extern void hataroid_releaseAssetDataRef(int assetID);
 extern const char* hataroid_getAssetDataDirect(JNIEnv *curEnv, const char* assetPath, int nullTerm, int *len);

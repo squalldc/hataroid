@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+	android:key="display_category_key"
+	android:title="@string/display"
+	android:persistent="false"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:robobunny="http://robobunny.com">
+
+	<PreferenceCategory
+		android:title="@string/pref_display_display_category"
+		android:key="pref_display_display_category">
+		<ListPreference android:key="pref_display_frameskip"
+						android:persistent="true"
+						android:entries="@array/pref_display_frameskip_entries"
+						android:entryValues="@array/pref_display_frameskip_values"
+						android:dialogTitle="@string/display_frameskip"
+						android:title="@string/display_frameskip"
+						android:defaultValue="5" />
+		<ListPreference android:key="pref_display_indicators"
+						android:persistent="true"
+						android:entries="@array/pref_display_indicators_entries"
+						android:entryValues="@array/pref_display_indicators_values"
+						android:dialogTitle="@string/display_indicators"
+						android:title="@string/display_indicators"
+						android:defaultValue="driveled" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_display_bilinearfilter"
+			android:title="@string/display_bilinearfilter"
+			android:summaryOn="@string/display_bilinearfilter_summary"
+			android:summaryOff="@string/display_bilinearfilter_summary"
+			android:defaultValue="true" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_display_fullscreen"
+			android:title="@string/display_fullscreen"
+			android:summaryOn="@string/display_fullscreen_summary"
+			android:summaryOff="@string/display_fullscreen_summary"
+			android:defaultValue="false" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_display_keepscreenawake"
+			android:title="@string/display_keepscreenawake"
+			android:summaryOn="@string/display_keepscreenawake_summary"
+			android:summaryOff="@string/display_keepscreenawake_summary"
+			android:defaultValue="false" />
+		<ListPreference android:key="pref_display_shader"
+						android:persistent="true"
+						android:entries="@array/pref_display_shader_entries"
+						android:entryValues="@array/pref_display_shader_values" android:dialogTitle="@string/shader_effect" android:title="@string/shader_effect"
+						android:defaultValue="basic" />
+	</PreferenceCategory>
+	<PreferenceCategory
+		android:title="@string/pref_display_monitory_category"
+		android:key="pref_display_monitor_category">
+		<ListPreference android:key="pref_display_monitortype"
+						android:persistent="true"
+						android:entries="@array/pref_display_monitortype_entries"
+						android:entryValues="@array/pref_display_monitortype_values"
+						android:dialogTitle="@string/display_monitortype"
+						android:title="@string/display_monitortype"
+						android:defaultValue="RGB" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_display_showborders"
+			android:title="@string/display_showborders"
+			android:summaryOn="@string/display_showborders_summary"
+			android:summaryOff="@string/display_showborders_summary"
+			android:defaultValue="true" />
+	</PreferenceCategory>
+	<PreferenceCategory
+		android:title="@string/pref_display_extendedvdi_category"
+		android:key="pref_display_extendedvdi_category">
+		<CheckBoxPreference
+			android:persistent="true"
+			android:enabled="false"
+			android:key="pref_display_extendedvdi"
+			android:title="@string/display_extendedvdi"
+			android:summaryOn="@string/display_extendedvdi_summary"
+			android:summaryOff="@string/display_extendedvdi_summary"
+			android:defaultValue="false" />
+		<ListPreference android:key="pref_display_extendedvdi_resolution"
+						android:persistent="true"
+						android:enabled="false"
+						android:entries="@array/pref_display_extendedvdi_resolution_entries"
+						android:entryValues="@array/pref_display_extendedvdi_resolution_values"
+						android:dialogTitle="@string/display_extendedvdi_resolution"
+						android:title="@string/display_extendedvdi_resolution"
+						android:defaultValue="16" />
+		<ListPreference android:key="pref_display_extendedvdi_colors"
+						android:persistent="true"
+						android:enabled="false"
+						android:entries="@array/pref_display_extendedvdi_colors_entries"
+						android:entryValues="@array/pref_display_extendedvdi_colors_values"
+						android:dialogTitle="@string/display_extendedvdi_colors"
+						android:title="@string/display_extendedvdi_colors"
+						android:defaultValue="640x480" />
+	</PreferenceCategory>
+</PreferenceScreen>

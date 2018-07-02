@@ -547,6 +547,8 @@ static Uint8 DMADiskWorkSpace[ FDC_TRACK_BYTES_STANDARD*4+1000 ];/* Workspace us
 /* Local functions prototypes					*/
 /*--------------------------------------------------------------*/
 
+void        FDC_Buffer_Reset_New( void );
+
 static Uint32	FDC_DelayToFdcCycles ( Uint32 Delay_micro );
 static Uint32	FDC_FdcCyclesToCpuCycles ( Uint32 FdcCycles );
 static Uint32	FDC_CpuCyclesToFdcCycles ( Uint32 CpuCycles );

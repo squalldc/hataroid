@@ -1,97 +1,122 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical" >
+			  android:layout_width="match_parent"
+			  android:layout_height="match_parent"
+			  android:orientation="vertical"
+			  android:id="@+id/inputmapconfigure_view"
+			  android:focusable="true">
 
-    <LinearLayout
-        android:id="@+id/LinearLayout1"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="0.025"
-        android:background="@drawable/gradient_drawable" >
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="48dp"
+		android:background="@drawable/header">
 
-        <TextView
-            android:id="@+id/im_title"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_gravity="left|center_vertical"
-            android:layout_marginLeft="@dimen/padding_small"
-            android:layout_weight="0.9"
-            android:gravity="center_vertical"
-            android:text="@string/input_device_configuremap"
-            android:textColor="#ffffff"
-            android:textSize="@dimen/padding_medium" />
+		<ImageButton
+			android:layout_width="70dp"
+			android:layout_height="36dp"
+			android:id="@+id/nav_back"
+			android:src="@drawable/btn_navback"
+			android:layout_centerVertical="true"
+			android:padding="2dp"/>
 
-        <ImageButton
-            android:id="@+id/im_closeBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="right|center_vertical"
-            android:layout_margin="@dimen/padding_smallest"
-            android:background="#00000000"
-            android:scaleType="fitXY"
-            android:src="@drawable/btn_close" />
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textAppearance="?android:attr/textAppearanceLarge"
+			android:id="@+id/ab_title"
+			android:layout_toRightOf="@+id/nav_back"
+			android:layout_alignParentLeft="false"
+			android:gravity="center_horizontal"
+			android:layout_centerVertical="true"
+			android:paddingLeft="8dp"
+			android:textColor="#000000"/>
 
-    </LinearLayout>
+		<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+					  android:layout_width="match_parent"
+					  android:layout_height="fill_parent"
+					  android:orientation="horizontal"
+					  android:gravity="right"
+					  android:layout_alignParentRight="true"
+					  android:layout_centerVertical="true"
+					  android:paddingTop="4dp"
+					  android:paddingBottom="4dp">
+
+			<Button
+				android:id="@+id/im_deleteBtn"
+				style="?android:attr/buttonStyle"
+				android:layout_width="80dp"
+				android:layout_height="fill_parent"
+				android:layout_gravity="center_vertical|right"
+				android:text="@string/delete"
+				android:foregroundGravity="center_vertical"
+				android:gravity="center_vertical|center_horizontal"
+				android:background="@drawable/btn_color_selector"
+				android:textSize="12sp"
+				android:focusable="true"/>
+
+			<Button
+				android:id="@+id/im_renameBtn"
+				style="?android:attr/buttonStyle"
+				android:layout_width="80dp"
+				android:layout_height="fill_parent"
+				android:layout_gravity="center_vertical|right"
+				android:text="@string/rename"
+				android:foregroundGravity="center_vertical"
+				android:gravity="center_vertical|center_horizontal"
+				android:background="@drawable/btn_color_selector"
+				android:textSize="12sp"
+				android:focusable="true"/>
+
+			<Button
+				android:id="@+id/im_newBtn"
+				style="?android:attr/buttonStyle"
+				android:layout_width="80dp"
+				android:layout_height="fill_parent"
+				android:layout_gravity="center_vertical|right"
+				android:text="@string/newStr"
+				android:foregroundGravity="center_vertical"
+				android:gravity="center_vertical|center_horizontal"
+				android:background="@drawable/btn_color_selector"
+				android:textSize="12sp"
+				android:focusable="true"/>
+
+			<Button
+				android:id="@+id/im_showKeyboardBtn"
+				style="?android:attr/buttonStyle"
+				android:layout_width="80dp"
+				android:layout_height="fill_parent"
+				android:layout_gravity="center_vertical|right"
+				android:text="@string/switchkeyboard"
+				android:foregroundGravity="center_vertical"
+				android:gravity="center_vertical|center_horizontal"
+				android:background="@drawable/btn_color_selector"
+				android:textSize="12sp"
+				android:focusable="true"/>
+
+		</LinearLayout>
+
+	</RelativeLayout>
 
     <Spinner
-        android:id="@+id/im_presetSpinner"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="0.025" />
+		android:id="@+id/im_presetSpinner"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:focusable="true"
+		/>
 
     <ListView
-        android:id="@id/android:list"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="0.9"
-        android:background="@drawable/bg_gradient"
-        android:choiceMode="singleChoice"
-        android:clickable="true"
-        android:divider="#66888888"
-        android:dividerHeight="1px"
+		android:id="@id/android:list"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:background="@drawable/bg_gradient"
+		android:choiceMode="singleChoice"
+		android:clickable="true"
+		android:divider="#66888888"
+		android:dividerHeight="1px"
 		android:cacheColorHint="#00000000"
-        android:drawSelectorOnTop="false" >
+		android:listSelector="@drawable/list_item_selector"
+		android:drawSelectorOnTop="false"
+		android:focusable="true">
     </ListView>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="0.0" >
-
-        <Button
-            android:id="@+id/im_deleteBtn"
-            android:layout_width="168dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_weight="0.25"
-            android:text="@string/delete" />
-
-        <Button
-            android:id="@+id/im_renameBtn"
-            android:layout_width="168dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_weight="0.25"
-            android:text="@string/rename" />
-        
-        <Button
-            android:id="@+id/im_newBtn"
-            android:layout_width="168dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_weight="0.25"
-            android:text="@string/newStr" />
-
-        <Button
-            android:id="@+id/im_showKeyboardBtn"
-            android:layout_width="168dp"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_weight="0.25"
-            android:text="@string/switchkeyboard" />
-        
-    </LinearLayout>
 
 </LinearLayout>

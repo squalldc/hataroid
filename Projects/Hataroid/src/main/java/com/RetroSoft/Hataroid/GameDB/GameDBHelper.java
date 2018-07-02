@@ -64,8 +64,9 @@ public class GameDBHelper extends SQLiteOpenHelper
 															+ "," + FILES_KEY_ZIPCOMPLETE + " INTEGER"
 															+ ")";
 
-	Map<Long, GameDBFile> _refDBMap = null;
-	GameDBScanner _scanner = null;
+	Map<Long, GameDBFile>       _refDBMap = null;
+	GameDBScanner               _scanner = null;
+	int                         _scanCount = 0;
 
 	public GameDBHelper(Context context)
 	{
@@ -468,13 +469,16 @@ public class GameDBHelper extends SQLiteOpenHelper
 		
 		isMultiDiscZip[0] = false;
 		zipComplete[0] = false;
+
+		++_scanCount;
+		String scanMsgPrefix = "Scanning " + _scanCount + ": ";
 		
 		if (filePath.toLowerCase().endsWith(".zip"))
 		{
 			ZipFile zf = null;
 			try
 			{
-				setCurProgressText("Scanning: " + fileName, scanner, false);
+				setCurProgressText(scanMsgPrefix + fileName, scanner, false);
 
 				zf = new ZipFile(filePath);
 				int [] numValidDiscs = new int [1];
@@ -482,7 +486,7 @@ public class GameDBHelper extends SQLiteOpenHelper
 				ZipEntry firstDisc = getNumSTDisks(zf, validExts, numValidDiscs);
 				if (numValidDiscs[0] == 1 && firstDisc != null)
 				{
-					setCurProgressText("Scanning: " + firstDisc.getName(), scanner, false);
+					setCurProgressText(scanMsgPrefix + firstDisc.getName(), scanner, false);
 
 					Long crc32 = crc32ZipFile(zf, firstDisc);
 					GameDBFile dbFile = _createFromRefDB(crc32, fileName);
@@ -512,7 +516,7 @@ public class GameDBHelper extends SQLiteOpenHelper
 								{
 									if (flc.endsWith(ext))
 									{
-										setCurProgressText("Scanning: " + f.getName(), scanner, false);
+										setCurProgressText(scanMsgPrefix + f.getName(), scanner, false);
 
 										Long crc32 = crc32ZipFile(zf, f);
 										GameDBFile dbFile = _createFromRefDB(crc32, f.getName());
@@ -545,7 +549,7 @@ public class GameDBHelper extends SQLiteOpenHelper
 		{
 			try
 			{
-				setCurProgressText("Scanning: " + fileName, scanner, false);
+				setCurProgressText(scanMsgPrefix + fileName, scanner, false);
 
 				Long crc32 = crc32File(filePath);
 				GameDBFile dbFile = _createFromRefDB(crc32, fileName);
@@ -704,6 +708,10 @@ public class GameDBHelper extends SQLiteOpenHelper
 		}
 
 		return false;
+	}
+
+	public void initScan() {
+		_scanCount = 0;
 	}
 
 	public void setCurProgressText(String msg, GameDBScanner scanner, boolean force)

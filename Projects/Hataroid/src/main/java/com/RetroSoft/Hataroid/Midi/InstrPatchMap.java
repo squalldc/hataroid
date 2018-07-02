@@ -6,11 +6,13 @@ import java.util.List;
 import java.util.Map;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.RetroSoft.Hataroid.HataroidNativeLib;
@@ -90,6 +92,7 @@ public class InstrPatchMap implements IMapSet
 	public String get_NewMapSetNamePrefix()			{ return kNewMapSetNamePrefix; }
 
 	public int get_ViewLayoutResID()				{ return R.layout.midi_instrument_patch_view; }
+	public int get_ViewLayoutID()					{ return R.id.midi_instrument_patch_view; }
 	public int get_ItemLayoutResID()				{ return R.layout.midi_instrument_patch_item; }
 
 	public int getNumPresets()						{ return kPresetIDs.length; }
@@ -327,7 +330,7 @@ class InstrMapListItem implements IMapSetListItem
 		_instr = instr;
 	}
 
-	public void formatItemView(View v)
+	public void formatItemView(final Context ctx, View v)
 	{
 		TextView chanView = (TextView) v.findViewById(R.id.ChannelText);
 		TextView instrView = (TextView) v.findViewById(R.id.InstrumentText);
@@ -357,6 +360,23 @@ class InstrMapListItem implements IMapSetListItem
 				instrView.setTextColor(Color.GREEN);
 			}
 		}
+
+		final IMapSetListItem item = this;
+		Button b1 = (Button) v.findViewById(R.id.mapBtn);
+		b1.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View view) {
+				MapSetConfigureView cv = (MapSetConfigureView)ctx;
+				cv.onMapBtnClicked(item);
+			}
+		});
+
+		Button b2 = (Button) v.findViewById(R.id.unmapBtn);
+		b2.setOnClickListener(new View.OnClickListener() {
+			public void onClick(View view) {
+				MapSetConfigureView cv = (MapSetConfigureView)ctx;
+				cv.onUnMapBtnClicked(item);
+			}
+		});
 	}
 
 	public int compareTo(IMapSetListItem item)
@@ -406,7 +426,7 @@ class InstrItem implements IMapSetListItem, Comparable<IMapSetListItem>
 		_instr = instr;
 	}
 
-	public void formatItemView(View v)
+	public void formatItemView(final Context ctx, View v)
 	{
 		TextView instrView = (TextView) v.findViewById(R.id.InstrumentText);
 

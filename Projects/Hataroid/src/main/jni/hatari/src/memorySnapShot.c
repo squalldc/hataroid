@@ -58,9 +58,9 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "cart.h"
 
 #define HATAROID_SAVE_ID        "HTSAV"
-#define HATAROID_VERSION        " 1.700 "
+#define HATAROID_VERSION        " 1.800 "
 #define HATAROID_LEGACY_VERSION " 1.609 "
-#define SAVE_VERSION_INT        1901
+#define SAVE_VERSION_INT        1902
 
 #define VERSION_STRING      "1.9.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 #define SNAPSHOT_MAGIC      0xDeadBeef
@@ -292,6 +292,7 @@ static bool MemorySnapShot_OpenFile(const char *pszFileName, bool bSave)
         }
 
         FDC_Compat_SetCompatMode((int)LegacyFDC);
+        FDC_Reset(true); // need to reset now as other bits below may update these values
 	}
 
 	/* All OK */
@@ -490,8 +491,9 @@ int MemorySnapShot_Restore(const char *pszFileName, bool bConfirm)
 
 		if (bCaptureError)
 		{
-			Log_AlertDlg(LOG_ERROR, "Full memory state restore failed!\nPlease reboot emulation.");
-			return;
+			Log_AlertDlg(LOG_ERROR, "Full memory state restore failed!\nResetting ST.");
+			Reset_Cold(false);
+			return -1;
 		}
 	}
 

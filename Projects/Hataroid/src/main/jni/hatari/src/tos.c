@@ -643,7 +643,7 @@ int TOS_LoadImage(void)
 	TosVersion = 0;
 	if (ConfigureParams.Hataroid.useEmuTOS)
     {
-        pTosFile = hataroid_LoadEmuTOS(ConfigureParams.System.nMachineType, &nFileSize);
+        pTosFile = (Uint8*)hataroid_LoadEmuTOS(ConfigureParams.System.nMachineType, &nFileSize);
     }
     else
     {

@@ -25,4 +25,33 @@
         android:textSize="14sp"
         android:textStyle="bold" />
 
+	<Button
+		android:id="@+id/mapBtn"
+		style="?android:attr/buttonStyle"
+		android:layout_width="64dp"
+		android:layout_height="40dp"
+		android:layout_gravity="center_vertical|right"
+		android:text="@string/map"
+		android:foregroundGravity="center_vertical"
+		android:gravity="center_vertical|center_horizontal"
+		android:textSize="12sp"
+		android:background="@drawable/btn_color_selector"
+		android:layout_alignParentRight="false"
+		android:layout_toLeftOf="@+id/unmapBtn"
+		android:layout_centerVertical="true" />
+
+	<Button
+		android:id="@+id/unmapBtn"
+		style="?android:attr/buttonStyle"
+		android:layout_width="64dp"
+		android:layout_height="40dp"
+		android:layout_gravity="center_vertical|right"
+		android:text="@string/unmap"
+		android:foregroundGravity="center_vertical"
+		android:gravity="center_vertical|center_horizontal"
+		android:textSize="12sp"
+		android:background="@drawable/btn_color_selector"
+		android:layout_alignParentRight="true"
+		android:layout_centerVertical="true" />
+
 </RelativeLayout>

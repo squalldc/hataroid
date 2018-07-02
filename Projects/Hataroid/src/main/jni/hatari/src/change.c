@@ -20,6 +20,7 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
 #include "dialog.h"
 #include "floppy.h"
 #include "fdc.h"
+#include "fdc_compat.h"
 #include "gemdos.h"
 #include "hdc.h"
 #include "ide.h"
@@ -39,6 +40,7 @@ const char Change_fileid[] = "Hatari change.c : " __DATE__ " " __TIME__;
 #include "vdi.h"
 #include "video.h"
 #include "hatari-glue.h"
+#include <hataroid.h>
 #if ENABLE_DSP_EMU
 # include "falcon/dsp.h"
 #endif
@@ -129,13 +131,13 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 	if (changed->System.nCpuLevel != current->System.nCpuLevel)
 		return true;
 
+	/* Did change CPU prefetch mode? */
+	if (changed->System.bCompatibleCpu != current->System.bCompatibleCpu)
+		return true;
+
 #if ENABLE_WINUAE_CPU
 	/* Did change CPU address mode? */
 	if (changed->System.bAddressSpace24 != current->System.bAddressSpace24)
-		return true;
-
-	/* Did change CPU prefetch mode? */
-	if (changed->System.bCompatibleCpu != current->System.bCompatibleCpu)
 		return true;
 
 	/* Did change CPU cycle exact? */
@@ -161,6 +163,12 @@ bool Change_DoNeedReset(CNF_PARAMS *current, CNF_PARAMS *changed)
 
 	/* MIDI related IRQs start/stop needs reset */
 	if (current->Midi.bEnableMidi != changed->Midi.bEnableMidi)
+		return true;
+
+	/* HACKED legacy floppy support */
+	bool actualLegacyFDC = (FDC_Compat_GetCompatMode() == FDC_CompatMode_Old);
+	if (changed->Hataroid.legacyFloppy != current->Hataroid.legacyFloppy
+	 || changed->Hataroid.legacyFloppy != actualLegacyFDC)
 		return true;
 
 	return false;
@@ -190,6 +198,19 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 		NeedReset = bForceReset;
 	else
 		NeedReset = Change_DoNeedReset(current, changed);
+
+	/* HACKED legacy floppy support */
+	bool floppyCompatChanged = false;
+	bool actualLegacyFDC = (FDC_Compat_GetCompatMode() == FDC_CompatMode_Old);
+	if (bForceReset
+	 || (NeedReset && (changed->Hataroid.legacyFloppy != current->Hataroid.legacyFloppy || changed->Hataroid.legacyFloppy != actualLegacyFDC)))
+	{
+        FDC_Compat_SetCompatMode(changed->Hataroid.legacyFloppy ? FDC_CompatMode_Old : FDC_CompatMode_Default);
+        FDC_Reset(true); // need to reset now as other bits below may update these values
+        floppyCompatChanged = true;
+
+        Debug_Printf("Changing floppy compat mode: %d", FDC_Compat_GetCompatMode());
+	}
 
 	/* Do need to change resolution? Need if change display/overscan settings
 	 * (if switch between Colour/Mono cause reset later) or toggle statusbar
@@ -247,7 +268,8 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 			   current->DiskImage.szDiskFileName[i],
 			   changed->DiskImage.szDiskFileName[i]);
 		 */
-		if (strcmp(changed->DiskImage.szDiskFileName[i],
+		if ( floppyCompatChanged
+			|| strcmp(changed->DiskImage.szDiskFileName[i],
 			   current->DiskImage.szDiskFileName[i])
 		    || strcmp(changed->DiskImage.szDiskZipPath[i],
 			      current->DiskImage.szDiskZipPath[i]))
@@ -256,14 +278,14 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 			bFloppyInsert[i] = false;
 	}
 
-	if ( changed->DiskImage.EnableDriveA != current->DiskImage.EnableDriveA )
+	if ( floppyCompatChanged || changed->DiskImage.EnableDriveA != current->DiskImage.EnableDriveA )
 		FDC_Drive_Set_Enable ( 0 , changed->DiskImage.EnableDriveA );
-	if ( changed->DiskImage.EnableDriveB != current->DiskImage.EnableDriveB )
+	if ( floppyCompatChanged || changed->DiskImage.EnableDriveB != current->DiskImage.EnableDriveB )
 		FDC_Drive_Set_Enable ( 1 , changed->DiskImage.EnableDriveB );
 
-	if ( changed->DiskImage.DriveA_NumberOfHeads != current->DiskImage.DriveA_NumberOfHeads )
+	if ( floppyCompatChanged || changed->DiskImage.DriveA_NumberOfHeads != current->DiskImage.DriveA_NumberOfHeads )
 		FDC_Drive_Set_NumberOfHeads ( 0 , changed->DiskImage.DriveA_NumberOfHeads );
-	if ( changed->DiskImage.DriveB_NumberOfHeads != current->DiskImage.DriveB_NumberOfHeads )
+	if ( floppyCompatChanged || changed->DiskImage.DriveB_NumberOfHeads != current->DiskImage.DriveB_NumberOfHeads )
 		FDC_Drive_Set_NumberOfHeads ( 1 , changed->DiskImage.DriveB_NumberOfHeads );
 
 	/* Did change GEMDOS drive Atari/host location or enabling? */
@@ -449,7 +471,7 @@ void Change_CopyChangedParamsToConfiguration(CNF_PARAMS *current, CNF_PARAMS *ch
 	if (NeedReset)
 	{
 		Dprintf("- reset\n");
-		Reset_Cold(true);
+		Reset_Cold(false);
 	}
 
 	/* Go into/return from full screen if flagged */

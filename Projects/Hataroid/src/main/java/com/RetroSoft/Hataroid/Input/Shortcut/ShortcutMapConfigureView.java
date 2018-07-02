@@ -9,28 +9,36 @@ import java.util.Map;
 
 import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+//import android.support.v7.app.ActionBar;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.RetroSoft.Hataroid.HataroidActivity;
 import com.RetroSoft.Hataroid.R;
 import com.RetroSoft.Hataroid.Input.Input;
 import com.RetroSoft.Hataroid.Input.RenameInputMapView;
 import com.RetroSoft.Hataroid.Input.VirtKeyDef;
+//import com.RetroSoft.Hataroid.Util.AppCompatListActivity;
 
+//public class ShortcutMapConfigureView extends AppCompatListActivity implements OnItemSelectedListener
 public class ShortcutMapConfigureView extends ListActivity implements OnItemSelectedListener
 {
 	final static int SHORTCUTSELECTRESULT_KEYCODE		= 11;
@@ -58,9 +66,50 @@ public class ShortcutMapConfigureView extends ListActivity implements OnItemSele
 	@Override public void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
+
 		setContentView(R.layout.shortcutmap_view);
-		
+
 		_parseOptions(savedInstanceState);
+
+		try
+		{
+			View mView = this.findViewById(R.id.shortcutmap_view);
+
+			TextView title = (TextView)mView.findViewById(R.id.ab_title);
+			title.setText(this.getTitle());
+
+			ImageButton navBackBtn = (ImageButton)mView.findViewById(R.id.nav_back);
+			navBackBtn.setOnClickListener(new View.OnClickListener() {
+				public void onClick(View view) {
+					sendFinish(RESULT_OK);
+				}
+			});
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
+//		try
+//		{
+//			ActionBar actionBar = getSupportActionBar();
+//
+//			LayoutInflater mInflater = LayoutInflater.from(this);
+//			View customView = mInflater.inflate(R.layout.presetlist_actionbar, null);
+//
+//			actionBar.setCustomView(customView);
+//			actionBar.setDisplayShowCustomEnabled(true);
+//
+//			TextView tv = (TextView)customView.findViewById(R.id.ab_title);
+//			tv.setText(getApplicationContext().getString(R.string.ab_title_configureshortcutmap));
+//		}
+//		catch (Exception e)
+//		{
+//			e.printStackTrace();
+//		}
+
+		getListView().setItemsCanFocus(true);
+
 		_setupButtonListeners();
 
 		_retIntent = new Intent();
@@ -244,39 +293,95 @@ public class ShortcutMapConfigureView extends ListActivity implements OnItemSele
 		return super.onKeyDown(keyCode, event);
 	}
 
+//	@Override
+//	public boolean onOptionsItemSelected(MenuItem item)
+//	{
+//		switch (item.getItemId())
+//		{
+//			case android.R.id.home:
+//			{
+//				sendFinish(RESULT_OK);
+//				return true;
+//			}
+//		}
+//
+//		return super.onOptionsItemSelected(item);
+//	}
+
 	void _setupButtonListeners()
 	{
-		findViewById(R.id.im_closeBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				sendFinish(RESULT_OK);
-			}
-		});
+//		findViewById(R.id.im_closeBtn).setOnClickListener(new OnClickListener() {
+//			public void onClick(View v) {
+//				sendFinish(RESULT_OK);
+//			}
+//		});
 
-		findViewById(R.id.im_deleteBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				_onDeleteClicked();
-			}
-		});
+//		ActionBar actionBar = null;
+//		View actionBarView = null;
+//		try
+//		{
+//			actionBar = getSupportActionBar();
+//			if (actionBar != null)
+//			{
+//				actionBarView = actionBar.getCustomView();
+//			}
+//		}
+//		catch (Exception e)
+//		{
+//			e.printStackTrace();
+//		}
+		View actionBarView = this.findViewById(R.id.shortcutmap_view);
 
-		findViewById(R.id.im_renameBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				_onRenameClicked();
-			}
-		});
+		try
+		{
+			if (actionBarView != null)
+			{
+				View spinner = findViewById(R.id.im_presetSpinner);
+				spinner.setNextFocusUpId(R.id.im_showKeyboardBtn);
 
-		findViewById(R.id.im_newBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				_onNewClicked();
-			}
-		});
+				View vb = null;
 
-		findViewById(R.id.im_showKeyboardBtn).setOnClickListener(new OnClickListener() {
-			public void onClick(View v) {
-				// show input method selector
-				Input input = HataroidActivity.instance.getInput();
-				input.showInputMethodSelector();
+				vb = actionBarView.findViewById(R.id.im_deleteBtn);
+				vb.setNextFocusDownId(R.id.im_presetSpinner);
+				vb.setOnClickListener(new OnClickListener() {
+					public void onClick(View v) {
+						_onDeleteClicked();
+					}
+				});
+
+				vb = actionBarView.findViewById(R.id.im_renameBtn);
+				vb.setNextFocusDownId(R.id.im_presetSpinner);
+				vb.setOnClickListener(new OnClickListener() {
+					public void onClick(View v) {
+						_onRenameClicked();
+					}
+				});
+
+				vb = actionBarView.findViewById(R.id.im_newBtn);
+				vb.setNextFocusDownId(R.id.im_presetSpinner);
+				vb.setOnClickListener(new OnClickListener() {
+					public void onClick(View v) {
+						_onNewClicked();
+					}
+				});
+
+				vb = actionBarView.findViewById(R.id.im_showKeyboardBtn);
+				vb.setNextFocusDownId(R.id.im_presetSpinner);
+				vb.setNextFocusRightId(R.id.im_presetSpinner);
+				//vb.setNextFocusForwardId(R.id.im_presetSpinner);
+				vb.setOnClickListener(new OnClickListener() {
+					public void onClick(View v) {
+						// show input method selector
+						Input input = HataroidActivity.instance.getInput();
+						input.showInputMethodSelector();
+					}
+				});
 			}
-		});
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 	
 	void _setModifyButtonsEnabled(boolean enabled)
@@ -365,19 +470,51 @@ public class ShortcutMapConfigureView extends ListActivity implements OnItemSele
 	@Override protected void onListItemClick(ListView l, View v, int position, long id)
 	{
 		super.onListItemClick(l,  v, position, id);
-		
-		if (ShortcutMap.isSystemPreset(_curPresetID))
+
+		ShortcutMapListItem item = _adapter.getItem(position);
+		onMapBtnClicked(item);
+	}
+
+	public void onMapBtnClicked(ShortcutMapListItem item)
+	{
+		if (!_verifyCanModifyCurPreset())
 		{
-    		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
-    		alertDialog.setTitle("Built-in PRESET");
-    		alertDialog.setMessage("This preset is read only. If you want to change the settings, please click the NEW button below or choose a different preset.");
-    		alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) {  } });
-    		alertDialog.show();
 			return;
 		}
-		
-		ShortcutMapListItem item = _adapter.getItem(position);
+
 		showShortcutSelectDialog(item);
+	}
+
+	public void onUnMapBtnClicked(ShortcutMapListItem item)
+	{
+		if (!_verifyCanModifyCurPreset())
+		{
+			return;
+		}
+
+		int anchor = item.getAnchor();
+		int shortcutIdx = item.getShortcutIdx();
+		String mapId = _curPresetID;
+
+		boolean unMap = true;
+		int emuKey = -1;
+
+		_updateShorcutMapKey(anchor, shortcutIdx, mapId, unMap, emuKey);
+	}
+
+	boolean _verifyCanModifyCurPreset()
+	{
+		if (ShortcutMap.isSystemPreset(_curPresetID))
+		{
+			AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+			alertDialog.setTitle("Built-in PRESET");
+			alertDialog.setMessage("This preset is read only. If you want to change the settings, please click the NEW button below or choose a different preset.");
+			alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) {  } });
+			alertDialog.show();
+			return false;
+		}
+
+		return true;
 	}
 
 	public void onItemSelected(AdapterView<?> parent, View view, int pos, long id)
@@ -441,52 +578,14 @@ public class ShortcutMapConfigureView extends ListActivity implements OnItemSele
 			{
 				if (resultCode == RESULT_OK)
 				{
-					if (_curShortcutMap == null || _adapter == null)
-					{
-						break;
-					}
-					
 					int anchor = data.getIntExtra(ShortcutSelectView.RESULT_ANCHOR, -1);
 					int shortcutIdx = data.getIntExtra(ShortcutSelectView.RESULT_SHORTCUTIDX, -1);
 					String mapId = data.getStringExtra(ShortcutSelectView.RESULT_MAPID);
-					
-					if (anchor < 0 || anchor >= ShortcutMap.kNumAnchors
-					 || shortcutIdx < 0 || shortcutIdx >= ShortcutMap.kMaxKeys[anchor]
-					 || mapId == null || mapId.compareTo(_curPresetID) != 0)
-					{
-						break;
-					}
-					
+
 					boolean unMap = data.getBooleanExtra(ShortcutSelectView.RESULT_UNMAP, false);
 					int emuKey = data.getIntExtra(ShortcutSelectView.RESULT_EMUKEY, -1);
-					if (unMap)
-					{
-						emuKey = -1;
-						_curShortcutMap.removeShortcutEntry(anchor, shortcutIdx);
-					}
-					else if (emuKey >= 0)
-					{
-						_curShortcutMap.addShortcutEntry(anchor, shortcutIdx, emuKey);
-					}
-					
-					// update list items
-					{
-						int numItems = _adapter.getCount();
-						for (int i = 0; i < numItems; ++i)
-						{
-							ShortcutMapListItem li = _adapter.getItem(i);
-							if (li != null && li.getAnchor() == anchor && li.getShortcutIdx() == shortcutIdx)
-							{
-								VirtKeyDef def = (emuKey >= 0) ? VirtKeyDef.kDefs[emuKey] : null;
-								li.setVirtKeyDef(def);
-								break;
-							}
-						}
-					}
-					
-					_adapter.notifyDataSetChanged();
-					
-					_storeShortcutMap(_curPresetID);
+
+					_updateShorcutMapKey(anchor, shortcutIdx, mapId, unMap, emuKey);
 				}
 				break;
 			}
@@ -525,6 +624,52 @@ public class ShortcutMapConfigureView extends ListActivity implements OnItemSele
 				break;
 			}
 		}
+	}
+
+	boolean _updateShorcutMapKey(int anchor, int shortcutIdx, String mapId, boolean unMap, int emuKey)
+	{
+		if (_curShortcutMap == null || _adapter == null)
+		{
+			return false;
+		}
+
+		if (anchor < 0 || anchor >= ShortcutMap.kNumAnchors
+				|| shortcutIdx < 0 || shortcutIdx >= ShortcutMap.kMaxKeys[anchor]
+				|| mapId == null || mapId.compareTo(_curPresetID) != 0)
+		{
+			return false;
+		}
+
+		if (unMap)
+		{
+			emuKey = -1;
+			_curShortcutMap.removeShortcutEntry(anchor, shortcutIdx);
+		}
+		else if (emuKey >= 0)
+		{
+			_curShortcutMap.addShortcutEntry(anchor, shortcutIdx, emuKey);
+		}
+
+		// update list items
+		{
+			int numItems = _adapter.getCount();
+			for (int i = 0; i < numItems; ++i)
+			{
+				ShortcutMapListItem li = _adapter.getItem(i);
+				if (li != null && li.getAnchor() == anchor && li.getShortcutIdx() == shortcutIdx)
+				{
+					VirtKeyDef def = (emuKey >= 0) ? VirtKeyDef.kDefs[emuKey] : null;
+					li.setVirtKeyDef(def);
+					break;
+				}
+			}
+		}
+
+		_adapter.notifyDataSetChanged();
+
+		_storeShortcutMap(_curPresetID);
+
+		return true;
 	}
 
 	boolean _showingDeleteConfirm = false;

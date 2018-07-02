@@ -6,7 +6,7 @@
 #include <math.h>
 #include "VirtJoy.h"
 #include <GLES2/gl2ext.h>
-#include <sdl.h>
+#include <SDL.h>
 
 #include "VirtKBDefs.h"
 #include "VirtKBTex.h"

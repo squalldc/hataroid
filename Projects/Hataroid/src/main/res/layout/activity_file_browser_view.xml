@@ -2,92 +2,108 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/filebrowser_view"
     android:orientation="vertical" >
 
-    <LinearLayout
-        android:id="@+id/LinearLayout1"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="0.05"
-        android:background="@drawable/gradient_drawable" >
+	<RelativeLayout
+		android:layout_width="fill_parent"
+		android:layout_height="48dp"
+		android:background="@drawable/header">
 
-        <TextView
-            android:id="@+id/fb_curPathText"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_gravity="left|center_vertical"
-            android:layout_marginLeft="@dimen/padding_small"
-            android:layout_weight="0.9"
-            android:gravity="center_vertical"
-            android:text=""
-            android:textColor="#ffffff"
-            android:textSize="@dimen/padding_medium" />
+		<ImageButton
+			android:layout_width="70dp"
+			android:layout_height="36dp"
+			android:id="@+id/nav_back"
+			android:src="@drawable/btn_navback"
+			android:layout_centerVertical="true"
+			android:padding="2dp"/>
 
-        <ImageButton
-            android:id="@+id/fb_closeBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="right|center_vertical"
-            android:layout_margin="@dimen/padding_smallest"
-            android:background="#00000000"
-            android:scaleType="fitXY"
-            android:src="@drawable/btn_close" />
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textAppearance="?android:attr/textAppearanceLarge"
+			android:id="@+id/ab_title"
+			android:layout_toRightOf="@+id/nav_back"
+			android:layout_alignParentLeft="false"
+			android:gravity="center_horizontal"
+			android:layout_centerVertical="true"
+			android:paddingLeft="8dp"
+			android:textColor="#000000"/>
 
-    </LinearLayout>
+		<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+					  android:layout_width="match_parent"
+					  android:layout_height="fill_parent"
+					  android:orientation="horizontal"
+					  android:gravity="right"
+					  android:layout_alignParentRight="true"
+					  android:layout_centerVertical="true"
+					  android:paddingTop="4dp"
+					  android:paddingBottom="4dp">
+
+			<Button
+				android:id="@+id/fb_clearDBBtn"
+				style="?android:attr/buttonStyle"
+				android:layout_width="80dp"
+				android:layout_height="fill_parent"
+				android:layout_gravity="center_vertical|right"
+				android:text="@string/clearDB"
+				android:foregroundGravity="center_vertical"
+				android:gravity="center_vertical|center_horizontal"
+				android:background="@drawable/btn_color_selector"
+				android:textSize="12sp"/>
+
+			<Button
+				android:id="@+id/fb_refreshDBBtn"
+				style="?android:attr/buttonStyle"
+				android:layout_width="80dp"
+				android:layout_height="fill_parent"
+				android:layout_gravity="center_vertical|right"
+				android:text="@string/refreshDB"
+				android:foregroundGravity="center_vertical"
+				android:gravity="center_vertical|center_horizontal"
+				android:background="@drawable/btn_color_selector"
+				android:textSize="12sp"/>
+
+			<Button
+				android:id="@+id/fb_selectBtn"
+				style="?android:attr/buttonStyle"
+				android:layout_width="80dp"
+				android:layout_height="fill_parent"
+				android:layout_gravity="center_vertical|right"
+				android:text="@string/select"
+				android:foregroundGravity="center_vertical"
+				android:gravity="center_vertical|center_horizontal"
+				android:background="@drawable/btn_color_selector"
+				android:textSize="12sp"/>
+
+			<Button
+				android:id="@+id/fb_newFolderBtn"
+				style="?android:attr/buttonStyle"
+				android:layout_width="80dp"
+				android:layout_height="fill_parent"
+				android:layout_gravity="center_vertical|right"
+				android:text="@string/newfolder"
+				android:foregroundGravity="center_vertical"
+				android:gravity="center_vertical|center_horizontal"
+				android:background="@drawable/btn_color_selector"
+				android:textSize="12sp"/>
+
+		</LinearLayout>
+
+	</RelativeLayout>
 
     <ListView
         android:id="@id/android:list"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="0.90"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
         android:background="@drawable/bg_gradient"
         android:choiceMode="singleChoice"
         android:clickable="true"
         android:divider="#66888888"
         android:dividerHeight="1px"
 		android:cacheColorHint="#00000000"
+		android:listSelector="@drawable/list_item_selector"
         android:drawSelectorOnTop="false" >
     </ListView>
 
-    <LinearLayout
-        android:id="@+id/bottomButtonsLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="0.05"
-        android:background="@drawable/gradient_drawable"
-        android:gravity="center" >
-
-	    <Button
-	        android:id="@+id/fb_clearDBBtn"
-	        style="?android:attr/buttonStyleSmall"
-	        android:layout_width="168dp"
-	        android:layout_height="wrap_content"
-	        android:layout_gravity="center"
-	        android:text="@string/clearDB" />
-        
-	    <Button
-	        android:id="@+id/fb_refreshDBBtn"
-	        style="?android:attr/buttonStyleSmall"
-	        android:layout_width="168dp"
-	        android:layout_height="wrap_content"
-	        android:layout_gravity="center"
-	        android:text="@string/refreshDB" />
-        
-	    <Button
-	        android:id="@+id/fb_selectBtn"
-	        style="?android:attr/buttonStyleSmall"
-	        android:layout_width="168dp"
-	        android:layout_height="wrap_content"
-	        android:layout_gravity="center"
-	        android:text="@string/select" />
-	
-	    <Button
-	        android:id="@+id/fb_newFolderBtn"
-	        style="?android:attr/buttonStyleSmall"
-	        android:layout_width="168dp"
-	        android:layout_height="wrap_content"
-	        android:layout_gravity="center"
-	        android:text="@string/newfolder" />
-    </LinearLayout>
-	    
 </LinearLayout>

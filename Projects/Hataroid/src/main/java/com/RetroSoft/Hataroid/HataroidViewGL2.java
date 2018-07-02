@@ -122,7 +122,7 @@ class HataroidViewGL2 extends GLSurfaceView
 				{
 					int pointerIndex = event.getActionIndex();
 					int pointerId = event.getPointerId(pointerIndex);
-					
+
 					boolean isMouse = false;
 					if (m_tryMouse && !m_newMouseDisabled)
 					{
@@ -197,6 +197,11 @@ class HataroidViewGL2 extends GLSurfaceView
 				}
 			}
 		}
+
+//		try {
+//			Thread.sleep(8);
+//		} catch (Exception e) {
+//		}
 
 		return true;
 	}	
@@ -546,14 +551,41 @@ class HataroidViewGL2 extends GLSurfaceView
 			
 			sview.checkNewMouseDisabling();
 
-			BitFlags keyPressFlags = HataroidActivity.instance.getInput().getKeyPresses();
-			int [] keyPresses = keyPressFlags._flags;
+			int [] keyPresses = null;
+			BitFlags keyPressFlags = input.getKeyPresses();
+			boolean hasDirectPresses = input.hasDirectPresses();
+			if (hasDirectPresses)
+			{
+				BitFlags directPressFlags = input.getDirectPresses();
+				directPressFlags.orAll(keyPressFlags); // Note: modifies direct press flags so I don't have to alloc new one
+
+				keyPresses = directPressFlags._flags;
+
+				//String s = "direct keys:";
+				//for (int i = 0; i < directPressFlags._flags.length; ++i)
+				//{
+				//	s += " " + String.valueOf(directPressFlags._flags[i]);
+				//}
+				//Log.i("hataroid", s);
+			}
+			else
+			{
+				keyPresses = keyPressFlags._flags;
+			}
+
+			float[] curAxis = input.getCurAxis();
+
 			HataroidNativeLib.updateInput(
 					sview.m_touched[0], sview.m_touchX[0], sview.m_touchY[0],
 					sview.m_touched[1], sview.m_touchX[1], sview.m_touchY[1],
 					sview.m_touched[2], sview.m_touchX[2], sview.m_touchY[2],
 					mouseX, mouseY, mouseBtns,
-					keyPresses);
+					keyPresses, curAxis);
+
+			if (hasDirectPresses)
+			{
+				input.clearDirectPresses();
+			}
 
 			boolean forceQuit = HataroidNativeLib.onDrawFrame();
 			if (forceQuit)

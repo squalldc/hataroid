@@ -62,6 +62,7 @@ static int Reset_ST(bool bCold)
 		Cart_ResetImage();          /* Load cartridge program into ROM memory. */
 		Cart_Patch();
 	}
+	Cycles_Reset();
 	CycInt_Reset();               /* Reset interrupts */
 	MFP_Reset();                  /* Setup MFP chip */
 	Video_Reset();                /* Reset video */
@@ -122,6 +123,7 @@ int Reset_Cold(bool resetFDCCompatMode)
 
     if (resetFDCCompatMode)
     {
+        ConfigureParams.Hataroid.legacyFloppy = false;
         FDC_Compat_SetCompatMode(FDC_CompatMode_Default);
     }
 

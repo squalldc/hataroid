@@ -8,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.RetroSoft.Hataroid.R;
@@ -67,10 +68,30 @@ public class InputMapArrayAdapter extends ArrayAdapter<InputMapListItem>
 				}
 				else
 				{
-					t2.setText("Mapped to keycode: " + systemKeyName);
+					t2.setText(/*"Mapped to keycode: " +*/ systemKeyName);
 					t2.setTextColor(Color.GREEN);
 				}
 			}
+
+			final InputMapConfigureView cv = (InputMapConfigureView)_c;
+
+			Button b1 = (Button) v.findViewById(R.id.mapBtn);
+			b1.setNextFocusLeftId(R.id.im_presetSpinner);
+			if (position == 0) { b1.setNextFocusUpId(R.id.im_presetSpinner); }
+			b1.setOnClickListener(new View.OnClickListener() {
+				public void onClick(View view) {
+					cv.onMapBtnClicked(item);
+				}
+			});
+
+			Button b2 = (Button) v.findViewById(R.id.unmapBtn);
+			if (position == 0) { b2.setNextFocusUpId(R.id.im_presetSpinner); }
+			b2.setOnClickListener(new View.OnClickListener() {
+				public void onClick(View view) {
+					cv.onUnMapBtnClicked(item);
+				}
+			});
+
 		}
 		return v;
 	}

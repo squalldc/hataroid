@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+	android:key="system_category_key"
+	android:title="@string/system"
+	android:persistent="false"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:robobunny="http://robobunny.com">
+
+	<PreferenceCategory
+		android:title="@string/pref_system_main_category"
+		android:key="pref_system_main_category">
+		<ListPreference android:key="pref_system_cputype"
+						android:persistent="true"
+						android:dialogTitle="@string/cputype" android:title="@string/cputype"
+						android:entries="@array/pref_system_cputype_entries"
+						android:entryValues="@array/pref_system_cputype_values"
+						android:defaultValue="68000"/>
+		<ListPreference android:key="pref_system_machinetype"
+						android:persistent="true"
+						android:entries="@array/pref_system_machinetype_entries"
+						android:entryValues="@array/pref_system_machinetype_values" android:dialogTitle="@string/machinetype" android:title="@string/machinetype"
+						android:defaultValue="ST" />
+		<ListPreference android:key="pref_system_cpuclock"
+						android:persistent="true"
+						android:entries="@array/pref_system_cpuclock_entries"
+						android:entryValues="@array/pref_system_cpuclock_values" android:dialogTitle="@string/cpuclock" android:title="@string/cpuclock"
+						android:defaultValue="8" />
+		<ListPreference android:key="pref_system_memory"
+						android:persistent="true"
+						android:entries="@array/pref_system_memory_entries"
+						android:entryValues="@array/pref_system_memory_values" android:dialogTitle="@string/memory" android:title="@string/memory"
+						android:defaultValue="1" />
+	</PreferenceCategory>
+	<PreferenceCategory
+		android:title="@string/pref_system_rom_category"
+		android:key="pref_system_rom_category">
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_system_tos_emutos"
+			android:title="@string/emutos"
+			android:summaryOn="@string/emutos_summary"
+			android:summaryOff="@string/emutos_summary"
+			android:defaultValue="false" />
+		<Preference
+			android:persistent="true"
+			android:key="pref_system_tos"
+			android:title="@string/tosimage"
+			android:defaultValue="/sdcard/hataroid/tos.img" />
+		<Preference
+			android:persistent="true"
+			android:key="pref_system_tos_ste"
+			android:title="@string/tosimage_ste"
+			android:defaultValue="/sdcard/hataroid/tos_ste.img" />
+		<Preference
+			android:persistent="true"
+			android:enabled="false"
+			android:key="pref_system_tos_falcon"
+			android:title="@string/tosimage_falcon"
+			android:defaultValue="/sdcard/hataroid/tos_falcon.img" />
+	</PreferenceCategory>
+	<PreferenceCategory
+		android:title="@string/pref_system_tweaks_category"
+		android:key="pref_system_tweaks_category">
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_system_compatiblecpu"
+			android:title="@string/compatiblecpu"
+			android:summaryOn="@string/compatiblecpu_summary"
+			android:summaryOff="@string/compatiblecpu_summary"
+			android:defaultValue="true" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_system_blitteremulation"
+			android:title="@string/blitteremulation"
+			android:summaryOn="@string/blitteremulation_summary"
+			android:summaryOff="@string/blitteremulation_summary"
+			android:defaultValue="false" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_system_rtc"
+			android:title="@string/rtcemulation"
+			android:summaryOn="@string/rtcemulation_summary"
+			android:summaryOff="@string/rtcemulation_summary"
+			android:defaultValue="true" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_system_patchtimerd"
+			android:title="@string/patchtimerd"
+			android:summaryOn="@string/patchtimerd_summary"
+			android:summaryOff="@string/patchtimerd_summary"
+			android:defaultValue="true" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_system_patchtosfasterboot"
+			android:title="@string/patchtosfasterboot"
+			android:summaryOn="@string/patchtosfasterboot_summary"
+			android:summaryOff="@string/patchtosfasterboot_summary"
+			android:defaultValue="true" />
+	</PreferenceCategory>
+	<PreferenceCategory
+		android:title="@string/pref_system_devices_category"
+		android:key="pref_system_devices_category">
+		<CheckBoxPreference
+			android:persistent="true"
+			android:enabled="false"
+			android:key="pref_system_printeremulation"
+			android:title="@string/printeremulation"
+			android:summaryOn="@string/printeremulation_summary"
+			android:summaryOff="@string/printeremulation_summary"
+			android:defaultValue="false" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:enabled="false"
+			android:key="pref_system_rs232emulation"
+			android:title="@string/rs232emulation"
+			android:summaryOn="@string/rs232emulation_summary"
+			android:summaryOff="@string/rs232emulation_summary"
+			android:defaultValue="false" />
+	</PreferenceCategory>
+</PreferenceScreen>

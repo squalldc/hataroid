@@ -62,6 +62,7 @@ typedef struct {
 	bool bSetLastBlockAddr;
 	Uint8 nLastError;
 	unsigned long hdSize;       /* Size of the hard disk in sectors */
+	bool writeable;
 } SCSI_DEV;
 
 /**
@@ -446,8 +447,11 @@ static void HDC_Cmd_WriteSector(SCSI_CTRLR *ctr)
 #ifndef DISALLOW_HDC_WRITE
 		if ( STMemory_CheckAreaType ( nDmaAddr , 512 * HDC_GetCount(ctr) , ABFLAG_RAM ) )
 		{
-			n = fwrite(&STRam[nDmaAddr], 512,
-				   HDC_GetCount(ctr), dev->image_file);
+			if (dev->writeable)
+			{
+				n = fwrite(&STRam[nDmaAddr], 512,
+					   HDC_GetCount(ctr), dev->image_file);
+			}
 		}
 		else
 		{
@@ -728,12 +732,23 @@ static int HDC_InitDevice(SCSI_DEV *dev, char *filename)
 		return -EINVAL;
 	}
 
+	bool writeable = true;
 	fp = fopen(filename, "rb+");
 	if (fp == NULL)
 	{
 		Log_Printf(LOG_ERROR, "ERROR: cannot open HD file read/write!\n");
+		writeable = false;
+		//return -ENOENT;
+	}
+
+	// try read only
+	fp = fopen(filename, "rb");
+	if (fp == NULL)
+	{
+		Log_Printf(LOG_ERROR, "ERROR: cannot open HD file read only!\n");
 		return -ENOENT;
 	}
+
 	if (!File_Lock(fp))
 	{
 		Log_Printf(LOG_ERROR, "ERROR: cannot lock HD file for writing!\n");
@@ -743,6 +758,7 @@ static int HDC_InitDevice(SCSI_DEV *dev, char *filename)
 
 	dev->hdSize = filesize / 512;
 	dev->image_file = fp;
+	dev->writeable = writeable;
 	dev->enabled = true;
 
 	return 0;

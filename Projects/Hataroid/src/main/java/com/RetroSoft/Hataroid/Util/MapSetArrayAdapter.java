@@ -7,6 +7,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+
+import com.RetroSoft.Hataroid.R;
 
 public class MapSetArrayAdapter extends ArrayAdapter<IMapSetListItem>
 {
@@ -45,7 +48,7 @@ public class MapSetArrayAdapter extends ArrayAdapter<IMapSetListItem>
 		final IMapSetListItem item = _items.get(position);
 		if (item != null)
 		{
-			item.formatItemView(v);
+			item.formatItemView(_c, v);
 		}
 		return v;
 	}

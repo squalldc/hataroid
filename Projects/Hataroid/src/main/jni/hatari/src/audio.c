@@ -44,10 +44,11 @@ static Sint64 s_lastValidTime = 0;
  * SDL audio callback function - copy emulation sound to audio system.
  */
 extern volatile int _runTillQuit;
+extern Sint64 Time_GetTicks(void);
 
 static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 {
-	Sint64 curTicks = 1000L * (SDL_GetTicks());
+	Sint64 curTicks = Time_GetTicks();//1000L * (SDL_GetTicks());
 
 	_validLenBytes = 0;
 
