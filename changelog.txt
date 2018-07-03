@@ -1,3 +1,6 @@
+v1.801
+- Fix not being able to see parent dir when dir is empty
+
 v1.800
 - Experimental Leanback Launcher support (Android TV and other non-touch screen devices)
 	- I don't have an Android TV device so please let me know if there are any issues

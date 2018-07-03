@@ -23,6 +23,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 //import android.support.v7.app.ActionBar;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -178,7 +179,7 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 				break;
 			}
 		}
-		
+
 		if (_savedPath != null)
 		{
 			_setCurDir(_savedPath);
@@ -985,71 +986,56 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 		
 		try
 		{
-			for (File f : curFiles)
-			{
-				if (f.isDirectory())
-				{
-					items.add(new FileListItem(FileListItem.TYPE_DIR, false, f.getAbsolutePath(), f.getName(), null, false));
-				}
-				else
-				{
-					boolean showNormal = true;
-					
-					GameDBFile dbf = dbFiles.get(f.getName());
-					if (dbf != null)
-					{
-						showNormal = false;
-						
-						if (!dbf.isMultiZip)
-						{
-							for (int i = 0; i < dbf.gameNames.length; ++i)
-							{
-								items.add(new FileListItem(FileListItem.TYPE_FILE, false, f.getAbsolutePath(), f.getName(), dbf.gameNames[i], true));
+			if (curFiles != null) {
+				for (File f : curFiles) {
+					if (f.isDirectory()) {
+						items.add(new FileListItem(FileListItem.TYPE_DIR, false, f.getAbsolutePath(), f.getName(), null, false));
+					} else {
+						boolean showNormal = true;
+
+						GameDBFile dbf = dbFiles.get(f.getName());
+						if (dbf != null) {
+							showNormal = false;
+
+							if (!dbf.isMultiZip) {
+								for (int i = 0; i < dbf.gameNames.length; ++i) {
+									items.add(new FileListItem(FileListItem.TYPE_FILE, false, f.getAbsolutePath(), f.getName(), dbf.gameNames[i], true));
+								}
+							} else if (dbf.zipComplete) {
+								Map<String, GameDBFile> dbZipFiles = gameDB.getFiles(f.getAbsolutePath()); // gameDB is valid at this point
+								Iterator<Map.Entry<String, GameDBFile>> entries = dbZipFiles.entrySet().iterator();
+								while (entries.hasNext()) {
+									Map.Entry<String, GameDBFile> entry = entries.next();
+									GameDBFile zipEntry = entry.getValue();
+									for (int i = 0; i < zipEntry.gameNames.length; ++i) {
+										items.add(new FileListItem(FileListItem.TYPE_FILE, true, f.getAbsolutePath(), zipEntry.fileName, zipEntry.gameNames[i], true));
+									}
+								}
+							} else {
+								showNormal = true;
 							}
 						}
-						else if (dbf.zipComplete)
-						{
-							Map<String,GameDBFile> dbZipFiles = gameDB.getFiles(f.getAbsolutePath()); // gameDB is valid at this point
-							Iterator<Map.Entry<String, GameDBFile>> entries = dbZipFiles.entrySet().iterator();
-							while (entries.hasNext())
-							{
-							    Map.Entry<String, GameDBFile> entry = entries.next();
-							    GameDBFile zipEntry = entry.getValue();
-								for (int i = 0; i < zipEntry.gameNames.length; ++i)
-								{
-									items.add(new FileListItem(FileListItem.TYPE_FILE, true, f.getAbsolutePath(), zipEntry.fileName, zipEntry.gameNames[i], true));
+
+						if (showNormal) {
+							boolean valid = true;
+							if (!_allowAllFiles() && validExtsLower != null) {
+								valid = false;
+								for (String ext : validExtsLower) {
+									if (f.getName().toLowerCase().endsWith(ext)) {
+										valid = true;
+										break;
+									}
 								}
 							}
-						}
-						else
-						{
-							showNormal = true;
-						}
-					}
-					
-					if (showNormal)
-					{
-						boolean valid = true;
-						if (!_allowAllFiles() && validExtsLower != null)
-						{
-							valid = false;
-							for (String ext : validExtsLower)
-							{
-								if (f.getName().toLowerCase().endsWith(ext))
-								{
-									valid = true;
-									break;
-								}
+							if (valid) {
+								items.add(new FileListItem(FileListItem.TYPE_FILE, false, f.getAbsolutePath(), f.getName(), null, false));
 							}
-						}
-						if (valid)
-						{
-							items.add(new FileListItem(FileListItem.TYPE_FILE, false, f.getAbsolutePath(), f.getName(), null, false));
 						}
 					}
 				}
 			}
-			
+
+			Log.i("hataroid", "parent dir: " + dir.getParent());
 			if (dir.getParent() != null)
 			{
 				items.add(new FileListItem(FileListItem.TYPE_DIR, false, dir.getParent(), "..", null, false));
@@ -1057,6 +1043,7 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 		}
 		catch (Exception e)
 		{
+			e.printStackTrace();
 		}
 		
 		Collections.sort(items);
@@ -1266,8 +1253,10 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 
 	void _setCurDir(String path)
 	{
+		Log.i("hataroid", "set curPath: " + path);
+
 		_curDir = (path != null) ? new File(path) : null;
-		
+
 		if (_refreshDBBtnView != null)
 		{
 			boolean showDBRefresh = _refreshDB && ((_curDir != null && _curDir.isDirectory()) || (_curZipFile != null));

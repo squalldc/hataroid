@@ -20,8 +20,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.RetroSoft.Hataroid"
     xmlns:tools="http://schemas.android.com/tools"
-    android:versionCode="1800"
-    android:versionName="1.800" >
+    android:versionCode="1801"
+    android:versionName="1.801" >
 
     <uses-sdk
         android:minSdkVersion="9"
