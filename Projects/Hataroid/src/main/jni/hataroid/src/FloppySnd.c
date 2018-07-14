@@ -144,7 +144,7 @@ int FloppySnd_Setup()
 
 	if (outFreq == _curFreq && outVol == _curVol)
 	{
-		return;
+		return 0;
 	}
 
 	_motorOnLen = _FloppySnd_Resample(_refMotorOnSnd, _refMotorOnLen, outFreq, outVol, &_motorOnSnd, &_motorOnBufLen);
