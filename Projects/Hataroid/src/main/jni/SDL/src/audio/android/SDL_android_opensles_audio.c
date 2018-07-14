@@ -20,6 +20,7 @@
     slouken@libsdl.org
 */
 #include <assert.h>
+#include <stdbool.h>
 
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
@@ -53,6 +54,7 @@ static void             ANDROID_OPENSLES_WaitAudio(_THIS);
 static void             ANDROID_OPENSLES_PlayAudio(_THIS);
 static Uint8*           ANDROID_OPENSLES_GetAudioBuf(_THIS);
 static void             ANDROID_OPENSLES_CloseAudio(_THIS);
+static void             ANDROID_OPENSLES_MuteAudio(_THIS, int mute);
 
 static void             ANDROID_OPENSLES_ThreadInit(_THIS);
 static void             ANDROID_OPENSLES_ThreadDeinit(_THIS);
@@ -63,6 +65,8 @@ static int              createBufferQueueAudioPlayer(_THIS, SDL_AudioSpec *spec)
 static void             destroyBufferQueueAudioPlayer(_THIS);
 static void             bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context);
 static void             playStream(_THIS);
+static void             muteStream(_THIS, SLboolean mute);
+static void             checkMuteStream(_THIS);
 
 // ----
 extern JavaVM*          g_jvm;
@@ -71,11 +75,8 @@ extern struct JNIAudio  g_jniAudioInterface;
 
 //extern volatile int     g_emuReady;
 //extern int              kMaxAudioMuteFrames;
-//extern volatile int     g_audioMute;
-//extern volatile int     g_audioMuteFrames;
-
-//volatile int            _validLenBytes = 0;
-//volatile int            _deviceMinBufSize = 0;
+extern volatile int     g_audioMute;
+extern volatile int     g_audioMuteFrames;
 
 // Audio driver bootstrap functions
 static int ANDROID_OPENSLES_Available(void)
@@ -153,6 +154,7 @@ static SDL_AudioDevice *ANDROID_OPENSLES_CreateDevice(int devindex)
 	this->PlayAudio = ANDROID_OPENSLES_PlayAudio;
 	this->GetAudioBuf = ANDROID_OPENSLES_GetAudioBuf;
 	this->CloseAudio = ANDROID_OPENSLES_CloseAudio;
+	this->MuteAudio = ANDROID_OPENSLES_MuteAudio;
 
 	this->ThreadInit = ANDROID_OPENSLES_ThreadInit;
 	this->ThreadDeinit = ANDROID_OPENSLES_ThreadDeinit;
@@ -200,7 +202,7 @@ static int ANDROID_OPENSLES_OpenAudio(_THIS, SDL_AudioSpec *spec)
 
 static void ANDROID_OPENSLES_CloseAudio(_THIS)
 {
-		Debug_Printf("SDL_Audio OPENSLES Close Audio");
+	Debug_Printf("SDL_Audio OPENSLES Close Audio");
 
 	destroyBufferQueueAudioPlayer(this);
 
@@ -216,12 +218,19 @@ static void ANDROID_OPENSLES_WaitAudio(_THIS)
 
 	for (;;) {
 
+		checkMuteStream(this);
+
 		// wait for free buf
 		if (myData->freeBufs <= 0) { // don't need lock here
 			SDL_Delay(8);
 		} else {
 			break;
 		}
+	}
+
+	checkMuteStream(this);
+	if (g_audioMuteFrames > 0) {
+		--g_audioMuteFrames;
 	}
 }
 
@@ -242,7 +251,6 @@ static void ANDROID_OPENSLES_PlayAudio(_THIS)
     }
     //else
     { // always decrement buf even in error case (which shouldn't occur) as it's better for audio to drop out rather than audio thread maxing out cpu
-		// TODO: lock around here?
 		SDL_mutexP(myData->freeBufLock);
 		{
 	        --myData->freeBufs;
@@ -335,8 +343,8 @@ static void destroyBufferQueueAudioPlayer(_THIS)
         myData->bqPlayerPlay = NULL;
         myData->bqPlayerBufferQueue = NULL;
         //bqPlayerEffectSend = NULL;
-        //bqPlayerMuteSolo = NULL;
-        //bqPlayerVolume = NULL;
+        myData->bqPlayerMuteSolo = NULL;
+        //myData->bqPlayerVolume = NULL;
     }
 
     // destroy our buffers
@@ -464,10 +472,10 @@ static int createBufferQueueAudioPlayer(_THIS, SDL_AudioSpec *spec)
     SLDataSink audioSnk = {&loc_outmix, NULL};
 
     // create audio player
-    const SLInterfaceID ids[1] = {SL_IID_BUFFERQUEUE }; //, SL_IID_VOLUME};, SL_IID_EFFECTSEND, SL_IID_MUTESOLO };
-    const SLboolean req[1] = {SL_BOOLEAN_TRUE }; //, SL_BOOLEAN_TRUE}, SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE };
+    const SLInterfaceID ids[2] = {SL_IID_BUFFERQUEUE, /*SL_IID_VOLUME,*/ SL_IID_MUTESOLO }; //, SL_IID_EFFECTSEND };
+    const SLboolean req[2] = {SL_BOOLEAN_TRUE, /*SL_BOOLEAN_TRUE,*/ SL_BOOLEAN_FALSE }; //, SL_BOOLEAN_TRUE}, };
 
-    result = (*(myData->engineEngine))->CreateAudioPlayer(myData->engineEngine, &myData->bqPlayerObject, &audioSrc, &audioSnk, 1, ids, req);
+    result = (*(myData->engineEngine))->CreateAudioPlayer(myData->engineEngine, &myData->bqPlayerObject, &audioSrc, &audioSnk, 2, ids, req);
     if (result != SL_RESULT_SUCCESS) {
 	    return -1;
     }
@@ -495,6 +503,23 @@ static int createBufferQueueAudioPlayer(_THIS, SDL_AudioSpec *spec)
     if (result != SL_RESULT_SUCCESS) {
 	    return -1;
     }
+
+    // get the mute/solo interface
+    result = (*(myData->bqPlayerObject))->GetInterface(myData->bqPlayerObject, SL_IID_MUTESOLO, &myData->bqPlayerMuteSolo);
+    if (result != SL_RESULT_SUCCESS) {
+	    myData->bqPlayerMuteSolo = NULL; // don't fail, but don't support muting
+    }
+
+    // get the volume interface
+    //result = (*(myData->bqPlayerObject))->GetInterface(myData->bqPlayerObject, SL_IID_VOLUME, &myData->bqPlayerVolume);
+    //if (result != SL_RESULT_SUCCESS) {
+	//    return -1;
+    //}
+
+    //result = (*(myData->bqPlayerVolume))->GetVolumeLevel(myData->bqPlayerVolume, &myData->defVolLevel);
+    //if (result != SL_RESULT_SUCCESS) {
+    //    return -1;
+    //}
 
 	// create our buffers
 	{
@@ -536,7 +561,6 @@ static void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
 
 	//Debug_Printf("SDL_Audio OPENSLES bqPlayerCallback");
 
-	// TODO: lock around here?
 	SDL_mutexP(myData->freeBufLock);
 	{
 		++myData->freeBufs;
@@ -556,4 +580,50 @@ static void playStream(_THIS)
 	    SLresult result = (*(myData->bqPlayerPlay))->SetPlayState(myData->bqPlayerPlay, SL_PLAYSTATE_PLAYING);
 	    assert(SL_RESULT_SUCCESS == result);
     }
+}
+
+static void muteStream(_THIS, SLboolean mute)
+{
+	int reqMute = mute ? 1 : 0;
+	if (reqMute != this->muted)
+	{
+		struct SDL_PrivateAudioData *myData = this->hidden;
+
+		Debug_Printf("SDL_Audio OPENSLES Mute Audio: %d", mute);
+
+		if (myData->bqPlayerMuteSolo != NULL) {
+			const int kNumChans = 2; // TODO: use the one we passed in the spec(for now we just support 2 channels)
+			int chan = 0;
+			for (; chan < kNumChans; ++chan) {
+			    SLresult result = (*(myData->bqPlayerMuteSolo))->SetChannelMute(myData->bqPlayerMuteSolo, chan, mute);
+			    //assert(SL_RESULT_SUCCESS == result);
+		    }
+	    }
+
+		{
+		    //SLresult result = (*(myData->bqPlayerVolume))->SetVolumeLevel(myData->bqPlayerVolume, mute ? (-100*100) : myData->defVolLevel);
+		    //assert(SL_RESULT_SUCCESS == result);
+	    }
+
+	    this->muted = reqMute;
+    }
+}
+
+static void checkMuteStream(_THIS)
+{
+	int reqMute = (g_audioMute || g_audioMuteFrames > 0) ? 1 : 0;
+
+	if (reqMute != this->muted)
+	{
+		muteStream(this, reqMute);
+	}
+}
+
+static void ANDROID_OPENSLES_MuteAudio(_THIS, int mute)
+{
+	int reqMute = (mute != 0) ? 1 : 0;
+	if (reqMute != this->muted)
+	{
+		muteStream(this, reqMute);
+	}
 }

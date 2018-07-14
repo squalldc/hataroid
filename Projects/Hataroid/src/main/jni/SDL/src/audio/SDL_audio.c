@@ -600,12 +600,25 @@ SDL_audiostatus SDL_GetAudioStatus(void)
 
 void SDL_PauseAudio (int pause_on)
 {
-	Debug_Printf("Audio paused %d", pause_on);
+	Debug_Printf("Audio pause %d", pause_on);
 
 	SDL_AudioDevice *audio = current_audio;
 
 	if ( audio ) {
 		audio->paused = pause_on;
+	}
+}
+
+void SDL_MuteAudio(int mute)
+{
+	Debug_Printf("Audio mute %d", mute);
+
+	SDL_AudioDevice *audio = current_audio;
+
+	if ( audio ) {
+		if ( audio->MuteAudio ) {
+			(*audio->MuteAudio)(audio, mute);
+		}
 	}
 }
 

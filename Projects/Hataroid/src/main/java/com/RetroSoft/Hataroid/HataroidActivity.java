@@ -1069,6 +1069,8 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 			    //_addSilence();
 		    }
 
+	        HataroidNativeLib.emulatorMuteAudio();
+
 		    _audioPaused = true;
 	    //}
     }
@@ -2050,6 +2052,8 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 		{
 			return;
 		}
+
+		HataroidNativeLib.emulatorMuteAudio();
 
 		final int subMenuType = optionType;
 

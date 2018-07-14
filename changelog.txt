@@ -1,3 +1,6 @@
+v1.821
+- Mute audio when entering menus
+
 v1.820
 - Disk drive loading sounds (sampled from my own STE ^_^)
 	- Off by default, enable it in Settings->Sound

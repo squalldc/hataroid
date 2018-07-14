@@ -84,6 +84,8 @@ extern "C"
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_hataroidDialogResult(JNIEnv * env, jobject obj, jint result);
 	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_hataroidSettingsResult(JNIEnv * env, jobject obj, jint result);
 
+	JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorMuteAudio(JNIEnv * env, jobject obj);
+
 	JavaVM *g_jvm = 0;
 	struct JNIAudio g_jniAudioInterface;
 	struct JNIMainMethodCache g_jniMainInterface;
@@ -104,7 +106,7 @@ extern "C"
 
 	volatile int g_validMainActivity = 0;
 
-	int kMaxAudioMuteFrames = 5;
+	int kMaxAudioMuteFrames = 6;
 	volatile int g_audioMute = 0;
 	volatile int g_audioMuteFrames = 0;
 
@@ -176,6 +178,8 @@ void _clearHataroidSaveCommands();
 void _hataroidRetrieveSaveExtraData();
 void _confirmSettings(JNIEnv* env);
 void _resetCold();
+static void _setMute(int mute);
+static void _setMuteFrames(int frames);
 static void _preloadEmuTOS(JNIEnv* curEnv);
 
 static void _initAssetDataItems();
@@ -396,8 +400,30 @@ void setUserEmuPaused(int pause, int pauseFlag)
 	if (pause)	{ emuUserPaused |= pauseFlag; }
 	else		{ emuUserPaused &= ~pauseFlag; }
 
-	g_audioMute = 1;
+	_setMute(1);
 	Sound_BufferIndexNeedReset = true;
+}
+
+static void _setMute(int mute)
+{
+	g_audioMute = mute;
+	if (g_audioMute) {
+		SDL_MuteAudio(mute); // mute straight away
+	}
+}
+
+static void _setMuteFrames(int frames)
+{
+	g_audioMuteFrames = frames;
+	if (g_audioMuteFrames > 0) {
+		SDL_MuteAudio(1); // mute straight away
+	}
+}
+
+JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorMuteAudio(JNIEnv * env, jobject obj)
+{
+	Debug_Printf("----> emulation NativeLib_emulatorMuteAudio");
+	_setMuteFrames(kMaxAudioMuteFrames);
 }
 
 int hasDialogResult() { return g_lastDialogResultValid; }
@@ -582,8 +608,8 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationMa
 
 			if (!_saveAndQuit && g_audioMute && s_loadingCommand == 0)
 			{
-				g_audioMuteFrames = kMaxAudioMuteFrames;
-				g_audioMute = 0;
+				_setMuteFrames(kMaxAudioMuteFrames);
+				_setMute(0);
 			}
 
 			if (_altUpdate)
@@ -702,7 +728,7 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationPa
 	videoReady = false;
 	_frameReady = false;
 
-	g_audioMute = 1;
+	_setMute(1);
 }
 
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorToggleUserPaused(JNIEnv * env, jobject obj)
@@ -739,7 +765,7 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationRe
 	Debug_Printf("----> emulationResume");
 	if (!g_emuReady)
 	{
-		g_audioMute = 1;
+		_setMute(1);
 	}
 }
 
@@ -1927,7 +1953,7 @@ static const int s_NumOptionMaps = sizeof(s_OptionsMap)/sizeof(OptionSetting);
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSetOptions(JNIEnv * env, jobject obj, jobjectArray keyarray, jobjectArray valarray)
 {
 	SetEmulatorOptions(env, keyarray, valarray, true, false, true);
-	g_audioMute = 1;
+	_setMute(1);
 }
 
 static bool _firstInit = true;
@@ -2107,7 +2133,7 @@ void EmuCommandResetCold_Run(EmuCommand *command)
 
 void _resetCold()
 {
-    g_audioMute = 1;
+	_setMute(1);
     setTurboSpeed(0);
     setUserEmuPaused(0, EMUPAUSETYPE_MASK);
     Reset_Cold(false);
@@ -2128,7 +2154,7 @@ void EmuCommandResetWarm_Run(EmuCommand *command)
 {
 	Debug_Printf("----> Warm Reset");
 	Main_PauseEmulation(false);
-	g_audioMute = 1;
+	_setMute(1);
 	setTurboSpeed(0);
 	setUserEmuPaused(0, EMUPAUSETYPE_MASK);
 	Reset_Warm();
@@ -3018,7 +3044,7 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulatorSav
 	if (emuInited && !_saveAndQuit && _doubleBusError==0)
 	{
 		_createNewSaveStateCommand(env, obj, path, filepath, saveSlot, EmuCommandSaveState_Data::OpLoad);
-		g_audioMute = 1;
+		_setMute(1);
 		++s_loadingCommand;
 
 		setUserEmuPaused(0, EMUPAUSETYPE_MASK);

@@ -54,6 +54,7 @@ struct SDL_AudioDevice {
 	Uint8 *(*GetAudioBuf)(_THIS);
 	void (*WaitDone)(_THIS);
 	void (*CloseAudio)(_THIS);
+	void (*MuteAudio)(_THIS, int mute);
 
 	/* * * */
 	/* Lock / Unlock functions added for the Mac port */
@@ -75,6 +76,7 @@ struct SDL_AudioDevice {
 	int enabled;
 	int paused;
 	int opened;
+	volatile int muted;
 
 	/* Fake audio buffer for when the audio hardware is busy */
 	Uint8 *fake_stream;

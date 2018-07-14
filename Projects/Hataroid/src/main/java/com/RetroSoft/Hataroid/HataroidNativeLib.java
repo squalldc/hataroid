@@ -58,7 +58,9 @@ public class HataroidNativeLib
 
 	public static native void hataroidDialogResult(int result);
 	public static native void hataroidSettingsResult(int result);
-	
+
+	public static native void emulatorMuteAudio();
+
     //public static native int     andMidiInit();
     //public static native int[]   andMidiConfig();
     //public static native int     andMidiRender(short a[]);
