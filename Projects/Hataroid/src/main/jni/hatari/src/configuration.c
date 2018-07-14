@@ -35,7 +35,6 @@ const char Configuration_fileid[] = "Hatari configuration.c : " __DATE__ " " __T
 #include "dsp.h"
 #include "joy.h"
 
-extern int SdlDeviceBufferSizeScale;
 extern void hataroidRetrieveSaveExtraData();
 
 CNF_PARAMS ConfigureParams;                 /* List of configuration for the emulator */
@@ -714,7 +713,7 @@ void Configuration_SetDefault(void)
 
         ConfigureParams.Hataroid.useEmuTOS = false;
 
-        ConfigureParams.Hataroid.legacyFloppy = true;
+        ConfigureParams.Hataroid.legacyFloppy = false;
 	}
 
 	// Hataroid Midi extra
@@ -804,9 +803,6 @@ void Configuration_Apply(bool bReset)
 		SdlAudioBufferSize = 10;
 	else if ( SdlAudioBufferSize > 100 )		/* max of 100 ms */
 		SdlAudioBufferSize = 100;
-
-	// device audio buffer size
-	SdlDeviceBufferSizeScale = ConfigureParams.Hataroid.deviceSoundBufSize;
 
 	/* Set playback frequency */
 	Audio_SetOutputAudioFreq(ConfigureParams.Sound.nPlaybackFreq);

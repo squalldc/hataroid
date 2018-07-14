@@ -79,6 +79,7 @@ typedef struct SDL_AudioSpec {
 	Uint16 samples;		/**< Audio buffer size in samples (power of 2) */
 	Uint16 padding;		/**< Necessary for some compile environments */
 	Uint32 size;		/**< Audio buffer size in bytes (calculated) */
+	Uint32 fillSize;
 	/**
 	 *  This function is called when the audio device needs more data.
 	 *

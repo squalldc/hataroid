@@ -67,7 +67,7 @@
 			android:title="@string/floppydisks_legacy"
 			android:summaryOn="@string/floppydisks_legacy_summary"
 			android:summaryOff="@string/floppydisks_legacy_summary"
-			android:defaultValue="true" />
+			android:defaultValue="false" />
 		<ListPreference android:key="pref_storage_floppydisks_writeprotection"
 						android:persistent="true"
 						android:entries="@array/pref_storage_floppydisks_writeprotection_entries"

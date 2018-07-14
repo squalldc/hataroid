@@ -704,6 +704,41 @@ int	FDC_Get_Statusbar_Text_New ( char *text, size_t maxlen )
 	return written;
 }
 
+int FDC_Get_CurTrack_New()
+{
+	Uint8   Track = 0;
+
+	if ( FDC_GetEmulationMode() == FDC_EMULATION_MODE_INTERNAL )
+	{
+		Track	= FDC.TR; // for active drive
+	}
+	else							/* FDC_EMULATION_MODE_IPF */
+	{
+		Uint8   Command , Head , Sector , Side;
+		IPF_FDC_StatusBar ( &Command , &Head , &Track , &Sector , &Side );
+	}
+
+	return Track;
+}
+
+bool FDC_Get_HasActiveCommands_New ()
+{
+	switch(FDC.Command)
+	{
+	case FDCEMU_CMD_NULL:           return false;
+	case FDCEMU_CMD_RESTORE:        return FDC.CommandState != FDCEMU_RUN_RESTORE_COMPLETE;
+	case FDCEMU_CMD_SEEK:           return FDC.CommandState != FDCEMU_RUN_SEEK_COMPLETE;
+	case FDCEMU_CMD_STEP:           return FDC.CommandState != FDCEMU_RUN_STEP_COMPLETE;
+	case FDCEMU_CMD_READSECTORS:    return FDC.CommandState != FDCEMU_RUN_READSECTORS_COMPLETE;
+	case FDCEMU_CMD_WRITESECTORS:   return FDC.CommandState != FDCEMU_RUN_WRITESECTORS_COMPLETE;
+	case FDCEMU_CMD_READADDRESS:    return FDC.CommandState != FDCEMU_RUN_READADDRESS_COMPLETE;
+	case FDCEMU_CMD_READTRACK:      return FDC.CommandState != FDCEMU_RUN_READTRACK_COMPLETE;
+	case FDCEMU_CMD_WRITETRACK:     return FDC.CommandState != FDCEMU_RUN_WRITETRACK_COMPLETE;
+	case FDCEMU_CMD_MOTOR_STOP:     return false;
+	}
+
+	return false;
+}
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -894,6 +929,7 @@ void FDC_Reset_New ( bool bCold )
 	FDC.CommandType = 0;
 	FDC.InterruptCond = 0;
 	FDC.IRQ_Signal = 0;
+	FDC_ClearIRQ();					/* Propagate IRQ signal to MFP GPIP5 */
 
 	FDC.IndexPulse_Counter = 0;
 	for ( i=0 ; i<MAX_FLOPPYDRIVES ; i++ )

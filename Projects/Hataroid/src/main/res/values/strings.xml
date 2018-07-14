@@ -134,6 +134,10 @@
     <string name="sound_downmix_enabled_summary">Downmix audio output from stereo to mono</string>
     <string name="playbackquality">Playback quality</string>
     <string name="ymvoices_mixing">YM voices mixing</string>
+    <string name="sound_drives_enabled">Disk Drive Sounds</string>
+    <string name="sound_drives_enabled_summary">Enable the simulated Disk Drive sounds</string>
+    <string name="sound_drives_vol">Disk Drive Sounds Volume</string>
+    <string name="sound_drives_vol_summary">Adjust volume of disk drive sounds</string>
     <string name="pref_display_monitory_category">Atari Monitor</string>
     <string name="pref_display_extendedvdi_category">Atari Extended VDI</string>
     <string name="pref_display_display_category">Android Display</string>

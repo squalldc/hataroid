@@ -1,3 +1,9 @@
+v1.820
+- Disk drive loading sounds (sampled from my own STE ^_^)
+	- Off by default, enable it in Settings->Sound
+- Complete Audio rewrite to use native code directly
+	- Help improve performance and reduce glitching
+
 v1.801
 - Fix not being able to see parent dir when dir is empty
 

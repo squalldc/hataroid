@@ -86,6 +86,7 @@
 /* Enable various audio drivers */
 #define SDL_AUDIO_DRIVER_DUMMY	1
 #define SDL_AUDIO_DRIVER_ANDROID_AUDIOTRACK	1
+#define SDL_AUDIO_DRIVER_ANDROID_OPENSLES 1
 
 /* Enable the stub cdrom driver (src/cdrom/dummy/\*.c) */
 #define SDL_CDROM_DISABLED	1
@@ -97,7 +98,8 @@
 #define SDL_LOADSO_DISABLED	1
 
 /* Enable the stub thread support (src/thread/generic/\*.c) */
-#define SDL_THREADS_DISABLED	1
+//#define SDL_THREADS_DISABLED	1
+#define SDL_THREAD_PTHREAD 1
 
 /* Enable various timer systems */
 #define SDL_TIMER_UNIX 1

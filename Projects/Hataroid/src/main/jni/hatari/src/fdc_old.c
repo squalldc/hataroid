@@ -2999,6 +2999,31 @@ int	FDC_Get_Statusbar_Text_Old ( char *text, size_t maxlen )
 	return 0;
 }
 
+int FDC_Get_CurTrack_Old()
+{
+	//return HeadTrack[ FDC_DRIVE ];
+	return FDC.TR; // for active drive
+}
+
+bool FDC_Get_HasActiveCommands_Old ()
+{
+	switch(FDC.Command)
+	{
+	case FDCEMU_CMD_NULL:           return false;
+	case FDCEMU_CMD_RESTORE:        return FDC.CommandState != FDCEMU_RUN_RESTORE_COMPLETE;
+	case FDCEMU_CMD_SEEK:           return FDC.CommandState != FDCEMU_RUN_SEEK_COMPLETE;
+	case FDCEMU_CMD_STEP:           return FDC.CommandState != FDCEMU_RUN_STEP_COMPLETE;
+	case FDCEMU_CMD_READSECTORS:    return FDC.CommandState != FDCEMU_RUN_READSECTORS_COMPLETE;
+	case FDCEMU_CMD_WRITESECTORS:   return FDC.CommandState != FDCEMU_RUN_WRITESECTORS_COMPLETE;
+	case FDCEMU_CMD_READADDRESS:    return FDC.CommandState != FDCEMU_RUN_READADDRESS_COMPLETE;
+	case FDCEMU_CMD_READTRACK:      return FDC.CommandState != FDCEMU_RUN_READTRACK_COMPLETE;
+	case FDCEMU_CMD_WRITETRACK:     return FDC.CommandState != FDCEMU_RUN_WRITETRACK_COMPLETE;
+	case FDCEMU_CMD_MOTOR_STOP:     return false;
+	}
+
+	return false;
+}
+
 // Not Supported in Legacy FDC
 void FDC_Drive_Set_Enable_Old ( int Drive , bool value ) { }
 void FDC_Drive_Set_NumberOfHeads_Old ( int Drive , int NbrHeads ) { }

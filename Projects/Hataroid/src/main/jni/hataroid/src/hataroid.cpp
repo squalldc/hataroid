@@ -19,6 +19,7 @@
 #include "VirtKB.h"
 
 #include "midi/fsmidi.h"
+#include "FloppySnd.h"
 
 #include <gui-android.h>
 
@@ -266,6 +267,36 @@ void usleep(int usecs)
 	nanosleep(&ts, &ts);
 }
 
+float dbgGetAudioBufQueuedPercent(JNIEnv *curEnv)
+{
+#if 0
+	if (!g_emuReady) {
+		return 0;
+	}
+
+	JNIEnv* env = (curEnv==0) ? g_jniMainInterface.android_mainEmuThreadEnv : curEnv;
+	jfloat percent = (env)->CallFloatMethod(g_jniMainInterface.android_mainActivity, g_jniMainInterface.dbgGetAudioBufQueuedPercent);
+	return percent;
+#else
+	return 0;
+#endif
+}
+
+int getFreeAudioBuffer(JNIEnv *curEnv)
+{
+#if 0
+	if (!g_emuReady) {
+		return 0;
+	}
+
+	JNIEnv* env = (curEnv==0) ? g_jniMainInterface.android_mainEmuThreadEnv : curEnv;
+	int freeFrames = (env)->CallIntMethod(g_jniMainInterface.android_mainActivity, g_jniMainInterface.getFreeAudioBuffer);
+	return (freeFrames >= 0) ? freeFrames : 0;
+#else
+	return 0;
+#endif
+}
+
 int showGenericDialog(JNIEnv *curEnv, const char *message, int ok, int noyes, const char* noTxt, const char* yesOKTxt)
 {
 	Debug_Printf("Show Generic Dialog");
@@ -416,6 +447,7 @@ static void registerJNIcallbacks(JNIEnv * env, jobject activityInstance)
 		g_jniAudioInterface.pauseAudio = (env)->GetMethodID(activityClass, "pauseAudio", "()V");
 
 		g_jniAudioInterface.sendAudio = (env)->GetMethodID(activityClass, "sendAudio", "([SII)V");
+		g_jniAudioInterface.showAudioErrorDialog = (env)->GetMethodID(activityClass, "showAudioErrorDialog", "()V");
 	}
 
 	{
@@ -432,6 +464,9 @@ static void registerJNIcallbacks(JNIEnv * env, jobject activityInstance)
 		g_jniMainInterface.quitHataroid = (env)->GetMethodID(activityClass, "quitHataroid", "()V");
 		g_jniMainInterface.setConfigOnSaveStateLoad = (env)->GetMethodID(activityClass, "setConfigOnSaveStateLoad", "([Ljava/lang/String;)V");
 		g_jniMainInterface.getAssetData = (env)->GetMethodID(activityClass, "getAssetData", "(Ljava/lang/String;)[B");
+
+		g_jniMainInterface.dbgGetAudioBufQueuedPercent = (env)->GetMethodID(activityClass, "dbgGetAudioBufQueuedPercent", "()F");
+		g_jniMainInterface.getFreeAudioBuffer = (env)->GetMethodID(activityClass, "getFreeAudioBuffer", "()I");
 
 		//g_jniMainInterface.sendAndMidiAudio = (env)->GetMethodID(activityClass, "sendAndMidiAudio", "()V");
 		g_jniMainInterface.sendMidiByte = (env)->GetMethodID(activityClass, "sendMidiByte", "(B)V");
@@ -455,6 +490,7 @@ static void _initEmulator()
 
 		fsMidi_init();
 		_preloadEmuTOS(g_jniMainInterface.android_mainEmuThreadEnv);
+		FloppySnd_Init(g_jniMainInterface.android_mainEmuThreadEnv);
 
 		const char *argv[] = { "Hataroid" };
 		hatari_main_init(1, argv);
@@ -566,6 +602,7 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_emulationMa
 				if (emuUserPaused == 0 || _saveAndQuit)
 				{
 					hatari_main_doframe();
+					FloppySnd_UpdateEmuFrame();
 				}
 
 				//fsMidi_postUpdate();
@@ -1092,6 +1129,7 @@ void _optionSetSoundQuality(const OptionSetting *setting, const char *val, EmuCo
 	ConfigureParams.Sound.nPlaybackFreq = freq;
 
 	fsMidi_setSetting(freq, -1, -1, -1, 0);
+	FloppySnd_SetOutFreq(freq);
 }
 
 bool _optionValYMVoicesMixing(const OptionSetting *setting, char *dstBuf, int dstBufLen)
@@ -1119,13 +1157,29 @@ void _optionSoundBufferSize(const OptionSetting *setting, const char *val, EmuCo
 {
 	int bufSize = atoi(val);
 	if (bufSize < 1)		{ bufSize = 1; }
-	else if (bufSize > 50) {  bufSize = 50; }
+	else if (bufSize > 100) { bufSize = 100; }
 	ConfigureParams.Hataroid.deviceSoundBufSize = bufSize;
 }
 
 void _optionSoundDownmixStereoMono(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	ConfigureParams.Hataroid.downmixStereo = _getBoolVal(val) ? 1 : 0;
+}
+
+void _optionSoundDrivesEnabled(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	FloppySnd_Enable(_getBoolVal(val) ? 1 : 0);
+}
+
+void _optionSoundDrivesVol(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	float vol = atof(val);
+	vol *= (1.0f/100.0f);
+
+	if (vol < 0.0f) { vol = 0.0f; }
+	else if (vol > 1.0f) { vol = 1.0f; }
+
+	FloppySnd_SetOutVol(vol);
 }
 
 bool _optionValMonitorType(const OptionSetting *setting, char *dstBuf, int dstBufLen)
@@ -1834,6 +1888,8 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_sound_ymvoicesmixing", _optionSetYMVoicesMixing, _optionValYMVoicesMixing },
 	{ "pref_sound_buffer_size", _optionSoundBufferSize, _optionValSoundBufferSize },
 	{ "pref_sound_downmix_enabled", _optionSoundDownmixStereoMono, 0 },
+	{ "pref_sound_drives_enabled", _optionSoundDrivesEnabled, 0 },//_optionValSoundDrivesEnabled },
+	{ "pref_sound_drives_vol", _optionSoundDrivesVol, 0 },
 	//{ "pref_input_keyboard_extra_keys", _optionSetVKBExtraKeys, 0 },
 	{ "pref_input_keyboard_obsession_keys", _optionSetVKBObsessionKeys, 0 },
     { "pref_input_onscreen_autohide", _optionSetVKBAutoHide, 0 },
@@ -1921,8 +1977,9 @@ void EmuCommandSetOptions_Run(EmuCommand *command)
 
 	{
 		// forced settings
-		const int minSize = 25;
-		ConfigureParams.Sound.SdlAudioBufferSize = minSize + (ConfigureParams.Hataroid.deviceSoundBufSize-18);
+		const int minSize = 20;
+		ConfigureParams.Sound.SdlAudioBufferSize = ConfigureParams.Hataroid.deviceSoundBufSize;
+		//ConfigureParams.Sound.SdlAudioBufferSize = minSize + (ConfigureParams.Hataroid.deviceSoundBufSize-18);
 		if (ConfigureParams.Sound.SdlAudioBufferSize < minSize)
 		{
 			ConfigureParams.Sound.SdlAudioBufferSize = minSize;
@@ -1930,6 +1987,15 @@ void EmuCommandSetOptions_Run(EmuCommand *command)
 
 		// Reset the sound emulation variables:
 		Sound_BufferIndexNeedReset = true;
+	}
+
+	{
+		// drive sound parameters
+		if (FloppySnd_IsEnabled())
+		{
+			FloppySnd_Setup();
+			FloppySnd_Reset();
+		}
 	}
 
 	// If a memory snapshot has been loaded, no further changes are required
@@ -3255,6 +3321,13 @@ extern "C" void hataroid_releaseAssetDataRef(int assetID)
 				return;
 			}
 		}
+	}
+}
+
+extern "C" void hataroid_freeAssetDataDirect(char* data)
+{
+	if (data != 0) {
+		delete [] data;
 	}
 }
 

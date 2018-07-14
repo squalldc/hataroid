@@ -50,7 +50,13 @@ public class InputCaptureView extends Activity
 		_parseOptions(savedInstanceState);
 
 		if (!_canCancel) {
-			this.setFinishOnTouchOutside(false);
+			try {
+				this.setFinishOnTouchOutside(false);
+			} catch (Exception e) {
+				e.printStackTrace();
+			} catch (Error e) {
+				e.printStackTrace();
+			}
 		}
 
 		_retIntent = new Intent();

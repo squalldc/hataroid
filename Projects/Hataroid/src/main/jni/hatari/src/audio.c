@@ -9,6 +9,7 @@
 const char Audio_fileid[] = "Hatari audio.c : " __DATE__ " " __TIME__;
 
 #include <SDL.h>
+#include <JNI.h>
 
 #include "main.h"
 #include "audio.h"
@@ -21,7 +22,6 @@ const char Audio_fileid[] = "Hatari audio.c : " __DATE__ " " __TIME__;
 #include "screen.h"
 #include "video.h"	/* FIXME: video.h is dependent on HBL_PALETTE_LINES from screen.h */
 
-
 int nAudioFrequency = 44100;			/* Sound playback frequency */
 bool bSoundWorking = false;			/* Is sound OK */
 static volatile bool bPlayingBuffer = false;	/* Is playing buffer? */
@@ -31,45 +31,20 @@ int SdlAudioBufferSize = 0;			/* in ms (0 = use default) */
 int pulse_swallowing_count = 0;			/* Sound disciplined emulation rate controlled by  */
 						/*  window comparator and pulse swallowing counter */
 
-volatile int _validLenBytes = 0;
+//extern Sint64 Time_GetTicks(void);
 
-extern int g_vsync;
-extern volatile int g_emuReady;
+//extern int g_vsync;
+//extern volatile int g_emuReady;
 extern volatile int _doubleBusError;
-
-static Sint64 s_lastValidTime = 0;
+extern volatile int _runTillQuit;
 
 /*-----------------------------------------------------------------------*/
 /**
  * SDL audio callback function - copy emulation sound to audio system.
  */
-extern volatile int _runTillQuit;
-extern Sint64 Time_GetTicks(void);
-
 static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 {
-	Sint64 curTicks = Time_GetTicks();//1000L * (SDL_GetTicks());
-
-	_validLenBytes = 0;
-
-	if (nGeneratedSamples == 0 || _runTillQuit != 0 || _doubleBusError)// && g_emuReady != 0)
-	{
-		if ((curTicks - s_lastValidTime) < ((nScreenRefreshRate==50) ? (1000000/50) : (1000000/60)))
-		{
-			return;
-		}
-		else
-		{
-			//Debug_Printf("ticks: %u", (unsigned int)(curTicks - s_lastValidTime));
-
-			memset(stream, 0, (len));
-			_validLenBytes = len;
-			s_lastValidTime = curTicks;
-			return;
-		}
-	}
-
-	s_lastValidTime = curTicks;
+	//JNIEnv* env = (JNIEnv*)userdata;
 
 	Sint16 *pBuffer;
 	int i, window, nSamplesPerFrame;
@@ -96,93 +71,62 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 		nSamplesPerFrame = nAudioFrequency/nScreenRefreshRate;
 		window = (nSamplesPerFrame > SoundBufferSize) ? nSamplesPerFrame : SoundBufferSize;
 
+		int min = window + (window >> 1); //1.5x
+		int max = (window << 1) + (window >> 2); // 2.25x
+
 		/* Window Comparator for SoundBufferSize */
-		if (nGeneratedSamples < window + (window >> 1))
+		if (nGeneratedSamples < min)
+		{
 		/* Increase emulation rate to maintain sound synchronization */
 			pulse_swallowing_count = -5793 / nScreenRefreshRate;
+			//Debug_Printf("not enough audio, speeding emu up: gen: %d, thresh: %d - %d", nGeneratedSamples, min, max);
+		}
 		else
-		if (nGeneratedSamples > (window << 1) + (window >> 2))
+		if (nGeneratedSamples > max)
+		{
 		/* Decrease emulation rate to maintain sound synchronization */
 			pulse_swallowing_count = 5793 / nScreenRefreshRate;
+			//Debug_Printf("too much audio, slowing emu down: gen: %d, thresh: %d - %d", nGeneratedSamples, min, max);
+		}
 
 		/* Otherwise emulation rate is unaltered. */
 	}
 
-	if (nGeneratedSamples >= len)
+	//Debug_Printf("req audio len: %d, generated: %d, freeBufs: %d", len, nGeneratedSamples, _sdlAudio_dbgFreeBufs);
+
+	if (nGeneratedSamples < len || _runTillQuit != 0 || _doubleBusError)// && g_emuReady != 0)
 	{
-		/* Enough samples available: Pass completed buffer to audio system
-		 * by write samples into sound buffer and by converting them from
-		 * 'signed' to 'unsigned' */
-		if (ConfigureParams.Hataroid.downmixStereo)
-		{
-			for (i = 0; i < len; i++)
-			{
-				int idx = (CompleteSndBufIdx + i) % MIXBUFFER_SIZE;
-				int val = (MixBuffer[idx][0] + MixBuffer[idx][1]) >> 1;
-				*pBuffer++ = val;
-				*pBuffer++ = val;
-			}
-		}
-		else
-		{
-			for (i = 0; i < len; i++)
-			{
-				*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][0];
-				*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][1];
-			}
-		}
-
-		CompleteSndBufIdx += len;
-		nGeneratedSamples -= len;
-
-		_validLenBytes = len<<2;
-
-		CompleteSndBufIdx = CompleteSndBufIdx % MIXBUFFER_SIZE;
-	}
-	else  /* Not enough samples available: */
-	{
-#if 0
-		for (i = 0; i < nGeneratedSamples; i++)
-		{
-			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][0];
-			*pBuffer++ = MixBuffer[(CompleteSndBufIdx + i) % MIXBUFFER_SIZE][1];
-		}
-		_validLenBytes = nGeneratedSamples<<2;
-#endif
-
-		_validLenBytes = nGeneratedSamples<<2;
-		memset(stream, 0, _validLenBytes);
-
-#if 0
-
-		/* If the buffer is filled more than 50%, mirror sample buffer to fake the
-		 * missing samples */
-		/*
-		if (nGeneratedSamples >= len/2)
-		{
-			int remaining = len - nGeneratedSamples;
-			int startOffset = nGeneratedSamples - remaining;
-			memcpy(pBuffer, stream+(startOffset*4), remaining*4);
-			_validLenBytes += remaining<<2;
-		}
-		//*/
-
-		CompleteSndBufIdx += nGeneratedSamples;
-		nGeneratedSamples = 0;
-#endif
-
-		CompleteSndBufIdx = CompleteSndBufIdx % MIXBUFFER_SIZE;
+		memset(stream, 0, len<<2);
+		return;
 	}
 
-	// zero out the rest
-	int zeroCount = (len<<2) - _validLenBytes;
-	if (zeroCount > 0)
+	//Debug_Printf("sending audio: %d samples, free: %d, gen: %d", len, maxFreeBuf, nGeneratedSamples);
+
+	if (ConfigureParams.Hataroid.downmixStereo)
 	{
-		memset(stream+_validLenBytes, 0, zeroCount);
+		for (i = 0; i < len; i++)
+        {
+            int idx = (CompleteSndBufIdx + i) % MIXBUFFER_SIZE;
+            int val = (MixBuffer[idx][0] + MixBuffer[idx][1]) >> 1;
+            *pBuffer++ = val;
+            *pBuffer++ = val;
+        }
 	}
-	//_validLenBytes = len<<2;
+	else
+	{
+		for (i = 0; i < len; i++)
+		{
+			int idx = (CompleteSndBufIdx + i) % MIXBUFFER_SIZE;
+			*pBuffer++ = MixBuffer[idx][0];
+			*pBuffer++ = MixBuffer[idx][1];
+		}
+	}
+
+	CompleteSndBufIdx += len;
+	nGeneratedSamples -= len;
+
+	CompleteSndBufIdx = CompleteSndBufIdx % MIXBUFFER_SIZE;
 }
-
 
 /*-----------------------------------------------------------------------*/
 /**
@@ -213,12 +157,14 @@ void Audio_Init(void)
 		}
 	}
 
+	int nSamplesPerFrame = nAudioFrequency/nScreenRefreshRate; // hack data passing
+
 	/* Set up SDL audio: */
 	desiredAudioSpec.freq = nAudioFrequency;
 	desiredAudioSpec.format = AUDIO_S16SYS;		/* 16-Bit signed */
 	desiredAudioSpec.channels = 2;			/* stereo */
 	desiredAudioSpec.callback = Audio_CallBack;
-	desiredAudioSpec.userdata = NULL;
+	desiredAudioSpec.userdata = nSamplesPerFrame;
 
 	/* In most case, setting samples to 1024 will give an equivalent */
 	/* sdl sound buffer of ~20-30 ms (depending on freq). */
@@ -231,14 +177,16 @@ void Audio_Init(void)
 	else
 	{
 		int samples = (desiredAudioSpec.freq / 1000) * SdlAudioBufferSize;
-		int power2 = 1;
-		while ( power2 < samples )		/* compute the power of 2 just above samples */
-                        power2 *= 2;
 
-//fprintf ( stderr , "samples %d power %d\n" , samples , power2 );
-		desiredAudioSpec.samples = power2;	/* number of samples corresponding to the requested SdlAudioBufferSize */
+		// my audio driver will take care of this as required
+//		int power2 = 1;
+//		while ( power2 < samples )		    /* compute the power of 2 just above samples */
+//            power2 *= 2;
+
+		//fprintf ( stderr , "samples %d power %d\n" , samples , power2 );
+		//desiredAudioSpec.samples = power2;	/* number of samples corresponding to the requested SdlAudioBufferSize */
+		desiredAudioSpec.samples = samples;
 	}
-
 
 	if (SDL_OpenAudio(&desiredAudioSpec, NULL))	/* Open audio device */
 	{
@@ -249,8 +197,8 @@ void Audio_Init(void)
 		return;
 	}
 
-	SoundBufferSize = desiredAudioSpec.size;	/* May be different than the requested one! */
-	SoundBufferSize /= 4;				/* bytes -> samples (16 bit signed stereo -> 4 bytes per sample) */
+	SoundBufferSize = desiredAudioSpec.size;    /* May be different than the requested one! */
+	SoundBufferSize /= 4;				        /* bytes -> samples (16 bit signed stereo -> 4 bytes per sample) */
 	if (SoundBufferSize > MIXBUFFER_SIZE/2)
 	{
 		fprintf(stderr, "Warning: Soundbuffer size is too big!\n");

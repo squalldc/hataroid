@@ -9,7 +9,8 @@ LOCAL_C_INCLUDES	+= $(APP_PROJECT_PATH)/jni/hataroid/src
 #--- audio
 LOCAL_SRC_FILES		+= src/audio/SDL_audio.c src/audio/SDL_audiocvt.c src/audio/SDL_audiodev.c src/audio/SDL_wave.c
 LOCAL_SRC_FILES		+= src/audio/dummy/SDL_dummyaudio.c
-LOCAL_SRC_FILES		+= src/audio/android_audiotrack/SDL_android_audiotrackaudio.c
+LOCAL_SRC_FILES		+= src/audio/android/SDL_android_audiotrackaudio.c
+LOCAL_SRC_FILES		+= src/audio/android/SDL_android_opensles_audio.c
 
 #--- cdrom
 LOCAL_SRC_FILES		+= src/cdrom/SDL_cdrom.c

@@ -17,6 +17,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.UiModeManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -88,6 +89,14 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 
 	private AudioTrack			        _audioTrack = null;
 	private Boolean				        _audioPaused = true;
+	private Object                      _audioTrackDestroyLock = new Object();
+
+	private int                         _audioBufSizeFrames = 0;
+	private int                         _audioBufSizeFillFrames = 0;
+	private int                         _audioBufFrameSizeShorts = 0;
+	private int                         _audioBufFramesWritten = 0;
+	private int                         _prevAudioHeadFrame = -1;
+	private int                         _headFrameUnchangedCount = 0;
 
 	private Input				        _input = null;
 
@@ -876,34 +885,98 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 
 		HataroidNativeLib.emulationResume();
 	}
-	
+
 	public int getMinBufSize(int freq, int bits, int channels)
 	{
+		// getting the buffer size
+		int amMinBufSize = 0;
+		try {
+			if ( android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 )
+			{
+				AudioManager am = ( AudioManager ) getApplicationContext().getSystemService( Context.AUDIO_SERVICE );
+				int amNativeSampleRate = Integer.parseInt( am.getProperty( AudioManager.PROPERTY_OUTPUT_SAMPLE_RATE ));
+				amMinBufSize = Integer.parseInt( am.getProperty( AudioManager.PROPERTY_OUTPUT_FRAMES_PER_BUFFER ));
+				if (amMinBufSize > 0) {
+					amMinBufSize *= channels * (bits/8);
+				}
+				Log.i(LOG_TAG, "AudioManager min buf size: " + amMinBufSize + ", native rate: " + amNativeSampleRate);
+			}
+		}  catch (Error e) {
+			e.printStackTrace();
+		}  catch (Exception e) {
+			e.printStackTrace();
+		}
+
 		int minBufSize = AudioTrack.getMinBufferSize(
 				freq,
 				(channels == 2) ? AudioFormat.CHANNEL_OUT_STEREO : AudioFormat.CHANNEL_OUT_MONO,
 				(bits == 8) ? AudioFormat.ENCODING_PCM_8BIT : AudioFormat.ENCODING_PCM_16BIT);
+		int nativeSampleRate = AudioTrack.getNativeOutputSampleRate(AudioManager.STREAM_MUSIC);
+		Log.i(LOG_TAG, "AudioTrack min buf size: " + minBufSize + ", native rate: " + nativeSampleRate);
+
+		if (amMinBufSize > 0) {
+			if (minBufSize <= 0 || amMinBufSize < minBufSize) {
+				minBufSize = amMinBufSize;
+			}
+		}
+
 		return minBufSize;
 	}
-	
+
 	public void initAudio(int freq, int bits, int channels, int bufSizeBytes)
     {
     	if (_audioTrack == null)
     	{
-    		Log.i(LOG_TAG, "Starting Audio. freq: " + freq + ", bits: " + bits + ", channels: " + channels + ", bufSizeBytes: " + bufSizeBytes);
+		    int reqBufSize = bufSizeBytes;
+
+		    int minBufSize = getMinBufSize(freq, bits, channels);
+		    if (bufSizeBytes < (minBufSize>>1)) {
+			    bufSizeBytes = minBufSize>>1;
+		    } else {
+			    bufSizeBytes = ((bufSizeBytes + (minBufSize-1)) / minBufSize) * minBufSize;
+		    }
+
+    		Log.i(LOG_TAG, "Starting Audio. freq: " + freq + ", bits: " + bits + ", channels: " + channels + ", bufSizeBytes: " + bufSizeBytes + "(req: " + reqBufSize + ")");
+
+		    int minFrames = minBufSize / (channels * (bits == 8 ? 1 : 2));
+
+		    _audioBufSizeFrames = bufSizeBytes / (channels * (bits == 8 ? 1 : 2));
+		    _audioBufSizeFillFrames = _audioBufSizeFrames;
+		    {   // HACK: some leeway so we don't overfill
+			    int adjFrames = (int) (_audioBufSizeFrames * 0.8f);
+			    if (adjFrames >= minFrames) {
+				    _audioBufSizeFillFrames = adjFrames;
+			    } else if (minFrames < _audioBufSizeFrames) {
+				    _audioBufSizeFillFrames = minFrames;
+			    }
+		    }
+		    Log.i(LOG_TAG, "Audio Buf Size Frames: " + _audioBufSizeFrames + ", fill max frames: " + _audioBufSizeFillFrames);
+
+		    _audioBufFrameSizeShorts = channels; // not for 8 bits
+		    _audioBufFramesWritten = 0;
 
     		boolean error = false;
     		try
     		{
-	    		_audioTrack = new AudioTrack(
-	    				AudioManager.STREAM_MUSIC,
-	    				freq,
-	    				(channels == 2) ? AudioFormat.CHANNEL_OUT_STEREO : AudioFormat.CHANNEL_OUT_MONO,
-	    				(bits == 8) ? AudioFormat.ENCODING_PCM_8BIT : AudioFormat.ENCODING_PCM_16BIT,
-	    				bufSizeBytes,
-	    				AudioTrack.MODE_STREAM);
-	
-	    		_audioPaused = false;
+			    //synchronized(_audioTrackDestroyLock) {
+				    _audioTrack = new AudioTrack(
+						    AudioManager.STREAM_MUSIC,
+						    freq,
+						    (channels == 2) ? AudioFormat.CHANNEL_OUT_STEREO : AudioFormat.CHANNEL_OUT_MONO,
+						    (bits == 8) ? AudioFormat.ENCODING_PCM_8BIT : AudioFormat.ENCODING_PCM_16BIT,
+						    bufSizeBytes,
+						    AudioTrack.MODE_STREAM);
+
+				    //_audioTrack.setPlaybackRate((int)(freq*0.999f));
+
+				    _audioBufFramesWritten = 0;
+				    _prevAudioHeadFrame = -1;
+				    _headFrameUnchangedCount = 0;
+				    _audioPaused = false;
+
+			        //_audioTrack.pause();
+			    //}
+
 	    		_checkPlayAudio();
     		}
     		catch (Exception e)
@@ -914,12 +987,12 @@ public class HataroidActivity extends Activity implements IGameDBScanner
     		
     		if (error)
     		{
-    			_showAudioErrorDialog();
+			    showAudioErrorDialog();
     		}
     	}
     }
 	
-	void _showAudioErrorDialog()
+	public void showAudioErrorDialog()
 	{
     	this.runOnUiThread(new Runnable() {
 			public void run() {
@@ -929,6 +1002,7 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 				alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int which) { _resetAudioSettings(); }
 				});
+				alertDialog.setCancelable(false);
 				alertDialog.show();
 			}
 		});
@@ -964,81 +1038,148 @@ public class HataroidActivity extends Activity implements IGameDBScanner
     
     public void deinitAudio()
     {
-		if (_audioTrack != null)
-		{
-			try
-			{
-				_audioTrack.pause();
-				_audioTrack.flush();
-				_audioTrack.stop();
-				_audioTrack.release();
-			}
-			catch (Exception e)
-			{
-			}
+	    synchronized(_audioTrackDestroyLock) {
+		    if (_audioTrack != null) {
+			    try {
+				    _audioTrack.pause();
+				    _audioTrack.flush();
+				    _audioTrack.stop();
+				    _audioTrack.release();
 
-			_audioTrack = null;
-		}
-		_audioPaused = true;
+			    } catch (Exception e) {
+			    }
+
+			    _audioTrack = null;
+			    _audioBufFramesWritten = 0;
+			    _prevAudioHeadFrame = -1;
+			    _headFrameUnchangedCount = 0;
+			    Log.i("hataroid", "destroyed audio track");
+		    }
+		    _audioPaused = true;
+	    }
     }
 
     public void pauseAudio()
     {
-    	if (_audioTrack != null)
-    	{
-    		Log.i(LOG_TAG, "Pausing Audio");
-    		_audioTrack.pause();
-        	_addSilence();
-    	}
+	    //synchronized(_audioTrackDestroyLock) {
 
-    	_audioPaused = true;
+		    if (_audioTrack != null) {
+			    Log.i(LOG_TAG, "Pausing Audio");
+			    _audioTrack.pause();
+			    //_addSilence();
+		    }
+
+		    _audioPaused = true;
+	    //}
     }
     
     public void playAudio()
     {
-    	if (_audioTrack != null)
-    	{
-    		Log.i(LOG_TAG, "Playing Audio");
-    		_audioTrack.play();
-        	_addSilence();
-    	}
+	    //synchronized(_audioTrackDestroyLock) {
+		    if (_audioTrack != null) {
+			    Log.i(LOG_TAG, "Pending Play Audio");
+			    //_audioTrack.play(); // will now play when we start writing data
+			    //_addSilence();
+		    }
 
-		_audioPaused = false;
+		    _audioPaused = false;
+	    //}
     }
 
-    void _addSilence()
-	{
-    	if (_audioTrack != null)
-    	{
-//    		_audioTrack.flush();
-			
-/*
-			short[] silence = new short [2048];
-    		for (int i = 0; i < 5; ++i)
-    		{
-    			_audioTrack.write(silence, 0, silence.length);
-    		}
- */
-    	}
-	}
-    
     public void sendAudio(short data [], int len, int flush)
     {
-    	if (_audioTrack != null && !_audioPaused)
-    	{
-    		if (flush != 0)// || flushNow)
-    		{
-    			_audioTrack.flush();
-    		}
-    		if (_audioTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING)
-    		{
-    			//_audioTrack.flush();
-    			_audioTrack.play();
-    		}
-    		_audioTrack.write(data, 0, len);//data.length);
-    	}
+	    //synchronized(_audioTrackDestroyLock) {
+
+		    if (_audioTrack != null && !_audioPaused) {
+
+			    if (flush != 0)// || flushNow)
+			    {
+			    }
+
+			    if (_audioTrack.getPlayState() != AudioTrack.PLAYSTATE_PLAYING) {
+				    _audioTrack.play();
+				    Log.i("hataroid", "playing audio from send");
+			    }
+
+//			    int headFrame = _audioTrack.getPlaybackHeadPosition();
+//			    int queuedFrames = Math.max(0, _audioBufFramesWritten - headFrame);
+//			    int maxFrames = _audioBufSizeFrames - queuedFrames;
+//			    int maxShorts = maxFrames * _audioBufFrameSizeShorts;
+//			    int clampedLen = Math.min(maxShorts, len);
+
+			    int written = _audioTrack.write(data, 0, len);//clampedLen);//data.length);
+//			    if (written < len) {
+//				    Log.i("hataroid", "-------------- buffer full: discarded shorts: " + (len - written));
+//			    }
+			    if (written > 0) {
+				    _audioBufFramesWritten += written / _audioBufFrameSizeShorts;
+			    }
+			    //Log.i("hataroid", "sent audio data");
+		    }
+	    //}
     }
-    
+
+	public float dbgGetAudioBufQueuedPercent()
+	{
+		//synchronized(_audioTrackDestroyLock) // disabled for slow devices
+		{
+			if (_audioTrack != null && _audioBufSizeFrames > 0) {
+				//int headFrame = _audioTrack.getPlaybackHeadPosition();
+				int headFrame = (_prevAudioHeadFrame > 0) ? _prevAudioHeadFrame : 0; // faster on slow devices
+				int queuedFrames = Math.max(0, _audioBufFramesWritten - headFrame);
+				//Log.i("hataroid", "queued: " + queuedFrames + " / " + _audioBufSizeFrames + ", pos: " + headFrame + " / " + _audioBufFramesWritten);
+				float percent = queuedFrames / (float) _audioBufSizeFrames;
+				return (_headFrameUnchangedCount > 0) ? -percent : percent;
+			}
+		}
+		return 0;
+	}
+
+	public int getFreeAudioBuffer()
+	{
+		if (_audioPaused) {
+			return 0;
+		}
+
+		synchronized(_audioTrackDestroyLock) {
+			if (_audioTrack != null && _audioBufSizeFillFrames > 0) {
+
+				int headFrame = _audioTrack.getPlaybackHeadPosition();
+
+				// hack
+				if (_audioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING)
+				{
+					if (_prevAudioHeadFrame == headFrame) {
+
+						++_headFrameUnchangedCount;
+						if (_headFrameUnchangedCount >= 192)
+						{
+							_audioTrack.pause();
+							_audioTrack.flush();
+							_audioTrack.stop();
+							headFrame = _audioBufFramesWritten = 0;//_audioTrack.getPlaybackHeadPosition();
+							_prevAudioHeadFrame = -1;
+							_headFrameUnchangedCount = 0;
+							//_audioTrack.play(); // will now start playing we we starting writing data
+							Log.i("hataroid", "detected audio track reset, forcing restart");
+						}
+					} else {
+						_prevAudioHeadFrame = headFrame;
+						_headFrameUnchangedCount = 0;
+					}
+				} else {
+					_audioTrack.play();
+					Log.i("hataroid", "playing audio from getFreeAudioBuffer");
+				}
+
+				int queuedFrames = Math.max(0, _audioBufFramesWritten - headFrame);
+				int freeFrames = _audioBufSizeFillFrames - queuedFrames;
+				return freeFrames;
+			}
+		}
+		return 0;
+	}
+
     private Map<String, Object> getFullEmulatorOptions(boolean stripJavaOptions)
     {
 		Map<String, Object> baseOptions = getEmulatorOptions(stripJavaOptions);

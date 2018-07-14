@@ -276,7 +276,7 @@ static void VirtKB_updateVirtMouseEmu();
 
 static void VirtKB_clearMousePresses();
 
-static void VirtKB_onRender();
+static void VirtKB_onRender(JNIEnv *env);
 static void VirtKB_RenderVerts(RTShader *pShader, GLfloat *v, GLsizei vstride, GLuint texID, GLushort *ind, int numQuads);
 static void VirtKB_UpdateRectVerts(	GLfloat *v, float x1, float y1, float x2, float y2,
 								float u1, float v1, float u2, float v2,
@@ -1261,9 +1261,60 @@ static void VirtKB_RenderVerts(RTShader *pShader, GLfloat *v, GLsizei vstride, G
 	glDrawElements(GL_TRIANGLES, 6*numQuads, GL_UNSIGNED_SHORT, ind);
 }
 
-static void VirtKB_onRender()
+#if DBG_SND
+	#include <sound.h>
+	static void Debug_Render(JNIEnv *env)
+	{
+		RTShader *pShader = Renderer_getColorModShader();
+
+		{
+			//-1,-1 to 1, 1 (bl -> tr)
+			if (s_VkbCurNumPresses < (s_MaxVkbPresses-1))
+			{
+				float tx1 = 0.0f, ty1 = 0.0f;
+				float tx2 = 1.0f, ty2 = 1.0f;
+
+				float barLen = 0.7f;
+
+				float x1 = 0, y1 = 0.95f;
+				float x2 = barLen, y2 = 0.99f;
+
+				{
+					GLfloat *v = &s_VkbPressedVerts[s_VkbCurNumPresses*36];
+					VirtKB_UpdateRectVerts(v, x1, y1, x2, y2, tx1, ty1, tx2, ty2, 1.0f, 1.0f, 1.0f, 0.5f);
+
+					++s_VkbCurNumPresses;
+				}
+				{
+					float fill = nGeneratedSamples / (float)MIXBUFFER_SIZE;
+					x2 = barLen * fill;
+
+					GLfloat *v = &s_VkbPressedVerts[s_VkbCurNumPresses*36];
+					VirtKB_UpdateRectVerts(v, x1, y1, x2, y2, tx1, ty1, tx2, ty2, 1.0f, 0.3f, 0.3f, 0.8f);
+
+					++s_VkbCurNumPresses;
+				}
+			}
+		}
+
+		if (!s_showKeyboard)
+		{
+			if (s_VkbCurNumPresses > 0)
+			{
+				GLuint pressedTexID = getWhiteTexture();
+				VirtKB_RenderVerts(pShader, s_VkbPressedVerts, s_VkbPressedStride, pressedTexID, s_VkbPressedIndices, s_VkbCurNumPresses);
+			}
+		}
+	}
+#endif // DBG_SND
+
+static void VirtKB_onRender(JNIEnv *env)
 {
 	RTShader *pShader = Renderer_getColorModShader();
+
+#if DBG_SND
+	Debug_Render(env);
+#endif
 
 	// keyboard
 	if (s_showKeyboard)

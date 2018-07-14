@@ -731,7 +731,7 @@ void renderFrame(JNIEnv* env)
 
 		for (int r = 0; r < s_numRenderCalbacks; ++r)
 		{
-			(*s_RenderCallbacks[r])();
+			(*s_RenderCallbacks[r])(env);
 		}
 	}
 }

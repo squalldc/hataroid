@@ -101,6 +101,9 @@ static AudioBootStrap *bootstrap[] = {
 #if SDL_AUDIO_DRIVER_ANDROID_AUDIOTRACK
 	&ANDROIDAUDIOTRACK_bootstrap,
 #endif
+#if SDL_AUDIO_DRIVER_ANDROID_OPENSLES
+	&ANDROIDAUDIO_OPENSLES_bootstrap,
+#endif
 #if SDL_AUDIO_DRIVER_DC
 	&DCAUD_bootstrap,
 #endif
@@ -153,7 +156,7 @@ int SDLCALL SDL_RunAudio(void *audiop)
 		stream_len = audio->convert.len;
 	} else {
 		silence = audio->spec.silence;
-		stream_len = audio->spec.size;
+		stream_len = audio->spec.fillSize;//audio->spec.size;
 	}
 
 #ifdef __OS2__
@@ -194,12 +197,14 @@ int SDLCALL SDL_RunAudio(void *audiop)
 			}
 		}
 
-		SDL_memset(stream, silence, stream_len);
+		//SDL_memset(stream, silence, stream_len); safe, but wasteful, our callback will handle it if required
 
 		if ( ! audio->paused ) {
 			SDL_mutexP(audio->mixer_lock);
 			(*fill)(udata, stream, stream_len);
 			SDL_mutexV(audio->mixer_lock);
+		} else {
+			SDL_memset(stream, silence, stream_len);
 		}
 
 		/* Convert the audio if necessary */
@@ -595,6 +600,8 @@ SDL_audiostatus SDL_GetAudioStatus(void)
 
 void SDL_PauseAudio (int pause_on)
 {
+	Debug_Printf("Audio paused %d", pause_on);
+
 	SDL_AudioDevice *audio = current_audio;
 
 	if ( audio ) {

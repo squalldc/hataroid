@@ -43,6 +43,8 @@ struct JNIAudio
 	jmethodID sendAudio;
 	jmethodID pauseAudio;
 	jmethodID playAudio;
+
+	jmethodID showAudioErrorDialog;
 };
 
 struct JNIMainMethodCache
@@ -62,6 +64,9 @@ struct JNIMainMethodCache
 	jmethodID quitHataroid;
 	jmethodID setConfigOnSaveStateLoad;
 	jmethodID getAssetData;
+
+	jmethodID dbgGetAudioBufQueuedPercent;
+	jmethodID getFreeAudioBuffer;
 
 	//jmethodID sendAndMidiAudio;
 	jmethodID sendMidiByte;
@@ -83,11 +88,16 @@ extern void setUserEmuPaused(int pause, int pauseFlag);
 extern void toggleUserEmuPaused();
 extern int isUserEmuPaused();
 
-extern void hataroid_releaseAssetDataRef(int assetID);
 extern const char* hataroid_getAssetDataDirect(JNIEnv *curEnv, const char* assetPath, int nullTerm, int *len);
+extern void hataroid_freeAssetDataDirect(char* data);
+
 extern const char* hataroid_getAssetDataRef(JNIEnv *curEnv, const char* assetPath, int persist, int *len, int *id);
+extern void hataroid_releaseAssetDataRef(int assetID);
 
 extern char* hataroid_LoadEmuTOS(int machineType, long* fileSize);
+
+extern float dbgGetAudioBufQueuedPercent(JNIEnv *curEnv);
+extern int getFreeAudioBuffer(JNIEnv *curEnv);
 
 #ifdef __cplusplus
 };  /* end of extern "C" */

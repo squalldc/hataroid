@@ -23,8 +23,6 @@
 */
 #include "SDL_config.h"
 
-/* Output audio to nowhere... */
-
 #include "SDL_rwops.h"
 #include "SDL_timer.h"
 #include "SDL_audio.h"
@@ -36,24 +34,38 @@
 /* The tag name used by Android AudioTrack audio */
 #define ANDROIDAUDIOTRACK_DRIVER_NAME         "android-audiotrack"
 
+static SDL_AudioDevice* ANDROIDAUDIOTRACK_CreateDevice(int devindex);
+static int              ANDROIDAUDIOTRACK_Available(void);
+
+AudioBootStrap ANDROIDAUDIOTRACK_bootstrap = {
+	ANDROIDAUDIOTRACK_DRIVER_NAME, "SDL android audiotrack audio driver",
+	ANDROIDAUDIOTRACK_Available, ANDROIDAUDIOTRACK_CreateDevice
+};
+
 /* Audio driver functions */
-static int ANDROIDAUDIOTRACK_OpenAudio(_THIS, SDL_AudioSpec *spec);
-static void ANDROIDAUDIOTRACK_WaitAudio(_THIS);
-static void ANDROIDAUDIOTRACK_PlayAudio(_THIS);
-static Uint8 *ANDROIDAUDIOTRACK_GetAudioBuf(_THIS);
-static void ANDROIDAUDIOTRACK_CloseAudio(_THIS);
+static int      ANDROIDAUDIOTRACK_OpenAudio(_THIS, SDL_AudioSpec *spec);
+static void     ANDROIDAUDIOTRACK_WaitAudio(_THIS);
+static void     ANDROIDAUDIOTRACK_PlayAudio(_THIS);
+static Uint8*   ANDROIDAUDIOTRACK_GetAudioBuf(_THIS);
+static void     ANDROIDAUDIOTRACK_CloseAudio(_THIS);
 
-static void ANDROIDAUDIOTRACK_ThreadInit(_THIS);
-static void ANDROIDAUDIOTRACK_ThreadDeinit(_THIS);
+static void     ANDROIDAUDIOTRACK_ThreadInit(_THIS);
+static void     ANDROIDAUDIOTRACK_ThreadDeinit(_THIS);
 
-extern JavaVM *g_jvm;
-extern struct JNIAudio g_jniAudioInterface;
-static void initAndroidAudio(_THIS, Uint16 format, int freq, int channels, int bufSizeBytes);
-static void deinitAndroidAudio(_THIS);
+static int      initAndroidAudio(_THIS, SDL_AudioSpec *spec, Uint16 format, int freq, int channels, int bufSizeBytes);
+static void     deinitAndroidAudio(_THIS);
 
-int SdlDeviceBufferSizeScale = 18;
+extern JavaVM*          g_jvm;
+extern struct JNIAudio  g_jniAudioInterface;
+extern volatile int     g_validMainActivity;
 
-extern volatile int g_validMainActivity;
+//extern volatile int     g_emuReady;
+extern int              kMaxAudioMuteFrames;
+extern volatile int     g_audioMute;
+extern volatile int     g_audioMuteFrames;
+
+volatile int            _validLenBytes = 0;
+volatile int            _deviceMinBufSize = 0;
 
 /* Audio driver bootstrap functions */
 static int ANDROIDAUDIOTRACK_Available(void)
@@ -79,8 +91,7 @@ static SDL_AudioDevice *ANDROIDAUDIOTRACK_CreateDevice(int devindex)
 	this = (SDL_AudioDevice *)SDL_malloc(sizeof(SDL_AudioDevice));
 	if ( this ) {
 		SDL_memset(this, 0, (sizeof *this));
-		this->hidden = (struct SDL_PrivateAudioData *)
-				SDL_malloc((sizeof *this->hidden));
+		this->hidden = (struct SDL_PrivateAudioData *)SDL_malloc((sizeof *this->hidden));
 	}
 	if ( (this == NULL) || (this->hidden == NULL) ) {
 		SDL_OutOfMemory();
@@ -106,35 +117,26 @@ static SDL_AudioDevice *ANDROIDAUDIOTRACK_CreateDevice(int devindex)
 	return this;
 }
 
-AudioBootStrap ANDROIDAUDIOTRACK_bootstrap = {
-	ANDROIDAUDIOTRACK_DRIVER_NAME, "SDL android audiotrack audio driver",
-	ANDROIDAUDIOTRACK_Available, ANDROIDAUDIOTRACK_CreateDevice
-};
-
 /* This function waits until it is possible to write a full sound buffer */
 static void ANDROIDAUDIOTRACK_WaitAudio(_THIS)
 {
+#if 0
 	/* Don't block on first calls to simulate initial fragment filling. */
 	if (this->hidden->initial_calls)
 	{
 		//this->hidden->initial_calls--;
 	}
-	else if (g_validMainActivity == 0)
+	else
+#endif
+	 if (g_validMainActivity == 0)
 	{
-		SDL_Delay(this->hidden->write_delay);
+		SDL_Delay(3);//this->hidden->write_delay);
 	}
 	else
 	{
-		SDL_Delay(1);//this->hidden->write_delay);
+		SDL_Delay(2);//1);//this->hidden->write_delay);
 	}
 }
-
-extern volatile int _validLenBytes;
-extern volatile int g_emuReady;
-
-extern int kMaxAudioMuteFrames;
-extern volatile int g_audioMute;
-extern volatile int g_audioMuteFrames;
 
 static void ANDROIDAUDIOTRACK_PlayAudio(_THIS)
 {
@@ -147,10 +149,12 @@ static void ANDROIDAUDIOTRACK_PlayAudio(_THIS)
 		return;
 	}
 
+#if 0
 	if (this->hidden->initial_calls)
 	{
 		this->hidden->initial_calls--;
 	}
+#endif
 
 	JNIEnv *j_env = hidden->playThreadjenv; //g_jniAudioInterface.android_env;
 	if (j_env)
@@ -159,45 +163,9 @@ static void ANDROIDAUDIOTRACK_PlayAudio(_THIS)
 
 		if (g_validMainActivity)
 		{
-			if (g_audioMute)
 			{
-				memset(this->hidden->mixbuf, 0, hidden->numjShorts<<1);
-				(*j_env)->SetShortArrayRegion(j_env, hidden->playThreadjavaSendBuf, 0, hidden->numjShorts, (int16_t*)this->hidden->mixbuf);
-				(*j_env)->CallVoidMethod(j_env, g_jniAudioInterface.android_mainActivity, g_jniAudioInterface.sendAudio, this->hidden->playThreadjavaSendBuf, hidden->numjShorts, 0);
-			}
-			else if (g_audioMuteFrames > 0)
-			{
-				int i;
-
-				memset(this->hidden->mixbuf, 0, hidden->numjShorts<<1);
-
-				(*j_env)->SetShortArrayRegion(j_env, hidden->playThreadjavaSendBuf, 0, hidden->numjShorts, (int16_t*)this->hidden->mixbuf);
-
-				int offsetCount = (int)(SdlDeviceBufferSizeScale / 20);
-				int flush = g_audioMuteFrames == 1 || g_audioMuteFrames == kMaxAudioMuteFrames;
-				if (g_audioMuteFrames > 1)
-				{
-					offsetCount = 1;
-				}
-				if (offsetCount < 1)
-				{
-					offsetCount = 1;
-				}
-				for (i = 0; i < offsetCount; ++i)
-				{
-					(*j_env)->CallVoidMethod(j_env, g_jniAudioInterface.android_mainActivity, g_jniAudioInterface.sendAudio, this->hidden->playThreadjavaSendBuf, hidden->numjShorts, flush);
-					flush = 0;
-				}
-
-				--g_audioMuteFrames;
-			}
-			else
-			{
-				(*j_env)->SetShortArrayRegion(j_env,
-						hidden->playThreadjavaSendBuf, 0, validShorts, (int16_t*)this->hidden->mixbuf);
-
-				(*j_env)->CallVoidMethod(j_env,
-						g_jniAudioInterface.android_mainActivity, g_jniAudioInterface.sendAudio, this->hidden->playThreadjavaSendBuf, validShorts, 0);
+				(*j_env)->SetShortArrayRegion(j_env, hidden->playThreadjavaSendBuf, 0, validShorts, (int16_t*)this->hidden->mixbuf);
+				(*j_env)->CallVoidMethod(j_env, g_jniAudioInterface.android_mainActivity, g_jniAudioInterface.sendAudio, this->hidden->playThreadjavaSendBuf, validShorts, 0);
 			}
 		}
 	}
@@ -222,7 +190,9 @@ static void ANDROIDAUDIOTRACK_CloseAudio(_THIS)
 
 static int ANDROIDAUDIOTRACK_OpenAudio(_THIS, SDL_AudioSpec *spec)
 {
-	initAndroidAudio(this, spec->format, spec->freq, spec->channels, spec->size);
+	if (initAndroidAudio(this, spec, spec->format, spec->freq, spec->channels, spec->size) < 0) {
+		return -1;
+	}
 
 	float bytes_per_sec = 0.0f;
 
@@ -234,8 +204,7 @@ static int ANDROIDAUDIOTRACK_OpenAudio(_THIS, SDL_AudioSpec *spec)
 	}
 	SDL_memset(this->hidden->mixbuf, spec->silence, spec->size);
 
-	bytes_per_sec = (float) (((spec->format & 0xFF) / 8) *
-	                   spec->channels * spec->freq);
+	bytes_per_sec = (float) (((spec->format & 0xFF) / 8) * spec->channels * spec->freq);
 
 	/*
 	 * We try to make this request more audio at the correct rate for
@@ -244,9 +213,8 @@ static int ANDROIDAUDIOTRACK_OpenAudio(_THIS, SDL_AudioSpec *spec)
 	 *  it seems like we're filling two audio fragments right out of the
 	 *  gate, like other SDL drivers tend to do.
 	 */
-	this->hidden->initial_calls = 2;
-	this->hidden->write_delay =
-	               (Uint32) ((((float) spec->size) / bytes_per_sec) * 1000.0f);
+	//this->hidden->initial_calls = 2;
+	this->hidden->write_delay = (Uint32) ((((float) spec->size) / bytes_per_sec) * 1000.0f);
 
 	/* We're ready to rock and roll. :-) */
 	return(0);
@@ -273,6 +241,8 @@ static void ANDROIDAUDIOTRACK_ThreadInit(_THIS)
 	jshortArray sendBuf = (*env)->NewShortArray(env, this->hidden->numjShorts);
 	this->hidden->playThreadjavaSendBuf = (*env)->NewGlobalRef(env, sendBuf);
 	(*env)->DeleteLocalRef(env, sendBuf);
+
+	this->spec.userdata = env;
 }
 
 static void ANDROIDAUDIOTRACK_ThreadDeinit(_THIS)
@@ -291,22 +261,16 @@ static void ANDROIDAUDIOTRACK_ThreadDeinit(_THIS)
 	this->hidden->playThreadjenv = 0;
 }
 
-static void initAndroidAudio(_THIS, Uint16 format, int freq, int channels, int bufSizeBytes)
+static int initAndroidAudio(_THIS, SDL_AudioSpec *spec, Uint16 format, int freq, int channels, int bufSizeBytes)
 {
 	JNIEnv *j_env = g_jniAudioInterface.android_env;
 	if (j_env)
 	{
 		int bits = 16;
 		int bytes = 2;
-		switch (format)
-		{
-			case AUDIO_U8:
-			case AUDIO_S8:
-			{
-				bits = 8;
-				bytes = 1;
-				break;
-			}
+
+		if (format != AUDIO_S16SYS) { // only signed 16 supported atm
+			return -1;
 		}
 
 		Debug_Printf("SDL_Audio Native->Java AudioInit_callback");
@@ -315,23 +279,18 @@ static void initAndroidAudio(_THIS, Uint16 format, int freq, int channels, int b
 				g_jniAudioInterface.android_mainActivity, g_jniAudioInterface.getMinBufSize,
 				freq, bits, channels);
 
-		float scale = (SdlDeviceBufferSizeScale<=0) ? 1 : ((SdlDeviceBufferSizeScale > 50) ? 50 : SdlDeviceBufferSizeScale);
-		scale *= 1.0f/100.0f;
-		const int roundSize = 1024; // pow2
-		int reqBufSize = (int)((freq * bytes * channels) * (scale));
-		reqBufSize = (reqBufSize + (roundSize-1)) & ~(roundSize-1);
+		_deviceMinBufSize = minBufSize;
 
-		Debug_Printf("SDL_Audio Requested BufSize: %d", reqBufSize);
+		Debug_Printf("SDL_Audio Requested BufSize: %d, minSize: %d", bufSizeBytes, minBufSize);
 
-		int deviceBufSize = reqBufSize;
-		if (deviceBufSize < bufSizeBytes)
-		{
-			deviceBufSize = bufSizeBytes;
-		}
+		int deviceBufSize = bufSizeBytes;
 		if (deviceBufSize < minBufSize)
 		{
 			Debug_Printf("Device MinBufSize: %d", minBufSize);
 			deviceBufSize = minBufSize;
+
+			spec->samples = deviceBufSize / (channels * bytes);
+			spec->size = deviceBufSize;
 		}
 
 		Debug_Printf("SDL_Audio Native->Java AudioInit_callback");
@@ -340,10 +299,13 @@ static void initAndroidAudio(_THIS, Uint16 format, int freq, int channels, int b
 				g_jniAudioInterface.android_mainActivity, g_jniAudioInterface.initAudio,
 				freq, bits, channels,
 				deviceBufSize);
-				//(freq == 44100) ? (32 * 1024) : (16*1024));
 
-		this->hidden->numjShorts = bufSizeBytes/2;
+		this->hidden->numjShorts = deviceBufSize/2;
+
+		return 0;
 	}
+
+	return -1;
 }
 
 static void deinitAndroidAudio(_THIS)

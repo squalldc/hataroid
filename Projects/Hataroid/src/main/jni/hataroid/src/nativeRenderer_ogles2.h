@@ -6,7 +6,7 @@
 
 class RTShader;
 
-typedef void (*RenderCallback)(void);
+typedef void (*RenderCallback)(JNIEnv* env);
 
 extern bool Renderer_setScreenShader(const char *shaderName);
 

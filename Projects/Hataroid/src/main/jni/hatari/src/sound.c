@@ -95,6 +95,7 @@ const char Sound_fileid[] = "Hatari sound.c : " __DATE__ " " __TIME__;
 #include "clocks_timings.h"
 
 #include <hataroid.h>
+#include <FloppySnd.h>
 #include <midi/fsmidi.h>
 
 
@@ -1344,6 +1345,8 @@ static int Sound_SetSamplesPassed(bool FillFrame)
 			SamplesToGenerate = 0;
 	}
 
+	//Debug_Printf("nSndCyc: %d, SampToGen: %d, CurSampNb: %d, genSamp: %d, free: %d", nSoundCycles, SamplesToGenerate, CurrentSamplesNb, nGeneratedSamples, MIXBUFFER_SIZE - nGeneratedSamples);
+
 	/* Check we don't fill the sound's ring buffer before it's played by Audio_Callback()	*/
 	/* This should never happen, except if the system suffers major slowdown due to	other	*/
 	/* processes or if we run in fast forward mode.						*/
@@ -1352,9 +1355,12 @@ static int Sound_SetSamplesPassed(bool FillFrame)
 	/* In the case of fast forward, we do nothing here, Sound_BufferIndexNeedReset will be	*/
 	/* set when the user exits fast forward mode.						*/
 	if ( ( SamplesToGenerate > MIXBUFFER_SIZE - nGeneratedSamples ) && ( ConfigureParams.System.bFastForward == false )
-	    && ( ConfigureParams.Sound.bEnableSound == true ) )
+	    && ( ConfigureParams.Sound.bEnableSound == true ))
 	{
-		Log_Printf ( LOG_WARN , "Your system is too slow, some sound samples were not correctly emulated\n" );
+		//Debug_Printf("nSndCyc: %d, SampToGen: %d, CurSampNb: %d, genSamp: %d, free: %d", nSoundCycles, SamplesToGenerate, CurrentSamplesNb, nGeneratedSamples, MIXBUFFER_SIZE - nGeneratedSamples);
+		//Debug_Printf("----------- SOUND IDX RESET *************************");
+
+		//Log_Printf ( LOG_WARN , "Your system is too slow, some sound samples were not correctly emulated\n" );
 		Sound_BufferIndexNeedReset = true;
 	}
 
@@ -1448,6 +1454,11 @@ static void Sound_GenerateSamples(int SamplesToGenerate)
 				}
 			}
 		}
+	}
+
+	// generate drive sounds
+	{
+		FloppySnd_GenSamples(ActiveSndBufIdx, SamplesToGenerate);
 	}
 
 	ActiveSndBufIdx = (ActiveSndBufIdx + SamplesToGenerate) % MIXBUFFER_SIZE;

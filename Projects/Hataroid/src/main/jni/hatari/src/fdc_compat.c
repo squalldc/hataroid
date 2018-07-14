@@ -112,6 +112,24 @@ int	FDC_Get_Statusbar_Text ( char *text, size_t maxlen )
     //return (*( (int (*)(char*, size_t)) _FDC_FnTables[FDC_FN_GET_STATUSBAR_TEXT]))(text, maxlen);
 }
 
+int	FDC_Get_CurTrack ()
+{
+    if (_FDC_UseCompatMode) {
+        return FDC_Get_CurTrack_Old();
+    } else {
+        return FDC_Get_CurTrack_New();
+    }
+}
+
+bool FDC_Get_HasActiveCommands ()
+{
+    if (_FDC_UseCompatMode) {
+        return FDC_Get_HasActiveCommands_Old();
+    } else {
+        return FDC_Get_HasActiveCommands_New();
+    }
+}
+
 void FDC_Drive_Set_Enable ( int Drive , bool value )
 {
     if (_FDC_UseCompatMode) {

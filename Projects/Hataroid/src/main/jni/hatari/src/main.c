@@ -836,7 +836,8 @@ int hatari_main_init(int argc, const char *argv[])
 	ret = SDL_putenv("SDL_VIDEODRIVER=android-ogles2");
 	assert(ret == 0);
 	//ret = SDL_putenv("SDL_AUDIODRIVER=dummy");
-	ret = SDL_putenv("SDL_AUDIODRIVER=android-audiotrack");
+	//ret = SDL_putenv("SDL_AUDIODRIVER=android-audiotrack");
+	ret = SDL_putenv("SDL_AUDIODRIVER=android-opensles-audio");
 	assert(ret == 0);
 
 	/* Generate random seed */

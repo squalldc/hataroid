@@ -168,6 +168,9 @@ extern AudioBootStrap DUMMYAUD_bootstrap;
 #if SDL_AUDIO_DRIVER_ANDROID_AUDIOTRACK
 extern AudioBootStrap ANDROIDAUDIOTRACK_bootstrap;
 #endif
+#if SDL_AUDIO_DRIVER_ANDROID_OPENSLES
+extern AudioBootStrap ANDROIDAUDIO_OPENSLES_bootstrap;
+#endif
 #if SDL_AUDIO_DRIVER_DC
 extern AudioBootStrap DCAUD_bootstrap;
 #endif

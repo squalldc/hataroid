@@ -21,26 +21,43 @@
 */
 #include "SDL_config.h"
 
-#ifndef _SDL_android_audiotrackaudio_h
-#define _SDL_android_audiotrackaudio_h
+#ifndef _SDL_android_opensles_audio_h
+#define _SDL_android_opensles_audio_h
 
 #include "../SDL_sysaudio.h"
 #include <hataroid.h>
 
-/* Hidden "this" pointer for the video functions */
+// Hidden "this" pointer for the audio functions
 #define _THIS	SDL_AudioDevice *this
 
+// private audio thread data
 struct SDL_PrivateAudioData {
-	/* The file descriptor for the audio device */
-	Uint8 *mixbuf;
-	Uint32 mixlen;
-	Uint32 write_delay;
-	Uint32 initial_calls;
 
-	JNIEnv *	playThreadjenv;
-	int			playThreadEnvAttached;
-	jshortArray playThreadjavaSendBuf;
-	int			numjShorts;
+	// JNI vars
+	JNIEnv *        playThreadjenv;
+	int			    playThreadEnvAttached;
+
+	// engine interfaces
+	SLObjectItf     engineObject;
+	SLEngineItf     engineEngine;
+
+	// output mix interfaces
+	SLObjectItf     outputMixObject;
+
+	// buffer queue player interfaces
+	SLObjectItf     bqPlayerObject;
+	SLPlayItf       bqPlayerPlay;
+	SLAndroidSimpleBufferQueueItf   bqPlayerBufferQueue;
+
+	SDL_mutex *     freeBufLock;
+
+	// buffers
+	int             numBufs;
+	volatile int    freeBufs;
+	int             nextBuf;
+
+	Uint8 **        audioBufs;
+	int             bufSizeBytes;
 };
 
-#endif /* _SDL_android_audiotrackaudio_h */
+#endif /* _SDL_android_opensles_audio_h */

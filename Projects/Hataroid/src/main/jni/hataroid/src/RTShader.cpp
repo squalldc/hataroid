@@ -414,8 +414,8 @@ bool RTShader::initShader(JNIEnv * env, const char* shaderName, ShaderDef* def)
 			Debug_Printf("Could not create shader.");
 		}
 	}
-	if (vsh != 0) { delete [] vsh; }
-	if (fsh != 0) { delete [] fsh; }
+	if (vsh != 0) { hataroid_freeAssetDataDirect(vsh); }
+	if (fsh != 0) { hataroid_freeAssetDataDirect(fsh); }
 
 	return res;
 }

@@ -12,7 +12,7 @@
 		android:title="@string/sound_buffer_size"
 		android:summary="@string/sound_buffer_size_summary"
 		android:defaultValue="18"
-		android:max="50"
+		android:max="100"
 		robobunny:min="1"
 		robobunny:unitsLeft=""
 		robobunny:unitsRight=""
@@ -38,6 +38,24 @@
 					android:dialogTitle="@string/playbackquality"
 					android:title="@string/playbackquality"
 					android:defaultValue="22050" />
+	<CheckBoxPreference
+		android:persistent="true"
+		android:key="pref_sound_drives_enabled"
+		android:title="@string/sound_drives_enabled"
+		android:summaryOn="@string/sound_drives_enabled_summary"
+		android:summaryOff="@string/sound_drives_enabled_summary"
+		android:defaultValue="false" />
+	<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
+		android:persistent="true"
+		android:key="pref_sound_drives_vol"
+		android:title="@string/sound_drives_vol"
+		android:summary="@string/sound_drives_vol_summary"
+		android:defaultValue="50"
+		android:max="100"
+		robobunny:min="1"
+		robobunny:unitsLeft=""
+		robobunny:unitsRight=""
+		/>
 	<ListPreference android:key="pref_sound_ymvoicesmixing"
 					android:persistent="true"
 					android:entries="@array/pref_sound_ymvoicesmixing_entries"
