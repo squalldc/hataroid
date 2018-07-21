@@ -17,7 +17,7 @@ LOCAL_C_INCLUDES += $(APP_PROJECT_PATH)/jni/fluidsynth/include
 
 LOCAL_SRC_FILES := src/hataroid.cpp src/nativeRenderer_ogles2.cpp src/uncompressGZ.cpp
 LOCAL_SRC_FILES += src/virtKBDefs.c src/virtKBTex.c src/VirtKB.cpp src/ShortcutMap.cpp src/virtJoy.cpp
-LOCAL_SRC_FILES += src/RTShader.cpp
+LOCAL_SRC_FILES += src/RTShader.cpp src/Debug.cpp
 LOCAL_SRC_FILES += src/midi/fsmidi.c
 LOCAL_SRC_FILES += src/FloppySnd.c
 #LOCAL_SRC_FILES += src/midi/mt32.cpp

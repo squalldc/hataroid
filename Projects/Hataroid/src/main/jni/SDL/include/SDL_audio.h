@@ -89,7 +89,7 @@ typedef struct SDL_AudioSpec {
 	 *  Once the callback returns, the buffer will no longer be valid.
 	 *  Stereo samples are stored in a LRLRLR ordering.
 	 */
-	void (SDLCALL *callback)(void *userdata, Uint8 *stream, int len);
+	int (SDLCALL *callback)(void *userdata, Uint8 *stream, int len);
 	void  *userdata;
 } SDL_AudioSpec;
 
@@ -195,8 +195,12 @@ extern DECLSPEC SDL_audiostatus SDLCALL SDL_GetAudioStatus(void);
  * Silence will be written to the audio device during the pause.
  */
 extern DECLSPEC void SDLCALL SDL_PauseAudio(int pause_on);
+extern DECLSPEC void SDLCALL SDL_PauseAudioStream(int pause_on);
 
 extern DECLSPEC void SDLCALL SDL_MuteAudio(int mute);
+
+extern DECLSPEC void SDLCALL SDL_PlaybackRateAudio(float rate);
+
 
 /**
  * This function loads a WAVE from the data source, automatically freeing

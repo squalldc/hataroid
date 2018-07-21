@@ -2,6 +2,7 @@
 #define VIRTJOY_H_
 
 #include <GLES2/gl2.h>
+#include <SDL.h>
 
 #include "VirtKBDefs.h"
 #include "VirtKB.h"
@@ -24,7 +25,7 @@ class VirtJoy
 
     public:
         void create(GLuint texID, int texW, int texH, float deadZone, float scale, float diagSensitivity, float alpha, float autoHideAlpha, bool floating);
-        void update(int curTouchSet, bool touched[2][VKB_MaxTouches], float touchX[2][VKB_MaxTouches], float touchY[2][VKB_MaxTouches], int maxTouches);
+        void update(int curInputLayer, int curTouchSet, bool touched[2][VKB_MaxTouches], float touchX[2][VKB_MaxTouches], float touchY[2][VKB_MaxTouches], int maxTouches);
         void render();
 
         unsigned int getBtnFlags() { return _curBtnDown; }
@@ -35,6 +36,8 @@ class VirtJoy
         void setDeadZone(float size);
         void setScale(float scale);
         void setDiagSensitivity(float sensitivity);
+
+        float calcScreenRadiusPixels();
 
         bool isEnabled() { return _enabled; }
         void setEnabled(bool enable);
@@ -59,7 +62,7 @@ class VirtJoy
 
         bool                _floating;
         float               _floatAlpha;
-        long                _floatTimer;
+        Uint32              _floatTimer;
         float               _deadZone;
         float               _diagSensitivity; // > 45deg = overlap for diagonal dir
 

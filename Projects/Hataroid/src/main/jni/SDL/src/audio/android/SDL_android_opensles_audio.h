@@ -50,8 +50,11 @@ struct SDL_PrivateAudioData {
 	SLAndroidSimpleBufferQueueItf   bqPlayerBufferQueue;
 	SLMuteSoloItf   bqPlayerMuteSolo;
 	//SLVolumeItf     bqPlayerVolume;
+	SLPlaybackRateItf bqPlaybackRate;
+	//SLPitchItf      bqPitch;
 
 	//SLmillibel      defVolLevel;
+	float           curPlaybackRate;
 
 
 	SDL_mutex *     freeBufLock;

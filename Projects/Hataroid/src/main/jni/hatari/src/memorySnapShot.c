@@ -58,9 +58,9 @@ const char MemorySnapShot_fileid[] = "Hatari memorySnapShot.c : " __DATE__ " " _
 #include "cart.h"
 
 #define HATAROID_SAVE_ID        "HTSAV"
-#define HATAROID_VERSION        " 1.820 "
+#define HATAROID_VERSION        " 1.830 "
 #define HATAROID_LEGACY_VERSION " 1.609 "
-#define SAVE_VERSION_INT        1902
+#define SAVE_VERSION_INT        1903
 
 #define VERSION_STRING      "1.9.0"   /* Version number of compatible memory snapshots - Always 6 bytes (inc' NULL) */
 #define SNAPSHOT_MAGIC      0xDeadBeef

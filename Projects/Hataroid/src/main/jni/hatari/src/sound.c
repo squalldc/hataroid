@@ -1447,8 +1447,8 @@ static void Sound_GenerateSamples(int SamplesToGenerate)
 
 					int l = MixBuffer[idx][0] + (*curMidiBuf); ++curMidiBuf;
 					int r = MixBuffer[idx][1] + (*curMidiBuf); ++curMidiBuf;
-					l = (l>32767) ? 32767 : (l<-32768) ? -32768 : l;
-					r = (r>32767) ? 32767 : (r<-32768) ? -32768 : r;
+					l = (l>32767) ? 32767 : (l<-32767) ? -32767 : l;
+					r = (r>32767) ? 32767 : (r<-32767) ? -32767 : r;
 					MixBuffer[idx][0] = l;
 					MixBuffer[idx][1] = r;
 				}

@@ -7,6 +7,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
+extern int g_vsync;
+
 extern void Debug_Printf(const char *a_pszformat, ...);
 extern void Debug_VPrintf(const char *a_pszformat, va_list args);
 
@@ -41,8 +43,8 @@ struct JNIAudio
 	jmethodID initAudio;
 	jmethodID deinitAudio;
 	jmethodID sendAudio;
-	jmethodID pauseAudio;
-	jmethodID playAudio;
+//	jmethodID pauseAudio;
+//	jmethodID playAudio;
 
 	jmethodID showAudioErrorDialog;
 };
@@ -67,6 +69,9 @@ struct JNIMainMethodCache
 
 	jmethodID dbgGetAudioBufQueuedPercent;
 	jmethodID getFreeAudioBuffer;
+	jmethodID getDisplayRefreshRate;
+
+	jmethodID useTouchScreen;
 
 	//jmethodID sendAndMidiAudio;
 	jmethodID sendMidiByte;

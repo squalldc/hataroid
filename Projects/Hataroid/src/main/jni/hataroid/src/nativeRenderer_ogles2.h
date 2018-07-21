@@ -12,9 +12,12 @@ extern bool Renderer_setScreenShader(const char *shaderName);
 
 extern RTShader* Renderer_getColorModShader();
 extern GLuint getWhiteTexture();
+extern void allocWhiteTex2D();
 
+extern int nativeRenderer_GetContextID();
+extern void	nativeRenderer_OnSurfaceCreated();
 extern void cleanupGraphics();
-extern bool setupGraphics(int w, int h, JNIEnv * env);
+extern bool setupGraphics(int w, int h, int prevW, int prevH, JNIEnv * env);
 extern void renderFrame(JNIEnv* env);
 
 extern bool Renderer_addRenderCallback(RenderCallback pCallback);

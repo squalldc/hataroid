@@ -20,8 +20,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.RetroSoft.Hataroid"
     xmlns:tools="http://schemas.android.com/tools"
-    android:versionCode="1821"
-    android:versionName="1.821" >
+    android:versionCode="1830"
+    android:versionName="1.830" >
 
     <uses-sdk
         android:minSdkVersion="9"
@@ -52,11 +52,11 @@
         android:banner="@drawable/tvbanner"
         android:isGame="true" >
 
+        <!--android:screenOrientation="sensorLandscape"-->
         <activity
             android:name=".HataroidActivity"
-            android:configChanges="orientation|keyboardHidden"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:launchMode="singleTask"
-            android:screenOrientation="sensorLandscape"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -92,7 +92,6 @@
         <activity
             android:name=".Help.HelpActivity"
             android:label="@string/title_activity_help"
-            android:screenOrientation="sensorLandscape"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen" >
         </activity>
         <activity

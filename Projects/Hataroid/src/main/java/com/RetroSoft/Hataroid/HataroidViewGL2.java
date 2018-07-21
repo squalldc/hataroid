@@ -9,7 +9,9 @@ import javax.microedition.khronos.opengles.GL10;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
+import android.os.Build;
 import android.util.Log;
+import android.view.Choreographer;
 import android.view.MotionEvent;
 
 import com.RetroSoft.Hataroid.Input.Input;
@@ -55,6 +57,11 @@ class HataroidViewGL2 extends GLSurfaceView
 
 	public boolean		m_pendingNewMouseDisabled = false;
 	public boolean		m_newNewMouseDisabledVal = false;
+
+	private Renderer        m_renderer = null;
+
+	private Choreographer.FrameCallback m_vsyncFrameCallback = null;
+	private boolean                     m_vsyncEnabled = false;
 
 	public HataroidViewGL2(Context context)
 	{
@@ -279,8 +286,59 @@ class HataroidViewGL2 extends GLSurfaceView
 				new ConfigChooser(5, 6, 5, 0, depth, stencil) );
 
 		// Set the renderer responsible for frame rendering
-		setRenderer(new Renderer());
+		m_renderer = new Renderer();
+		setRenderer(m_renderer);
+
+/*
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
+		{
+			m_vsyncFrameCallback = new Choreographer.FrameCallback() {
+				@Override public void doFrame(long frameTimeNanos) {
+
+//					long dT = frameTimeNanos - prevTime;
+//					prevTime = frameTimeNanos;
+//
+//					Log.i("hataroid", "frame time: " + (dT));
+
+					HataroidViewGL2.instance.requestRender();
+					if (m_vsyncEnabled) {
+						Choreographer.getInstance().postFrameCallback(this);
+					}
+				}
+			};
+		}
+*/
 	}
+
+//	long prevTime = 0;
+
+	public void enableVSync(boolean enable)
+	{
+/*
+		if (enable == m_vsyncEnabled) {
+			return;
+		}
+
+		if (m_vsyncFrameCallback != null) {
+
+			m_vsyncEnabled = enable;
+			try {
+				if (enable) {
+					Choreographer.getInstance().postFrameCallback(m_vsyncFrameCallback);
+					//HataroidViewGL2.instance.setRenderMode(RENDERMODE_WHEN_DIRTY);
+				} else {
+					Choreographer.getInstance().removeFrameCallback(m_vsyncFrameCallback);
+					//HataroidViewGL2.instance.setRenderMode( RENDERMODE_CONTINUOUSLY);
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			} catch (Error e) {
+				e.printStackTrace();
+			}
+		} else {
+			Log.i("hataroid", "Choreographer unavailable");
+		}
+*/	}
 
 	private static class ContextFactory implements GLSurfaceView.EGLContextFactory
 	{

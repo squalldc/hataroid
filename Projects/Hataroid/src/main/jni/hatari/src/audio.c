@@ -33,7 +33,9 @@ int pulse_swallowing_count = 0;			/* Sound disciplined emulation rate controlled
 
 //extern Sint64 Time_GetTicks(void);
 
-//extern int g_vsync;
+extern int g_vsync;
+extern float g_scrRefreshRate;
+
 //extern volatile int g_emuReady;
 extern volatile int _doubleBusError;
 extern volatile int _runTillQuit;
@@ -42,15 +44,23 @@ extern volatile int _runTillQuit;
 /**
  * SDL audio callback function - copy emulation sound to audio system.
  */
-static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
+
+static int Audio_CallBack(void *userdata, Uint8 *stream, int len)
 {
 	//JNIEnv* env = (JNIEnv*)userdata;
+
+	// check playback rate
+	if (g_vsync && g_scrRefreshRate > 0)
+	{
+		float playBackRate = g_scrRefreshRate / ((float)nScreenRefreshRate);
+		SDL_PlaybackRateAudio(playBackRate);
+	}
 
 	Sint16 *pBuffer;
 	int i, window, nSamplesPerFrame;
 
 	pBuffer = (Sint16 *)stream;
-	len = len / 4;  // Use length in samples (16 bit stereo), not in bytes
+	len = len >> 2;  // Use length in samples (16 bit stereo), not in bytes
 
 	/* Adjust emulation rate within +/- 0.58% (10 cents) occasionally,
 	 * to synchronize sound. Note that an octave (frequency doubling)
@@ -96,8 +106,13 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 
 	if (nGeneratedSamples < len || _runTillQuit != 0 || _doubleBusError)// && g_emuReady != 0)
 	{
+		if (g_vsync)
+		{
+		//	return 0;
+		}
+
 		memset(stream, 0, len<<2);
-		return;
+		return (len << 2);
 	}
 
 	//Debug_Printf("sending audio: %d samples, free: %d, gen: %d", len, maxFreeBuf, nGeneratedSamples);
@@ -126,6 +141,8 @@ static void Audio_CallBack(void *userdata, Uint8 *stream, int len)
 	nGeneratedSamples -= len;
 
 	CompleteSndBufIdx = CompleteSndBufIdx % MIXBUFFER_SIZE;
+
+	return (len << 2);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -158,6 +175,9 @@ void Audio_Init(void)
 	}
 
 	int nSamplesPerFrame = nAudioFrequency/nScreenRefreshRate; // hack data passing
+//	if (g_vsync) {
+//		nSamplesPerFrame = nAudioFrequency / 50; // max number of samples per frame in all refreshrates
+//	}
 
 	/* Set up SDL audio: */
 	desiredAudioSpec.freq = nAudioFrequency;

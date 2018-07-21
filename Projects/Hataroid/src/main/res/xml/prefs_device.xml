@@ -36,5 +36,33 @@
 			android:summaryOn="@string/device_developer_options_summary"
 			android:summaryOff="@string/device_developer_options_summary"
 			android:defaultValue="false" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_device_dbg_show_sound_buffer"
+			android:title="@string/device_dbg_show_sound_buffer"
+			android:summaryOn="@string/device_dbg_show_sound_buffer_summary"
+			android:summaryOff="@string/device_dbg_show_sound_buffer_summary"
+			android:defaultValue="false" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_device_dbg_vsync"
+			android:title="@string/device_dbg_vsync"
+			android:summaryOn="@string/device_dbg_vsync_summary"
+			android:summaryOff="@string/device_dbg_vsync_summary"
+			android:defaultValue="false" />
+		<CheckBoxPreference
+			android:persistent="true"
+			android:key="pref_device_dbg_vsync_autorate"
+			android:title="@string/device_dbg_vsync_autorate"
+			android:summaryOn="@string/device_dbg_vsync_autorate_summary"
+			android:summaryOff="@string/device_dbg_vsync_autorate_summary"
+			android:defaultValue="false" />
+		<EditTextPreference
+			android:persistent="true"
+			android:inputType="numberDecimal"
+			android:key="pref_device_dbg_vsync_rate"
+			android:title="@string/device_dbg_vsync_rate"
+			android:summary="@string/device_dbg_vsync_rate_summary"
+			android:defaultValue="0" />
 	</PreferenceCategory>
 </PreferenceScreen>

@@ -51,8 +51,8 @@ VirtJoy::~VirtJoy()
 
 void VirtJoy::create(GLuint texID, int texW, int texH, float deadZone, float scale, float diagSensitivity, float alpha, float autoHideAlpha, bool floating)
 {
-    int scrW = getScreenWidth();
-    int scrH = getScreenHeight();
+    //int scrW = getScreenWidth();
+    //int scrH = getScreenHeight();
 
     _alpha = alpha;
     _autoHideAlpha = autoHideAlpha;
@@ -119,13 +119,23 @@ void VirtJoy::setDeadZone(float size)
     _deadZone = size;
 }
 
+float VirtJoy::calcScreenRadiusPixels()
+{
+    int scrW = getScreenWidth();
+    int scrH = getScreenHeight();
+    int refSize = scrH < scrW ? scrH : scrW;
+
+    int joyRingWidth = (int)(refSize * _sizeRatio * _scale * 0.5f);
+    return joyRingWidth;
+}
+
 void VirtJoy::setScale(float scale)
 {
-    int scrH = getScreenHeight();
-
     _scale = scale;
 
-    int joyRingWidth = (int)(scrH * _sizeRatio * _scale * 0.5f);
+    int joyRingWidth = calcScreenRadiusPixels();
+    int scrH = getScreenHeight();
+
     _centerX = joyRingWidth;
     _centerY = scrH - joyRingWidth;
 }
@@ -184,7 +194,7 @@ bool VirtJoy::IsValidJoyTouch(bool down, float x, float y)
     return false;
 }
 
-void VirtJoy::update(int curTouchSet, bool touched[2][VKB_MaxTouches], float touchX[2][VKB_MaxTouches], float touchY[2][VKB_MaxTouches], int maxTouches)
+void VirtJoy::update(int curInputLayer, int curTouchSet, bool touched[2][VKB_MaxTouches], float touchX[2][VKB_MaxTouches], float touchY[2][VKB_MaxTouches], int maxTouches)
 {
     _curBtnDown = 0;
 
@@ -193,9 +203,7 @@ void VirtJoy::update(int curTouchSet, bool touched[2][VKB_MaxTouches], float tou
         return;
     }
 
-    int scrW = getScreenWidth();
-    int scrH = getScreenHeight();
-    int joyRingWidth = (int)(scrH * _sizeRatio * _scale * 0.5f);
+    int joyRingWidth = calcScreenRadiusPixels();
     int joyKnobWidth = (int)(joyRingWidth * _joyKnobRatio);
 
     int prevIndex = 1 - curTouchSet;
@@ -278,7 +286,10 @@ void VirtJoy::update(int curTouchSet, bool touched[2][VKB_MaxTouches], float tou
 
     joyPosX = _centerX;
     joyPosY = _centerY;
-    if (curJoyDistNorm > 0 && curJoyDistNorm >= _deadZone)
+
+	bool acceptInput = (curInputLayer == 0 || curInputLayer == InputLayer_VirtController || curInputLayer == InputLayer_QuickKeys); // joystick fire buttons on quick keys...
+
+    if (acceptInput && curJoyDistNorm > 0 && curJoyDistNorm >= _deadZone)
     {
         joyPosX = 0;
         joyPosY = 0;
@@ -333,8 +344,8 @@ void VirtJoy::update(int curTouchSet, bool touched[2][VKB_MaxTouches], float tou
     {
         if (_floating && _floatAlpha > 0.0f)
         {
-            long nowMS = SDL_GetTicks();
-            long elapsedMS = nowMS - _floatTimer;
+            Uint32 nowMS = SDL_GetTicks();
+            Uint32 elapsedMS = nowMS - _floatTimer;
             if (elapsedMS > 0)
             {
                 _floatAlpha -= 2.0f*(elapsedMS/1000.0f);

@@ -361,6 +361,9 @@ typedef struct
 	float scrPanX;
 	float scrPanY;
 
+	float scrResX;
+	float scrResY;
+
 	float kbdZoom;
 	float kbdPanX;
 	float kbdPanY;

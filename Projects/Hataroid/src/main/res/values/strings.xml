@@ -212,6 +212,14 @@
     <string name="device_kitkat_immersive_summary">Enable Immersive Mode (Android 4.4 Kit Kat or newer required)</string>
     <string name="device_force_android_tv">Force Android TV Mode</string>
     <string name="device_force_android_tv_summary">Enables gamepad only control of the Emulator for non-touch screen devices</string>
+    <string name="device_dbg_show_sound_buffer">[Debug] Show Sound Buffer</string>
+    <string name="device_dbg_show_sound_buffer_summary">Displays the sound buffer usage</string>
+    <string name="device_dbg_vsync">[Debug] Sync to Hardware Screen Refresh</string>
+    <string name="device_dbg_vsync_summary">Match emulator timing to hardware screen refresh (NOTE: may play and sound too fast)</string>
+    <string name="device_dbg_vsync_autorate">[Debug] Use Reported Hardware Screen Refresh Rate</string>
+    <string name="device_dbg_vsync_autorate_summary">Affects audio speed and buffer underruns/overruns. Will use hardware defined refresh rate. If this is inaccurate, you can manually override below.</string>
+    <string name="device_dbg_vsync_rate">[Debug] Override Hardware Screen Refresh Rate</string>
+    <string name="device_dbg_vsync_rate_summary">Affects audio when screen sync is enabled. (if inaccurate, will cause audio buffer underruns and overruns). Disable the above option to use this.</string>
     <string name="pref_storage_savestates_category">Save States</string>
     <string name="storage_savestate_exitautosave">Auto save on quit</string>
     <string name="storage_savestate_exitautosave_summary">Automatically saves the session on quit and restores on load. This is saved separately from normal save slots</string>

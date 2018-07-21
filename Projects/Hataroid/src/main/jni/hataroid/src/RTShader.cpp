@@ -10,6 +10,7 @@
 
 #include "hataroid.h"
 #include "RTShader.h"
+#include "nativeRenderer_ogles2.h"
 
 //------------------------------------------------------------------------------------------------------------------
 static char* allocStr(const char* s)
@@ -277,7 +278,8 @@ RTShader::RTShader()
 	_shaderPath(0),
 	_shaderName(0),
 	_vertShader(0),
-	_fragShader(0)
+	_fragShader(0),
+	_contextID(0)
 {
 	resetParamHandles();
 }
@@ -342,21 +344,30 @@ void RTShader::unloadShader()
 {
 	_ready = false;
 
+	int curContextID = nativeRenderer_GetContextID();
+	bool sameContext = (curContextID == _contextID);
+
 	if (_shaderProgram != 0)
 	{
-		glDeleteProgram(_shaderProgram);
+		if (sameContext) {
+			glDeleteProgram(_shaderProgram);
+		}
 		_shaderProgram = 0;
 	}
 
 	if (_vertShader != 0)
 	{
-		glDeleteShader(_vertShader);
+		if (sameContext) {
+			glDeleteShader(_vertShader);
+		}
 		_vertShader = 0;
 	}
 
 	if (_fragShader != 0)
 	{
-		glDeleteShader(_fragShader);
+		if (sameContext) {
+			glDeleteShader(_fragShader);
+		}
 		_fragShader = 0;
 	}
 
@@ -422,6 +433,8 @@ bool RTShader::initShader(JNIEnv * env, const char* shaderName, ShaderDef* def)
 
 bool RTShader::createShader(const char* shaderName, const char* pVertexSource, const char* pFragmentSource, const char* attribNames[RTShader::ShaderParam_Max])
 {
+	_contextID = nativeRenderer_GetContextID();
+
 	if (_shaderName != 0)
 	{
 		delete [] _shaderName;

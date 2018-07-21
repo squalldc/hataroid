@@ -109,6 +109,9 @@ static volatile bool	s_InputEnabled = false;
 static int          g_vkbTexKbW = 0;
 static int          g_vkbTexKbH = 0;
 
+static JNIEnv*      s_curEnv = 0;
+static bool         s_isPortrait = false;
+
 static bool			s_showKeyboard = false;
 static bool			s_keyboardZoomMode = false;
 static bool			s_screenZoomMode = false;
@@ -151,6 +154,7 @@ static int			s_buttonDown[2][MaxButtonDown];
 static int			s_numButtonDown[2] = {0};
 
 static int			s_curIndex = 0;
+static int          s_curInputLayer = InputLayer_None;
 
 static GLfloat		s_VkbVerts[36];
 static GLushort		s_VkbIndices[6] = { 0, 1, 2, 0, 2, 3 };
@@ -196,8 +200,8 @@ static const long	kKBRepeatDelayDeltaRate = 10;
 
 static bool			s_nonTouchKB = false;
 static int			s_curKBKeyFocus = VKB_KEY_SPACE;
-static long			s_lastKBFocusRepeat = 0;
-static long			s_KBRepeatDelay = kInitKBRepeatDelay;
+static Uint32		s_lastKBFocusRepeat = 0;
+static Uint32		s_KBRepeatDelay = kInitKBRepeatDelay;
 
 static bool			s_hideJoystick = false;
 static float		s_keySizeVX = 1;
@@ -270,7 +274,7 @@ static void VirtKB_NavDown();
 static const VirtKeyDef *VirtKB_VkbHitTest(float x, float y);
 
 static void VirtKB_updateInput();
-static void VirtKB_updateMouse();
+static void VirtKB_updateTouchMouse();
 static void VirtKB_updateHardwareMouse();
 static void VirtKB_updateVirtMouseEmu();
 
@@ -359,8 +363,8 @@ void VirtKB_MapJoysticksToArrowKeys(bool map)
 
 void VirtKB_SetMouseEmuDirect()
 {
-	if (s_showKeyboard || s_screenZoomMode)	{ s_prevInputFlags &= ~(FLAG_MOUSEBUTTON); }
-	else									{ s_curInputFlags &= ~(FLAG_MOUSEBUTTON); }
+	if (!s_isPortrait && (s_showKeyboard || s_screenZoomMode))  { s_prevInputFlags &= ~(FLAG_MOUSEBUTTON); }
+	else									                    { s_curInputFlags &= ~(FLAG_MOUSEBUTTON); }
 
 	s_recreateQuickKeys = true;
 
@@ -369,8 +373,8 @@ void VirtKB_SetMouseEmuDirect()
 
 void VirtKB_SetMouseEmuButtons()
 {
-	if (s_showKeyboard || s_screenZoomMode)	{ s_prevInputFlags |= (FLAG_MOUSEBUTTON); }
-	else									{ s_curInputFlags |= (FLAG_MOUSEBUTTON); }
+	if (!s_isPortrait && (s_showKeyboard || s_screenZoomMode))  { s_prevInputFlags |= (FLAG_MOUSEBUTTON); }
+	else									                    { s_curInputFlags |= (FLAG_MOUSEBUTTON); }
 
 	s_recreateQuickKeys = true;
 
@@ -381,8 +385,6 @@ void VirtKB_SetMouseEmuSpeed(float speed)
 {
 	s_mouseSpeed = speed;
 }
-
-JNIEnv *s_curEnv = 0;
 
 JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_updateInput(JNIEnv * env, jobject obj,
 		jboolean t0, jfloat tx0, jfloat ty0,
@@ -439,12 +441,13 @@ JNIEXPORT void JNICALL Java_com_RetroSoft_Hataroid_HataroidNativeLib_updateInput
 	_curHWMouseY = mouseY;
 	_curHWMouseBtns = mouseBtns;
 
-    VirtKB_updateAutoHide(t0 || t1 || t2);
+	bool hasTouches = t0 || t1 || t2;
+    VirtKB_updateAutoHide(hasTouches);
 
-    if (_virtJoyEnabled && _virtJoy != 0)
-    {
-        _virtJoy->update(s_curIndex, s_curtouched, s_curtouchX, s_curtouchY, VKB_MaxTouches);
+    if (!hasTouches) {
+        s_curInputLayer = InputLayer_None;
     }
+
 	VirtKB_updateInput();
 
 	if (s_recreateQuickKeys)
@@ -492,10 +495,71 @@ void VirtKB_EnableInput(bool enable)
 	s_recreateQuickKeys = true;
 }
 
-int VirtKB_OnSurfaceChanged(int width, int height)
+void VirtKB_OnSurfaceCreated()
 {
+	s_KbTextureID = 0;
+}
+
+int VirtKB_OnSurfaceChanged(int width, int height, int prevW, int prevH)
+{
+	int prevPortrait = s_isPortrait;
+
 	VirtKB_CleanUp();
 	VirtKB_Create();
+
+	if (prevW == 0 || prevH == 0) // first init
+	{
+		if (s_isPortrait)
+		{
+			//if (!s_showKeyboard)
+			//{
+			//	VirtKB_ToggleKeyboard(0, 0, true); // show portrait by default in portrait
+			//}
+		}
+	}
+	else // re-inits
+	{
+		if (width != 0 && height != 0 && width != prevW && height != prevH)
+		{
+			if (s_curScreenZoomPreset >= 0)
+			{
+				Renderer_setZoomPreset(s_curScreenZoomPreset);
+			}
+			if (s_VkbZoomInited)
+			{
+				VirtkKB_KeyboardSetPreset(s_curKeyboardZoomPreset);
+			}
+
+			// reset and restore any current flags/modes
+			{
+				bool showKeyboard = s_showKeyboard;
+				bool showMouse = (!prevPortrait && (s_showKeyboard || s_screenZoomMode)) ? (s_prevInputFlags & FLAG_MOUSE) != 0 : (s_curInputFlags & FLAG_MOUSE) != 0;
+				bool mouseButtons = ((s_curInputFlags | s_prevInputFlags) & FLAG_MOUSEBUTTON) != 0;
+
+		        s_curInputFlags = DEFAULT_INPUT_FLAGS;
+		        s_prevInputFlags = s_curInputFlags;
+				s_keyboardZoomMode = false;
+				s_screenZoomMode = false;
+				s_showKeyboard = false;
+
+		        if (mouseButtons)
+		        {
+			        s_curInputFlags |= FLAG_MOUSEBUTTON;
+			        s_prevInputFlags |= FLAG_MOUSEBUTTON;
+		        }
+
+		        if (showMouse)
+		        {
+		            VirtKB_MJToggle(0, 0, true);
+		        }
+		        if (showKeyboard)
+		        {
+					VirtKB_ToggleKeyboard(0, 0, true);
+		        }
+			}
+		}
+
+	}
 
 	s_InputReady = true;
 
@@ -539,6 +603,10 @@ void VirtKB_CleanUp()
 
 void VirtKB_Create()
 {
+	int scrWidth = getScreenWidth();
+    int scrHeight = getScreenHeight();
+    s_isPortrait = scrWidth < scrHeight;
+
     {
         g_vkbTexKbW = 0;
         g_vkbTexKbH = 0;
@@ -586,15 +654,6 @@ void VirtKB_Create()
 
 	VirtKB_CreateQuickKeys();
 
-	if (!s_VkbZoomInited)
-	{
-		if (VirtkKB_KeyboardSetPreset(s_curKeyboardZoomPreset))
-		{
-			s_VkbZoomInited = true;
-		}
-	}
-
-	VirtKB_UpdateVkbVerts();
 	VirtKB_SetupShader();
 
 	if (s_curScreenZoomPreset == -1)
@@ -602,6 +661,17 @@ void VirtKB_Create()
 		s_curScreenZoomPreset = ScreenZoom_Fit;
 		Renderer_setZoomPreset(s_curScreenZoomPreset);
 	}
+
+	if (!s_VkbZoomInited)
+	{
+		int preset = (s_isPortrait && !s_nonTouchKB) ? VkbZoom_2 : VkbZoom_Fit;
+		if (VirtkKB_KeyboardSetPreset(preset))
+		{
+			s_VkbZoomInited = true;
+		}
+	}
+
+	VirtKB_UpdateVkbVerts();
 }
 
 void VirtKB_DestroyTextures()
@@ -890,6 +960,11 @@ void VirtKB_CreateQuickKeys()
 
 	float sscale = (float)scrwidth/1024.0f;
 
+	if (s_isPortrait) {
+		 // portrait, make buttons a bit bigger
+		 sscale *= 1.4f;
+	}
+
 	// top left keys
 	if (!s_showJoystickOnly && !s_hideAll && !s_nonTouchKB)
 	{
@@ -900,22 +975,32 @@ void VirtKB_CreateQuickKeys()
 		int keyMarginY = (int)ceilf(2*sscale);
 
 		//bool isFullScreen = Renderer_isFullScreenStretch();
-		int vkbKeys[] = {	VKB_KEY_KEYBOARDTOGGLE, VKB_KEY_SCREENZOOM, VKB_KEY_SCREENPRESETS,
-							VKB_KEY_KEYBOARDZOOM, VKB_KEY_KEYBOARDPRESETS, VKB_KEY_MOUSETOGGLE, VKB_KEY_JOYTOGGLE};
+		int vkbKeys[] = {	VKB_KEY_KEYBOARDTOGGLE, VKB_KEY_KEYBOARDZOOM, VKB_KEY_KEYBOARDPRESETS,
+							VKB_KEY_SCREENZOOM, VKB_KEY_SCREENPRESETS, VKB_KEY_MOUSETOGGLE, VKB_KEY_JOYTOGGLE};
 		int numKeys = sizeof(vkbKeys)/sizeof(int);
 
 		int curKeyY = keyOffsetY;
 		for (int i = 0; i < numKeys; ++i)
 		{
-			//if (isFullScreen && vkbKeys[i] == VKB_KEY_SCREENZOOM) { continue; }
+			int k = vkbKeys[i];
 
-			if (s_showKeyboard && vkbKeys[i]==VKB_KEY_KEYBOARDTOGGLE) 	{ vkbKeys[i] = VKB_KEY_KEYBOARDTOGGLE_SEL; }
-			if (s_keyboardZoomMode && vkbKeys[i]==VKB_KEY_KEYBOARDZOOM)	{ vkbKeys[i] = VKB_KEY_KEYBOARDZOOM_SEL; }
-			if (s_screenZoomMode && vkbKeys[i]==VKB_KEY_SCREENZOOM) 	{ vkbKeys[i] = VKB_KEY_SCREENZOOM_SEL; }
+			//if (isFullScreen && k == VKB_KEY_SCREENZOOM) { continue; }
+			if (s_isPortrait) {
+				if (!s_keyboardZoomMode && k == VKB_KEY_KEYBOARDPRESETS) {
+					continue;
+				}
+				if (s_keyboardZoomMode && k == VKB_KEY_KEYBOARDTOGGLE) {
+					continue;
+				}
+			}
+
+			if (s_showKeyboard && k == VKB_KEY_KEYBOARDTOGGLE)  	{ k = VKB_KEY_KEYBOARDTOGGLE_SEL; }
+			if (s_keyboardZoomMode && k == VKB_KEY_KEYBOARDZOOM)	{ k = VKB_KEY_KEYBOARDZOOM_SEL; }
+			if (s_screenZoomMode && k == VKB_KEY_SCREENZOOM) 	    { k = VKB_KEY_SCREENZOOM_SEL; }
 
 			if (!addQuickKey(0, curKeyY, keyOffsetX+keyBtnSizeX, curKeyY+keyBtnSizeY,
 						keyOffsetX, curKeyY, keyOffsetX+keyBtnSizeX, curKeyY+keyBtnSizeY,
-						2, 2, -2, -2, QuickKey::PANEL_TL, &g_vkbKeyDefs[vkbKeys[i]])) { continue; }
+						2, 2, -2, -2, QuickKey::PANEL_TL, &g_vkbKeyDefs[k])) { continue; }
 
 			curKeyY = s_QuickKeys[s_numQuickKeys-1].y2 + keyMarginY;
 		}
@@ -1261,60 +1346,9 @@ static void VirtKB_RenderVerts(RTShader *pShader, GLfloat *v, GLsizei vstride, G
 	glDrawElements(GL_TRIANGLES, 6*numQuads, GL_UNSIGNED_SHORT, ind);
 }
 
-#if DBG_SND
-	#include <sound.h>
-	static void Debug_Render(JNIEnv *env)
-	{
-		RTShader *pShader = Renderer_getColorModShader();
-
-		{
-			//-1,-1 to 1, 1 (bl -> tr)
-			if (s_VkbCurNumPresses < (s_MaxVkbPresses-1))
-			{
-				float tx1 = 0.0f, ty1 = 0.0f;
-				float tx2 = 1.0f, ty2 = 1.0f;
-
-				float barLen = 0.7f;
-
-				float x1 = 0, y1 = 0.95f;
-				float x2 = barLen, y2 = 0.99f;
-
-				{
-					GLfloat *v = &s_VkbPressedVerts[s_VkbCurNumPresses*36];
-					VirtKB_UpdateRectVerts(v, x1, y1, x2, y2, tx1, ty1, tx2, ty2, 1.0f, 1.0f, 1.0f, 0.5f);
-
-					++s_VkbCurNumPresses;
-				}
-				{
-					float fill = nGeneratedSamples / (float)MIXBUFFER_SIZE;
-					x2 = barLen * fill;
-
-					GLfloat *v = &s_VkbPressedVerts[s_VkbCurNumPresses*36];
-					VirtKB_UpdateRectVerts(v, x1, y1, x2, y2, tx1, ty1, tx2, ty2, 1.0f, 0.3f, 0.3f, 0.8f);
-
-					++s_VkbCurNumPresses;
-				}
-			}
-		}
-
-		if (!s_showKeyboard)
-		{
-			if (s_VkbCurNumPresses > 0)
-			{
-				GLuint pressedTexID = getWhiteTexture();
-				VirtKB_RenderVerts(pShader, s_VkbPressedVerts, s_VkbPressedStride, pressedTexID, s_VkbPressedIndices, s_VkbCurNumPresses);
-			}
-		}
-	}
-#endif // DBG_SND
-
 static void VirtKB_onRender(JNIEnv *env)
 {
 	RTShader *pShader = Renderer_getColorModShader();
-
-#if DBG_SND
-	Debug_Render(env);
-#endif
 
 	// keyboard
 	if (s_showKeyboard)
@@ -1391,6 +1425,7 @@ void updateQuickKeyColor(int qkID, QuickKey *qk, bool down)
 	v[c++] = r; v[c++] = g; v[c++] = b; v[c++] = a;
 }
 
+// touch priority (overlap cases) -> quick keys -> vkb -> joy/mouse
 void VirtKB_updateInput()
 {
 	int prevIndex = 1 - s_curIndex;
@@ -1417,7 +1452,7 @@ void VirtKB_updateInput()
 	//s_recreateQuickKeys = false;
 	VirtKB_resetVkbPresses();
 
-	// retrieve current touches
+	// retrieve current touches and check quick keys
 	for (int i = 0; i < VKB_MaxTouches; ++i)
 	{
 		if (curtouched[i])
@@ -1425,59 +1460,34 @@ void VirtKB_updateInput()
 			hasTouches = true;
 
 			// quick keys
-			for (int c = 0; c < s_numQuickKeys; ++c)
+			if (s_curInputLayer == 0 || s_curInputLayer == InputLayer_QuickKeys || s_curInputLayer == InputLayer_VirtController)
 			{
-				QuickKey *qk = &s_QuickKeys[c];
-				const VirtKeyDef *vk = qk->pKeyDef;
-
-				if (vk->flags & s_curInputFlags)
+				for (int c = 0; c < s_numQuickKeys; ++c)
 				{
-					if (numCurButtonDown < MaxButtonDown
-					 && curtouchX[i] >= qk->x1 && curtouchX[i] < qk->x2
-					 && curtouchY[i] >= qk->y1 && curtouchY[i] < qk->y2)
+					QuickKey *qk = &s_QuickKeys[c];
+					const VirtKeyDef *vk = qk->pKeyDef;
+
+					if (vk->flags & s_curInputFlags)
 					{
-						curButtons->setBit(vk->id);
-						curButtonDownSet[numCurButtonDown] = MAKE_BUTTON_DOWN_SET(vk->id, c);
-						++numCurButtonDown;
+						if (numCurButtonDown < MaxButtonDown
+						 && curtouchX[i] >= qk->x1 && curtouchX[i] < qk->x2
+						 && curtouchY[i] >= qk->y1 && curtouchY[i] < qk->y2)
+						{
+							curButtons->setBit(vk->id);
+							curButtonDownSet[numCurButtonDown] = MAKE_BUTTON_DOWN_SET(vk->id, c);
+							++numCurButtonDown;
+							s_curInputLayer = InputLayer_QuickKeys;
+						}
 					}
 				}
 			}
 		}
 	}
 
-	// new arcade virtual joystick
-	if (_virtJoyEnabled && _virtJoy != 0 && _virtJoy->isEnabled())
-    {
-        const int virtJoy1VKIDMap[] = {VKB_KEY_JOYUP, VKB_KEY_JOYDOWN, VKB_KEY_JOYLEFT, VKB_KEY_JOYRIGHT};
-        const int virtJoy2VKIDMap[] = {VKB_KEY_JOY2UP, VKB_KEY_JOY2DOWN, VKB_KEY_JOY2LEFT, VKB_KEY_JOY2RIGHT};
-
-        const int *virtJoyVKIDMap = (s_joyID==0) ? virtJoy2VKIDMap : virtJoy1VKIDMap;
-
-        unsigned int vjBtnDown = _virtJoy->getBtnFlags();
-        if (vjBtnDown != 0)
-        {
-            for (int i = 0; i < 4; ++i)
-            {
-                if (numCurButtonDown >= MaxButtonDown)
-                {
-                    break;
-                }
-
-                if ((vjBtnDown & (1<<i)) != 0)
-                {
-                    int vkID = virtJoyVKIDMap[i];
-                    curButtons->setBit(vkID);
-                    curButtonDownSet[numCurButtonDown] = MAKE_BUTTON_DOWN_SET(vkID, INVALID_QUICK_KEY_ID);
-                    ++numCurButtonDown;
-                }
-            }
-        }
-    }
-
-	// vkb
-	if (s_keyboardZoomMode || s_screenZoomMode)
+	// screen / vkb zoom
+	if (s_curInputLayer == 0 || s_curInputLayer == InputLayer_Zoom)
 	{
-		if (numCurButtonDown == 0)
+		if (s_keyboardZoomMode || s_screenZoomMode)
 		{
 			int zoomPanCount = 0;
 			zoomPanCount += curtouched[0] ? 1 : 0;
@@ -1493,6 +1503,8 @@ void VirtKB_updateInput()
 
 				if (s_keyboardZoomMode)		VirtKB_ZoomVKB(dist2 - dist1);
 				else if (s_screenZoomMode)	Renderer_zoomEmuScreen(dist2 - dist1);
+
+				s_curInputLayer = InputLayer_Zoom;
 			}
 			else if (zoomPanCount > 0 && s_prevZoomPanCount > 0)
 			{
@@ -1502,34 +1514,43 @@ void VirtKB_updateInput()
 
 				if (s_keyboardZoomMode)		VirtKB_PanVKB(px1, py1);
 				else if (s_screenZoomMode)	Renderer_panEmuScreen(px1, py1);
+
+				s_curInputLayer = InputLayer_Zoom;
 			}
 
 			s_prevZoomPanCount = zoomPanCount;
 		}
 	}
-	else if (s_showKeyboard)
-	{
-		for (int i = 0; i < VKB_MaxTouches; ++i)
-		{
-			if (numCurButtonDown >= MaxButtonDown)
-			{
-				break;
-			}
 
-			if (curtouched[i])
+	// vkb
+	if (s_curInputLayer == 0 || s_curInputLayer == InputLayer_VirtKB)
+	{
+		if (s_showKeyboard && !(s_keyboardZoomMode || s_screenZoomMode))
+		{
+			for (int i = 0; i < VKB_MaxTouches; ++i)
 			{
-				const VirtKeyDef *vk = VirtKB_VkbHitTest(curtouchX[i], curtouchY[i]);
-				if (vk)
+				if (numCurButtonDown >= MaxButtonDown)
 				{
-					VirtKB_addVkbPress(vk->id, false);
-					curButtons->setBit(vk->id);
-					curButtonDownSet[numCurButtonDown] = MAKE_BUTTON_DOWN_SET(vk->id, INVALID_QUICK_KEY_ID);
-					++numCurButtonDown;
+					break;
+				}
+
+				if (curtouched[i])
+				{
+					const VirtKeyDef *vk = VirtKB_VkbHitTest(curtouchX[i], curtouchY[i]);
+					if (vk)
+					{
+						VirtKB_addVkbPress(vk->id, false);
+						curButtons->setBit(vk->id);
+						curButtonDownSet[numCurButtonDown] = MAKE_BUTTON_DOWN_SET(vk->id, INVALID_QUICK_KEY_ID);
+						++numCurButtonDown;
+						s_curInputLayer = InputLayer_VirtKB;
+					}
 				}
 			}
 		}
 	}
 
+	// input from android layer
 	for (int f = 0; f < s_jKeyPresses->_flagSize32; ++f)
 	{
 		uint32_t g = s_jKeyPresses->_flags[f];
@@ -1557,13 +1578,15 @@ void VirtKB_updateInput()
 		}
 	}
 
-	// add cur key focus (non-touch mode)
+	// add cur key focus (vkb) (non-touch mode)
 	{
 		if (s_showKeyboard && s_nonTouchKB)
 		{
-			long nowMS = SDL_GetTicks();
-            long elapsedMS = nowMS - s_lastKBFocusRepeat;
-            bool canNav = elapsedMS > s_KBRepeatDelay;
+			Uint32 nowMS = SDL_GetTicks();
+            Uint32 elapsedMS = nowMS - s_lastKBFocusRepeat;
+            bool canNav = (elapsedMS > s_KBRepeatDelay) ? true: false;
+
+            //Debug_Printf("~~~~~~~~~~~~~~~~~~~~~ CAN NAV: %d, elapsed: %d, repeatDelay: %ld, now: %ld, lastRepeat: %ld", canNav, elapsedMS, s_KBRepeatDelay, nowMS, s_lastKBFocusRepeat);
 
             bool navPressed = false;
 
@@ -1613,6 +1636,43 @@ void VirtKB_updateInput()
 			}
 		}
 	}
+
+	// new arcade virtual joystick
+    if (_virtJoyEnabled && _virtJoy != 0)
+    {
+        _virtJoy->update(s_curInputLayer, s_curIndex, s_curtouched, s_curtouchX, s_curtouchY, VKB_MaxTouches);
+    }
+	if (s_curInputLayer == 0 || s_curInputLayer == InputLayer_VirtController || s_curInputLayer == InputLayer_QuickKeys) // joystick fire buttons on quick keys...
+	{
+		if (_virtJoyEnabled && _virtJoy != 0 && _virtJoy->isEnabled())
+	    {
+	        const int virtJoy1VKIDMap[] = {VKB_KEY_JOYUP, VKB_KEY_JOYDOWN, VKB_KEY_JOYLEFT, VKB_KEY_JOYRIGHT};
+	        const int virtJoy2VKIDMap[] = {VKB_KEY_JOY2UP, VKB_KEY_JOY2DOWN, VKB_KEY_JOY2LEFT, VKB_KEY_JOY2RIGHT};
+
+	        const int *virtJoyVKIDMap = (s_joyID==0) ? virtJoy2VKIDMap : virtJoy1VKIDMap;
+
+	        unsigned int vjBtnDown = _virtJoy->getBtnFlags();
+	        if (vjBtnDown != 0)
+	        {
+	            for (int i = 0; i < 4; ++i)
+	            {
+	                if (numCurButtonDown >= MaxButtonDown)
+	                {
+	                    break;
+	                }
+
+	                if ((vjBtnDown & (1<<i)) != 0)
+	                {
+	                    int vkID = virtJoyVKIDMap[i];
+	                    curButtons->setBit(vkID);
+	                    curButtonDownSet[numCurButtonDown] = MAKE_BUTTON_DOWN_SET(vkID, INVALID_QUICK_KEY_ID);
+	                    ++numCurButtonDown;
+	                    s_curInputLayer = InputLayer_VirtController;
+	                }
+	            }
+	        }
+	    }
+    }
 
 	s_numButtonDown[s_curIndex] = numCurButtonDown;
 
@@ -1679,10 +1739,15 @@ void VirtKB_updateInput()
 	}
 
 	// update mouse
+	if (s_curInputLayer == 0 || s_curInputLayer == InputLayer_VirtController || s_curInputLayer == InputLayer_QuickKeys) // mouse buttons on quick keys...
 	{
 		if (((prevInputFlags&s_curInputFlags)&FLAG_MOUSE))
 		{
-			VirtKB_updateMouse();
+			VirtKB_updateTouchMouse();
+			if (s_prevFingerCount > 0)
+			{
+				s_curInputLayer = InputLayer_VirtController;
+			}
 		}
 
 		VirtKB_updateHardwareMouse();
@@ -1794,7 +1859,7 @@ static void VirtKB_updateVirtMouseEmu()
 	s_mouseDy += jy * accel;
 }
 
-static void VirtKB_updateMouse()
+static void VirtKB_updateTouchMouse()
 {
 	int prevIndex = 1 - s_curIndex;
 
@@ -2412,11 +2477,19 @@ static void VirtKB_ToggleKeyboard(const VirtKeyDef *keyDef, uint32_t uParam1, bo
 		if (s_showKeyboard)
 		{
 			s_prevInputFlags = s_curInputFlags;
-			s_curInputFlags = FLAG_PERSIST|FLAG_VKB;
+			if (s_isPortrait) {
+				s_curInputFlags |= FLAG_VKB;
+			} else {
+				s_curInputFlags = FLAG_PERSIST|FLAG_VKB;
+			}
 		}
 		else
 		{
-			s_curInputFlags = s_prevInputFlags;
+			if (s_isPortrait) {
+				s_curInputFlags &= ~FLAG_VKB;
+			} else {
+				s_curInputFlags = s_prevInputFlags;
+			}
 		}
 		s_recreateQuickKeys = true;
 		s_prevZoomPanCount = 0;
@@ -2448,6 +2521,8 @@ void VirtKB_setScreenZoomMode(bool set)
 	{
 		s_prevInputFlags = s_curInputFlags;
 		s_curInputFlags = FLAG_SCREEN | FLAG_SCREEN2;
+
+		s_keyboardZoomMode = 0;
 	}
 	else
 	{
@@ -2468,6 +2543,20 @@ static void VirtkKB_VkbZoomToggle(const VirtKeyDef *keyDef, uint32_t uParam1, bo
 		s_recreateQuickKeys = true;
 
 		VirtKB_clearMousePresses();
+
+		if (s_isPortrait)
+		{
+			if (s_keyboardZoomMode)
+			{
+				s_prevInputFlags = s_curInputFlags;
+				s_curInputFlags &= ~(FLAG_SCREEN | FLAG_SCREEN2 | FLAG_MOUSE | FLAG_JOY);// | FLAG_MOUSEBUTTON);
+			}
+			else
+			{
+				s_curInputFlags = s_prevInputFlags;
+			}
+		}
+
 	}
 }
 
@@ -2491,6 +2580,13 @@ static void VirtkKB_KeyboardPresetToggle(const VirtKeyDef *keyDef, uint32_t uPar
 	if (down)
 	{
 		VirtkKB_KeyboardSetPreset((s_curKeyboardZoomPreset + 1) % VkbZoom_NumOf);
+	}
+}
+
+void VirtKB_setDefaultVKBZoomPreset()
+{
+	if (s_VkbZoomInited) {
+		VirtkKB_KeyboardSetPreset(VkbZoom_Fit);
 	}
 }
 
@@ -2532,6 +2628,12 @@ static bool VirtkKB_KeyboardSetPreset(int preset)
 			}
 		}
 
+		if (s_isPortrait) {
+			// anchor keyboard above joystick controls
+			float jsize = (_virtJoy != 0) ? ((_virtJoy->calcScreenRadiusPixels() * 2) + 32): (scrheight * (1/3.0f));
+			s_vkbPanY -= jsize;
+		}
+
 		VirtKB_UpdateVkbVerts();
 		return true;
 	}
@@ -2539,12 +2641,24 @@ static bool VirtkKB_KeyboardSetPreset(int preset)
 	return false;
 }
 
+void VirtKB_SetNonTouchKB(bool nonTouch)
+{
+	s_nonTouchKB = nonTouch;
+
+	if (s_nonTouchKB) {
+		// force full keyboard
+		VirtkKB_KeyboardSetPreset(VkbZoom_Fit);
+	}
+
+	VirtKB_RefreshKB();
+}
+
 static void VirtKB_MJToggle(const VirtKeyDef *keyDef, uint32_t uParam1, bool down)
 {
 	if (down)
 	{
-		if (s_showKeyboard || s_screenZoomMode)	{ s_prevInputFlags ^= (FLAG_MOUSE|FLAG_JOY); }
-		else									{ s_curInputFlags ^= (FLAG_MOUSE|FLAG_JOY); }
+		if (!s_isPortrait && (s_showKeyboard || s_screenZoomMode))	{ s_prevInputFlags ^= (FLAG_MOUSE|FLAG_JOY); }
+		else									                    { s_curInputFlags ^= (FLAG_MOUSE|FLAG_JOY); }
 
 		s_recreateQuickKeys = true;
 
@@ -2850,7 +2964,7 @@ void VirtKB_SetVKBPanZoom(float kbdZoom, float kbdPanX, float kbdPanY)
 
 bool VirtKB_getMouseActive()
 {
-	if (s_showKeyboard || s_screenZoomMode)
+	if (!s_isPortrait && (s_showKeyboard || s_screenZoomMode))
 	{
 		return (s_prevInputFlags & FLAG_MOUSE) != 0;
 	}
@@ -2859,7 +2973,7 @@ bool VirtKB_getMouseActive()
 
 void VirtKB_SetMouseActive(bool mouseActive)
 {
-	if (s_showKeyboard || s_screenZoomMode)
+	if (!s_isPortrait && (s_showKeyboard || s_screenZoomMode))
 	{
 		s_prevInputFlags &= ~(FLAG_MOUSE|FLAG_JOY);
 		s_prevInputFlags |= mouseActive ? FLAG_MOUSE : FLAG_JOY;

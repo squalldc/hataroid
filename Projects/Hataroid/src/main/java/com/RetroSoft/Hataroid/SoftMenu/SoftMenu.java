@@ -222,6 +222,35 @@ public class SoftMenu
 		}
 	}
 
+	public void ReLayout() {
+
+		int[] screenRes = getScreenDimensions();
+		int scrWidth = screenRes[0];
+		int scrHeight = screenRes[1];
+
+		// main menu
+		{
+			int popupWidth = (int)(scrWidth);
+			//int popupHeight = (int)(scrHeight * (showShortcuts?0.5f:0.25f));
+			int popupHeight = (int)(scrHeight * 0.5f);
+
+			_mainPopup.setWidth(popupWidth);
+
+			if (_mainPopup.isShowing() && _parentView != null) {
+				_mainPopup.dismiss();
+				_mainPopup.showAtLocation(_parentView, Gravity.LEFT | Gravity.BOTTOM, 0, 0);
+			}
+		}
+
+		// sub menu
+		{
+			int popupWidth = (int)(scrWidth * 0.62f);
+			int popupHeight = (int)(scrHeight * 0.8f);
+
+			_subPopup.setWidth(popupWidth);
+		}
+	}
+
 	public void _handleFocusChange(int btnIdx, int actionIdx, View v, Boolean hasFocus)
 	{
 		try {

@@ -50,7 +50,8 @@
 			android:scrollbars="vertical"
 			android:linksClickable="true"
 			android:text="TextView"
-			android:textColor="#ffffff"/>
+			android:textColor="#ffffff"
+		    />
 	
 	</RelativeLayout>
 

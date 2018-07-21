@@ -23,10 +23,20 @@ enum
 	VkbZoom_NumOf
 };
 
-#define VKB_MaxTouches 3
+enum
+{
+	InputLayer_None = 0,
+	InputLayer_Zoom,
+	InputLayer_QuickKeys,
+	InputLayer_VirtKB,
+	InputLayer_VirtController,
+};
+
+#define VKB_MaxTouches 5
 
 
-extern int VirtKB_OnSurfaceChanged(int width, int height);
+extern void VirtKB_OnSurfaceCreated();
+extern int VirtKB_OnSurfaceChanged(int width, int height, int prevW, int prevH);
 extern void VirtKB_CleanUp();
 extern void VirtKB_EnableInput(bool enable);
 extern void VirtKB_RefreshKB();
@@ -56,6 +66,8 @@ extern float VirtKB_getVKBZoom();
 extern float VirtKB_getVKBPanX();
 extern float VirtKB_getVKBPanY();
 extern void VirtKB_SetVKBPanZoom(float kbdZoom, float kbdPanX, float kbdPanY);
+extern void VirtKB_setDefaultVKBZoomPreset();
+extern void VirtKB_SetNonTouchKB(bool nonTouch);
 
 extern bool VirtKB_getMouseActive();
 extern void VirtKB_SetMouseActive(bool mouseActive);

@@ -11,6 +11,7 @@
 #include "hataroid.h"
 #include "FloppySnd.h"
 
+extern int nFrameSkips;
 
 #define SRC_SND_FREQ            44100
 #define ON_FADE_FRAMES          10
@@ -215,12 +216,16 @@ void FloppySnd_UpdateEmuFrame()
 //	int motorOn = driveState != LED_STATE_OFF;
 
 	bool driveActive = FDC_Get_HasActiveCommands();
+	int fDT = nFrameSkips + 1;
 
 	if (driveActive) {
 		_stopDelay = MOTOR_STOP_FRAMES;
 	} else {
 		if (_stopDelay > 0) {
-			--_stopDelay;
+			_stopDelay -= fDT;
+			if (_stopDelay < 0) {
+				_stopDelay = 0;
+			}
 		}
 	}
 	int motorOn = _stopDelay > 0;
@@ -232,12 +237,15 @@ void FloppySnd_UpdateEmuFrame()
 		if (_seeking < SEEK_SHORT_FRAMES) {
 		    _seeking = SEEK_SHORT_FRAMES;
 	    } else if (_seeking < SEEK_LONG_FRAMES) {
-			++_seeking;
+			_seeking += fDT;
+			if (_seeking > SEEK_LONG_FRAMES) {
+				_seeking = SEEK_LONG_FRAMES;
+			}
 		}
 	} else {
 		if (_seeking > 0) {
-			--_seeking;
-			if (_seeking == 0) {
+			_seeking -= fDT;
+			if (_seeking <= 0) {
 				_curSeekShortPos = 0;
 			}
 		}
@@ -293,8 +301,11 @@ void FloppySnd_GenSamples(int nMixBufIdx, int samplesToGen)
 				}
 			}
 
-			MixBuffer[idx][0] += m + s;
-			MixBuffer[idx][1] += m + s;
+			int v = m + s;
+			int l = MixBuffer[idx][0] + v;
+			int r = MixBuffer[idx][1] + v;
+			MixBuffer[idx][0] = (l>32767) ? 32767 : (l<-32767) ? -32767 : l;
+			MixBuffer[idx][1] = (r>32767) ? 32767 : (r<-32767) ? -32767 : r;
 		}
 	}
 }

@@ -24,10 +24,13 @@ import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
 //import android.support.v7.app.ActionBar;
 import android.util.Log;
+import android.view.Choreographer;
+import android.view.Display;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 //import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -116,9 +119,21 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 	public static final String LastSaveStateDirItemPrefixKey			= "pref_system_sstate_lastdir";
 	public static final String LastFluidSynthSFDirItemPrefixKey			= "pref_system_fssfont_lastdir";
 
-	static final String kHelpSiteLink									= "http://sites.google.com/site/hataroid/help";
+	public static final String kPrefName_Device_VSync       			= "pref_device_dbg_vsync";
+	public static final String kPrefName_Device_VSync_Autorate			= "pref_device_dbg_vsync_autorate";
 
-	public Map<String,Boolean> _noSetSummary = new HashMap<String,Boolean>();
+	static final String        kHelpSiteLink					        = "http://sites.google.com/site/hataroid/help";
+
+	public Map<String,Boolean>              _noSetSummary = new HashMap<String,Boolean>();
+
+	private final int                       kMaxFreqMapCnt = 20;
+	private final int                       kRefreshMeasureCount = 60*3;
+	private Choreographer.FrameCallback     _refreshRateMeasureCallback = null;
+	private AlertDialog                     _refreshRateMeasureDialog = null;
+	private long                            _lastRefreshRateNanoTime = 0;
+	private Map<Long, Integer>              _refreshFreqMap = new HashMap<Long, Integer>();
+	private int                             _sampleCount = 0;
+
 
 	@SuppressWarnings("deprecation")
 	@Override protected void onCreate(Bundle savedInstanceState)
@@ -220,6 +235,8 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		else if (action.equals("com.RetroSoft.Hataroid.action.prefdevice"))
 		{
 			addPreferencesFromResource(R.xml.prefs_device);
+
+			_createRefreshRateMeasurer();
 		}
 		else
 		{
@@ -809,6 +826,196 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		{
 			e.printStackTrace();
 		}
+	}
+
+	void _createRefreshRateMeasurer() {
+
+		try {
+			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+				_refreshRateMeasureCallback = new Choreographer.FrameCallback() {
+					@Override
+					public void doFrame(long frameTimeNanos) {
+						if (_lastRefreshRateNanoTime > 0) {
+							long dT = frameTimeNanos - _lastRefreshRateNanoTime;
+							dT /= 10000;
+							dT *= 10000;
+
+							if (_refreshFreqMap.containsKey(dT)) {
+								_refreshFreqMap.put(dT, _refreshFreqMap.get(dT) + 1);
+							} else if (_refreshFreqMap.size() < kMaxFreqMapCnt) {
+								_refreshFreqMap.put(dT, 1);
+							} else {
+								long minKey = 0;
+								long minVal = 0;
+								for (Map.Entry<Long,Integer> e : _refreshFreqMap.entrySet()) {
+									if (minKey == 0 || e.getValue() < minVal) {
+										minKey = e.getKey();
+										minVal = e.getValue();
+									}
+								}
+								if (minKey > 0) {
+									_refreshFreqMap.remove(minKey);
+									_refreshFreqMap.put(dT, 1);
+								}
+							}
+						}
+						_lastRefreshRateNanoTime = frameTimeNanos;
+						++_sampleCount;
+						if (_sampleCount < kRefreshMeasureCount) {
+							Choreographer.getInstance().postFrameCallback(this);
+						} else {
+							if (_refreshRateMeasureDialog != null) {
+								_refreshRateMeasureDialog.dismiss();
+								_refreshRateMeasureDialog = null;
+
+								// show results dialog
+								_showRefreshRateResults();
+							}
+						}
+					}
+				};
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		try
+		{
+			CheckBoxPreference item = (CheckBoxPreference)findPreference(kPrefName_Device_VSync);
+			if (item != null)
+			{
+				item.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+					public boolean onPreferenceClick(Preference preference) {
+						_onVSyncClicked(preference);
+						return true;
+					}
+				});
+			}
+
+			item = (CheckBoxPreference)findPreference(kPrefName_Device_VSync_Autorate);
+			if (item != null)
+			{
+				item.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+					public boolean onPreferenceClick(Preference preference) {
+						_onVSyncAutoRateClicked(preference);
+						return true;
+					}
+				});
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	void _onVSyncClicked(Preference pref)
+	{
+		CheckBoxPreference item = (CheckBoxPreference)pref;
+		if (item.isChecked()) {
+			AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+			alertDialog.setTitle("(Experimental) Hardware Screen Sync Help (fast device needed)");
+			alertDialog.setMessage("- With sync on, most games will run too fast. (most ST games runs at 50hz, but most Android screens are ~60hz)\n"
+								 + "- To account for this sound needs to be sped up (pitched higher).\n"
+								 + "- You can tick the 'Use Reported Hardware Refresh Rate' to use the value read from your device.\n"
+								 + "- If sound skips or buffers too much, try disabling the reported rate and use the override option with the value autodetected from above or your own values\n"
+								 + "- You can see if there are sound issues by enabling the Debug Sound Buffer option above\n"
+			);
+			alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int which) {
+				}
+			});
+			alertDialog.show();
+		}
+	}
+
+	void _onVSyncAutoRateClicked(Preference pref)
+	{
+		CheckBoxPreference item = (CheckBoxPreference)pref;
+		if (!item.isChecked()) {
+			return;
+		}
+
+		_lastRefreshRateNanoTime = 0;
+		_sampleCount = 0;
+		_refreshFreqMap.clear();
+
+		if (_refreshRateMeasureCallback != null) {
+
+			AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+			alertDialog.setTitle("Measuring Video Refresh Rate");
+			alertDialog.setMessage("Please wait a few seconds...");
+			alertDialog.setCancelable(false);
+			alertDialog.setCanceledOnTouchOutside(false);
+			alertDialog.show();
+
+			_refreshRateMeasureDialog = alertDialog;
+
+			Choreographer.getInstance().postFrameCallback(_refreshRateMeasureCallback);
+
+		}
+		else
+		{
+
+			_showRefreshRateResults();
+		}
+	}
+
+	void _showRefreshRateResults() {
+
+		float hardwareRefreshRate = 0;
+		try {
+			Display display = ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+			hardwareRefreshRate = display.getRefreshRate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		String msg = "Using Refresh Rate (from driver): " + hardwareRefreshRate;
+
+		float detectedRefreshRate = 0;
+		float detectedRefreshRateAvg = 0;
+		if (_refreshRateMeasureCallback != null)
+		{
+			if (_refreshFreqMap.size() > 0) {
+				long count = 0;
+				long maxKey = 0;
+				long maxVal = 0;
+				for (Map.Entry<Long,Integer> e : _refreshFreqMap.entrySet()) {
+					detectedRefreshRateAvg += e.getValue() * e.getKey();
+					if (maxKey == 0 || e.getValue() > maxVal) {
+						maxKey = e.getKey();
+						maxVal = e.getValue();
+					}
+					count += e.getValue();
+				}
+				if (maxKey > 0) {
+					detectedRefreshRate = (float)(1000000000.0 / (double)maxKey);
+				}
+				detectedRefreshRateAvg = (float)(1000000000.0 / (detectedRefreshRateAvg / (double)count));
+
+				_refreshFreqMap.clear();
+			}
+
+			if (detectedRefreshRate > 0) {
+				msg += "\n\nActual Detected Refresh Rate: " + String.format("%.8f", detectedRefreshRate);
+				//msg += "\nDetected Refresh Rate (Avg): " + String.format("%.8f", detectedRefreshRateAvg);
+
+				if (Math.abs(detectedRefreshRate - hardwareRefreshRate) > 0.1f) {
+					msg += "\n\n- The actual rate differs from the hardware reported rate. I recommend disabling this option and putting the detected refresh rate in the override option below instead.\n";
+					msg += "- You may also want to run this test a few times to make sure the detected value is stable";
+				}
+			}
+		}
+
+		AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+		alertDialog.setTitle("Screen Refresh Info");
+		alertDialog.setMessage(msg);
+		alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int which) {
+			}
+		});
+		alertDialog.show();
 	}
 
 	void _checkSeekBarKeyInput(int incr, int keyCode, KeyEvent event)

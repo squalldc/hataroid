@@ -1,3 +1,9 @@
+v1.830
+- Portrait orientation support
+	- Virtual Keyboard can be on screen at same time as joystick/mouse in this mode
+
+- Various bug fixes
+
 v1.821
 - Mute audio when entering menus
 

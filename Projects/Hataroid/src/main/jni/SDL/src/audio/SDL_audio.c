@@ -134,7 +134,7 @@ int SDLCALL SDL_RunAudio(void *audiop)
 	Uint8 *stream;
 	int    stream_len;
 	void  *udata;
-	void (SDLCALL *fill)(void *userdata,Uint8 *stream, int len);
+	int (SDLCALL *fill)(void *userdata,Uint8 *stream, int len);
 	int    silence;
 
 	/* Perform any thread setup */
@@ -199,28 +199,35 @@ int SDLCALL SDL_RunAudio(void *audiop)
 
 		//SDL_memset(stream, silence, stream_len); safe, but wasteful, our callback will handle it if required
 
+		int filled = 0;
 		if ( ! audio->paused ) {
 			SDL_mutexP(audio->mixer_lock);
-			(*fill)(udata, stream, stream_len);
+			filled = (*fill)(udata, stream, stream_len);
 			SDL_mutexV(audio->mixer_lock);
 		} else {
 			SDL_memset(stream, silence, stream_len);
+			filled = stream_len;
 		}
 
-		/* Convert the audio if necessary */
-		if ( audio->convert.needed ) {
-			SDL_ConvertAudio(&audio->convert);
-			stream = audio->GetAudioBuf(audio);
-			if ( stream == NULL ) {
-				stream = audio->fake_stream;
+		if (filled > 0)
+		{
+			/* Convert the audio if necessary */
+			if ( audio->convert.needed ) {
+				SDL_ConvertAudio(&audio->convert);
+				stream = audio->GetAudioBuf(audio);
+				if ( stream == NULL ) {
+					stream = audio->fake_stream;
+				}
+				SDL_memcpy(stream, audio->convert.buf,
+				               audio->convert.len_cvt);
 			}
-			SDL_memcpy(stream, audio->convert.buf,
-			               audio->convert.len_cvt);
-		}
 
-		/* Ready current buffer for play and change current buffer */
-		if ( stream != audio->fake_stream ) {
-			audio->PlayAudio(audio);
+			/* Ready current buffer for play and change current buffer */
+			if ( stream != audio->fake_stream ) {
+				audio->PlayAudio(audio);
+			}
+		} else {
+			SDL_Delay(1);
 		}
 
 		/* Wait for an audio buffer to become available */
@@ -609,6 +616,19 @@ void SDL_PauseAudio (int pause_on)
 	}
 }
 
+void SDL_PauseAudioStream(int pause_on)
+{
+	Debug_Printf("Audio stream pause %d", pause_on);
+
+	SDL_AudioDevice *audio = current_audio;
+
+	if ( audio ) {
+		if ( audio->PauseStream ) {
+			(*audio->PauseStream)(audio, pause_on);
+		}
+	}
+}
+
 void SDL_MuteAudio(int mute)
 {
 	Debug_Printf("Audio mute %d", mute);
@@ -618,6 +638,17 @@ void SDL_MuteAudio(int mute)
 	if ( audio ) {
 		if ( audio->MuteAudio ) {
 			(*audio->MuteAudio)(audio, mute);
+		}
+	}
+}
+
+void SDL_PlaybackRateAudio(float rate)
+{
+	SDL_AudioDevice *audio = current_audio;
+
+	if ( audio ) {
+		if ( audio->PlaybackRateAudio ) {
+			(*audio->PlaybackRateAudio)(audio, rate);
 		}
 	}
 }
@@ -649,13 +680,16 @@ void SDL_CloseAudio (void)
 
 void SDL_AudioQuit(void)
 {
+	Debug_Printf("SDL_AudioQuit");
 	SDL_AudioDevice *audio = current_audio;
 
 	if ( audio ) {
 		audio->enabled = 0;
+		Debug_Printf("SDL_AudioQuit::WaitThread");
 		if ( audio->thread != NULL ) {
 			SDL_WaitThread(audio->thread, NULL);
 		}
+		Debug_Printf("SDL_AudioQuit::DestroyLock");
 		if ( audio->mixer_lock != NULL ) {
 			SDL_DestroyMutex(audio->mixer_lock);
 		}
@@ -666,6 +700,7 @@ void SDL_AudioQuit(void)
 			SDL_FreeAudioMem(audio->convert.buf);
 
 		}
+		Debug_Printf("SDL_AudioQuit::CloseAudio");
 		if ( audio->opened ) {
 			audio->CloseAudio(audio);
 			audio->opened = 0;

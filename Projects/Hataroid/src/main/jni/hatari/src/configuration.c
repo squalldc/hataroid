@@ -443,6 +443,9 @@ static const struct Config_Tag configs_Hataroid[] =
 	{ "scrPanX", Float_Tag, &ConfigureParams.Hataroid.scrPanX },
 	{ "scrPanY", Float_Tag, &ConfigureParams.Hataroid.scrPanY },
 
+	{ "scrResX", Float_Tag, &ConfigureParams.Hataroid.scrResX },
+	{ "scrResY", Float_Tag, &ConfigureParams.Hataroid.scrResY},
+
 	{ "kbdZoom", Float_Tag, &ConfigureParams.Hataroid.kbdZoom },
 	{ "kbdPanX", Float_Tag, &ConfigureParams.Hataroid.kbdPanX },
 	{ "kbdPanY", Float_Tag, &ConfigureParams.Hataroid.kbdPanY },
@@ -704,6 +707,9 @@ void Configuration_SetDefault(void)
 		ConfigureParams.Hataroid.scrZoomY = 1;
 		ConfigureParams.Hataroid.scrPanX = 0;
 		ConfigureParams.Hataroid.scrPanY = 0;
+
+		ConfigureParams.Hataroid.scrResX = 0;
+		ConfigureParams.Hataroid.scrResY = 0;
 
 		ConfigureParams.Hataroid.kbdZoom = 1;
 		ConfigureParams.Hataroid.kbdPanX = 0;
@@ -1123,6 +1129,16 @@ void Configuration_MemorySnapShot_Capture(bool bSave)
 		MemorySnapShot_Store(&ConfigureParams.Hataroid.kbdPanY, sizeof(ConfigureParams.Hataroid.kbdPanY));
 
 		MemorySnapShot_Store(&ConfigureParams.Hataroid.mouseActive, sizeof(ConfigureParams.Hataroid.mouseActive));
+
+		if (!bSave) {
+			ConfigureParams.Hataroid.scrResX = 0;
+			ConfigureParams.Hataroid.scrResY = 0;
+		}
+		if (gSaveVersion >= 1903)
+		{
+			MemorySnapShot_Store(&ConfigureParams.Hataroid.scrResX, sizeof(ConfigureParams.Hataroid.scrResX));
+			MemorySnapShot_Store(&ConfigureParams.Hataroid.scrResY, sizeof(ConfigureParams.Hataroid.scrResY));
+		}
 
         if (gSaveVersion >= 1902)
         {

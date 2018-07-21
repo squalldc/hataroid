@@ -45,6 +45,7 @@ class RTShader
 	private:
 		GLuint		_vertShader;
 		GLuint		_fragShader;
+		int         _contextID;
 
 	public:
 		RTShader();

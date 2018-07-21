@@ -55,6 +55,8 @@ struct SDL_AudioDevice {
 	void (*WaitDone)(_THIS);
 	void (*CloseAudio)(_THIS);
 	void (*MuteAudio)(_THIS, int mute);
+	void (*PauseStream)(_THIS, int pause_on);
+	void (*PlaybackRateAudio)(_THIS, float rate);
 
 	/* * * */
 	/* Lock / Unlock functions added for the Mac port */

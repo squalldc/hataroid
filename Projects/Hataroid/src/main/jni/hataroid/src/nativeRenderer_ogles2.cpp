@@ -71,12 +71,17 @@ static const char gColorModFragmentShader[] =
 	"	gl_FragColor = v_color * texture2D(s_texture, v_texCoord); \n"
 	"}													 \n";
 
+static int s_nextContextID = 1;
+static int s_curContextID = 0;
+
 static RTShader* s_basicShader = 0;
 static RTShader* s_colorModShader = 0;
 
 #define kSCREENSHADER_NAME_LEN 512
 static char* s_setScreenShaderName = 0;
 static RTShader* s_curScreenShader = 0;
+
+static GLuint* s_whitePixels = 0;
 
 static GLuint gTextureID = 0;
 static GLuint gWhiteTexID = 0;
@@ -168,6 +173,16 @@ void allocWhiteTex2D()
 {
 	deleteWhiteTex2D();
 
+	int w = 2, h = 2;
+	if (s_whitePixels == 0)
+	{
+		s_whitePixels = (GLuint*)memalign(128, w*h*sizeof(GLuint));
+		for (int i = 0; i < w*h; ++i)
+		{
+			s_whitePixels[i] = 0xffffffff;
+		}
+	}
+
 	glGenTextures(1, &gWhiteTexID);
 
 	// Bind the texture unit
@@ -178,15 +193,8 @@ void allocWhiteTex2D()
 	glBindTexture(GL_TEXTURE_2D, gWhiteTexID);
 	checkGlError("glBindTexture");
 
-	int w = 2, h = 2;
-	GLuint *whitePixels = (GLuint*)memalign(4, w*h*sizeof(GLuint));
-	for (int i = 0; i < w*h; ++i)
-	{
-		whitePixels[i] = 0xffffffff;
-	}
-
 	// Alloc the texture
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, whitePixels);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, s_whitePixels);
 	checkGlError("glTexSubImage2D");
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -195,7 +203,7 @@ void allocWhiteTex2D()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	free(whitePixels);
+	Debug_Printf("allocated white texture id: %d", gWhiteTexID);
 }
 
 void Renderer_setFilterEmuScreeen(bool filter)
@@ -258,6 +266,18 @@ void updateVideoTex2D(GLuint textureid, GLubyte * pixels, int scrWidth, int scrH
 
 	// Load the texture
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, scrHeight, format, formatDataType, pixels);
+}
+
+int nativeRenderer_GetContextID() {
+	return s_curContextID;
+}
+
+void nativeRenderer_OnSurfaceCreated()
+{
+	s_curContextID = s_nextContextID++;
+
+	gTextureID = 0;
+	gWhiteTexID = 0;
 }
 
 void cleanupGraphics()
@@ -398,7 +418,7 @@ bool _initCurScreenShader(JNIEnv * env)
 	return res;
 }
 
-bool setupGraphics(int w, int h, JNIEnv * env)
+bool setupGraphics(int w, int h, int prevW, int prevH, JNIEnv * env)
 {
 	cleanupGraphics();
 
@@ -412,6 +432,7 @@ bool setupGraphics(int w, int h, JNIEnv * env)
 	
 	Debug_Printf("setupGraphics(%d, %d)", w, h);
 
+	Debug_Printf("creating viewport: %d x %d", w, h);
     glViewport(0, 0, w, h);
 	checkGlError("glViewport");
 
@@ -430,6 +451,21 @@ bool setupGraphics(int w, int h, JNIEnv * env)
 	}
 
 	_initCurScreenShader(env);
+
+	// adjust zoom for new aspect ratio
+	/*
+	if (prevW != 0 && prevH != 0 && w != 0 && h != 0)
+	{
+		float prevAspect = prevW / (float)prevH;
+		float newAspect = w / (float)h;
+
+		if (prevAspect != newAspect)
+		{
+			float yScale = newAspect / (float)prevAspect;
+			curZoomY *= yScale;
+		}
+	}
+	*/
 
 	return true;
 }
@@ -504,9 +540,6 @@ void Renderer_setZoomPreset(int preset)
 		dispParamsChanged = true;
 		_delayedPreset = -1;
 
-		curPanX = 0;
-		curPanY = 0;
-
 		switch (preset)
 		{
 			case ScreenZoom_1:
@@ -543,7 +576,16 @@ void Renderer_setZoomPreset(int preset)
 			}
 		}
 
-		//Debug_Printf("******** SET ZOOOM PRESET: %d, %fx%f\n", preset, curZoomX, curZoomY);
+		curPanX = 0;
+		curPanY = 0;
+
+		if (gScrHeight > gScrWidth)
+		{
+			// portrait mode, anchor to top of screen
+			curPanY = 1 - curZoomY;
+		}
+
+		//Debug_Printf("******** SET ZOOOM PRESET: %d, zoom: %f x %f, pan: %f x %f\n", preset, curZoomX, curZoomY, curPanX, curPanY);
 	}
 	else
 	{

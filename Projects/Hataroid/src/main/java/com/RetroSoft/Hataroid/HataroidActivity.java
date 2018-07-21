@@ -22,6 +22,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
@@ -35,6 +36,7 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.Display;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -130,6 +132,9 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 
 	private boolean                     _dbgClearTVPrefs = false;
 	private boolean                     _dbgForceTVMode = false;
+
+	private float                       _detectedDisplayRefreshRate = 0;
+	private float                       _displayRefreshRate = 0;
 
 	boolean                             _argsConsumed = false;
 	IntentArgs                          _args = new IntentArgs();
@@ -330,6 +335,7 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 
 				_viewGL2 = new HataroidViewGL2(getApplication(), false, 0, 0);
 				setContentView(_viewGL2);
+				updateVSyncState();
 
 				HataroidNativeLib.emulationStartExec();
 				_setInitState(kInitState_Ready);
@@ -572,6 +578,82 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 		{
 			e.printStackTrace();
 		}
+
+		_updateDisplayRefreshRate();
+	}
+
+	void _updateDisplayRefreshRate() {
+
+		try {
+
+			_detectedDisplayRefreshRate = 0;
+			_displayRefreshRate = 0;
+
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+			Map<String,?> allPrefs = prefs.getAll();
+			Object val;
+
+			boolean autoDetect = false;
+			val = allPrefs.get("pref_device_dbg_vsync_autorate");
+			if (val != null) {
+				String sval = val.toString();
+				autoDetect = !(sval.compareTo("false") == 0 || sval.compareTo("0") == 0);
+			}
+
+			if (autoDetect) {
+				Display display = ((WindowManager) getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+				_detectedDisplayRefreshRate = display.getRefreshRate();
+				_displayRefreshRate = _detectedDisplayRefreshRate;
+			} else {
+				val = allPrefs.get("pref_device_dbg_vsync_rate");
+				if (val != null) {
+					String sval = val.toString();
+					try {
+						_displayRefreshRate = Float.parseFloat(sval);
+					} catch (NumberFormatException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+			Log.i(LOG_TAG, "Detected display refresh rate: " + _detectedDisplayRefreshRate + ", set: " + _displayRefreshRate);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} catch (Error e) {
+			e.printStackTrace();
+		}
+
+		updateVSyncState();
+	}
+
+	public void updateVSyncState() {
+
+		try {
+
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+			Map<String,?> allPrefs = prefs.getAll();
+			Object val;
+
+			val = allPrefs.get("pref_device_dbg_vsync");
+			boolean vsync = false;
+			if (val != null) {
+				String sval = val.toString();
+				vsync = !(sval.compareTo("false") == 0 || sval.compareTo("0") == 0);
+			}
+			if (_viewGL2 != null) {
+				_viewGL2.enableVSync(vsync);
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		} catch (Error e) {
+			e.printStackTrace();
+		}
+	}
+
+	public float getDisplayRefreshRate()
+	{
+		return _displayRefreshRate;
 	}
 
 	boolean _setupTVDeviceOptions()
@@ -2305,6 +2387,10 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 		return true;
 	}
 
+	public boolean useTouchScreen() {
+		return _useTouchScreen;
+	}
+
 	boolean checkShowTVAssignButtons()
 	{
 		if (!_useTouchScreen)
@@ -2418,6 +2504,7 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 					SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 					Editor ed = prefs.edit();
 					ed.putBoolean("pref_input_onscreen_autohide", true);
+					ed.putBoolean("pref_input_onscreen_hide_all", true);
 					ed.putBoolean("TVSetupDone", true);
 					ed.commit();
 				}
@@ -2430,5 +2517,18 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 
 			_setInitState(kInitState_NativePlusDeps);
 		}
+	}
+
+	@Override
+	public void onConfigurationChanged(Configuration newConfig) {
+		super.onConfigurationChanged(newConfig);
+
+		if (_softMenu != null) {
+			_softMenu.ReLayout();
+		}
+
+//		if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+//		} else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
+//		}
 	}
 }

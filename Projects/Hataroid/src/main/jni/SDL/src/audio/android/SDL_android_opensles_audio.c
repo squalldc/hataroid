@@ -55,6 +55,8 @@ static void             ANDROID_OPENSLES_PlayAudio(_THIS);
 static Uint8*           ANDROID_OPENSLES_GetAudioBuf(_THIS);
 static void             ANDROID_OPENSLES_CloseAudio(_THIS);
 static void             ANDROID_OPENSLES_MuteAudio(_THIS, int mute);
+static void             ANDROID_OPENSLES_PauseStream(_THIS, int pause_on);
+static void             ANDROID_OPENSLES_PlaybackRateAudio(_THIS, float rate);
 
 static void             ANDROID_OPENSLES_ThreadInit(_THIS);
 static void             ANDROID_OPENSLES_ThreadDeinit(_THIS);
@@ -65,8 +67,11 @@ static int              createBufferQueueAudioPlayer(_THIS, SDL_AudioSpec *spec)
 static void             destroyBufferQueueAudioPlayer(_THIS);
 static void             bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context);
 static void             playStream(_THIS);
+static void             pauseStream(_THIS);
 static void             muteStream(_THIS, SLboolean mute);
 static void             checkMuteStream(_THIS);
+
+static void             setPlaybackRate(_THIS, float rate);
 
 // ----
 extern JavaVM*          g_jvm;
@@ -155,6 +160,8 @@ static SDL_AudioDevice *ANDROID_OPENSLES_CreateDevice(int devindex)
 	this->GetAudioBuf = ANDROID_OPENSLES_GetAudioBuf;
 	this->CloseAudio = ANDROID_OPENSLES_CloseAudio;
 	this->MuteAudio = ANDROID_OPENSLES_MuteAudio;
+	this->PauseStream = ANDROID_OPENSLES_PauseStream;
+	this->PlaybackRateAudio = ANDROID_OPENSLES_PlaybackRateAudio;
 
 	this->ThreadInit = ANDROID_OPENSLES_ThreadInit;
 	this->ThreadDeinit = ANDROID_OPENSLES_ThreadDeinit;
@@ -218,6 +225,10 @@ static void ANDROID_OPENSLES_WaitAudio(_THIS)
 
 	for (;;) {
 
+		if (!this->enabled) {
+			return;
+		}
+
 		checkMuteStream(this);
 
 		// wait for free buf
@@ -240,10 +251,15 @@ static void ANDROID_OPENSLES_PlayAudio(_THIS)
 
 	struct SDL_PrivateAudioData *myData = this->hidden;
 
+	if (!this->enabled) {
+		return;
+	}
+
 	Uint8* buf = myData->audioBufs[myData->nextBuf];
+	int bufSize = myData->bufSizeBytes;
 
     // enqueue another buffer
-    SLresult result = (*(myData->bqPlayerBufferQueue))->Enqueue(myData->bqPlayerBufferQueue, buf, myData->bufSizeBytes);
+    SLresult result = (*(myData->bqPlayerBufferQueue))->Enqueue(myData->bqPlayerBufferQueue, buf, bufSize);
     if (result != SL_RESULT_SUCCESS) {
 		// the most likely other result is SL_RESULT_BUFFER_INSUFFICIENT,
 		// warn, there should be enough buffers
@@ -345,6 +361,8 @@ static void destroyBufferQueueAudioPlayer(_THIS)
         //bqPlayerEffectSend = NULL;
         myData->bqPlayerMuteSolo = NULL;
         //myData->bqPlayerVolume = NULL;
+        myData->bqPlaybackRate = NULL;
+        //myData->bqPitch = NULL;
     }
 
     // destroy our buffers
@@ -393,6 +411,8 @@ static int createBufferQueueAudioPlayer(_THIS, SDL_AudioSpec *spec)
 		return -1;
 	}
 	int reqBits = 16;
+
+	myData->curPlaybackRate = 1;
 
 	// we're still in the main thread at this point (not the audio thread)
 	{
@@ -472,10 +492,10 @@ static int createBufferQueueAudioPlayer(_THIS, SDL_AudioSpec *spec)
     SLDataSink audioSnk = {&loc_outmix, NULL};
 
     // create audio player
-    const SLInterfaceID ids[2] = {SL_IID_BUFFERQUEUE, /*SL_IID_VOLUME,*/ SL_IID_MUTESOLO }; //, SL_IID_EFFECTSEND };
-    const SLboolean req[2] = {SL_BOOLEAN_TRUE, /*SL_BOOLEAN_TRUE,*/ SL_BOOLEAN_FALSE }; //, SL_BOOLEAN_TRUE}, };
+    const SLInterfaceID ids[3] = {SL_IID_BUFFERQUEUE, /*SL_IID_VOLUME,*/ SL_IID_MUTESOLO, SL_IID_PLAYBACKRATE};//, SL_IID_PITCH }; //, SL_IID_EFFECTSEND };
+    const SLboolean req[3] = {SL_BOOLEAN_TRUE, /*SL_BOOLEAN_TRUE,*/ SL_BOOLEAN_FALSE, SL_BOOLEAN_FALSE};//, SL_BOOLEAN_FALSE }; //, SL_BOOLEAN_TRUE}, };
 
-    result = (*(myData->engineEngine))->CreateAudioPlayer(myData->engineEngine, &myData->bqPlayerObject, &audioSrc, &audioSnk, 2, ids, req);
+    result = (*(myData->engineEngine))->CreateAudioPlayer(myData->engineEngine, &myData->bqPlayerObject, &audioSrc, &audioSnk, 3, ids, req);
     if (result != SL_RESULT_SUCCESS) {
 	    return -1;
     }
@@ -508,6 +528,7 @@ static int createBufferQueueAudioPlayer(_THIS, SDL_AudioSpec *spec)
     result = (*(myData->bqPlayerObject))->GetInterface(myData->bqPlayerObject, SL_IID_MUTESOLO, &myData->bqPlayerMuteSolo);
     if (result != SL_RESULT_SUCCESS) {
 	    myData->bqPlayerMuteSolo = NULL; // don't fail, but don't support muting
+	    Debug_Printf("warning: device opensles audio doesn't have mute interface");
     }
 
     // get the volume interface
@@ -519,6 +540,28 @@ static int createBufferQueueAudioPlayer(_THIS, SDL_AudioSpec *spec)
     //result = (*(myData->bqPlayerVolume))->GetVolumeLevel(myData->bqPlayerVolume, &myData->defVolLevel);
     //if (result != SL_RESULT_SUCCESS) {
     //    return -1;
+    //}
+
+    // get the playbackrate interface
+    result = (*(myData->bqPlayerObject))->GetInterface(myData->bqPlayerObject, SL_IID_PLAYBACKRATE, &myData->bqPlaybackRate);
+    if (result != SL_RESULT_SUCCESS) {
+
+	    myData->bqPlaybackRate = NULL; // don't fail, but don't support
+	    Debug_Printf("warning: device opensles audio doesn't have playbackrate interface");
+
+    } else {
+	    // set to auto pitch correction
+		result = (*(myData->bqPlaybackRate))->SetPropertyConstraints(myData->bqPlaybackRate, SL_RATEPROP_PITCHCORAUDIO);
+	    if (result != SL_RESULT_SUCCESS) {
+		    Debug_Printf("warning: device opensles audio doesn't have pitch correction");
+	    }
+	}
+
+    // get the pitch interface
+    //result = (*(myData->bqPlayerObject))->GetInterface(myData->bqPlayerObject, SL_IID_PITCH, &myData->bqPitch);
+    //if (result != SL_RESULT_SUCCESS) {
+	//    myData->bqPitch = NULL; // don't fail, but don't support
+	//    Debug_Printf("warning: device opensles audio doesn't have pitch interface");
     //}
 
 	// create our buffers
@@ -578,7 +621,41 @@ static void playStream(_THIS)
 
 	if (myData->bqPlayerPlay != NULL) {
 	    SLresult result = (*(myData->bqPlayerPlay))->SetPlayState(myData->bqPlayerPlay, SL_PLAYSTATE_PLAYING);
-	    assert(SL_RESULT_SUCCESS == result);
+	    //assert(SL_RESULT_SUCCESS == result);
+    }
+}
+
+static void pauseStream(_THIS)
+{
+	struct SDL_PrivateAudioData *myData = this->hidden;
+
+	if (myData->bqPlayerPlay != NULL) {
+	    SLresult result = (*(myData->bqPlayerPlay))->SetPlayState(myData->bqPlayerPlay, SL_PLAYSTATE_PAUSED);
+	    //assert(SL_RESULT_SUCCESS == result);
+    }
+}
+
+static void setPlaybackRate(_THIS, float rate)
+{
+	struct SDL_PrivateAudioData *myData = this->hidden;
+
+	if (myData->bqPlaybackRate != NULL) {
+		SLpermille r = (int)(rate * 1000);
+		Debug_Printf("setting audio playback rate: %d", r);
+	    SLresult result = (*(myData->bqPlaybackRate))->SetRate(myData->bqPlaybackRate, r);
+	    if (result != SL_RESULT_SUCCESS) {
+	   		Debug_Printf("failed to set audio playback rate: %d", r);
+	    } else {
+			//if (myData->bqPitch != NULL) {
+			//	SLpermille p = (int)(1000.0f/rate);
+			//	Debug_Printf("setting audio playback rate: %d", p);
+			//    SLresult result = (*(myData->bqPitch))->SetPitch(myData->bqPitch, p);
+			//    if (result != SL_RESULT_SUCCESS) {
+			//        Debug_Printf("failed to set audio rate pitch: %d", p);
+			//    }
+		    //}
+	    }
+		myData->curPlaybackRate = rate;
     }
 }
 
@@ -625,5 +702,26 @@ static void ANDROID_OPENSLES_MuteAudio(_THIS, int mute)
 	if (reqMute != this->muted)
 	{
 		muteStream(this, reqMute);
+	}
+}
+
+static void ANDROID_OPENSLES_PauseStream(_THIS, int pause_on)
+{
+	if (pause_on)
+	{
+		pauseStream(this);
+	}
+	else
+	{
+		playStream(this);
+	}
+}
+
+static void ANDROID_OPENSLES_PlaybackRateAudio(_THIS, float rate)
+{
+	struct SDL_PrivateAudioData *myData = this->hidden;
+
+	if (rate > 0 && rate != myData->curPlaybackRate) {
+		setPlaybackRate(this, rate);
 	}
 }
