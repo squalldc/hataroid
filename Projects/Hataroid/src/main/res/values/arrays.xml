@@ -261,5 +261,15 @@
 			<item >crt-geom</item>
 			<item >crt-geom-flat</item>
 		</string-array>
+		<string-array name="pref_input_keyboard_region_entries">
+			<item >English</item>
+			<item >German</item>
+			<item >French</item>
+		</string-array>
+		<string-array name="pref_input_keyboard_region_values">
+			<item >en</item>
+			<item >de</item>
+			<item >fr</item>
+		</string-array>
 
 	</resources>

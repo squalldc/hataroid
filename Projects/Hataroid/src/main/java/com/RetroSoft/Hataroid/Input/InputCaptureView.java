@@ -18,6 +18,7 @@ public class InputCaptureView extends Activity
 	public static final String CONFIG_EMUKEY		= "Config_EmuKey";
 	//public static final String CONFIG_SYSTEMKEY	= "Config_SystemKey";
 	public static final String CONFIG_MAPID			= "Config_MapID";
+	public static final String CONFIG_LOCALEID		= "Config_LocaleID";
 	public static final String CONFIG_CANCANCEL     = "Config_CanCancel";
 	public static final String CONFIG_CALLERDATA	= "Config_CallerData";
 
@@ -36,6 +37,8 @@ public class InputCaptureView extends Activity
 	
 	int				_emuKey = -1;
 	int				_scannedKeyCode = -1;
+
+	int             _localeID = Input.kLocale_EN;
 
 	Serializable	_callerData = null;
 
@@ -68,7 +71,7 @@ public class InputCaptureView extends Activity
 			String buttonText = "unknown";
 			if (_emuKey >= 0 && _emuKey < VirtKeyDef.VKB_KEY_NumOf)
 			{
-				buttonText = VirtKeyDef.kDefs[_emuKey].name;
+				buttonText = VirtKeyDef.kDefs[_emuKey].getName(_localeID);
 			}
 			tv.setText(buttonText);
 			tv.setTextColor(Color.CYAN);
@@ -99,6 +102,7 @@ public class InputCaptureView extends Activity
 			outState.putInt(CONFIG_EMUKEY, _emuKey);
 			//outState.putInt(CONFIG_SYSTEMKEY, _prevSystemKey);
 			outState.putString(CONFIG_MAPID, _prevMapID);
+			outState.putInt(CONFIG_LOCALEID, _localeID);
 			outState.putBoolean(CONFIG_CANCANCEL, _canCancel);
 			outState.putSerializable(CONFIG_CALLERDATA, _callerData);
 		}
@@ -114,6 +118,7 @@ public class InputCaptureView extends Activity
 
 		//_prevSystemKey = -1;
 		_prevMapID = null;
+		_localeID = Input.kLocale_EN;
 
 		_callerData = null;
 
@@ -124,6 +129,8 @@ public class InputCaptureView extends Activity
 
 			//_prevSystemKey = b.getInt(CONFIG_SYSTEMKEY, -1);
 			_prevMapID = b.getString(CONFIG_MAPID);
+
+			_localeID = b.getInt(CONFIG_LOCALEID);
 
 			_canCancel = b.getBoolean(CONFIG_CANCANCEL, true);
 

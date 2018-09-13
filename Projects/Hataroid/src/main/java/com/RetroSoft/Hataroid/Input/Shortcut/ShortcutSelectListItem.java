@@ -1,5 +1,7 @@
 package com.RetroSoft.Hataroid.Input.Shortcut;
 
+import com.RetroSoft.Hataroid.Input.Input;
+import com.RetroSoft.Hataroid.Input.InputMap;
 import com.RetroSoft.Hataroid.Input.VirtKeyDef;
 
 
@@ -7,16 +9,18 @@ public class ShortcutSelectListItem implements Comparable<ShortcutSelectListItem
 {
 	final int [] kFlagPriorities = {VirtKeyDef.FLAG_JOY, VirtKeyDef.FLAG_MOUSEBUTTON, VirtKeyDef.FLAG_CUSTOMKEY, VirtKeyDef.FLAG_STFNKEY, VirtKeyDef.FLAG_STKEY, -1};
 
+	int         _localeID = Input.kLocale_EN;
 	VirtKeyDef	_vkDef = null;
 
-	public ShortcutSelectListItem(VirtKeyDef def)
+	public ShortcutSelectListItem(VirtKeyDef def, int localeID)
 	{
 		_vkDef = def;
+		_localeID = localeID;
 	}
 	
 	public String getEmuKeyName()
 	{
-		return (_vkDef!=null) ? _vkDef.name : "";
+		return (_vkDef!=null) ? _vkDef.getName(_localeID) : "";
 	}
 	
 	public VirtKeyDef getKeyDef()
@@ -41,13 +45,13 @@ public class ShortcutSelectListItem implements Comparable<ShortcutSelectListItem
 					if (_vkDef.sort < o._vkDef.sort)		{ return -1; }
 					else if (_vkDef.sort > o._vkDef.sort)	{ return 1; }
 					
-					int def1Len = _vkDef.name.length();
-					int def2Len = o._vkDef.name.length();
+					int def1Len = _vkDef.getName(_localeID).length();
+					int def2Len = o._vkDef.getName(_localeID).length();
 
 					if (def1Len == 1 && def2Len > 1)		{ return -1; }
 					else if (def1Len > 1 && def2Len == 1)	{ return 1; }
 
-					return _vkDef.name.compareTo(o._vkDef.name);
+					return _vkDef.getName(_localeID).compareTo(o._vkDef.getName(_localeID));
 				}
 			}
 		}

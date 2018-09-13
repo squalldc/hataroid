@@ -1,3 +1,17 @@
+1.850
+- French and German virtual keyboard overlays
+    - Settings -> Input -> ST Keyboard Region
+    - Note: You need to use the correct French/German TOS rom for this to work.
+
+- Add modifier key lock to virtual keyboard (alt/ctrl/shift will become toggle keys)
+    - Easier to type French/German keys
+
+- Fix frontend argument passing (Arcbrowser)
+
+- File browser will default to external storage directory when the base folder "/" is unaccessible.
+
+- Changes to comply with Android TV guidelines.
+
 v1.830
 - Portrait orientation support
 	- Virtual Keyboard can be on screen at same time as joystick/mouse in this mode

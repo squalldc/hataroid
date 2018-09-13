@@ -9,8 +9,7 @@ typedef struct
 {
 	int		id;
 	char *		desc;
-	char *		name;
-	short		androidKeycode;
+	short		androidKeycode[3];
 	short		config;
 	short		scut;
 	short		sort;
@@ -166,7 +165,13 @@ enum
 	VKB_KEY_NAVDOWN		= 137,
 	VKB_KEY_NAVUP		= 138,
 	VKB_KEY_NAVBTN		= 139,
-	VKB_KEY_NumOf		= 140
+	VKB_KEY_LEFTSHIFT_HOLD		= 140,
+	VKB_KEY_RIGHTSHIFT_HOLD		= 141,
+	VKB_KEY_ALTERNATE_HOLD		= 142,
+	VKB_KEY_CONTROL_HOLD		= 143,
+	VKB_KEY_MODLOCK		= 144,
+	VKB_KEY_BKG		= 145,
+	VKB_KEY_NumOf		= 146
 };
 
 enum
@@ -174,15 +179,18 @@ enum
 	FLAG_STFNKEY		= (1<<0),
 	FLAG_POLY		= (1<<1),
 	FLAG_STKEY		= (1<<2),
-	FLAG_CUSTOMKEY		= (1<<3),
-	FLAG_PERSIST		= (1<<4),
-	FLAG_JOY		= (1<<5),
-	FLAG_VKB		= (1<<6),
-	FLAG_SCREEN2		= (1<<7),
-	FLAG_SCREEN		= (1<<8),
-	FLAG_MOUSE		= (1<<9),
-	FLAG_MOUSEBUTTON		= (1<<10),
-	FLAG_MAIN		= (1<<11)
+	FLAG_REGION_REMAP		= (1<<3),
+	FLAG_MODKEY		= (1<<4),
+	FLAG_CUSTOMKEY		= (1<<5),
+	FLAG_PERSIST		= (1<<6),
+	FLAG_JOY		= (1<<7),
+	FLAG_VKB		= (1<<8),
+	FLAG_SCREEN		= (1<<9),
+	FLAG_SCREEN2		= (1<<10),
+	FLAG_MOUSE		= (1<<11),
+	FLAG_MOUSEBUTTON		= (1<<12),
+	FLAG_MAIN		= (1<<13),
+	FLAG_HOLDKEY		= (1<<14)
 };
 
 extern const int g_vkbTexFullW;

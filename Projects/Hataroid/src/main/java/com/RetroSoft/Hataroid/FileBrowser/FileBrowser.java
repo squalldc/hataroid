@@ -201,7 +201,7 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 		}
 		if (_curZipFile == null)
 		{
-			if (_curDir == null || !_curDir.exists())
+			if (_curDir == null || !_curDir.exists() || !_curDir.canRead())
 			{
 				_setCurDir(_root);
 				_savedPath = null;
@@ -957,7 +957,9 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 
 	private void retrieveFileList(File dir, String [] validExts)
 	{
-//		setTitle("Current path: " + dir.getAbsolutePath());
+		Log.i("hataroid", "retrieving file list for folder: '" + dir.getAbsolutePath() + "', canRead: " + dir.canRead());
+
+		//		setTitle("Current path: " + dir.getAbsolutePath());
 		setCurPathText("Current path: " + dir.getAbsolutePath());
 		
 		GameDBHelper gameDB = null;
@@ -1253,9 +1255,13 @@ public class FileBrowser extends ListActivity implements IGameDBScanner
 
 	void _setCurDir(String path)
 	{
-		Log.i("hataroid", "set curPath: " + path);
+		Log.i("hataroid", "attempting set curPath: " + path);
 
 		_curDir = (path != null) ? new File(path) : null;
+		if (_curDir != null && _curDir.isDirectory() && _curDir.getAbsolutePath().equals("/") && !_curDir.canRead()) {
+			Log.i("hataroid", "can't read folder: '" + _curDir.getAbsolutePath() + "', resetting to initial path: '" + _root + "'");
+			_curDir = (_root != null) ? new File(_root) : null;
+		}
 
 		if (_refreshDBBtnView != null)
 		{

@@ -28,6 +28,11 @@
 			android:title="@string/input_device_configuremap"
 			android:summary="@string/input_device_configuremap_summary"
 			android:defaultValue="none" />
+		<ListPreference android:key="pref_input_keyboard_region"
+		                android:persistent="true"
+		                android:entries="@array/pref_input_keyboard_region_entries"
+		                android:entryValues="@array/pref_input_keyboard_region_values" android:dialogTitle="@string/input_keyboard_region" android:title="@string/input_keyboard_region"
+		                android:defaultValue="en" />
 	</PreferenceCategory>
 	<PreferenceCategory
 		android:title="@string/pref_input_joysticks_category"

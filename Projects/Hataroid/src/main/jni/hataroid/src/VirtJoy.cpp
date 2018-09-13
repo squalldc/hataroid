@@ -104,6 +104,13 @@ void VirtJoy::create(GLuint texID, int texW, int texH, float deadZone, float sca
     _ready = true;
 }
 
+void VirtJoy::setTexture(GLuint texID, int texW, int texH)
+{
+    _texID = texID;
+    _texW = texW;
+    _texH = texH;
+}
+
 void VirtJoy::setFloating(bool floating)
 {
     _floating = floating;

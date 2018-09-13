@@ -152,6 +152,9 @@ int fluid_android_process_frames(fluid_audio_driver_t* d, int nframes)
 short* fluid_android_consume_buffer(fluid_audio_driver_t* d, int reqLenShorts, int *startOffsetShorts, int *readLenShorts, int *bufMaxShorts)
 {
 	fluid_android_audio_driver_t* dev = (fluid_android_audio_driver_t*) d;
+	if (dev == NULL || dev->renderer == NULL) {
+		return NULL;
+	}
 
 	return fluid_mbuf_consume_buffer(dev->renderer, reqLenShorts, startOffsetShorts, readLenShorts, bufMaxShorts);
 }

@@ -7,16 +7,18 @@ public class InputMapListItem implements Comparable<InputMapListItem>
 
 	VirtKeyDef	_vkDef = null;
 	int[]		_systemKeys = null;
+	int         _localeID = Input.kLocale_EN;
 	
-	public InputMapListItem(VirtKeyDef def, int[] systemKeys)
+	public InputMapListItem(VirtKeyDef def, int[] systemKeys, int localeID)
 	{
 		_systemKeys = systemKeys;
 		_vkDef = def;
+		_localeID = localeID;
 	}
 	
 	public String getEmuKeyName()
 	{
-		return (_vkDef!=null) ? _vkDef.name : "";
+		return (_vkDef!=null) ? _vkDef.getName(_localeID) : "";
 	}
 	
 	public String getSystemKeyName()
@@ -63,13 +65,13 @@ public class InputMapListItem implements Comparable<InputMapListItem>
 					if (_vkDef.sort < o._vkDef.sort)		{ return -1; }
 					else if (_vkDef.sort > o._vkDef.sort)	{ return 1; }
 					
-					int def1Len = _vkDef.name.length();
-					int def2Len = o._vkDef.name.length();
+					int def1Len = _vkDef.getName(_localeID).length();
+					int def2Len = o._vkDef.getName(_localeID).length();
 
 					if (def1Len == 1 && def2Len > 1)		{ return -1; }
 					else if (def1Len > 1 && def2Len == 1)	{ return 1; }
 
-					return _vkDef.name.compareTo(o._vkDef.name);
+					return _vkDef.getName(_localeID).compareTo(o._vkDef.getName(_localeID));
 				}
 			}
 		}

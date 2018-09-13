@@ -26,6 +26,7 @@ class VirtJoy
     public:
         void create(GLuint texID, int texW, int texH, float deadZone, float scale, float diagSensitivity, float alpha, float autoHideAlpha, bool floating);
         void update(int curInputLayer, int curTouchSet, bool touched[2][VKB_MaxTouches], float touchX[2][VKB_MaxTouches], float touchY[2][VKB_MaxTouches], int maxTouches);
+		void setTexture(GLuint texID, int texW, int texH);
         void render();
 
         unsigned int getBtnFlags() { return _curBtnDown; }

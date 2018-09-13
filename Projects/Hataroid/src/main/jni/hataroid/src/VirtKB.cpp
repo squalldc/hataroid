@@ -10,6 +10,8 @@
 
 #include "VirtKBDefs.h"
 #include "VirtKBTex.h"
+#include "VirtKBTexFR.h"
+#include "VirtKBTexDE.h"
 #include "VirtJoy.h"
 #include "uncompressGZ.h"
 #include "nativeRenderer_ogles2.h"
@@ -68,6 +70,30 @@ static const int kAxis_X2			= 2;
 static const int kAxis_Y2			= 3;
 static const int kNumAxis			= 4;
 
+enum
+{
+	// don't re-order without updating kModLockVKBIDs as well
+	kModLockFlag_LShift             = (1<<0),
+	kModLockFlag_RShift             = (1<<1),
+	kModLockFlag_Alt                = (1<<2),
+	kModLockFlag_Control            = (1<<3),
+
+	kModLockFlag_LShiftToggle       = (1<<4),
+	kModLockFlag_RShiftToggle       = (1<<5),
+	kModLockFlag_AltToggle          = (1<<6),
+	kModLockFlag_ControlToggle      = (1<<7),
+
+	kModLockFlag_Locked             = (1<<12),
+	kModLockFlag_LockedToggle       = (1<<13),
+
+};
+const int kModLockVKBIDs[] = { VKB_KEY_LEFTSHIFT, VKB_KEY_RIGHTSHIFT, VKB_KEY_ALTERNATE, VKB_KEY_CONTROL };
+const int kNumModLockKeys = sizeof(kModLockVKBIDs) / sizeof(int);
+
+static const char* kLocaleIDStrs[kLocale_Numof] = {
+	"en", "de", "fr"
+};
+
 struct QuickKey;
 typedef void (*OnKeyEvent)(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 
@@ -124,6 +150,7 @@ static bool			s_waitInputCleared = false;
 static float		s_joystickSize = 1.3f;
 static float		s_joystickFireSize = 1.3f;
 static bool			s_vkbObsessionKeys = false;
+static int          s_modLockFlags = 0;
 //static bool			s_vkbExtraKeys = false;
 
 static GLuint		s_KbTextureID = 0;
@@ -175,6 +202,7 @@ static bool			s_VkbZoomInited = false;
 static float		s_vkbZoom = 1.0f;
 static float		s_vkbPanX = 0;
 static float		s_vkbPanY = 0;
+static bool         s_vkbUserZoomPan = false;
 
 static int			s_curScreenZoomPreset = -1;
 static int			s_curKeyboardZoomPreset = VkbZoom_Fit;
@@ -233,6 +261,9 @@ static bool         s_mouseMoveOnly = false;
 static float        s_mouseDragStartX = 0;
 static float        s_mouseDragStartY = 0;
 
+static int          s_curVKBRegionID = kLocale_EN;
+static int          s_curVKBTexRegionID = kLocale_EN;
+
 static float		_prevHWMouseX = MAXFLOAT;
 static float		_prevHWMouseY = MAXFLOAT;
 static float		_curHWMouseX = MAXFLOAT;
@@ -247,7 +278,6 @@ static bool         _virtJoyFloating = false;
 static float        _virtJoyDeadZone = 0;
 static float        _virtJoyDiagSensitivity = 0.5f;
 
-
 static void VirtKB_Create();
 static void VirtKB_CreateTextures();
 static void VirtKB_DestroyTextures();
@@ -256,6 +286,7 @@ static void VirtKB_DestroyShader();
 static void VirtKB_ClearQuickKeys();
 static void VirtKB_CreateQuickKeys();
 static void VirtKB_InitCallbacks();
+static void VirtKB_RecreateVKBTexture();
 
 static void VirtKB_UpdateQuickKeyVerts();
 
@@ -265,6 +296,8 @@ static void VirtKB_ZoomVKB(float absChange);
 static void VirtKB_PanVKB(float absX, float absY);
 static void VirtKB_resetVkbPresses();
 static void VirtKB_addVkbPress(int vkbKeyID, bool focusKey);
+static void VirtKB_addVkbPress_Rect(const VirtKeyDef *k, bool focusKey);
+static void VirtKB_addVkbPress_Poly(const VirtKeyDef *k, bool focusKey);
 
 static void VirtKB_NavLeft();
 static void VirtKB_NavRight();
@@ -293,6 +326,7 @@ static void VirtkKB_ScreenZoomToggle(const VirtKeyDef *keyDef, uint32_t uParam1,
 static void VirtkKB_VkbZoomToggle(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 static void VirtkKB_ScreenPresetToggle(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 static void VirtkKB_KeyboardPresetToggle(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
+static void VirtKB_OnModLockKey(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 static bool VirtkKB_KeyboardSetPreset(int preset);
 static void VirtKB_ToggleShowUI(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
 static void VirtKB_TogglePause(const VirtKeyDef *keyDef, uint32_t uParam1, bool down);
@@ -513,7 +547,7 @@ int VirtKB_OnSurfaceChanged(int width, int height, int prevW, int prevH)
 		{
 			//if (!s_showKeyboard)
 			//{
-			//	VirtKB_ToggleKeyboard(0, 0, true); // show portrait by default in portrait
+			//	VirtKB_ToggleKeyboard(0, 0, true); // show keyboard  by default in portrait
 			//}
 		}
 	}
@@ -662,7 +696,7 @@ void VirtKB_Create()
 		Renderer_setZoomPreset(s_curScreenZoomPreset);
 	}
 
-	if (!s_VkbZoomInited)
+	if (!s_VkbZoomInited || !s_vkbUserZoomPan)
 	{
 		int preset = (s_isPortrait && !s_nonTouchKB) ? VkbZoom_2 : VkbZoom_Fit;
 		if (VirtkKB_KeyboardSetPreset(preset))
@@ -687,8 +721,34 @@ void VirtKB_DestroyTextures()
 
 void VirtKB_CreateTextures()
 {
+	VirtKB_RecreateVKBTexture();
+}
+
+static void VirtKB_RecreateVKBTexture()
+{
+	if (s_KbTextureID != 0)
+	{
+	    glDeleteTextures(1, &s_KbTextureID);
+	    s_KbTextureID = 0;
+	    s_VkbGPUTexWidth = 0;
+	    s_VkbGPUTexHeight = 0;
+	}
+
+	int vkbTexZSize = 0;
+	const unsigned char* vkbTexZ = 0;
+	if (s_curVKBRegionID == kLocale_FR) {
+		vkbTexZSize = g_vkbTexFRZSize;
+		vkbTexZ = g_vkbTexFRZ;
+	} else if (s_curVKBRegionID == kLocale_DE) {
+		vkbTexZSize = g_vkbTexDEZSize;
+		vkbTexZ = g_vkbTexDEZ;
+	} else {
+		vkbTexZSize = g_vkbTexZSize;
+		vkbTexZ = g_vkbTexZ;
+	}
+
 	int kbTexSize = 0;
-	unsigned char *srcTex = uncompressGZ(g_vkbTexZ, g_vkbTexZSize, &kbTexSize);
+	unsigned char *srcTex = uncompressGZ(vkbTexZ, vkbTexZSize, &kbTexSize);
 	if (srcTex)
 	{
 		int fullWidth = roundUpPower2(g_vkbTexFullW);
@@ -743,6 +803,13 @@ void VirtKB_CreateTextures()
 
 		s_VkbGPUTexWidth = fullWidth;
 	    s_VkbGPUTexHeight = fullHeight;
+
+		Debug_Printf("Recreated vkb texture: locale: %d, texid: %d", s_curVKBRegionID, s_KbTextureID);
+
+		if (_virtJoy != NULL)
+		{
+			_virtJoy->setTexture(s_KbTextureID, s_VkbGPUTexWidth, s_VkbGPUTexHeight);
+		}
 	}
 }
 
@@ -803,6 +870,34 @@ static bool addQuickKey(int x1, int y1, int x2, int y2,
 static void _onSTKeyEventCallback(const VirtKeyDef *vk, uint32_t uParam1, bool down)
 {
 	IKBD_PressSTKey(vk->scancode, down);
+
+	if ((s_modLockFlags != 0) && ((vk->flags & FLAG_MODKEY) != 0))
+	{
+		int vkID = vk->id;
+		for (int i = 0; i < kNumModLockKeys; ++i)
+		{
+			if (kModLockVKBIDs[i] == vkID)
+			{
+				if (down)
+				{
+					s_modLockFlags |= (1<<i);
+				}
+				else
+				{
+					int toggleFlag = (1<<(i+kNumModLockKeys));
+					if ((s_modLockFlags & toggleFlag) != 0)
+					{
+						s_modLockFlags &= ~(toggleFlag|(1<<i));
+					}
+					else
+					{
+						s_modLockFlags |= toggleFlag;
+					}
+				}
+				break;
+			}
+		}
+	}
 }
 
 static void _onMouseButtonEventCallback(const VirtKeyDef *vk, uint32_t uParam1, bool down)
@@ -902,6 +997,7 @@ static void VirtKB_InitCallbacks()
 				case VKB_KEY_FLOPPYA_INSERT:		kcb->onKeyEvent = VirtKB_ShowFloppyAInsert; break;
 				case VKB_KEY_FLOPPYB_INSERT:		kcb->onKeyEvent = VirtKB_ShowFloppyBInsert; break;
 				case VKB_KEY_SETTINGS_MENU:			kcb->onKeyEvent = VirtKB_ShowSettingsMenu; break;
+				case VKB_KEY_MODLOCK:               kcb->onKeyEvent = VirtKB_OnModLockKey; break;
 			}
 		}
 		else if (vk->flags & (FLAG_STKEY|FLAG_STFNKEY))
@@ -1350,6 +1446,12 @@ static void VirtKB_onRender(JNIEnv *env)
 {
 	RTShader *pShader = Renderer_getColorModShader();
 
+	if (s_curVKBTexRegionID != s_curVKBRegionID)
+	{
+		VirtKB_RecreateVKBTexture();
+		s_curVKBTexRegionID = s_curVKBRegionID;
+	}
+
 	// keyboard
 	if (s_showKeyboard)
 	{
@@ -1539,10 +1641,13 @@ void VirtKB_updateInput()
 					const VirtKeyDef *vk = VirtKB_VkbHitTest(curtouchX[i], curtouchY[i]);
 					if (vk)
 					{
-						VirtKB_addVkbPress(vk->id, false);
-						curButtons->setBit(vk->id);
-						curButtonDownSet[numCurButtonDown] = MAKE_BUTTON_DOWN_SET(vk->id, INVALID_QUICK_KEY_ID);
-						++numCurButtonDown;
+						if (vk->id != VKB_KEY_BKG)
+						{
+							VirtKB_addVkbPress(vk->id, false);
+							curButtons->setBit(vk->id);
+							curButtonDownSet[numCurButtonDown] = MAKE_BUTTON_DOWN_SET(vk->id, INVALID_QUICK_KEY_ID);
+							++numCurButtonDown;
+						}
 						s_curInputLayer = InputLayer_VirtKB;
 					}
 				}
@@ -1637,6 +1742,41 @@ void VirtKB_updateInput()
 		}
 	}
 
+	// special key hold
+	if (s_modLockFlags != 0)
+	{
+		if (s_showKeyboard) {
+			VirtKB_addVkbPress(VKB_KEY_MODLOCK, false); // highlight only (not a real key)
+		}
+
+		for (int i = 0; i < kNumModLockKeys; ++i)
+		{
+			if (numCurButtonDown >= MaxButtonDown)
+			{
+				break;
+			}
+
+			if ((s_modLockFlags & (1<<i)) != 0)
+			{
+				int vkID = kModLockVKBIDs[i];
+				if (!curButtons->getBit(vkID))
+				{
+					int vkHoldID = VKB_KEY_LEFTSHIFT_HOLD + i;
+					const VirtKeyDef *vk = &g_vkbKeyDefs[vkHoldID];
+					if (vk)
+					{
+						if (s_showKeyboard) {
+							VirtKB_addVkbPress(vk->id, false);
+						}
+						curButtons->setBit(vk->id);
+						curButtonDownSet[numCurButtonDown] = MAKE_BUTTON_DOWN_SET(vk->id, INVALID_QUICK_KEY_ID);
+						++numCurButtonDown;
+					}
+				}
+			}
+		}
+	}
+
 	// new arcade virtual joystick
     if (_virtJoyEnabled && _virtJoy != 0)
     {
@@ -1705,7 +1845,8 @@ void VirtKB_updateInput()
 	// don't process new presses when we switch key layouts until fingers are off the screen
 	if (s_waitInputCleared)
 	{
-		if (numCurButtonDown == 0)
+		//if (numCurButtonDown == 0)
+		if (!hasTouches)
 		{
 			s_waitInputCleared = false;
 			Debug_Printf("Input Cleared");
@@ -2024,9 +2165,6 @@ static void VirtKB_resetVkbPresses()
 	s_VkbCurNumPresses = 0;
 }
 
-static void VirtKB_addVkbPress_Rect(const VirtKeyDef *k, bool focusKey);
-static void VirtKB_addVkbPress_Poly(const VirtKeyDef *k, bool focusKey);
-
 static void VirtKB_addVkbPress(int vkbKeyID, bool focusKey)
 {
 	const VirtKeyDef *k = &g_vkbKeyDefs[vkbKeyID];
@@ -2084,7 +2222,7 @@ static void VirtKB_addVkbPress_Rect(const VirtKeyDef *k, bool focusKey)
 		float tx1 = 0.0f, ty1 = 0.0f;
 		float tx2 = 1.0f, ty2 = 1.0f;
 
-		float a = 0.8f;
+		float a = 0.8f * s_autoHideAlpha;
 		float r = 0.1f;
 		float g, b;
 		if (focusKey)	{ g = 1.0f; b = 0.1f; }
@@ -2124,7 +2262,7 @@ static void VirtKB_addVkbPress_Poly(const VirtKeyDef *k, bool focusKey)
 		float texU[4] = {0, 0, 1, 1};
 		float texV[4] = {0, 1, 1, 0};
 
-		float a = 0.8f;
+		float a = 0.8f * s_autoHideAlpha;
 		float r = 0.1f;
 		float g, b;
 		if (focusKey)	{ g = 1.0f; b = 0.1f; }
@@ -2182,6 +2320,8 @@ static void VirtKB_ZoomVKB(float absChange)
 			s_vkbZoom = s_VkbMinZoom;
 		}
 
+		s_vkbUserZoomPan = true;
+
 		VirtKB_UpdateVkbVerts();
 	}
 }
@@ -2199,6 +2339,8 @@ static void VirtKB_PanVKB(float absDX, float absDY)
 
 		s_vkbPanX += dX;
 		s_vkbPanY += dY;
+
+		s_vkbUserZoomPan = true;
 
 		VirtKB_UpdateVkbVerts();
 	}
@@ -2337,7 +2479,8 @@ static const VirtKeyDef *VirtKB_VkbHitTest(float x, float y)
 						minID = curID+1;
 						if (minID > maxID)
 						{
-							return 0;
+							break;
+							//return 0;
 						}
 					}
 				}
@@ -2346,12 +2489,27 @@ static const VirtKeyDef *VirtKB_VkbHitTest(float x, float y)
 					maxID = curID-1;
 					if (maxID < minID)
 					{
-						return 0;
+						break;//
+						//return 0;
 					}
 				}
 
 				curID = minID + ((maxID-minID)>>1);
 			}
+		}
+	}
+
+	// special keys (can't add it to general case above as I can't re-order keys easily due to backwards compatibility)
+	const int kSPKeys[] = {VKB_KEY_MODLOCK, VKB_KEY_BKG};
+	const int kNumSPKeys = sizeof(kSPKeys) / sizeof(int);
+	for (int i = 0; i < kNumSPKeys; ++i)
+	{
+		vk = &g_vkbKeyDefs[kSPKeys[i]];
+		if (x >= vk->v[0] && x < vk->v[2]
+		 && y >= vk->v[1] && y < vk->v[3])
+		{
+			//Debug_Printf("vkb hit sp test: %s", vk->desc);
+			return vk;
 		}
 	}
 
@@ -2428,6 +2586,16 @@ static int _findClosestKey(int curVKeyID, int nextRowIdx, int dir)
 
 static void VirtKB_NavLeft()
 {
+	// special case
+	{
+		if (s_curKBKeyFocus == VKB_KEY_MODLOCK) {
+			return;
+		} else if (s_curKBKeyFocus == VKB_KEY_ALTERNATE) {
+			s_curKBKeyFocus = VKB_KEY_MODLOCK;
+			return;
+		}
+	}
+
 	int curRowIdx = _VirtKB_FindCurFocusRow();
 	if (curRowIdx >= 0)
 	{
@@ -2440,6 +2608,14 @@ static void VirtKB_NavLeft()
 }
 static void VirtKB_NavRight()
 {
+	// special case
+	{
+		if (s_curKBKeyFocus == VKB_KEY_MODLOCK) {
+			s_curKBKeyFocus = VKB_KEY_ALTERNATE;
+			return;
+		}
+	}
+
 	int curRowIdx = _VirtKB_FindCurFocusRow();
 	if (curRowIdx >= 0)
 	{
@@ -2452,6 +2628,14 @@ static void VirtKB_NavRight()
 }
 static void VirtKB_NavUp()
 {
+	// special case
+	{
+		if (s_curKBKeyFocus == VKB_KEY_MODLOCK) {
+			s_curKBKeyFocus = VKB_KEY_LEFTSHIFT;
+			return;
+		}
+	}
+
 	int curRowIdx = _VirtKB_FindCurFocusRow();
 	if (curRowIdx > 0)
 	{
@@ -2461,6 +2645,16 @@ static void VirtKB_NavUp()
 }
 static void VirtKB_NavDown()
 {
+	// special case
+	{
+		if (s_curKBKeyFocus == VKB_KEY_MODLOCK) {
+			return;
+		} else if (s_curKBKeyFocus == VKB_KEY_LEFTSHIFT) {
+			s_curKBKeyFocus = VKB_KEY_MODLOCK;
+			return;
+		}
+	}
+
 	int curRowIdx = _VirtKB_FindCurFocusRow();
 	if (curRowIdx >= 0 && curRowIdx < (g_vkbRowSearchSize-1))
 	{
@@ -2497,6 +2691,25 @@ static void VirtKB_ToggleKeyboard(const VirtKeyDef *keyDef, uint32_t uParam1, bo
 		s_screenZoomMode = 0;
 
 		VirtKB_clearMousePresses();
+	}
+}
+
+static void VirtKB_OnModLockKey(const VirtKeyDef *keyDef, uint32_t uParam1, bool down)
+{
+	if (down)
+	{
+		s_modLockFlags |= kModLockFlag_Locked;
+	}
+	else
+	{
+		if ((s_modLockFlags & kModLockFlag_LockedToggle) != 0)
+		{
+			s_modLockFlags = 0;
+		}
+		else
+		{
+			s_modLockFlags |= kModLockFlag_LockedToggle;
+		}
 	}
 }
 
@@ -2579,6 +2792,7 @@ static void VirtkKB_KeyboardPresetToggle(const VirtKeyDef *keyDef, uint32_t uPar
 {
 	if (down)
 	{
+		s_vkbUserZoomPan = true;
 		VirtkKB_KeyboardSetPreset((s_curKeyboardZoomPreset + 1) % VkbZoom_NumOf);
 	}
 }
@@ -2959,6 +3173,8 @@ void VirtKB_SetVKBPanZoom(float kbdZoom, float kbdPanX, float kbdPanY)
 		s_vkbZoom = s_VkbMinZoom;
 	}
 
+	s_vkbUserZoomPan = true;
+
 	VirtKB_UpdateVkbVerts();
 }
 
@@ -3064,4 +3280,30 @@ void VirtKB_VJStickSetDiagSensitivity(float sensitivity)
     {
         _virtJoy->setDiagSensitivity(sensitivity);
     }
+}
+
+int VirtKB_FindLocaleID(const char* localeStr)
+{
+	if (localeStr) {
+		for (int i = 0; i < kLocale_Numof; ++i) {
+			if (strcmp(localeStr, kLocaleIDStrs[i]) == 0) {
+				return i;
+			}
+		}
+	}
+	return -1;
+}
+
+int VirtKB_GetVKBRegion()
+{
+	return s_curVKBRegionID;
+}
+
+void VirtKB_SetVKBRegion(const char* localeStr)
+{
+	int newLocaleID = VirtKB_FindLocaleID(localeStr);
+	if (newLocaleID >= 0 && newLocaleID != s_curVKBRegionID)
+	{
+		s_curVKBRegionID = newLocaleID;
+	}
 }

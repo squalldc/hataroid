@@ -32,6 +32,15 @@ enum
 	InputLayer_VirtController,
 };
 
+enum
+{
+	kLocale_EN = 0,
+	kLocale_DE,
+	kLocale_FR,
+
+	kLocale_Numof
+};
+
 #define VKB_MaxTouches 5
 
 
@@ -87,5 +96,9 @@ extern void VirtKB_VJStickEnable(bool useVJStick);
 extern void VirtKB_VJStickSetFloating(bool vjStickFloating);
 extern void VirtKB_VJStickSetDeadZone(float size);
 extern void VirtKB_VJStickSetDiagSensitivity(float sensitivity);
+
+extern int VirtKB_FindLocaleID(const char* localeStr);
+extern int VirtKB_GetVKBRegion();
+extern void VirtKB_SetVKBRegion(const char* localeStr);
 
 #endif /* VIRTKB_H_ */

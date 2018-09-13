@@ -189,6 +189,7 @@
     <string name="input_onscreen_hide_all_summary">Hides all on screen controls</string>
     <string name="input_onscreen_only_joy">Show joystick only</string>
     <string name="input_onscreen_only_joy_summary">Hides everything except for the on screen joystick</string>
+    <string name="input_keyboard_region">ST Keyboard Region</string>
     <string name="mouseemutype">Mouse Button Emulation Type</string>
     <string name="mousespeed">Mouse Emulation Speed</string>
     <string name="AppDescription">Atari ST Emulator</string>
@@ -322,7 +323,7 @@
 	<string name="midi_hardware_out_summary">Send MIDI output to a connected MIDI device. Soft synth will be disabled</string>
 	<string name="midi_hardware_in">Input from USB MIDI device (experimental)</string>
 	<string name="midi_hardware_in_summary">Receive MIDI input from a connected MIDI device</string>
-	<string name="pref_help_online">Help (http://sites.google.com/site/hataroid/help)</string>
+	<string name="pref_help_online">Help / Manual</string>
 	<string name="shader_effect">Shader Effect</string>
 	<string name="shader">Shader</string>
 

@@ -574,6 +574,7 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 		if ( IPF_Insert ( Drive , EmulationDrives[Drive].pBuffer , nImageBytes ) == false )
 		{
 			free ( EmulationDrives[Drive].pBuffer );
+			EmulationDrives[Drive].pBuffer = NULL;
 			return false;
 		}
 	}
@@ -584,6 +585,7 @@ bool Floppy_InsertDiskIntoDrive(int Drive)
 		if ( STX_Insert ( Drive , filename , EmulationDrives[Drive].pBuffer , nImageBytes ) == false )
 		{
 			free ( EmulationDrives[Drive].pBuffer );
+			EmulationDrives[Drive].pBuffer = NULL;
 			return false;
 		}
 	}

@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -36,6 +37,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.RetroSoft.Hataroid.HataroidActivity;
+import com.RetroSoft.Hataroid.HataroidTVActivity;
 import com.RetroSoft.Hataroid.R;
 import com.RetroSoft.Hataroid.FileBrowser.FileBrowser;
 import com.RetroSoft.Hataroid.Input.Input;
@@ -89,6 +91,7 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 
 	public static final String kPrefName_InputDevice_InputMethod		= "pref_input_device_inputmethod";
 	public static final String kPrefName_InputDevice_ConfigureMap		= "pref_input_device_configuremap";
+	public final static String kPrefName_Input_KeyboardRegion           = "pref_input_keyboard_region";
 
 	public static final String kPrefName_OnScreen_ConfigureShortcutsMap	= "pref_input_onscreen_configureshortcutmap";
 
@@ -182,6 +185,9 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 
 			// add shorcut keys mapping click hooks
 			linkConfigureView(kPrefName_OnScreen_ConfigureShortcutsMap, SHORTCUTMAPACTIVITYRESULT_OK, ShortcutMapConfigureView.class, null, null);
+
+			// add on input region changed so the input configuration views work straight away with new region
+			linkKeyboardRegionListener();
 		}
 		else if (action.equals("com.RetroSoft.Hataroid.action.prefsystem"))
 		{
@@ -276,6 +282,24 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		}
 		catch (Exception e)
 		{
+			e.printStackTrace();
+		}
+	}
+
+	@Override protected void onDestroy()
+	{
+		super.onDestroy();
+
+		try {
+			if (_refreshRateMeasureDialog != null) {
+				_refreshRateMeasureDialog.dismiss();
+				_refreshRateMeasureDialog = null;
+				Choreographer.getInstance().removeFrameCallback(_refreshRateMeasureCallback);
+				Log.i("hataroid", "remove choreographer callback as settings activity getting destroyed");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} catch (Error e) {
 			e.printStackTrace();
 		}
 	}
@@ -817,10 +841,39 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 
 	void _onHelpClicked(Preference pref)
 	{
+		boolean isAndroidTV = false;
 		try
 		{
-			Intent myIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(kHelpSiteLink));
-			startActivity(myIntent);
+			if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEVISION)
+				|| getPackageManager().hasSystemFeature(PackageManager.FEATURE_LEANBACK)) {
+				isAndroidTV = true;
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
+		try
+		{
+			if (isAndroidTV) {
+
+				AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+				alertDialog.setTitle("Help / Manual");
+				alertDialog.setMessage("To view the help / manual pages, please go to the following site on another device (eg. your phone or desktop computer.\n\n"
+						+ "(Due to Android TV guidelines not allowing links to web content)\n\n"
+						+ "sites.google.com/site/hataroid/help\n"
+				);
+				alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Ok", new DialogInterface.OnClickListener() { public void onClick(DialogInterface dialog, int which) { } });
+				alertDialog.setCancelable(true);
+				alertDialog.setCanceledOnTouchOutside(true);
+				alertDialog.show();
+
+			} else {
+
+				Intent myIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(kHelpSiteLink));
+				startActivity(myIntent);
+			}
 		}
 		catch (Exception e)
 		{
@@ -1017,6 +1070,67 @@ public class Settings extends PreferenceActivity implements OnSharedPreferenceCh
 		});
 		alertDialog.show();
 	}
+
+	void linkKeyboardRegionListener()
+	{
+		try
+		{
+			ListPreference p = (ListPreference)findPreference(kPrefName_Input_KeyboardRegion);
+			if (p != null)
+			{
+				p.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+					@Override
+					public boolean onPreferenceChange(Preference preference, Object newValue) {
+						try {
+							if (newValue != null && HataroidActivity.instance != null) {
+								String localeStr = newValue.toString();
+								Input input = HataroidActivity.instance.getInput();
+								input.setLocaleID(localeStr, true);
+
+								int newLocaleID = input.getLocaleID();
+								String infoMsg = null;
+								if (newLocaleID == Input.kLocale_FR) {
+									infoMsg = "Vous devez définir une ST TOS ROM française pour fonctionner correctement";
+									infoMsg += "\n\n(A French ST TOS ROM needs to be set for this to work correctly)";
+								} else if (newLocaleID == Input.kLocale_DE){
+									infoMsg = "Sie müssen ein deutsches ST TOS ROM einrichten, damit es ordnungsgemäß funktioniert";
+									infoMsg += "\n\n(A German ST TOS ROM needs to be set for this to work correctly)";
+								}
+								_showKeyboardRegionHelp(infoMsg);
+							}
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+						//Log.i("hataroid", "Pref region changed: " + newValue.toString());
+						return true;
+					}
+				});
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		catch (Error e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	void _showKeyboardRegionHelp(String infoMsg)
+	{
+		if (infoMsg != null) {
+			AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+			alertDialog.setTitle("Keyboard Help");
+			alertDialog.setMessage(infoMsg);
+			alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Ok", new DialogInterface.OnClickListener() {
+				public void onClick(DialogInterface dialog, int which) {
+				}
+			});
+			alertDialog.show();
+		}
+	}
+
 
 	void _checkSeekBarKeyInput(int incr, int keyCode, KeyEvent event)
 	{

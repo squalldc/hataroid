@@ -1505,6 +1505,11 @@ void _optionSetOnScreenJoyAlpha(const OptionSetting *setting, const char *val, E
 	VirtKB_SetJoystickAlpha(alpha);
 }
 
+void _optionsKeyboardRegion(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
+{
+	VirtKB_SetVKBRegion(val);
+}
+
 void _optionSetJoystickSize(const OptionSetting *setting, const char *val, EmuCommandSetOptions_Data *data)
 {
 	float size = _getOptionFloatPercent(val, 0.1f, 3.0f);
@@ -1911,6 +1916,7 @@ static const OptionSetting s_OptionsMap[] =
 	{ "pref_input_mouse_speed", _optionSetMouseSpeed, 0 },
 	{ "pref_input_onscreen_alpha", _optionSetOnScreenAlpha, 0 },
 	{ "pref_input_onscreen_joy_alpha", _optionSetOnScreenJoyAlpha, 0 },
+	{ "pref_input_keyboard_region", _optionsKeyboardRegion, 0},
 	{ "pref_system_blitteremulation", _optionSetBlitter, _optionValBlitter },
 	{ "pref_system_cpuclock", _optionSetCPUFreq, _optionValCPUFreq },
 	{ "pref_system_cputype", _optionSetCPUType, _optionValCPUType },

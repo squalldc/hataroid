@@ -1,18 +1,21 @@
 package com.RetroSoft.Hataroid.Input;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import android.annotation.SuppressLint;
+import android.util.Log;
 
 @SuppressLint("UseSparseArrays")
 public class InputMap
 {
-	public int [] srcToDestMap = null;
-	public Map<Integer, List<Integer>> destToSrcMap = null;
-	public int numDestInputs = 0;
+	public int []                       srcToDestMap = null;
+	public Map<Integer, List<Integer>>  destToSrcMap = null;
+	public int                          numDestInputs = 0;
 
 	public InputMap() { }
 	
@@ -25,16 +28,16 @@ public class InputMap
 		destToSrcMap.clear();
 	}
 	
-	public void addDefaults()
+	private void addDefaults(int localeID)
 	{
 		for (int i = 0; i < VirtKeyDef.kDefs.length; ++i)
 		{
 			VirtKeyDef vk = VirtKeyDef.kDefs[i];
-			addKeyMapEntry((int)vk.androidKeycode, vk.id);
+			addKeyMapEntry((int)vk.getAndroidKeyCode(localeID), vk.id);
 		}
 	}
 	
-	public void init(int numSrcInputs_)
+	public void init(int numSrcInputs_, int localeID)
 	{
 		srcToDestMap = new int [numSrcInputs_];
 		destToSrcMap = new HashMap<Integer, List<Integer>>();
@@ -44,12 +47,12 @@ public class InputMap
 		clear();
 
 		// default map
-		addDefaults();
+		addDefaults(localeID);
 	}
 	
-	public void initFromArray(int numSrcInputs_, int [] inputMap)
+	public void initFromArray(int numSrcInputs_, int [] inputMap, int localeID)
 	{
-		init(numSrcInputs_);
+		init(numSrcInputs_, localeID);
 
 		if (inputMap == null) { return; }
 		
@@ -67,6 +70,8 @@ public class InputMap
 				addKeyMapEntry(srcKey, destKey);
 			}
 		}
+
+		autoRemapRegionKeys(localeID);
 	}
 	
 	public boolean removeKeyMapEntry(int srcKey)
@@ -152,5 +157,66 @@ public class InputMap
 			}
 		}
 		return s;
+	}
+
+	public void autoRemapRegionKeys(int localeID)
+	{
+		// (src) android key id -> (dst) virt key id
+		try
+		{
+			HashSet<Integer>    remapIDs = new HashSet<Integer>();
+			List<Integer>       removeIDs = new ArrayList<Integer>();
+
+			for (int i = VirtKeyDef.VKB_KEY_F1; i < VirtKeyDef.VKB_KEY_KEYBOARDTOGGLE; ++i) // first st key to the last st key on the virt keyboard
+			{
+				VirtKeyDef vk = VirtKeyDef.kDefs[i];
+				if ((vk.flags & VirtKeyDef.FLAG_REGION_REMAP) != 0)
+				{
+					//Log.i("hataroid", "remapping: \"" + vk.name[0] + "\" to \"" + vk.name[localeID] + "\"");
+					remapIDs.clear();
+
+					int desiredAndroidKeyID = vk.getAndroidKeyCode(localeID);
+
+					for (int j = 0; j < vk.androidKeycode.length; ++j) {
+						if (j != localeID) {
+							remapIDs.add((int)vk.androidKeycode[j]);
+						}
+					}
+
+					int curAndroidKeyID = -1;
+					List<Integer> sysKeys = destToSrcMap.get(i);
+					if (sysKeys != null)
+					{
+						removeIDs.clear();
+						for (int skey : sysKeys) {
+							if (skey == desiredAndroidKeyID) {
+								curAndroidKeyID = skey;
+							} else if (remapIDs.contains(skey)) {
+								removeIDs.add(skey);
+							}
+						}
+						for (int rkey : removeIDs)
+						{
+							removeKeyMapEntry(rkey);
+							//Log.i("hataroid", "regionremap: removing \"" + AndroidKeyNames.kKeyCodeNames[rkey] + "\" for \"" + vk.name[0] + "\" (mapped key: \"" + vk.name[localeID]+ "\")");
+						}
+					}
+
+					if (curAndroidKeyID != desiredAndroidKeyID) {
+						if (curAndroidKeyID != -1) {
+							removeKeyMapEntry(curAndroidKeyID);
+							//Log.i("hataroid", "regionremap: removing \"" + AndroidKeyNames.kKeyCodeNames[curAndroidKeyID] + "\" for \"" + vk.name[0] + "\" (mapped key: \"" + vk.name[localeID]+ "\")");
+						}
+						if (desiredAndroidKeyID != -1) {
+							addKeyMapEntry(desiredAndroidKeyID, i);
+							//Log.i("hataroid", "regionremap: adding\"" + AndroidKeyNames.kKeyCodeNames[desiredAndroidKeyID] + "\" for \"" + vk.name[0] + "\" (mapped key: \"" + vk.name[localeID]+ "\")");
+						}
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 }

@@ -1,5 +1,7 @@
 package com.RetroSoft.Hataroid.Input.Shortcut;
 
+import com.RetroSoft.Hataroid.Input.Input;
+import com.RetroSoft.Hataroid.Input.InputMap;
 import com.RetroSoft.Hataroid.Input.VirtKeyDef;
 
 
@@ -7,12 +9,14 @@ public class ShortcutMapListItem implements Comparable<ShortcutMapListItem>
 {
 	int			_anchor = -1;
 	int			_shortcutIdx = -1;
+	int         _localeID = Input.kLocale_EN;
 	VirtKeyDef	_vkDef = null;
 
-	public ShortcutMapListItem(VirtKeyDef def, int anchor, int shortcutIdx)
+	public ShortcutMapListItem(VirtKeyDef def, int anchor, int shortcutIdx, int localeID)
 	{
 		_anchor = anchor;
 		_shortcutIdx = shortcutIdx;
+		_localeID = localeID;
 		_vkDef = def;
 	}
 	
@@ -23,7 +27,7 @@ public class ShortcutMapListItem implements Comparable<ShortcutMapListItem>
 	
 	public String getEmuKeyName()
 	{
-		return (_vkDef!=null) ? _vkDef.name : "";
+		return (_vkDef!=null) ? _vkDef.getName(_localeID) : "";
 	}
 	
 	public String getShortcutName()

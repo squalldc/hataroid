@@ -63,6 +63,8 @@ public class ShortcutMapConfigureView extends ListActivity implements OnItemSele
 	String					_curPresetID = null;
 	ShortcutMap				_curShortcutMap = null;
 
+	int                     _localeID = Input.kLocale_EN;
+
 	@Override public void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
@@ -70,6 +72,17 @@ public class ShortcutMapConfigureView extends ListActivity implements OnItemSele
 		setContentView(R.layout.shortcutmap_view);
 
 		_parseOptions(savedInstanceState);
+
+		_localeID = Input.kLocale_EN;
+		try {
+			if (HataroidActivity.instance != null) {
+				_localeID = HataroidActivity.instance.getInput().getLocaleID();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} catch (Error e) {
+			e.printStackTrace();
+		}
 
 		try
 		{
@@ -176,7 +189,7 @@ public class ShortcutMapConfigureView extends ListActivity implements OnItemSele
 					try
 					{
 						Map<String,Object> result = new HashMap<String,Object>();
-						error = !ShortcutMap.decodeShortcutMapPref(entry.getValue().toString(), result);
+						error = !ShortcutMap.decodeShortcutMapPref(entry.getValue().toString(), _localeID, result);
 						if (!error)
 						{
 							_userPresetNameList.put(id, (String)result.get("name"));
@@ -426,7 +439,7 @@ public class ShortcutMapConfigureView extends ListActivity implements OnItemSele
 		if (ShortcutMap.isSystemPreset(_curPresetID))
 		{
 			// system preset
-			_curShortcutMap = new ShortcutMap();
+			_curShortcutMap = new ShortcutMap(_localeID);
 		}
 		else
 		{
@@ -435,7 +448,7 @@ public class ShortcutMapConfigureView extends ListActivity implements OnItemSele
 			if (_curShortcutMap == null)
 			{
 				// create new one
-				_curShortcutMap = new ShortcutMap();
+				_curShortcutMap = new ShortcutMap(_localeID);
 				_userPresetList.put(_curPresetID, _curShortcutMap);
 			}
 		}
@@ -455,7 +468,7 @@ public class ShortcutMapConfigureView extends ListActivity implements OnItemSele
 					{
 						vkDef = VirtKeyDef.kDefs[vkId];
 					}
-					items.add(new ShortcutMapListItem(vkDef, a, k));
+					items.add(new ShortcutMapListItem(vkDef, a, k, _localeID));
 				}
 			}
 			Collections.sort(items);
@@ -773,7 +786,7 @@ public class ShortcutMapConfigureView extends ListActivity implements OnItemSele
 		_presetNameList.add(newPresetName);
 		
 		// create new input map
-		ShortcutMap map = new ShortcutMap();
+		ShortcutMap map = new ShortcutMap(_localeID);
 		_userPresetList.put(newPresetID, map);
 		_userPresetOrder.add(newPresetID);
 		_userPresetNameList.put(newPresetID, newPresetName);

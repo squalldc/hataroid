@@ -44,7 +44,7 @@
 		android:title="@string/sound_drives_enabled"
 		android:summaryOn="@string/sound_drives_enabled_summary"
 		android:summaryOff="@string/sound_drives_enabled_summary"
-		android:defaultValue="false" />
+		android:defaultValue="true" />
 	<com.RetroSoft.Hataroid.Preferences.SeekBarPreference
 		android:persistent="true"
 		android:key="pref_sound_drives_vol"

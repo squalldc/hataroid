@@ -3,14 +3,14 @@ package com.RetroSoft.Hataroid.Input;
 public class VirtKeyDef
 {
 	public int		id;
-	public String		name;
-	public short		androidKeycode;
+	public String[]		name;
+	public short[]		androidKeycode;
 	public short		config;
 	public short		scut;
 	public short		sort;
 	public int		flags;
 
-	public VirtKeyDef(int id_, String name_, short androidKeycode_, short config_, short scut_, short sort_, int flags_)
+	public VirtKeyDef(int id_, String[] name_, short[] androidKeycode_, short config_, short scut_, short sort_, int flags_)
 	{
 		id = id_;
 		name = name_;
@@ -20,6 +20,9 @@ public class VirtKeyDef
 		sort = sort_;
 		flags = flags_;
 	}
+
+	public String getName(int localeID)				{ return name[localeID]; }
+	public short getAndroidKeyCode(int localeID)	{ return androidKeycode[localeID]; }
 
 	public final static int VKB_KEY_F1		= 0;
 	public final static int VKB_KEY_F2		= 1;
@@ -159,163 +162,178 @@ public class VirtKeyDef
 	public final static int VKB_KEY_NAVDOWN		= 137;
 	public final static int VKB_KEY_NAVUP		= 138;
 	public final static int VKB_KEY_NAVBTN		= 139;
+	public final static int VKB_KEY_LEFTSHIFT_HOLD		= 140;
+	public final static int VKB_KEY_RIGHTSHIFT_HOLD		= 141;
+	public final static int VKB_KEY_ALTERNATE_HOLD		= 142;
+	public final static int VKB_KEY_CONTROL_HOLD		= 143;
+	public final static int VKB_KEY_MODLOCK		= 144;
+	public final static int VKB_KEY_BKG		= 145;
 
-	public final static int VKB_KEY_NumOf		= 140;
+	public final static int VKB_KEY_NumOf		= 146;
 
 	public final static int FLAG_STFNKEY		= (1<<0);
 	public final static int FLAG_POLY		= (1<<1);
 	public final static int FLAG_STKEY		= (1<<2);
-	public final static int FLAG_CUSTOMKEY		= (1<<3);
-	public final static int FLAG_PERSIST		= (1<<4);
-	public final static int FLAG_JOY		= (1<<5);
-	public final static int FLAG_VKB		= (1<<6);
-	public final static int FLAG_SCREEN2		= (1<<7);
-	public final static int FLAG_SCREEN		= (1<<8);
-	public final static int FLAG_MOUSE		= (1<<9);
-	public final static int FLAG_MOUSEBUTTON		= (1<<10);
-	public final static int FLAG_MAIN		= (1<<11);
+	public final static int FLAG_REGION_REMAP		= (1<<3);
+	public final static int FLAG_MODKEY		= (1<<4);
+	public final static int FLAG_CUSTOMKEY		= (1<<5);
+	public final static int FLAG_PERSIST		= (1<<6);
+	public final static int FLAG_JOY		= (1<<7);
+	public final static int FLAG_VKB		= (1<<8);
+	public final static int FLAG_SCREEN		= (1<<9);
+	public final static int FLAG_SCREEN2		= (1<<10);
+	public final static int FLAG_MOUSE		= (1<<11);
+	public final static int FLAG_MOUSEBUTTON		= (1<<12);
+	public final static int FLAG_MAIN		= (1<<13);
+	public final static int FLAG_HOLDKEY		= (1<<14);
 
 
 	public final static VirtKeyDef[] kDefs = {
-		new VirtKeyDef(VKB_KEY_F1, "F1", (short)131, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
-		new VirtKeyDef(VKB_KEY_F2, "F2", (short)132, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
-		new VirtKeyDef(VKB_KEY_F3, "F3", (short)133, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
-		new VirtKeyDef(VKB_KEY_F4, "F4", (short)134, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
-		new VirtKeyDef(VKB_KEY_F5, "F5", (short)135, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
-		new VirtKeyDef(VKB_KEY_F6, "F6", (short)136, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
-		new VirtKeyDef(VKB_KEY_F7, "F7", (short)137, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
-		new VirtKeyDef(VKB_KEY_F8, "F8", (short)138, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
-		new VirtKeyDef(VKB_KEY_F9, "F9", (short)139, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
-		new VirtKeyDef(VKB_KEY_F10, "F10", (short)140, (short)1, (short)1, (short)1, FLAG_POLY|FLAG_STFNKEY),
-		new VirtKeyDef(VKB_KEY_ESC, "Esc", (short)111, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_1, "1", (short)8, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_2, "2", (short)9, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_3, "3", (short)10, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_4, "4", (short)11, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_5, "5", (short)12, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_6, "6", (short)13, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_7, "7", (short)14, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_8, "8", (short)15, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_9, "9", (short)16, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_0, "0", (short)7, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_SUBTRACT, "- (Minus)", (short)69, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_EQUAL, "= (Equal)", (short)70, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_BACKQUOTE, "` (Backquote)", (short)68, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_BACKSPACE, "Backspace", (short)67, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_HELP, "Help", (short)-1, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_UNDO, "Undo", (short)-1, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_LEFTPAREN, "Numpad (", (short)162, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_RIGHTPAREN, "Numpad )", (short)163, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_DIVIDE, "Numpad /", (short)154, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_MULTIPLY, "Numpad *", (short)155, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_TAB, "Tab", (short)61, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_Q, "Q", (short)45, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_W, "W", (short)51, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_E, "E", (short)33, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_R, "R", (short)46, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_T, "T", (short)48, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_Y, "Y", (short)53, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_U, "U", (short)49, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_I, "I", (short)37, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_O, "O", (short)43, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_P, "P", (short)44, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_LEFTBRACKET, "[ (Left Bracket)", (short)71, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_RIGHTBRACKET, "] (Right Bracket)", (short)72, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_RETURN, "Return", (short)66, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_DELETE, "Delete", (short)112, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_INSERT, "Insert", (short)124, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_UPARROW, "Arrow Up", (short)19, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_HOME, "Home", (short)-1, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_7, "Numpad 7", (short)151, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_8, "Numpad 8", (short)152, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_9, "Numpad 9", (short)153, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_SUBTRACT, "Numpad -", (short)156, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_CONTROL, "Control", (short)113, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_A, "A", (short)29, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_S, "S", (short)47, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_D, "D", (short)32, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_F, "F", (short)34, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_G, "G", (short)35, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_H, "H", (short)36, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_J, "J", (short)38, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_K, "K", (short)39, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_L, "L", (short)40, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_SEMICOLON, "; (Semicolon)", (short)74, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_APOSTROPHE, "' (Apostrophe)", (short)75, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_RETURN, "Return", (short)66, (short)0, (short)0, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_TILDA, "~ (Tilda)", (short)-1, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_LEFTARROW, "Arrow Left", (short)21, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_DOWNARROW, "Arrow Down", (short)20, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_RIGHTARROW, "Arrow Right", (short)22, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_4, "Numpad 4", (short)148, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_5, "Numpad 5", (short)149, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_6, "Numpad 6", (short)150, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_ADD, "Numpad +", (short)157, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_LEFTSHIFT, "Left Shift", (short)59, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_BACKSLASH, "\\ (Backslash)", (short)73, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_Z, "Z", (short)54, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_X, "X", (short)52, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_C, "C", (short)31, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_V, "V", (short)50, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_B, "B", (short)30, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_N, "N", (short)42, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_M, "M", (short)41, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_COMMA, ", (Comma)", (short)55, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_PERIOD, ". (Period)", (short)56, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_FORWARDSLASH, "/ (Forward Slash)", (short)76, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_RIGHTSHIFT, "Right Shift", (short)60, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_1, "Numpad 1", (short)145, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_2, "Numpad 2", (short)146, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_3, "Numpad 3", (short)147, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_ENTER, "Numpad Enter", (short)160, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_ALTERNATE, "Alternate", (short)57, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_SPACE, "Space", (short)62, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_CAPS, "Capslock", (short)115, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_0, "Numpad 0", (short)144, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_PERIOD, "Numpad . (Period)", (short)158, (short)1, (short)1, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_NUMPAD_ENTER, "Numpad Enter", (short)160, (short)0, (short)0, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_KEYBOARDTOGGLE, "Toggle Keyboard", (short)-1, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_PERSIST),
-		new VirtKeyDef(VKB_KEY_KEYBOARDTOGGLE_SEL, "Toggle Keyboard", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_PERSIST),
-		new VirtKeyDef(VKB_KEY_JOYLEFT, "Joystick Left", (short)-1, (short)1, (short)1, (short)1, FLAG_JOY),
-		new VirtKeyDef(VKB_KEY_JOYRIGHT, "Joystick Right", (short)-1, (short)1, (short)1, (short)2, FLAG_JOY),
-		new VirtKeyDef(VKB_KEY_JOYDOWN, "Joystick Down", (short)-1, (short)1, (short)1, (short)4, FLAG_JOY),
-		new VirtKeyDef(VKB_KEY_JOYUP, "Joystick Up", (short)-1, (short)1, (short)1, (short)3, FLAG_JOY),
-		new VirtKeyDef(VKB_KEY_JOYFIRE_OLD, "Joystick Fire Old", (short)-1, (short)0, (short)0, (short)0, FLAG_JOY),
-		new VirtKeyDef(VKB_KEY_KEYBOARDZOOM, "Keyboard Zoom", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_VKB),
-		new VirtKeyDef(VKB_KEY_KEYBOARDZOOM_SEL, "Keyboard Zoom", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_VKB),
-		new VirtKeyDef(VKB_KEY_SCREENZOOM, "Screen Zoom", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_SCREEN|FLAG_SCREEN2),
-		new VirtKeyDef(VKB_KEY_SCREENZOOM_SEL, "Screen Zoom", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_SCREEN|FLAG_SCREEN2),
-		new VirtKeyDef(VKB_KEY_MOUSETOGGLE, "Toggle Mouse/Joystick", (short)-1, (short)1, (short)0, (short)10, FLAG_CUSTOMKEY|FLAG_JOY),
-		new VirtKeyDef(VKB_KEY_JOYTOGGLE, "Toggle Mouse/Joystick", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MOUSE),
-		new VirtKeyDef(VKB_KEY_MOUSELB, "Left Mouse Button", (short)-1, (short)1, (short)0, (short)0, FLAG_MOUSEBUTTON),
-		new VirtKeyDef(VKB_KEY_MOUSERB, "Right Mouse Button", (short)-1, (short)1, (short)0, (short)0, FLAG_MOUSEBUTTON),
-		new VirtKeyDef(VKB_KEY_NORMALSPEED, "Toggle Turbo Speed", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
-		new VirtKeyDef(VKB_KEY_TURBOSPEED, "Toggle Turbo Speed", (short)-1, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
-		new VirtKeyDef(VKB_KEY_SCREENPRESETS, "Cycle Screen Zoom Presets", (short)-1, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_SCREEN2),
-		new VirtKeyDef(VKB_KEY_KEYBOARDPRESETS, "Cycle Keyboard Zoom Presets", (short)-1, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_VKB),
-		new VirtKeyDef(VKB_KEY_JOYFIRE, "Joystick Fire", (short)-1, (short)1, (short)0, (short)0, FLAG_JOY),
-		new VirtKeyDef(VKB_KEY_LEFTSHIFT_BUTTON, "Left Shift Button", (short)-1, (short)0, (short)0, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_RIGHTSHIFT_BUTTON, "Right Shift Button", (short)-1, (short)0, (short)0, (short)0, FLAG_STKEY),
-		new VirtKeyDef(VKB_KEY_TOGGLEUI, "Toggle UI", (short)-1, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY),
-		new VirtKeyDef(VKB_KEY_AUTOFIRE, "Toggle Auto Fire", (short)-1, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY),
-		new VirtKeyDef(VKB_KEY_QUICKSAVESTATE, "Quick Save State", (short)-1, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY),
-		new VirtKeyDef(VKB_KEY_QUICKLOADSTATE, "Quick Load State", (short)-1, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY),
-		new VirtKeyDef(VKB_KEY_ANDROID_MENU, "Android Soft Menu", (short)-1, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
-		new VirtKeyDef(VKB_KEY_FLOPPY_MENU, "Floppy Menu", (short)-1, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
-		new VirtKeyDef(VKB_KEY_JOY2LEFT, "Joystick 2 Left", (short)-1, (short)1, (short)1, (short)6, FLAG_JOY),
-		new VirtKeyDef(VKB_KEY_JOY2RIGHT, "Joystick 2 Right", (short)-1, (short)1, (short)1, (short)7, FLAG_JOY),
-		new VirtKeyDef(VKB_KEY_JOY2DOWN, "Joystick 2 Down", (short)-1, (short)1, (short)1, (short)9, FLAG_JOY),
-		new VirtKeyDef(VKB_KEY_JOY2UP, "Joystick 2 Up", (short)-1, (short)1, (short)1, (short)8, FLAG_JOY),
-		new VirtKeyDef(VKB_KEY_JOY2FIRE, "Joystick 2 Fire", (short)-1, (short)1, (short)0, (short)5, FLAG_JOY),
-		new VirtKeyDef(VKB_KEY_FLOPPYA_INSERT, "Floppy A Insert", (short)-1, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
-		new VirtKeyDef(VKB_KEY_FLOPPYB_INSERT, "Floppy B Insert", (short)-1, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
-		new VirtKeyDef(VKB_KEY_SETTINGS_MENU, "Settings Menu", (short)-1, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
-		new VirtKeyDef(VKB_KEY_ANDROID_BACK, "Android Back", (short)4, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
-		new VirtKeyDef(VKB_KEY_PAUSE, "Pause Toggle", (short)-1, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
-		new VirtKeyDef(VKB_KEY_NAVLEFT, "Nav Left", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
-		new VirtKeyDef(VKB_KEY_NAVRIGHT, "Nav Right", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
-		new VirtKeyDef(VKB_KEY_NAVDOWN, "Nav Down", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
-		new VirtKeyDef(VKB_KEY_NAVUP, "Nav Up", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
-		new VirtKeyDef(VKB_KEY_NAVBTN, "Nav Button", (short)-1, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN)
+		new VirtKeyDef(VKB_KEY_F1, new String[] { "F1", "F1", "F1" }, new short[] { (short)131, (short)131, (short)131 }, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
+		new VirtKeyDef(VKB_KEY_F2, new String[] { "F2", "F2", "F2" }, new short[] { (short)132, (short)132, (short)132 }, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
+		new VirtKeyDef(VKB_KEY_F3, new String[] { "F3", "F3", "F3" }, new short[] { (short)133, (short)133, (short)133 }, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
+		new VirtKeyDef(VKB_KEY_F4, new String[] { "F4", "F4", "F4" }, new short[] { (short)134, (short)134, (short)134 }, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
+		new VirtKeyDef(VKB_KEY_F5, new String[] { "F5", "F5", "F5" }, new short[] { (short)135, (short)135, (short)135 }, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
+		new VirtKeyDef(VKB_KEY_F6, new String[] { "F6", "F6", "F6" }, new short[] { (short)136, (short)136, (short)136 }, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
+		new VirtKeyDef(VKB_KEY_F7, new String[] { "F7", "F7", "F7" }, new short[] { (short)137, (short)137, (short)137 }, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
+		new VirtKeyDef(VKB_KEY_F8, new String[] { "F8", "F8", "F8" }, new short[] { (short)138, (short)138, (short)138 }, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
+		new VirtKeyDef(VKB_KEY_F9, new String[] { "F9", "F9", "F9" }, new short[] { (short)139, (short)139, (short)139 }, (short)1, (short)1, (short)0, FLAG_POLY|FLAG_STFNKEY),
+		new VirtKeyDef(VKB_KEY_F10, new String[] { "F10", "F10", "F10" }, new short[] { (short)140, (short)140, (short)140 }, (short)1, (short)1, (short)1, FLAG_POLY|FLAG_STFNKEY),
+		new VirtKeyDef(VKB_KEY_ESC, new String[] { "Esc", "Esc", "Esc" }, new short[] { (short)111, (short)111, (short)111 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_1, new String[] { "1", "1", "1" }, new short[] { (short)8, (short)8, (short)8 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_2, new String[] { "2", "2", "2" }, new short[] { (short)9, (short)9, (short)9 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_3, new String[] { "3", "3", "3" }, new short[] { (short)10, (short)10, (short)10 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_4, new String[] { "4", "4", "4" }, new short[] { (short)11, (short)11, (short)11 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_5, new String[] { "5", "5", "5" }, new short[] { (short)12, (short)12, (short)12 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_6, new String[] { "6", "6", "6" }, new short[] { (short)13, (short)13, (short)13 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_7, new String[] { "7", "7", "7" }, new short[] { (short)14, (short)14, (short)14 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_8, new String[] { "8", "8", "8" }, new short[] { (short)15, (short)15, (short)15 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_9, new String[] { "9", "9", "9" }, new short[] { (short)16, (short)16, (short)16 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_0, new String[] { "0", "0", "0" }, new short[] { (short)7, (short)7, (short)7 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_SUBTRACT, new String[] { "- (Minus)", "\u00df", ") (Right Bracket)" }, new short[] { (short)69, (short)-1, (short)-1 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_EQUAL, new String[] { "= (Equal)", "\u00b4 (Acute Accent)", "- (Minus)" }, new short[] { (short)70, (short)-1, (short)69 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_BACKQUOTE, new String[] { "` (Backquote)", "#", "` (Grave Accent)" }, new short[] { (short)68, (short)-1, (short)68 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_BACKSPACE, new String[] { "Backspace", "Backspace", "Backspace" }, new short[] { (short)67, (short)67, (short)67 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_HELP, new String[] { "Help", "Help", "Help" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_UNDO, new String[] { "Undo", "Undo", "Undo" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_LEFTPAREN, new String[] { "Numpad (", "Numpad (", "Numpad (" }, new short[] { (short)162, (short)162, (short)162 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_RIGHTPAREN, new String[] { "Numpad )", "Numpad )", "Numpad )" }, new short[] { (short)163, (short)163, (short)163 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_DIVIDE, new String[] { "Numpad /", "Numpad /", "Numpad /" }, new short[] { (short)154, (short)154, (short)154 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_MULTIPLY, new String[] { "Numpad *", "Numpad *", "Numpad *" }, new short[] { (short)155, (short)155, (short)155 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_TAB, new String[] { "Tab", "Tab", "Tab" }, new short[] { (short)61, (short)61, (short)61 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_Q, new String[] { "Q", "Q", "A" }, new short[] { (short)45, (short)45, (short)29 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_W, new String[] { "W", "W", "Z" }, new short[] { (short)51, (short)51, (short)54 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_E, new String[] { "E", "E", "E" }, new short[] { (short)33, (short)33, (short)33 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_R, new String[] { "R", "R", "R" }, new short[] { (short)46, (short)46, (short)46 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_T, new String[] { "T", "T", "T" }, new short[] { (short)48, (short)48, (short)48 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_Y, new String[] { "Y", "Z", "Y" }, new short[] { (short)53, (short)54, (short)53 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_U, new String[] { "U", "U", "U" }, new short[] { (short)49, (short)49, (short)49 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_I, new String[] { "I", "I", "I" }, new short[] { (short)37, (short)37, (short)37 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_O, new String[] { "O", "O", "O" }, new short[] { (short)43, (short)43, (short)43 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_P, new String[] { "P", "P", "P" }, new short[] { (short)44, (short)44, (short)44 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_LEFTBRACKET, new String[] { "[ (Left Bracket)", "\u00dc", "^" }, new short[] { (short)71, (short)-1, (short)-1 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_RIGHTBRACKET, new String[] { "] (Right Bracket)", "+", "$" }, new short[] { (short)72, (short)81, (short)-1 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_RETURN, new String[] { "Return", "Return", "Return" }, new short[] { (short)66, (short)66, (short)66 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_DELETE, new String[] { "Delete", "Delete", "Delete" }, new short[] { (short)112, (short)112, (short)112 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_INSERT, new String[] { "Insert", "Insert", "Insert" }, new short[] { (short)124, (short)124, (short)124 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_UPARROW, new String[] { "Arrow Up", "Arrow Up", "Arrow Up" }, new short[] { (short)19, (short)19, (short)19 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_HOME, new String[] { "Home", "Home", "Home" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_7, new String[] { "Numpad 7", "Numpad 7", "Numpad 7" }, new short[] { (short)151, (short)151, (short)151 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_8, new String[] { "Numpad 8", "Numpad 8", "Numpad 8" }, new short[] { (short)152, (short)152, (short)152 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_9, new String[] { "Numpad 9", "Numpad 9", "Numpad 9" }, new short[] { (short)153, (short)153, (short)153 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_SUBTRACT, new String[] { "Numpad -", "Numpad -", "Numpad -" }, new short[] { (short)156, (short)156, (short)156 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_CONTROL, new String[] { "Control", "Control", "Control" }, new short[] { (short)113, (short)113, (short)113 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_MODKEY),
+		new VirtKeyDef(VKB_KEY_A, new String[] { "A", "A", "Q" }, new short[] { (short)29, (short)29, (short)45 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_S, new String[] { "S", "S", "S" }, new short[] { (short)47, (short)47, (short)47 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_D, new String[] { "D", "D", "D" }, new short[] { (short)32, (short)32, (short)32 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_F, new String[] { "F", "F", "F" }, new short[] { (short)34, (short)34, (short)34 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_G, new String[] { "G", "G", "G" }, new short[] { (short)35, (short)35, (short)35 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_H, new String[] { "H", "H", "H" }, new short[] { (short)36, (short)36, (short)36 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_J, new String[] { "J", "J", "J" }, new short[] { (short)38, (short)38, (short)38 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_K, new String[] { "K", "K", "K" }, new short[] { (short)39, (short)39, (short)39 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_L, new String[] { "L", "L", "L" }, new short[] { (short)40, (short)40, (short)40 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_SEMICOLON, new String[] { "; (Semicolon)", "\u00d6", "M" }, new short[] { (short)74, (short)-1, (short)41 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_APOSTROPHE, new String[] { "' (Apostrophe)", "\u00c4", "\u00f9" }, new short[] { (short)75, (short)-1, (short)-1 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_RETURN, new String[] { "Return", "Return", "Return" }, new short[] { (short)66, (short)66, (short)66 }, (short)0, (short)0, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_TILDA, new String[] { "~ (Tilda)", "~ (Tilda)", "#" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_LEFTARROW, new String[] { "Arrow Left", "Arrow Left", "Arrow Left" }, new short[] { (short)21, (short)21, (short)21 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_DOWNARROW, new String[] { "Arrow Down", "Arrow Down", "Arrow Down" }, new short[] { (short)20, (short)20, (short)20 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_RIGHTARROW, new String[] { "Arrow Right", "Arrow Right", "Arrow Right" }, new short[] { (short)22, (short)22, (short)22 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_4, new String[] { "Numpad 4", "Numpad 4", "Numpad 4" }, new short[] { (short)148, (short)148, (short)148 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_5, new String[] { "Numpad 5", "Numpad 5", "Numpad 5" }, new short[] { (short)149, (short)149, (short)149 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_6, new String[] { "Numpad 6", "Numpad 6", "Numpad 6" }, new short[] { (short)150, (short)150, (short)150 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_ADD, new String[] { "Numpad +", "Numpad +", "Numpad +" }, new short[] { (short)157, (short)157, (short)157 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_LEFTSHIFT, new String[] { "Left Shift", "Left Shift", "Left Shift" }, new short[] { (short)59, (short)59, (short)59 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_MODKEY),
+		new VirtKeyDef(VKB_KEY_BACKSLASH, new String[] { "\\ (Backslash)", "<", "<" }, new short[] { (short)73, (short)-1, (short)-1 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_Z, new String[] { "Z", "Y", "W" }, new short[] { (short)54, (short)53, (short)51 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_X, new String[] { "X", "X", "X" }, new short[] { (short)52, (short)52, (short)52 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_C, new String[] { "C", "C", "C" }, new short[] { (short)31, (short)31, (short)31 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_V, new String[] { "V", "V", "V" }, new short[] { (short)50, (short)50, (short)50 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_B, new String[] { "B", "B", "B" }, new short[] { (short)30, (short)30, (short)30 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_N, new String[] { "N", "N", "N" }, new short[] { (short)42, (short)42, (short)42 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_M, new String[] { "M", "M", ", (Comma)" }, new short[] { (short)41, (short)41, (short)55 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_COMMA, new String[] { ", (Comma)", ", (Comma)", "; (Semicolon)" }, new short[] { (short)55, (short)55, (short)74 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_PERIOD, new String[] { ". (Period)", ". (Period)", ": (Colon)" }, new short[] { (short)56, (short)56, (short)-1 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_FORWARDSLASH, new String[] { "/ (Forward Slash)", "- (Minus)", "= (Equal)" }, new short[] { (short)76, (short)69, (short)70 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_REGION_REMAP),
+		new VirtKeyDef(VKB_KEY_RIGHTSHIFT, new String[] { "Right Shift", "Right Shift", "Right Shift" }, new short[] { (short)60, (short)60, (short)60 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_MODKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_1, new String[] { "Numpad 1", "Numpad 1", "Numpad 1" }, new short[] { (short)145, (short)145, (short)145 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_2, new String[] { "Numpad 2", "Numpad 2", "Numpad 2" }, new short[] { (short)146, (short)146, (short)146 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_3, new String[] { "Numpad 3", "Numpad 3", "Numpad 3" }, new short[] { (short)147, (short)147, (short)147 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_ENTER, new String[] { "Numpad Enter", "Numpad Enter", "Numpad Enter" }, new short[] { (short)160, (short)160, (short)160 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_ALTERNATE, new String[] { "Alternate", "Alternate", "Alternate" }, new short[] { (short)57, (short)57, (short)57 }, (short)1, (short)1, (short)0, FLAG_STKEY|FLAG_MODKEY),
+		new VirtKeyDef(VKB_KEY_SPACE, new String[] { "Space", "Space", "Space" }, new short[] { (short)62, (short)62, (short)62 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_CAPS, new String[] { "Capslock", "Capslock", "Capslock" }, new short[] { (short)115, (short)115, (short)115 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_0, new String[] { "Numpad 0", "Numpad 0", "Numpad 0" }, new short[] { (short)144, (short)144, (short)144 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_PERIOD, new String[] { "Numpad . (Period)", "Numpad . (Period)", "Numpad . (Period)" }, new short[] { (short)158, (short)158, (short)158 }, (short)1, (short)1, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_NUMPAD_ENTER, new String[] { "Numpad Enter", "Numpad Enter", "Numpad Enter" }, new short[] { (short)160, (short)160, (short)160 }, (short)0, (short)0, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_KEYBOARDTOGGLE, new String[] { "Toggle Keyboard", "Toggle Keyboard", "Toggle Keyboard" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_PERSIST),
+		new VirtKeyDef(VKB_KEY_KEYBOARDTOGGLE_SEL, new String[] { "Toggle Keyboard", "Toggle Keyboard", "Toggle Keyboard" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_PERSIST),
+		new VirtKeyDef(VKB_KEY_JOYLEFT, new String[] { "Joystick Left", "Joystick Left", "Joystick Left" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)1, FLAG_JOY),
+		new VirtKeyDef(VKB_KEY_JOYRIGHT, new String[] { "Joystick Right", "Joystick Right", "Joystick Right" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)2, FLAG_JOY),
+		new VirtKeyDef(VKB_KEY_JOYDOWN, new String[] { "Joystick Down", "Joystick Down", "Joystick Down" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)4, FLAG_JOY),
+		new VirtKeyDef(VKB_KEY_JOYUP, new String[] { "Joystick Up", "Joystick Up", "Joystick Up" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)3, FLAG_JOY),
+		new VirtKeyDef(VKB_KEY_JOYFIRE_OLD, new String[] { "Joystick Fire Old", "Joystick Fire Old", "Joystick Fire Old" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_JOY),
+		new VirtKeyDef(VKB_KEY_KEYBOARDZOOM, new String[] { "Keyboard Zoom", "Keyboard Zoom", "Keyboard Zoom" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_VKB),
+		new VirtKeyDef(VKB_KEY_KEYBOARDZOOM_SEL, new String[] { "Keyboard Zoom", "Keyboard Zoom", "Keyboard Zoom" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_VKB),
+		new VirtKeyDef(VKB_KEY_SCREENZOOM, new String[] { "Screen Zoom", "Screen Zoom", "Screen Zoom" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_SCREEN|FLAG_SCREEN2),
+		new VirtKeyDef(VKB_KEY_SCREENZOOM_SEL, new String[] { "Screen Zoom", "Screen Zoom", "Screen Zoom" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_SCREEN|FLAG_SCREEN2),
+		new VirtKeyDef(VKB_KEY_MOUSETOGGLE, new String[] { "Toggle Mouse/Joystick", "Toggle Mouse/Joystick", "Toggle Mouse/Joystick" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)0, (short)10, FLAG_CUSTOMKEY|FLAG_JOY),
+		new VirtKeyDef(VKB_KEY_JOYTOGGLE, new String[] { "Toggle Mouse/Joystick", "Toggle Mouse/Joystick", "Toggle Mouse/Joystick" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MOUSE),
+		new VirtKeyDef(VKB_KEY_MOUSELB, new String[] { "Left Mouse Button", "Left Mouse Button", "Left Mouse Button" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)0, (short)0, FLAG_MOUSEBUTTON),
+		new VirtKeyDef(VKB_KEY_MOUSERB, new String[] { "Right Mouse Button", "Right Mouse Button", "Right Mouse Button" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)0, (short)0, FLAG_MOUSEBUTTON),
+		new VirtKeyDef(VKB_KEY_NORMALSPEED, new String[] { "Toggle Turbo Speed", "Toggle Turbo Speed", "Toggle Turbo Speed" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN|FLAG_PERSIST),
+		new VirtKeyDef(VKB_KEY_TURBOSPEED, new String[] { "Toggle Turbo Speed", "Toggle Turbo Speed", "Toggle Turbo Speed" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN|FLAG_PERSIST),
+		new VirtKeyDef(VKB_KEY_SCREENPRESETS, new String[] { "Cycle Screen Zoom Presets", "Cycle Screen Zoom Presets", "Cycle Screen Zoom Presets" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_SCREEN2),
+		new VirtKeyDef(VKB_KEY_KEYBOARDPRESETS, new String[] { "Cycle Keyboard Zoom Presets", "Cycle Keyboard Zoom Presets", "Cycle Keyboard Zoom Presets" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_VKB),
+		new VirtKeyDef(VKB_KEY_JOYFIRE, new String[] { "Joystick Fire", "Joystick Fire", "Joystick Fire" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)0, (short)0, FLAG_JOY),
+		new VirtKeyDef(VKB_KEY_LEFTSHIFT_BUTTON, new String[] { "Left Shift Button", "Left Shift Button", "Left Shift Button" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_RIGHTSHIFT_BUTTON, new String[] { "Right Shift Button", "Right Shift Button", "Right Shift Button" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_STKEY),
+		new VirtKeyDef(VKB_KEY_TOGGLEUI, new String[] { "Toggle UI", "Toggle UI", "Toggle UI" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY),
+		new VirtKeyDef(VKB_KEY_AUTOFIRE, new String[] { "Toggle Auto Fire", "Toggle Auto Fire", "Toggle Auto Fire" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY),
+		new VirtKeyDef(VKB_KEY_QUICKSAVESTATE, new String[] { "Quick Save State", "Quick Save State", "Quick Save State" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY),
+		new VirtKeyDef(VKB_KEY_QUICKLOADSTATE, new String[] { "Quick Load State", "Quick Load State", "Quick Load State" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY),
+		new VirtKeyDef(VKB_KEY_ANDROID_MENU, new String[] { "Android Soft Menu", "Android Soft Menu", "Android Soft Menu" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN|FLAG_PERSIST),
+		new VirtKeyDef(VKB_KEY_FLOPPY_MENU, new String[] { "Floppy Menu", "Floppy Menu", "Floppy Menu" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_JOY2LEFT, new String[] { "Joystick 2 Left", "Joystick 2 Left", "Joystick 2 Left" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)6, FLAG_JOY),
+		new VirtKeyDef(VKB_KEY_JOY2RIGHT, new String[] { "Joystick 2 Right", "Joystick 2 Right", "Joystick 2 Right" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)7, FLAG_JOY),
+		new VirtKeyDef(VKB_KEY_JOY2DOWN, new String[] { "Joystick 2 Down", "Joystick 2 Down", "Joystick 2 Down" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)9, FLAG_JOY),
+		new VirtKeyDef(VKB_KEY_JOY2UP, new String[] { "Joystick 2 Up", "Joystick 2 Up", "Joystick 2 Up" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)8, FLAG_JOY),
+		new VirtKeyDef(VKB_KEY_JOY2FIRE, new String[] { "Joystick 2 Fire", "Joystick 2 Fire", "Joystick 2 Fire" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)0, (short)5, FLAG_JOY),
+		new VirtKeyDef(VKB_KEY_FLOPPYA_INSERT, new String[] { "Floppy A Insert", "Floppy A Insert", "Floppy A Insert" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_FLOPPYB_INSERT, new String[] { "Floppy B Insert", "Floppy B Insert", "Floppy B Insert" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_SETTINGS_MENU, new String[] { "Settings Menu", "Settings Menu", "Settings Menu" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_ANDROID_BACK, new String[] { "Android Back", "Android Back", "Android Back" }, new short[] { (short)4, (short)4, (short)4 }, (short)1, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_PAUSE, new String[] { "Pause Toggle", "Pause Toggle", "Pause Toggle" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)1, (short)1, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_NAVLEFT, new String[] { "Nav Left", "Nav Left", "Nav Left" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_NAVRIGHT, new String[] { "Nav Right", "Nav Right", "Nav Right" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_NAVDOWN, new String[] { "Nav Down", "Nav Down", "Nav Down" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_NAVUP, new String[] { "Nav Up", "Nav Up", "Nav Up" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_NAVBTN, new String[] { "Nav Button", "Nav Button", "Nav Button" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN),
+		new VirtKeyDef(VKB_KEY_LEFTSHIFT_HOLD, new String[] { "Left Shift Hold", "Left Shift Hold", "Left Shift Hold" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_STKEY|FLAG_HOLDKEY),
+		new VirtKeyDef(VKB_KEY_RIGHTSHIFT_HOLD, new String[] { "Right Shift Hold", "Right Shift Hold", "Right Shift Hold" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_STKEY|FLAG_HOLDKEY),
+		new VirtKeyDef(VKB_KEY_ALTERNATE_HOLD, new String[] { "Alternate Hold", "Alternate Hold", "Alternate Hold" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_STKEY|FLAG_HOLDKEY),
+		new VirtKeyDef(VKB_KEY_CONTROL_HOLD, new String[] { "Control Hold", "Control Hold", "Control Hold" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_STKEY|FLAG_HOLDKEY),
+		new VirtKeyDef(VKB_KEY_MODLOCK, new String[] { "Mod Lock", "Mod Lock", "Mod Lock" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_VKB),
+		new VirtKeyDef(VKB_KEY_BKG, new String[] { "Background", "Background", "Background" }, new short[] { (short)-1, (short)-1, (short)-1 }, (short)0, (short)0, (short)0, FLAG_CUSTOMKEY|FLAG_MAIN|FLAG_PERSIST)
 	};
 }

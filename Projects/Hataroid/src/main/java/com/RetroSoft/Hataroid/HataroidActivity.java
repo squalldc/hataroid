@@ -152,8 +152,8 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 
 		public void Deserialize(Bundle savedInstanceState)
 		{
-			_argFloppyA =  savedInstanceState.getString(_argFloppyA);
-			_argFloppyAZipPath = savedInstanceState.getString(_argFloppyAZipPath);
+			_argFloppyA =  savedInstanceState.getString("_argFloppyA");
+			_argFloppyAZipPath = savedInstanceState.getString("_argFloppyAZipPath");
 		}
 	}
 
@@ -828,15 +828,23 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 	{
 		super.onPause();
 
+		if (_input != null) {
+			_input.onPause();
+		}
+
 		_pause();
 	}
 	
 	@Override protected void onResume()
 	{
 		super.onResume();
-		
+
 		if (!_lostFocus)
 		{
+			if (_input != null) {
+				_input.onResume();
+			}
+
 			_resume();
 		}
 
@@ -1482,7 +1490,7 @@ public class HataroidActivity extends Activity implements IGameDBScanner
     	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
     	Map<String,?> allPrefs = prefs.getAll();
     	
-    	ShortcutMap.getSelectedOptionFromPrefs(prefs, allPrefs, dynOptions);
+    	ShortcutMap.getSelectedOptionFromPrefs(prefs, allPrefs, dynOptions, (_input!=null)?_input.getLocaleID():Input.kLocale_EN);
     	
     	return dynOptions;
 	}
@@ -2459,6 +2467,7 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 		view.putExtra(InputCaptureView.CONFIG_EMUKEY, assignKeys[curKey].intValue());
 		//view.putExtra(InputCaptureView.CONFIG_SYSTEMKEY, scanItem._systemKey);
 		view.putExtra(InputCaptureView.CONFIG_MAPID, "");//_curPresetID);
+		view.putExtra(InputCaptureView.CONFIG_LOCALEID, _input.getLocaleID());
 		view.putExtra(InputCaptureView.CONFIG_CANCANCEL, false);
 		view.putExtra(InputCaptureView.CONFIG_CALLERDATA, callerData);
 		startActivityForResult(view, resultID);
@@ -2499,7 +2508,7 @@ public class HataroidActivity extends Activity implements IGameDBScanner
 				}
 				else
 				{
-					InputMapConfigureView.createTVInputMap(assignKeys, assignVals, getApplicationContext());
+					InputMapConfigureView.createTVInputMap(assignKeys, assignVals, getApplicationContext(), (_input!=null)?_input.getLocaleID():Input.kLocale_EN);
 
 					SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 					Editor ed = prefs.edit();

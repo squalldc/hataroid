@@ -5,6 +5,7 @@ import java.util.Map;
 
 import android.content.SharedPreferences;
 
+import com.RetroSoft.Hataroid.Input.Input;
 import com.RetroSoft.Hataroid.Input.VirtKeyDef;
 
 public class ShortcutMap
@@ -51,7 +52,7 @@ public class ShortcutMap
 
 	int [][] _shortcutMap = null;
 	
-	public ShortcutMap()
+	public ShortcutMap(int localeID)
 	{
 		_shortcutMap = new int [kNumAnchors][];
 		for (int i = 0; i < kNumAnchors; ++i)
@@ -62,6 +63,8 @@ public class ShortcutMap
 				_shortcutMap[i][k] = kDefaultPreset[i][k];
 			}
 		}
+
+		_autoRemapRegionKeys(localeID);
 	}
 	
 	public void clear()
@@ -124,7 +127,7 @@ public class ShortcutMap
 		return s;
 	}
 
-	public static boolean decodeShortcutMapPref(String prefVal, Map<String,Object> result)
+	public static boolean decodeShortcutMapPref(String prefVal, int localeID, Map<String,Object> result)
 	{
 		if (prefVal == null)
 		{
@@ -141,7 +144,7 @@ public class ShortcutMap
 			}
 			else
 			{
-				ShortcutMap map = new ShortcutMap();
+				ShortcutMap map = new ShortcutMap(localeID);
 				map.clear();
 
 				String name = info[0].trim();
@@ -166,7 +169,7 @@ public class ShortcutMap
 		return !error;
 	}
 
-	public static void getSelectedOptionFromPrefs(SharedPreferences prefs, Map<String,?> allPrefs, Map<String,String> dynOptions)
+	public static void getSelectedOptionFromPrefs(SharedPreferences prefs, Map<String,?> allPrefs, Map<String,String> dynOptions, int localeID)
 	{
 		ShortcutMap m = null;
 
@@ -182,7 +185,7 @@ public class ShortcutMap
 					try
 					{
 						Map<String,Object> result = new HashMap<String,Object>();
-						boolean error = !decodeShortcutMapPref(prefStr, result);
+						boolean error = !decodeShortcutMapPref(prefStr, localeID, result);
 						if (!error)
 						{
 							m = (ShortcutMap)result.get("map");
@@ -198,7 +201,7 @@ public class ShortcutMap
 		
 		if (m == null)
 		{
-			m = new ShortcutMap();
+			m = new ShortcutMap(localeID);
 		}
 
 		// setup our dynamic options
@@ -215,5 +218,52 @@ public class ShortcutMap
 		}
 		
 		dynOptions.put(kDynPrefKeyName, dynPref);
+	}
+
+	private void _autoRemapRegionKeys(int localeID)
+	{
+		/* disabled for now
+		try
+		{
+			if (localeID != Input.kLocale_EN)
+			{
+				for (int a = 0; a < _shortcutMap.length; ++a)
+				{
+					for (int k = 0; k < _shortcutMap[a].length; ++k)
+					{
+						int vkId = _shortcutMap[a][k];
+						if (vkId >= 0)
+						{
+							VirtKeyDef vk = VirtKeyDef.kDefs[vkId];
+							if ((vk.flags & VirtKeyDef.FLAG_REGION_REMAP) != 0 && vk.getAndroidKeyCode(Input.kLocale_EN) >= 0)
+							{
+								int desiredAndroidKeyID = vk.getAndroidKeyCode(Input.kLocale_EN);
+								int regionAndroidKeyID = vk.getAndroidKeyCode(localeID);
+								if (regionAndroidKeyID != desiredAndroidKeyID)
+								{
+									// search through virtkey defs to to find one in our region which matches the desired
+									for (int i = 0; i < VirtKeyDef.VKB_KEY_NumOf; ++i)
+									{
+										VirtKeyDef vkMap = VirtKeyDef.kDefs[i];
+										if ((vkMap.flags & VirtKeyDef.FLAG_REGION_REMAP) != 0 && vk.getAndroidKeyCode(localeID) == desiredAndroidKeyID)
+										{
+											_shortcutMap[a][k] = i;
+											break;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		catch (Exception e)  {
+			e.printStackTrace();
+		}
+		catch (Error e)  {
+			e.printStackTrace();
+		}
+		*/
 	}
 }

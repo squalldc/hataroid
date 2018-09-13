@@ -654,7 +654,9 @@ int TOS_LoadImage(void)
 	{
 		//Log_AlertDlg(LOG_FATAL, "Can not load TOS file:\n'%s'", ConfigureParams.Rom.szTosImageFileName);
 		Log_AlertDlg(LOG_FATAL, "Atari ST emulators require a valid TOS rom image. These are still under copyright by Atari so can't be provided here.\n\n"
-				"1. Please search the net for one and place it anywhere on you device.\n"
+				"You can also choose to use the open source EmuTOS in the settings screen.\n\n"
+				"If you want to use the original Atari TOS rom:\n"
+				"1. Please search the net for one and place it (.img/.rom) anywhere on you device.\n"
 				"2. In the Settings screen, go to the System screen and then click on TOS image\n"
 				"3. Select the TOS image from the built-in file browser");
 		free(pTosFile);

@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.ListView;
 
+import com.RetroSoft.Hataroid.Input.Input;
 import com.RetroSoft.Hataroid.R;
 import com.RetroSoft.Hataroid.Input.VirtKeyDef;
 
@@ -19,7 +20,8 @@ public class ShortcutSelectView extends ListActivity
 	public static final String CONFIG_ANCHOR		= "Config_Anchor";
 	public static final String CONFIG_SHORTCUTIDX	= "Config_ShortcutIdx";
 	public static final String CONFIG_MAPID			= "Config_MapID";
-	
+	public static final String CONFIG_LOCALEID	    = "Config_LocaleID";
+
 	public static final String RESULT_UNMAP			= "ResultUnmap";
 
 	public static final String RESULT_EMUKEY		= "ResultEmuKey";
@@ -31,6 +33,8 @@ public class ShortcutSelectView extends ListActivity
 	int			_anchor = -1;
 	int			_shortcutIdx = -1;
 	String		_mapID = null;
+
+	int         _localeID = Input.kLocale_EN;
 
 	Intent		_retIntent = null;
 
@@ -71,6 +75,7 @@ public class ShortcutSelectView extends ListActivity
 			outState.putInt(CONFIG_ANCHOR, _anchor);
 			outState.putInt(CONFIG_SHORTCUTIDX, _shortcutIdx);
 			outState.putString(CONFIG_MAPID, _mapID);
+			outState.putInt(CONFIG_LOCALEID, _localeID);
 		}
 		catch (Exception e)
 		{
@@ -83,6 +88,7 @@ public class ShortcutSelectView extends ListActivity
 		_anchor = -1;
 		_shortcutIdx = -1;
 		_mapID = null;
+		_localeID = Input.kLocale_EN;
 
 		Bundle b = (savedInstanceState == null) ? getIntent().getExtras() : savedInstanceState;
 		if (b != null)
@@ -90,6 +96,7 @@ public class ShortcutSelectView extends ListActivity
 			_anchor = b.getInt(CONFIG_ANCHOR, -1);
 			_shortcutIdx = b.getInt(CONFIG_SHORTCUTIDX, -1);
 			_mapID = b.getString(CONFIG_MAPID);
+			_localeID = b.getInt(CONFIG_LOCALEID);
 		}
 	}
 
@@ -131,7 +138,7 @@ public class ShortcutSelectView extends ListActivity
 			VirtKeyDef vkDef = VirtKeyDef.kDefs[i];
 			if (vkDef.scut > 0)
 			{
-				items.add(new ShortcutSelectListItem(vkDef));
+				items.add(new ShortcutSelectListItem(vkDef, _localeID));
 			}
 		}
 		Collections.sort(items);

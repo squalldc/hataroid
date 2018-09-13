@@ -60,12 +60,25 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 	String					_curPresetID = null;
 	InputMap				_curInputMap = null;
 
+	int                     _localeID = Input.kLocale_EN;
+
 	@Override public void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.configureinputmap_view);
 		
 		_parseOptions(savedInstanceState);
+
+		_localeID = Input.kLocale_EN;
+		try {
+			if (HataroidActivity.instance != null) {
+				_localeID = HataroidActivity.instance.getInput().getLocaleID();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		} catch (Error e) {
+			e.printStackTrace();
+		}
 
 //		try
 //		{
@@ -181,7 +194,7 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 					try
 					{
 						Map<String,Object> result = new HashMap<String,Object>();
-						error = !Input.decodeInputMapPref(entry.getValue().toString(), result);
+						error = !Input.decodeInputMapPref(entry.getValue().toString(), _localeID, result);
 						if (!error)
 						{
 							_userPresetNameList.put(id, (String)result.get("name"));
@@ -437,7 +450,7 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 			if (presetArray != null)
 			{
 				_curInputMap = new InputMap();
-				_curInputMap.initFromArray(Input.kNumSrcKeyCodes, presetArray);
+				_curInputMap.initFromArray(Input.kNumSrcKeyCodes, presetArray, _localeID);
 			}
 		}
 		else
@@ -448,7 +461,7 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 			{
 				// create new one
 				_curInputMap = new InputMap();
-				_curInputMap.init(Input.kNumSrcKeyCodes);
+				_curInputMap.init(Input.kNumSrcKeyCodes, _localeID);
 				_userPresetList.put(_curPresetID, _curInputMap);
 			}
 		}
@@ -473,7 +486,7 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 							systemKeys[s] = systemKeysList.get(s);
 						}
 					}
-					items.add(new InputMapListItem(vkDef, systemKeys));
+					items.add(new InputMapListItem(vkDef, systemKeys, _localeID));
 				}
 			}
 			Collections.sort(items);
@@ -801,7 +814,7 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 		
 		// create new input map
 		InputMap map = new InputMap();
-		map.init(Input.kNumSrcKeyCodes);
+		map.init(Input.kNumSrcKeyCodes, _localeID);
 		_userPresetList.put(newPresetID, map);
 		_userPresetOrder.add(newPresetID);
 		_userPresetNameList.put(newPresetID, newPresetName);
@@ -925,13 +938,13 @@ public class InputMapConfigureView extends ListActivity implements OnItemSelecte
 		}
 	}
 
-	public static boolean createTVInputMap(Integer[] assignKeys, Integer[] assignVals, Context ctx)
+	public static boolean createTVInputMap(Integer[] assignKeys, Integer[] assignVals, Context ctx, int localeID)
 	{
 		String id = "TVInputMap";
 		String mapName = "Android TV Input Map";
 
 		InputMap map = new InputMap();
-		map.init(Input.kNumSrcKeyCodes);
+		map.init(Input.kNumSrcKeyCodes, localeID);
 
 		int defKeyMap[] = new int[]
 		{
